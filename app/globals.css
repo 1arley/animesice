@@ -1,0 +1,33 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Auto-generated from crawled site: https://animefire.plus */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+}
+
+img, video {
+  max-width: 100%;
+  height: auto;
+}
+
+/* --- crawled styles --- */
+button{outline: none !important}
+@media(min-width: 830px){body{background-image:url("https://animefire.io/img/lt/bg1.webp"), url("https://animefire.io/img/lt/bg.webp"); background-size: auto, 100% } }
+@media(max-width:829px){body{background-image: url("https://animefire.io/img/lt/bgM.webp"); background-size: 100% } }
+.cd-top{background: url("https://animefire.io/img/icons/cd-top-arrow.svg") center 50% no-repeat #2A2A2A; }
+@media(min-width:992px){#ad_468x60{display:none}}
+#b2t{bottom:58px !important}button{outline: none !important}
+@media(min-width: 830px){body{background-image:url("https://animefire.io/img/lt/bg1.webp"), url("https://animefire.io/img/lt/bg.webp"); background-size: auto, 100% } }
+@media(max-width:829px){body{background-image: url("https://animefire.io/img/lt/bgM.webp"); background-size: 100% } }
+.cd-top{background: url("https://animefire.io/img/icons/cd-top-arrow.svg") center 50% no-repeat #2A2A2A; }
+@media(min-width:992px){#ad_468x60{display:none}}
+#b2t{bottom:58px !important}

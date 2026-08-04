@@ -1,0 +1,14 @@
+{
+  "origin": "https://animefire.plus",
+  "startUrl": "https://animefire.plus",
+  "generatedAt": "2026-08-03T19:52:58.915Z",
+  "pages": [
+    {
+      "route": "/",
+      "title": "AnimeFire - Assistir animes online",
+      "component": "HomePage",
+      "file": "app/page.tsx"
+    }
+  ],
+  "assetCount": 14
+}
