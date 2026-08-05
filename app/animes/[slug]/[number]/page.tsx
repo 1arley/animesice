@@ -1,14 +1,22 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Footer } from "@/components/common/Footer";
+import { Header } from "@/components/common/Header";
 import { SiteNav } from "@/components/common/SiteNav";
-import { AuthButtons } from "@/components/common/AuthButtons";
+import { Footer } from "@/components/common/Footer";
 import { VideoPlayer } from "@/components/common/VideoPlayer";
 import { api, ApiError } from "@/lib/api";
-import type { Episode, Anime, StreamTokenResponse } from "@/types";
+import type { Episode, Anime } from "@/types";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api";
+interface StreamSource {
+  animeSlug: string;
+  episodeNumber: number;
+  src: string;
+  rawVideoUrl: string | null;
+  embedUrl: string | null;
+  reextracted: boolean;
+  thumbnailUrl: string | null;
+}
 
 export default function WatchPage({
   params,
@@ -28,8 +36,9 @@ export default function WatchPage({
   const [episode, setEpisode] = useState<(Episode & { anime: Anime }) | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [stream, setStream] = useState<StreamTokenResponse | null>(null);
-  const [streamError, setStreamError] = useState<string | null>(null);
+  const [source, setSource] = useState<StreamSource | null>(null);
+  const [sourceError, setSourceError] = useState<string | null>(null);
+  const [loadingSource, setLoadingSource] = useState(false);
 
   useEffect(() => {
     if (!slug || number == null) return;
@@ -41,114 +50,120 @@ export default function WatchPage({
       .finally(() => setLoading(false));
   }, [slug, number]);
 
-  async function loadStream() {
+  async function loadSource() {
     if (!slug || number == null) return;
-    setStreamError(null);
-    setStream(null);
+    setLoadingSource(true);
+    setSourceError(null);
+    setSource(null);
     try {
-      const res = await api.streamToken(slug, number);
-      setStream(res);
+      const res = await api.streamSource(slug, number);
+      setSource(res);
     } catch (e) {
-      setStreamError(
+      setSourceError(
         e instanceof ApiError
           ? e.message
-          : "Não foi possível gerar o token de streaming. Você está logado?",
+          : "Não foi possível obter o vídeo deste episódio.",
       );
+    } finally {
+      setLoadingSource(false);
     }
   }
 
-  // Monta a URL do proxy de vídeo (suporta Range 206, seek funciona)
-  const proxyUrl = stream
-    ? `${API_URL}/stream/video?token=${encodeURIComponent(stream.token)}&expires=${stream.expires}&ip=${encodeURIComponent(stream.ip)}`
-    : null;
+  // Auto-carrega o source ao montar/trocar episódio — player pronto sem clique.
+  useEffect(() => {
+    if (!slug || number == null) return;
+    loadSource();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [slug, number]);
 
   return (
     <>
-      <nav className="navbar navbar-expand-lg navbar-dark">
-        <a className="navbar-brand" href="/">
-          <img src="/assets/img/lt/logo.webp" alt="AnimesIce" />
-        </a>
-        <div className="ml-auto">
-          <AuthButtons />
-        </div>
-      </nav>
+      <Header />
       <SiteNav />
 
-      <div id="body-content">
-        <div className="container text-white py-3">
+      <main id="body-content">
+        <div className="mx-auto max-w-shelf px-4 py-6">
           {loading ? (
-            <p>Carregando...</p>
+            <p className="text-body-sm text-mist">Carregando...</p>
           ) : error ? (
             <div>
-              <p style={{ color: "#ff6b6b" }}>{error}</p>
-              <a href={`/animes/${slug}`} className="btn btn-outline-light">
+              <p className="mb-3 text-body-sm text-signal">{error}</p>
+              <a href={`/animes/${slug}`} className="btn-ghost">
                 Voltar ao anime
               </a>
             </div>
           ) : episode ? (
             <>
-              <h1>
-                {episode.anime.title} — Episódio {episode.number}
-              </h1>
-              <p>
-                <a href={`/animes/${slug}`} className="text-info">
+              <p className="mb-3">
+                <a
+                  href={`/animes/${slug}`}
+                  className="text-body-sm text-mist transition-colors hover:text-ice"
+                >
                   ← Todos os episódios
                 </a>
               </p>
 
-              {episode.videoUrl || episode.embedUrl ? (
-                <div>
-                  {episode.embedUrl ? (
-                    // Embed externo (iframe): sem token/proxy.
-                    <div style={{ marginTop: 16 }}>
-                      <VideoPlayer
-                        src={""}
-                        embedUrl={episode.embedUrl}
-                        posterUrl={episode.thumbnailUrl ?? undefined}
-                      />
-                    </div>
-                  ) : (
-                    <>
-                      {!stream && !streamError && (
-                        <button
-                          onClick={loadStream}
-                          className="btn btn-info"
-                          style={{ padding: "10px 20px", fontSize: 16 }}
-                        >
-                          ▶ Assistir
-                        </button>
-                      )}
-                      {streamError && (
-                        <p style={{ color: "#ff6b6b" }}>{streamError}</p>
-                      )}
-                      {proxyUrl && (
-                        <div style={{ marginTop: 16 }}>
-                          <VideoPlayer
-                            src={proxyUrl}
-                            posterUrl={episode.thumbnailUrl ?? undefined}
-                          />
-                        </div>
-                      )}
-                    </>
-                  )}
-                </div>
-              ) : (
-                <p style={{ color: "#ffcc00" }}>
-                  Vídeo não disponível para este episódio. Um administrador
-                  precisa cadastrar a URL do vídeo no{" "}
-                  <a href="/admin/episodes" className="text-info">
-                    painel admin
-                  </a>
-                  .
-                </p>
-              )}
+              <h1 className="font-display text-display-lg text-ink">
+                {episode.anime.title}
+              </h1>
+              <p className="mt-1 font-display text-body-sm font-medium text-ice tabular-nums">
+                EP {episode.number}
+              </p>
+
+              <div className="mt-4">
+                {/* Embed externo via proxy interno do backend (sem XFO/CSP). */}
+                {episode.embedUrl && episode.embedUrl.includes("/embed/proxy?") ? (
+                  <VideoPlayer
+                    src={""}
+                    embedUrl={episode.embedUrl}
+                    posterUrl={episode.thumbnailUrl ?? undefined}
+                  />
+                ) : sourceError ? (
+                  <p className="text-body-sm text-signal">{sourceError}</p>
+                ) : loadingSource ? (
+                  <p className="text-body-sm text-mist">Carregando vídeo...</p>
+                ) : source ? (
+                  <VideoPlayer
+                    src={source.src}
+                    posterUrl={source.thumbnailUrl ?? episode.thumbnailUrl ?? undefined}
+                  />
+                ) : (
+                  <p className="text-body-sm text-mist">
+                    Vídeo não disponível para este episódio.
+                  </p>
+                )}
+              </div>
+
+              {/* Próximo episódio */}
+              {number != null && <NextEpisode slug={slug} number={number} />}
             </>
           ) : (
-            <p>Episódio não encontrado.</p>
+            <p className="text-body-sm text-mist">Episódio não encontrado.</p>
           )}
         </div>
-      </div>
+      </main>
       <Footer />
     </>
+  );
+}
+
+function NextEpisode({ slug, number }: { slug: string; number: number }) {
+  const [hasNext, setHasNext] = useState<boolean | null>(null);
+  useEffect(() => {
+    api
+      .getEpisode(slug, number + 1)
+      .then(() => setHasNext(true))
+      .catch(() => setHasNext(false));
+  }, [slug, number]);
+  if (hasNext === null || !hasNext) return null;
+  return (
+    <p className="mt-3">
+      <a
+        href={`/animes/${slug}/${number + 1}`}
+        className="btn-ghost"
+      >
+        Próximo episódio →
+      </a>
+    </p>
   );
 }

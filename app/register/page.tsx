@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
 import { ApiError } from "@/lib/api";
+import { Wordmark } from "@/components/common/Wordmark";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -35,178 +36,95 @@ export default function RegisterPage() {
       await register(name, email, password);
       router.push("/");
     } catch (err) {
-      if (err instanceof ApiError) {
-        setError(err.message);
-      } else {
-        setError("Erro ao cadastrar. Tente novamente.");
-      }
+      setError(err instanceof ApiError ? err.message : "Erro ao cadastrar. Tente novamente.");
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        backgroundColor: "#1a1a1a",
-        padding: "1rem",
-      }}
-    >
-      <div
-        style={{
-          maxWidth: 400,
-          width: "100%",
-          backgroundColor: "#212121",
-          borderRadius: 8,
-          padding: "2rem",
-        }}
-      >
-        <h1
-          style={{
-            color: "#fff",
-            textAlign: "center",
-            marginBottom: "1.5rem",
-            fontFamily: "KoHo, sans-serif",
-            textTransform: "uppercase",
-          }}
-        >
-          Cadastrar
-        </h1>
+    <div className="flex min-h-screen items-center justify-center px-4 py-10">
+      <div className="w-full max-w-sm border border-hairline bg-panel p-8">
+        <div className="mb-6 text-center">
+          <Wordmark className="text-2xl" />
+          <h1 className="mt-4 font-display text-display-lg text-ink">Cadastrar</h1>
+        </div>
 
         {error && (
-          <div
-            style={{
-              backgroundColor: "#dc3545",
-              color: "#fff",
-              padding: "10px",
-              borderRadius: 4,
-              marginBottom: "1rem",
-              fontSize: 14,
-            }}
-          >
+          <div role="alert" className="mb-4 border border-signal/40 bg-signal/10 p-3 text-body-sm text-signal">
             {error}
           </div>
         )}
 
-        <form onSubmit={handleSubmit}>
-          <div style={{ marginBottom: "1rem" }}>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <label className="block">
+            <span className="mb-1.5 block font-sans text-caption uppercase tracking-wider text-mist">
+              Nome
+            </span>
             <input
               type="text"
-              placeholder="Nome"
+              placeholder="Seu nome"
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
-              style={{
-                width: "100%",
-                padding: "10px",
-                borderRadius: 4,
-                border: "none",
-                backgroundColor: "#2a2a2a",
-                color: "#fff",
-                fontSize: 14,
-                fontFamily: "Quicksand, sans-serif",
-              }}
+              autoComplete="name"
+              className="field"
             />
-          </div>
+          </label>
 
-          <div style={{ marginBottom: "1rem" }}>
+          <label className="block">
+            <span className="mb-1.5 block font-sans text-caption uppercase tracking-wider text-mist">
+              Email
+            </span>
             <input
               type="email"
-              placeholder="Email"
+              placeholder="voce@email.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              style={{
-                width: "100%",
-                padding: "10px",
-                borderRadius: 4,
-                border: "none",
-                backgroundColor: "#2a2a2a",
-                color: "#fff",
-                fontSize: 14,
-                fontFamily: "Quicksand, sans-serif",
-              }}
+              autoComplete="email"
+              className="field"
             />
-          </div>
+          </label>
 
-          <div style={{ marginBottom: "1rem" }}>
+          <label className="block">
+            <span className="mb-1.5 block font-sans text-caption uppercase tracking-wider text-mist">
+              Senha
+            </span>
             <input
               type="password"
-              placeholder="Senha (mín. 8 caracteres)"
+              placeholder="Mínimo 8 caracteres"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              style={{
-                width: "100%",
-                padding: "10px",
-                borderRadius: 4,
-                border: "none",
-                backgroundColor: "#2a2a2a",
-                color: "#fff",
-                fontSize: 14,
-                fontFamily: "Quicksand, sans-serif",
-              }}
+              autoComplete="new-password"
+              className="field"
             />
-          </div>
+          </label>
 
-          <div style={{ marginBottom: "1.5rem" }}>
+          <label className="block">
+            <span className="mb-1.5 block font-sans text-caption uppercase tracking-wider text-mist">
+              Confirmar senha
+            </span>
             <input
               type="password"
-              placeholder="Confirmar senha"
+              placeholder="Repita a senha"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
-              style={{
-                width: "100%",
-                padding: "10px",
-                borderRadius: 4,
-                border: "none",
-                backgroundColor: "#2a2a2a",
-                color: "#fff",
-                fontSize: 14,
-                fontFamily: "Quicksand, sans-serif",
-              }}
+              autoComplete="new-password"
+              className="field"
             />
-          </div>
+          </label>
 
-          <button
-            type="submit"
-            disabled={loading}
-            style={{
-              width: "100%",
-              padding: "12px",
-              borderRadius: 4,
-              border: "none",
-              backgroundColor: loading ? "#444" : "#21d3ff",
-              color: loading ? "#888" : "#111",
-              fontSize: 16,
-              fontWeight: "bold",
-              cursor: loading ? "not-allowed" : "pointer",
-              fontFamily: "Quicksand, sans-serif",
-            }}
-          >
+          <button type="submit" disabled={loading} className="btn-ice w-full justify-center">
             {loading ? "Cadastrando..." : "Cadastrar"}
           </button>
         </form>
 
-        <p
-          style={{
-            color: "#888",
-            textAlign: "center",
-            marginTop: "1.5rem",
-            fontFamily: "Quicksand, sans-serif",
-            fontSize: 14,
-          }}
-        >
+        <p className="mt-6 text-center text-body-sm text-mist">
           Já tem conta?{" "}
-          <Link
-            href="/login"
-            style={{ color: "#21d3ff", textDecoration: "none" }}
-          >
+          <Link href="/login" className="text-ice transition-colors hover:opacity-70">
             Entrar
           </Link>
         </p>
