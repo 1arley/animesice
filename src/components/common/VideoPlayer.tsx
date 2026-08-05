@@ -16,9 +16,12 @@ interface HlsStatic {
 }
 
 interface VideoPlayerProps {
+  /** URL da mídia. Já vem envolvida pelo proxy de mídia backend
+   *  (/embed/media?url=...) p/ contornar anti-hotlinking + IP-vínculo. */
   src: string;
   posterUrl?: string;
-  /** URL de iframe externo. Se presente, renderiza iframe em vez do player de vídeo. */
+  /** URL de iframe interno (proxy). Se presente e interna, renderiza iframe.
+   *  Embed externo direto NÃO é mais suportado (anúncios + XFO). */
   embedUrl?: string | null;
 }
 
@@ -33,68 +36,23 @@ export function VideoPlayer({ src, posterUrl, embedUrl }: VideoPlayerProps) {
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
   const [blocked, setBlocked] = useState(false);
 
-  // Modo embed externo (iframe).
-  if (embedUrl) {
-    // Proxy interno: iframe direto, sem tentar contornar XFO (nao ha bloqueio).
-    if (isProxyEmbed(embedUrl)) {
-      return (
-        <iframe
-          ref={iframeRef}
-          src={embedUrl}
-          title="Player"
-          allowFullScreen
-          style={{
-            width: "100%",
-            height: "70vh",
-            minHeight: 360,
-            border: 0,
-            background: "#000",
-          }}
-        />
-      );
-    }
-
-    // Embed direto (sem proxy): pode ter XFO/CSP. Detecta bloqueio via contentWindow.
+  // Modo embed interno (iframe via proxy do backend): sem XFO, carrega direto.
+  // Embed externo direto foi removido (anúncios do site de origem + bloqueio XFO).
+  if (embedUrl && isProxyEmbed(embedUrl)) {
     return (
-      <>
-        {!blocked ? (
-          <iframe
-            ref={iframeRef}
-            src={embedUrl}
-            title="Player externo"
-            allowFullScreen
-            style={{
-              width: "100%",
-              height: "70vh",
-              minHeight: 360,
-              border: 0,
-              background: "#000",
-            }}
-            onError={() => setBlocked(true)}
-          />
-        ) : (
-          <div
-            style={{
-              width: "100%",
-              height: "70vh",
-              minHeight: 360,
-              background: "#000",
-              color: "#ffcc00",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              textAlign: "center",
-              padding: 16,
-            }}
-          >
-            <p>
-              Embed bloqueado (X-Frame-Options/CSP). Use o proxy backend no
-              painel admin para gerar uma URL de embed interna.
-            </p>
-          </div>
-        )}
-        <EmbedBlockDetector iframeRef={iframeRef} onBlocked={() => setBlocked(true)} />
-      </>
+      <iframe
+        ref={iframeRef}
+        src={embedUrl}
+        title="Player"
+        allowFullScreen
+        style={{
+          width: "100%",
+          height: "70vh",
+          minHeight: 360,
+          border: 0,
+          background: "#000",
+        }}
+      />
     );
   }
 
@@ -126,7 +84,6 @@ export function VideoPlayer({ src, posterUrl, embedUrl }: VideoPlayerProps) {
     }
 
     // dinamico client-only: hls.js.
-    let mod: HlsModule | null = null;
     import("hls.js")
       .then((m: HlsModule) => {
         if (cancelled) return;
@@ -153,7 +110,6 @@ export function VideoPlayer({ src, posterUrl, embedUrl }: VideoPlayerProps) {
       }
       video.removeAttribute("src");
       video.load();
-      mod = null;
     };
   }, [src]);
 
@@ -183,7 +139,6 @@ function EmbedBlockDetector({
   useEffect(() => {
     const id = window.setTimeout(() => {
       try {
-        // Acesso cross-origin lanca SecurityError quando XFO bloqueia.
         if (iframeRef.current && !iframeRef.current.contentWindow) {
           onBlocked();
         }
