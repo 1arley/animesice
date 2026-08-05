@@ -6,34 +6,13 @@ import { useAuth } from "@/lib/auth-context";
 export function AuthButtons() {
   const { user, logout } = useAuth();
 
-  // Aparece desde a primeira renderização (SSR), antes do useEffect resolver a
-  // sessão. Antes este componente retornava null no loading, fazendo os botões
-  // de login "sumirem" até a hidratação.
   if (user) {
     return (
-      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-        <span
-          style={{
-            fontSize: 14,
-            fontFamily: "Quicksand, sans-serif",
-            color: "#fff",
-          }}
-        >
+      <div className="flex items-center gap-3">
+        <Link href="/settings" className="text-body-sm text-mist transition-colors hover:text-ice">
           {user.name}
-        </span>
-        <button
-          onClick={logout}
-          style={{
-            padding: "8px 16px",
-            backgroundColor: "#2a2a2a",
-            color: "#fff",
-            border: "none",
-            borderRadius: 4,
-            cursor: "pointer",
-            fontSize: 14,
-            fontFamily: "Quicksand, sans-serif",
-          }}
-        >
+        </Link>
+        <button onClick={logout} className="btn-ghost">
           Sair
         </button>
       </div>
@@ -41,36 +20,11 @@ export function AuthButtons() {
   }
 
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-      <Link
-        href="/login"
-        style={{
-          padding: "8px 16px",
-          backgroundColor: "transparent",
-          color: "#21d3ff",
-          border: "1px solid #21d3ff",
-          borderRadius: 4,
-          textDecoration: "none",
-          fontSize: 14,
-          fontFamily: "Quicksand, sans-serif",
-        }}
-      >
+    <div className="flex items-center gap-2">
+      <Link href="/login" className="btn-ghost">
         Entrar
       </Link>
-      <Link
-        href="/register"
-        style={{
-          padding: "8px 16px",
-          backgroundColor: "#21d3ff",
-          color: "#111",
-          border: "none",
-          borderRadius: 4,
-          textDecoration: "none",
-          fontSize: 14,
-          fontWeight: "bold",
-          fontFamily: "Quicksand, sans-serif",
-        }}
-      >
+      <Link href="/register" className="btn-ice">
         Cadastrar
       </Link>
     </div>
