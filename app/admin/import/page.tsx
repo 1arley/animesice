@@ -3,6 +3,9 @@
 import { useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { api, ApiError } from "@/lib/api";
+import { Header } from "@/components/common/Header";
+import { SiteNav } from "@/components/common/SiteNav";
+import { Footer } from "@/components/common/Footer";
 import type { Anime } from "@/types";
 
 export default function AdminImportPage() {
@@ -41,105 +44,119 @@ export default function AdminImportPage() {
     }
   }
 
-  if (authLoading)
-    return <p className="container text-white py-4">Carregando...</p>;
+  if (authLoading) {
+    return (
+      <>
+        <Header />
+        <SiteNav />
+        <main className="mx-auto max-w-shelf px-4 py-10 text-body-sm text-mist">Carregando...</main>
+      </>
+    );
+  }
   if (!user || (user.role !== "ADMIN" && user.role !== "SUPERADMIN")) {
     return (
-      <p className="container text-white py-4">
-        Acesso negado. <a href="/login" className="text-info">Entrar</a>.
-      </p>
+      <>
+        <Header />
+        <SiteNav />
+        <main className="mx-auto max-w-shelf px-4 py-10 text-body-sm text-mist">
+          Acesso negado. <a href="/login" className="text-ice">Entrar</a>.
+        </main>
+      </>
     );
   }
 
   return (
-    <div className="container text-white py-4" style={{ maxWidth: 720 }}>
-      <p>
-        <a href="/admin" className="text-info">← Painel</a>
-      </p>
-      <h1>Importar do AniList</h1>
-      <p className="text-muted">
-        Busca metadados do anime no AniList (capa, banner, sinopse, gêneros,
-        episódios) e cria no catálogo.
-      </p>
+    <>
+      <Header />
+      <SiteNav />
+      <main className="mx-auto max-w-shelf px-4 py-6" style={{ maxWidth: 720 }}>
+        <p className="mb-4">
+          <a href="/admin" className="text-body-sm text-mist transition-colors hover:text-ice">
+            ← Painel
+          </a>
+        </p>
+        <h1 className="font-display text-display-xl text-ink">Importar do AniList</h1>
+        <p className="mt-2 text-body-sm text-mist">
+          Busca metadados do anime no AniList (capa, banner, sinopse, gêneros,
+          episódios) e cria no catálogo.
+        </p>
 
-      <form onSubmit={doImport} style={{ marginTop: 16 }}>
-        <div className="form-group">
-          <label>AniList ID (número)</label>
-          <input
-            className="form-control bg-dark text-white"
-            value={anilistId}
-            onChange={(e) => setAnilistId(e.target.value)}
-            placeholder="ex: 101922"
-            inputMode="numeric"
-          />
-        </div>
+        <form onSubmit={doImport} className="mt-6 space-y-4">
+          <label className="block">
+            <span className="mb-1.5 block font-sans text-caption uppercase tracking-wider text-mist">
+              AniList ID (número)
+            </span>
+            <input
+              className="field"
+              value={anilistId}
+              onChange={(e) => setAnilistId(e.target.value)}
+              placeholder="ex: 101922"
+              inputMode="numeric"
+            />
+          </label>
 
-        <div className="text-center text-muted my-2">— ou —</div>
+          <p className="text-center font-display text-caption text-mist">— ou —</p>
 
-        <div className="form-group">
-          <label>Termo de busca</label>
-          <input
-            className="form-control bg-dark text-white"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="ex: Frieren"
-          />
-          <small className="text-muted">
-            Usado quando o AniList ID estiver vazio.
-          </small>
-        </div>
+          <label className="block">
+            <span className="mb-1.5 block font-sans text-caption uppercase tracking-wider text-mist">
+              Termo de busca
+            </span>
+            <input
+              className="field"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="ex: Frieren"
+            />
+            <span className="mt-1 block text-caption text-mist">
+              Usado quando o AniList ID estiver vazio.
+            </span>
+          </label>
 
-        <div className="form-group mt-3">
-          <label>Áudio padrão</label>
-          <select
-            className="form-control bg-dark text-white"
-            value={audio}
-            onChange={(e) =>
-              setAudio(e.target.value as "LEGENDADO" | "DUBLADO")
-            }
-          >
-            <option value="LEGENDADO">LEGENDADO</option>
-            <option value="DUBLADO">DUBLADO</option>
-          </select>
-        </div>
+          <label className="block">
+            <span className="mb-1.5 block font-sans text-caption uppercase tracking-wider text-mist">
+              Áudio padrão
+            </span>
+            <select
+              className="field"
+              value={audio}
+              onChange={(e) => setAudio(e.target.value as "LEGENDADO" | "DUBLADO")}
+            >
+              <option value="LEGENDADO">Legendado</option>
+              <option value="DUBLADO">Dublado</option>
+            </select>
+          </label>
 
-        {error && (
-          <p style={{ color: "#ff6b6b" }} className="mt-3">{error}</p>
+          {error && (
+            <p role="alert" className="border border-signal/40 bg-signal/10 p-3 text-body-sm text-signal">
+              {error}
+            </p>
+          )}
+
+          <button type="submit" disabled={submitting} className="btn-ice">
+            {submitting ? "Importando..." : "Importar"}
+          </button>
+        </form>
+
+        {result && (
+          <div className="mt-6 border border-hairline bg-panel p-4">
+            <p className="text-body-sm text-ice">Importado com sucesso!</p>
+            <p className="mt-1 text-body text-ink">
+              <strong>{result.title}</strong>{" "}
+              <code className="text-mist">/{result.slug}</code>
+            </p>
+            <p className="mt-2 flex gap-3 text-body-sm">
+              <a href={`/animes/${result.slug}`} className="text-ice transition-colors hover:opacity-70">
+                ver no site
+              </a>
+              <span className="text-hairline">·</span>
+              <a href={`/admin/episode/${result.slug}/1`} className="text-ice transition-colors hover:opacity-70">
+                editar ep 1
+              </a>
+            </p>
+          </div>
         )}
-
-        <button
-          type="submit"
-          disabled={submitting}
-          className="btn btn-info mt-3"
-        >
-          {submitting ? "Importando..." : "Importar"}
-        </button>
-      </form>
-
-      {result && (
-        <div className="mt-4" style={{ color: "#4eff9b" }}>
-          <p>Importado com sucesso!</p>
-          <p>
-            <strong>{result.title}</strong>{" "}
-            <code className="text-white">/{result.slug}</code>
-          </p>
-          <p>
-            <a
-              href={`/animes/${result.slug}`}
-              className="text-info"
-            >
-              ver no site
-            </a>{" "}
-            ·{" "}
-            <a
-              href={`/admin/episode/${result.slug}/1`}
-              className="text-info"
-            >
-              editar ep 1
-            </a>
-          </p>
-        </div>
-      )}
-    </div>
+      </main>
+      <Footer />
+    </>
   );
 }
