@@ -1,3 +1,7 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+
 export interface NavLink {
   href: string;
   title: string;
@@ -10,98 +14,111 @@ export interface NavItem {
 }
 
 // Links internos. Rotas de gênero/temporada ainda não implementadas (#) —
-// melhor que apontar para um domínio externo inexistente (animesice.io).
+// melhor que apontar para um domínio externo inexistente.
 const navItems: NavItem[] = [
   {
     title: "Animes",
     links: [
-      { href: "/", title: "Home" },
+      { href: "/", title: "Início" },
       { href: "/admin", title: "Painel admin" },
-    ]
+    ],
   },
   {
     title: "Conta",
     links: [
       { href: "/login", title: "Entrar" },
       { href: "/register", title: "Registrar" },
-      { href: "https://myanimelist.net", title: "Calendário (MAL)", target: "_blank" }
-    ]
+      {
+        href: "https://myanimelist.net",
+        title: "Calendário (MAL)",
+        target: "_blank",
+      },
+    ],
   },
 ];
 
-
 export function SiteNav() {
+  const [openGroup, setOpenGroup] = useState<string | null>(null);
+  const navRef = useRef<HTMLElement | null>(null);
+
+  // Fecha o dropdown ao clicar fora ou ao Esc — floor de qualidade.
+  useEffect(() => {
+    function onClick(e: MouseEvent) {
+      if (navRef.current && !navRef.current.contains(e.target as Node)) {
+        setOpenGroup(null);
+      }
+    }
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setOpenGroup(null);
+    }
+    document.addEventListener("mousedown", onClick);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onClick);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, []);
+
   return (
     <nav
-      style={{
-        display: "flex",
-        flexWrap: "wrap",
-        gap: 12,
-        padding: 12,
-        borderBottom: "1px solid #e5e5e5",
-        fontFamily: "system-ui, sans-serif",
-        fontSize: 14,
-      }}
+      ref={navRef}
+      className="border-b border-hairline bg-ink"
+      aria-label="Navegação principal"
     >
-      {navItems.map((item) => (
-        <div key={item.title} style={{ position: "relative" }}>
-          <button
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 4,
-              padding: "8px 12px",
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-              fontSize: "inherit",
-              fontFamily: "inherit",
-            }}
-          >
-            {item.title}
-            <svg
-              width="16"
-              height="16"
-              fill="currentColor"
-              viewBox="0 0 16 16"
-            >
-              <path d="M0 3.5A.5.5 0 0 1 .5 3H1c2.202 0 3.827 1.24 4.874 2.418.49.552.865 1.102 1.126 1.532.26-.43.636-.98 1.126-1.532C9.173 4.24 10.798 3 13 3v1c-1.798 0-3.173 1.01-4.126 2.082A9.6 9.6 0 0 0 7.556 8a9.6 9.6 0 0 0 1.317 1.918C9.828 10.99 11.204 12 13 12v1c-2.202 0-3.827-1.24-4.874-2.418A10.6 10.6 0 0 1 7 9.05c-.26.43-.636.98-1.126 1.532C4.827 11.76 3.202 13 1 13H.5a.5.5 0 0 1 0-1H1c1.798 0 3.173-1.01 4.126-2.082A9.6 9.6 0 0 0 6.444 8a9.6 9.6 0 0 0-1.317-1.918C4.172 5.01 2.796 4 1 4H.5a.5.5 0 0 1-.5-.5" />
-            </svg>
-          </button>
-          <div
-            style={{
-              position: "absolute",
-              top: "100%",
-              left: 0,
-              backgroundColor: "white",
-              border: "1px solid #e5e5e5",
-              borderRadius: 4,
-              padding: 8,
-              boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-              display: "block",
-              zIndex: 1000,
-            }}
-            className="dropdown-menu"
-          >            {item.links.map((link) => (
-              <a
-                key={link.href}
-                href={link.href}
-                target={link.target || "_self"}
-                style={{
-                  display: "block",
-                  padding: "8px 12px",
-                  color: "#2563eb",
-                  textDecoration: "none",
-                  whiteSpace: "nowrap",
-                }}
-                className="dropdown-item"
+      <div className="mx-auto flex max-w-shelf items-stretch gap-1 px-4">
+        {navItems.map((item) => {
+          const isOpen = openGroup === item.title;
+          return (
+            <div key={item.title} className="relative">
+              <button
+                type="button"
+                aria-expanded={isOpen}
+                aria-haspopup="true"
+                onClick={() => setOpenGroup(isOpen ? null : item.title)}
+                className="flex items-center gap-1.5 px-3 py-3 text-body-sm font-medium text-mist transition-colors hover:text-ice data-[open=true]:text-ice"
+                data-open={isOpen}
               >
-                {link.title}
-              </a>
-            ))}
-          </div>
-        </div>
-      ))}
+                {item.title}
+                <svg
+                  width="10"
+                  height="10"
+                  viewBox="0 0 10 10"
+                  fill="none"
+                  aria-hidden="true"
+                  className={`transition-transform ${isOpen ? "rotate-180" : ""}`}
+                >
+                  <path
+                    d="M2 3.5L5 6.5L8 3.5"
+                    stroke="currentColor"
+                    strokeWidth="1.4"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </button>
+              {isOpen && (
+                <div
+                  role="menu"
+                  className="absolute left-0 top-full z-50 min-w-40 border border-hairline bg-panel py-1"
+                >
+                  {item.links.map((link) => (
+                    <a
+                      key={link.href + link.title}
+                      href={link.href}
+                      target={link.target || "_self"}
+                      rel={link.target === "_blank" ? "noopener noreferrer" : undefined}
+                      role="menuitem"
+                      className="block px-4 py-2 text-body-sm text-mist transition-colors hover:bg-ink hover:text-ice"
+                    >
+                      {link.title}
+                    </a>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
     </nav>
   );
 }
