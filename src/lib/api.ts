@@ -1,6 +1,7 @@
 import type {
   Anime,
   Episode,
+  Genre,
   Paginated,
   StreamTokenResponse,
 } from "@/types";
@@ -58,6 +59,7 @@ async function request<T>(
   const res = await fetch(`${API_URL}${path}`, {
     ...options,
     headers,
+    credentials: "include",
   });
 
   const data = await res.json().catch(() => null);
@@ -96,6 +98,35 @@ export const api = {
       headers: { Authorization: `Bearer ${refreshToken}` },
     }),
 
+  logout: () =>
+    request<{ message: string }>("/auth/logout", {
+      method: "POST",
+    }),
+
+  changeEmail: (newEmail: string) =>
+    request<{ message: string; token?: string }>("/auth/change-email", {
+      method: "POST",
+      body: JSON.stringify({ newEmail }),
+    }),
+
+  confirmEmail: (token: string) =>
+    request<{ message: string }>("/auth/confirm-email", {
+      method: "POST",
+      body: JSON.stringify({ token }),
+    }),
+
+  changePassword: (currentPassword: string, newPassword: string) =>
+    request<{ message: string }>("/auth/change-password", {
+      method: "POST",
+      body: JSON.stringify({ currentPassword, newPassword }),
+    }),
+
+  updateProfile: (name: string) =>
+    request<User>("/auth/update-profile", {
+      method: "POST",
+      body: JSON.stringify({ name }),
+    }),
+
   // --- Catálogo (públicos) ---
   listAnimes: (page = 1, limit = 12) =>
     request<Paginated<Anime>>(`/anime?page=${page}&limit=${limit}`),
@@ -119,16 +150,40 @@ export const api = {
       `/stream/token?anime=${encodeURIComponent(animeSlug)}&episode=${episodeNumber}`,
     ),
 
+  // Source público (sem JWT) — resolve videoUrl + re-extrai da fonte quando
+  // necessário e devolve `src` apontando p/ o proxy de mídia do backend
+  // (/embed/media) com anti-hotlinking + IP-vínculo resolvidos server-side.
+  // O <video> usa este `src` direto; não há token nem login no client.
+  streamSource: (animeSlug: string, episodeNumber: number) =>
+    request<{
+      animeSlug: string;
+      episodeNumber: number;
+      src: string;
+      rawVideoUrl: string | null;
+      embedUrl: string | null;
+      reextracted: boolean;
+      thumbnailUrl: string | null;
+    }>(`/stream/source?anime=${encodeURIComponent(animeSlug)}&episode=${episodeNumber}`),
+
   // --- Embed / Scrape (animefire proxy backend) ---
   // Monta a URL do proxy de embed (mesmo dominio backend, sem XFO/CSP).
-  // O iframe aponta para este endereco, nao direto para animefire.
-  embedProxyUrl: (animefireUrl: string): string =>
-    `${API_URL}/embed/proxy?url=${encodeURIComponent(animefireUrl)}`,
+  // Genérico: funciona p/ qualquer URL http/https (animefire, animesonlinecc, ...).
+  embedProxyUrl: (targetUrl: string): string =>
+    `${API_URL}/embed/proxy?url=${encodeURIComponent(targetUrl)}`,
 
-  // Scrape do episodio animefire: retorna URLs .mp4 token + iframes.
-  embedScrape: (animefireUrl: string) =>
+  // Monta a URL do proxy de mídia (mesmo domínio backend, injeta Referer/UA
+  // anti-hotlinking + resolve IP-vínculo do token). Usado p/ .mp4/.m3u8 de
+  // CDNs externas (lightspeedst.net, googlevideo.com/videoplayback, ...).
+  mediaProxyUrl: (targetUrl: string): string =>
+    `${API_URL}/embed/media?url=${encodeURIComponent(targetUrl)}`,
+
+  // Scrape de episódio: extrai URLs .mp4/.m3u8 + iframes.
+  // source opcional força um adapter (animefire/animesonlinecc/meusanimes);
+  // sem source, o backend auto-detecta pelo host.
+  embedScrape: (targetUrl: string, source?: string) =>
     request<{ videos: string[]; iframes: string[] }>(
-      `/embed/scrape?url=${encodeURIComponent(animefireUrl)}`,
+      `/embed/scrape?url=${encodeURIComponent(targetUrl)}` +
+        (source ? `&source=${encodeURIComponent(source)}` : ""),
     ),
 
   // --- Admin (protegido ROLE=ADMIN) ---
@@ -136,6 +191,51 @@ export const api = {
     request<Paginated<Anime & { _count: { episodes: number } }>>(
       `/admin/animes?page=${page}&limit=${limit}`,
     ),
+
+  adminCreateAnime: (dto: {
+    slug: string;
+    title: string;
+    synopsis?: string;
+    coverImage?: string;
+    bannerImage?: string;
+    rating?: number;
+    status?: string;
+    audio?: "LEGENDADO" | "DUBLADO";
+    ageRating?: string;
+    genreSlugs?: string[];
+  }) =>
+    request<Anime>("/admin/anime", {
+      method: "POST",
+      body: JSON.stringify(dto),
+    }),
+
+  adminDeleteAnime: (slug: string) =>
+    request<{ message: string }>(`/admin/anime/${slug}`, {
+      method: "DELETE",
+    }),
+
+  adminCreateEpisode: (
+    slug: string,
+    dto: {
+      number: number;
+      title?: string;
+      videoUrl?: string;
+      embedUrl?: string;
+      thumbnailUrl?: string;
+      duration?: string;
+    },
+  ) =>
+    request<Episode>(`/admin/episode/${slug}`, {
+      method: "POST",
+      body: JSON.stringify(dto),
+    }),
+
+  adminDeleteEpisode: (slug: string, number: number) =>
+    request<{ message: string }>(`/admin/episode/${slug}/${number}`, {
+      method: "DELETE",
+    }),
+
+  adminListGenres: () => request<Genre[]>(`/genre`),
 
   adminUpdateEpisode: (
     slug: string,
