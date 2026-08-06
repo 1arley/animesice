@@ -4,6 +4,7 @@ import { safeImageSrc } from "@/lib/url";
 import { AdSlot } from "@/components/ads/AdSlot";
 import { serverFetchJson } from "@/lib/api-server";
 import { isOnAir } from "@/lib/status";
+import { ContinueWatchingRail } from "@/components/common/ContinueWatchingRail";
 import type { Anime, Episode, Paginated } from "@/types";
 
 export default async function HomePage() {
@@ -28,6 +29,7 @@ export default async function HomePage() {
 
   return (
     <div className="mx-auto max-w-shelf px-4 py-6">
+      <ContinueWatchingRail />
       {/* Signature: a programação de agora, como um broadcast bug.
           Hero = conteúdo (episódios correntes), não headline+gradient. */}
       {onAirList.length > 0 && (
