@@ -1,15 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { useAuth } from "@/lib/auth-context";
 import { api, ApiError } from "@/lib/api";
 import { Header } from "@/components/common/Header";
 import { SiteNav } from "@/components/common/SiteNav";
 import { Footer } from "@/components/common/Footer";
+import { AdminGate } from "@/components/common/AdminGate";
 import type { Anime } from "@/types";
 
 export default function AdminImportPage() {
-  const { user, loading: authLoading } = useAuth();
   const [anilistId, setAnilistId] = useState("");
   const [search, setSearch] = useState("");
   const [audio, setAudio] = useState<"LEGENDADO" | "DUBLADO">("LEGENDADO");
@@ -44,29 +43,8 @@ export default function AdminImportPage() {
     }
   }
 
-  if (authLoading) {
-    return (
-      <>
-        <Header />
-        <SiteNav />
-        <main className="mx-auto max-w-shelf px-4 py-10 text-body-sm text-mist">Carregando...</main>
-      </>
-    );
-  }
-  if (!user || (user.role !== "ADMIN" && user.role !== "SUPERADMIN")) {
-    return (
-      <>
-        <Header />
-        <SiteNav />
-        <main className="mx-auto max-w-shelf px-4 py-10 text-body-sm text-mist">
-          Acesso negado. <a href="/login" className="text-ice">Entrar</a>.
-        </main>
-      </>
-    );
-  }
-
   return (
-    <>
+    <AdminGate>
       <Header />
       <SiteNav />
       <main className="mx-auto max-w-shelf px-4 py-6" style={{ maxWidth: 720 }}>
@@ -157,6 +135,6 @@ export default function AdminImportPage() {
         )}
       </main>
       <Footer />
-    </>
+    </AdminGate>
   );
 }
