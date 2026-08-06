@@ -3,6 +3,20 @@ import type {
   Episode,
   Genre,
   Paginated,
+  CommentItem,
+  Rating,
+  RatingStats,
+  AnimeStats,
+  ToggleFavoriteResponse,
+  CheckFavoriteResponse,
+  ToggleLikeResponse,
+  ContinueWatchingItem,
+  WatchHistoryItem,
+  NotificationItem,
+  NotificationListResponse,
+  ChatMessage,
+  CommentRepliesResponse,
+  PublicUserProfile,
 } from "@/types";
 
 // Re-export da sanção de URL — módulo puro em url.ts; aqui por compat.
@@ -311,4 +325,89 @@ export const api = {
 
     return data as Episode;
   },
+
+  // --- Comments ---
+  listAnimeComments: (animeId: string, page = 1, limit = 50) =>
+    request<CommentItem[]>(`/comment/anime/${animeId}?page=${page}&limit=${limit}`),
+
+  listEpisodeComments: (episodeId: string, page = 1, limit = 50) =>
+    request<CommentItem[]>(`/comment/episode/${episodeId}?page=${page}&limit=${limit}`),
+
+  createComment: (body: {
+    content: string;
+    animeId?: string;
+    episodeId?: string;
+    parentId?: string;
+  }) =>
+    request<CommentItem>(`/comment`, { method: "POST", body: JSON.stringify(body) }),
+
+  editComment: (id: string, content: string) =>
+    request<CommentItem>(`/comment/${id}`, { method: "PATCH", body: JSON.stringify({ content }) }),
+
+  deleteComment: (id: string) =>
+    request<CommentItem>(`/comment/${id}`, { method: "DELETE" }),
+
+  toggleCommentLike: (id: string) =>
+    request<ToggleLikeResponse>(`/comment/${id}/like`, { method: "POST" }),
+
+  getCommentReplies: (id: string, page = 1, limit = 50) =>
+    request<CommentRepliesResponse>(`/comment/${id}/replies?page=${page}&limit=${limit}`),
+
+  // --- Rating ---
+  rateAnime: (slug: string, score: number) =>
+    request<Rating>(`/rating/${slug}`, { method: "POST", body: JSON.stringify({ score }) }),
+
+  removeRating: (slug: string) =>
+    request<{ message: string }>(`/rating/${slug}`, { method: "DELETE" }),
+
+  getUserRating: (slug: string) =>
+    request<Rating | null>(`/rating/me/${slug}`),
+
+  getRatingStats: (slug: string) =>
+    request<RatingStats>(`/rating/stats/${slug}`),
+
+  toggleFavorite: (slug: string) =>
+    request<ToggleFavoriteResponse>(`/favorite/${slug}/toggle`, { method: "POST" }),
+
+  listFavorites: (page = 1, limit = 24) =>
+    request<Paginated<Anime>>(`/favorite?page=${page}&limit=${limit}`),
+
+  checkFavorite: (slug: string) =>
+    request<CheckFavoriteResponse>(`/favorite/${slug}/check`),
+
+  updateProgress: (slug: string, episodeNumber: number, progress: number, duration?: number, completed?: boolean) =>
+    request(`/watch-history/${slug}/${episodeNumber}`, {
+      method: "POST",
+      body: JSON.stringify({ progress, duration, completed }),
+    }),
+
+  getContinueWatching: (limit = 12) =>
+    request<ContinueWatchingItem[]>(`/watch-history/continue?limit=${limit}`),
+
+  getWatchHistory: (page = 1, limit = 24) =>
+    request<Paginated<WatchHistoryItem>>(`/watch-history?page=${page}&limit=${limit}`),
+
+  incrementViews: (slug: string, episodeNumber: number) =>
+    request<{ message: string }>(`/episode/${slug}/${episodeNumber}/views`, { method: "POST" }),
+
+  listNotifications: (page = 1, limit = 20, unread = false) =>
+    request<NotificationListResponse>(`/notification?page=${page}&limit=${limit}${unread ? "&unread=true" : ""}`),
+
+  markNotificationRead: (id: string) =>
+    request<NotificationItem>(`/notification/${id}/read`, { method: "PATCH" }),
+
+  markAllNotificationsRead: () =>
+    request<{ message: string }>(`/notification/read-all`, { method: "PATCH" }),
+
+  getPublicProfile: (userId: string) =>
+    request<PublicUserProfile>(`/user/${userId}/profile`),
+
+  updateProfileMeta: (data: { avatar?: string; bio?: string }) =>
+    request<User>(`/user/me/profile-meta`, { method: "POST", body: JSON.stringify(data) }),
+
+  getRelatedAnime: (slug: string) =>
+    request<Anime[]>(`/anime/${slug}/related`),
+
+  getAnimeStats: (slug: string) =>
+    request<AnimeStats>(`/anime/${slug}/stats`),
 };
