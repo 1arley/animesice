@@ -5,7 +5,10 @@ import type {
   Paginated,
 } from "@/types";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api";
+// Re-export da sanção de URL — módulo puro em url.ts; aqui por compat.
+export { isValidRemoteUrl, safeImageSrc } from "@/lib/url";
+
+export const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api";
 
 export interface User {
   id: string;
@@ -34,32 +37,35 @@ export class ApiError extends Error {
   }
 }
 
-/**
- * Allowlist de schemes/hosts seguros para URLs renderizadas no client.
- * Bloqueia `data:`, `javascript:`, `file:` — vetores XSS via <img>/<poster>.
- */
-const ALLOWED_IMAGE_HOSTS = new Set<string | null>([
-  null,
-]);
-
-export function isValidRemoteUrl(raw: string | null | undefined): raw is string {
-  if (!raw) return false;
-  let val = raw.trim();
-  if (!val) return false;
-  if (/^javascript:/i.test(val) || /^data:/i.test(val) || /^file:/i.test(val)) {
-    return false;
-  }
-  try {
-    const u = new URL(val);
-    return u.protocol === "https:" || u.protocol === "http:";
-  } catch {
-    return false;
-  }
+/** Resposta de /stream/source — contrato do backend. */
+export interface StreamSource {
+  animeSlug: string;
+  episodeNumber: number;
+  src: string;
+  rawVideoUrl: string | null;
+  embedUrl: string | null;
+  reextracted: boolean;
+  thumbnailUrl: string | null;
 }
 
-/** Normaliza URL de imagem: devolve a string só se for http(s) válida. */
-export function safeImageSrc(raw: string | null | undefined): string | undefined {
-  return isValidRemoteUrl(raw) ? (raw as string) : undefined;
+/** Proxy interno do backend: mesmo dominio, sem XFO/CSP bloqueando iframe. */
+export function isProxyEmbed(url: string): boolean {
+  return url.includes("/embed/proxy?");
+}
+
+/**
+ * Extrai mensagem de erro do shape `{ message: string | string[] }` do backend.
+ * Pura e testável — usado por request + adminUploadVideo.
+ */
+export function readErrorMessage(
+  data: unknown,
+  fallback = "Erro desconhecido",
+): string {
+  if (typeof data === "object" && data !== null && "message" in data) {
+    const message = (data as { message: unknown }).message;
+    return Array.isArray(message) ? message.join(", ") : String(message);
+  }
+  return fallback;
 }
 
 async function request<T>(
@@ -90,12 +96,7 @@ async function request<T>(
       });
       const retryData = await retry.json().catch(() => null);
       if (!retry.ok) {
-        throw new ApiError(
-          retry.status,
-          typeof retryData === "object" && retryData !== null && "message" in retryData
-            ? String((retryData as { message: unknown }).message)
-            : "Sessão expirada.",
-        );
+        throw new ApiError(retry.status, readErrorMessage(retryData, "Sessão expirada."));
       }
       return retryData as T;
     } catch (e) {
@@ -107,13 +108,7 @@ async function request<T>(
   const data = await res.json().catch(() => null);
 
   if (!res.ok) {
-    const message =
-      typeof data === "object" && data !== null && "message" in data
-        ? Array.isArray((data as { message: unknown }).message)
-          ? ((data as { message: string[] }).message as string[]).join(", ")
-          : String((data as { message: unknown }).message)
-        : "Erro desconhecido";
-    throw new ApiError(res.status, message);
+    throw new ApiError(res.status, readErrorMessage(data));
   }
 
   return data as T;
@@ -139,10 +134,10 @@ export const api = {
       method: "POST",
     }),
 
-  changeEmail: (newEmail: string) =>
+  changeEmail: (newEmail: string, password: string) =>
     request<{ message: string; token?: string }>("/auth/change-email", {
       method: "POST",
-      body: JSON.stringify({ newEmail }),
+      body: JSON.stringify({ newEmail, password }),
     }),
 
   confirmEmail: (token: string) =>
@@ -191,20 +186,12 @@ export const api = {
 
   latestEpisodes: (limit = 12) =>
     request<(Episode & { anime: Anime })[]>(
-      `/anime/latest-episodes?limit=${limit}`,
+      `/episode/latest?limit=${limit}`,
     ),
 
   // --- Streaming ---
   streamSource: (animeSlug: string, episodeNumber: number) =>
-    request<{
-      animeSlug: string;
-      episodeNumber: number;
-      src: string;
-      rawVideoUrl: string | null;
-      embedUrl: string | null;
-      reextracted: boolean;
-      thumbnailUrl: string | null;
-    }>(`/stream/source?anime=${encodeURIComponent(animeSlug)}&episode=${episodeNumber}`),
+    request<StreamSource>(`/stream/source?anime=${encodeURIComponent(animeSlug)}&episode=${episodeNumber}`),
 
   // --- Embed / Scrape (animefire proxy backend) ---
   embedProxyUrl: (targetUrl: string): string =>
@@ -319,13 +306,7 @@ export const api = {
     const data = await res.json().catch(() => null);
 
     if (!res.ok) {
-      const message =
-        typeof data === "object" && data !== null && "message" in data
-          ? Array.isArray((data as { message: unknown }).message)
-            ? ((data as { message: string[] }).message as string[]).join(", ")
-            : String((data as { message: unknown }).message)
-          : "Erro desconhecido";
-      throw new ApiError(res.status, message);
+      throw new ApiError(res.status, readErrorMessage(data));
     }
 
     return data as Episode;
