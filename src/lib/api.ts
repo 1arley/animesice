@@ -3,7 +3,6 @@ import type {
   Episode,
   Genre,
   Paginated,
-  StreamTokenResponse,
 } from "@/types";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api";
@@ -18,8 +17,6 @@ export interface User {
 }
 
 export interface AuthResponse {
-  access_token: string;
-  refresh_token: string;
   user: User;
 }
 
@@ -37,30 +34,75 @@ export class ApiError extends Error {
   }
 }
 
-function getToken(): string | null {
-  if (typeof window === "undefined") return null;
-  return localStorage.getItem("access_token");
+/**
+ * Allowlist de schemes/hosts seguros para URLs renderizadas no client.
+ * Bloqueia `data:`, `javascript:`, `file:` — vetores XSS via <img>/<poster>.
+ */
+const ALLOWED_IMAGE_HOSTS = new Set<string | null>([
+  null,
+]);
+
+export function isValidRemoteUrl(raw: string | null | undefined): raw is string {
+  if (!raw) return false;
+  let val = raw.trim();
+  if (!val) return false;
+  if (/^javascript:/i.test(val) || /^data:/i.test(val) || /^file:/i.test(val)) {
+    return false;
+  }
+  try {
+    const u = new URL(val);
+    return u.protocol === "https:" || u.protocol === "http:";
+  } catch {
+    return false;
+  }
+}
+
+/** Normaliza URL de imagem: devolve a string só se for http(s) válida. */
+export function safeImageSrc(raw: string | null | undefined): string | undefined {
+  return isValidRemoteUrl(raw) ? (raw as string) : undefined;
 }
 
 async function request<T>(
   path: string,
   options: RequestInit = {},
 ): Promise<T> {
-  const token = getToken();
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     ...((options.headers as Record<string, string>) || {}),
   };
-
-  if (token) {
-    headers["Authorization"] = `Bearer ${token}`;
-  }
 
   const res = await fetch(`${API_URL}${path}`, {
     ...options,
     headers,
     credentials: "include",
   });
+
+  if (res.status === 401 && !path.startsWith("/auth/")) {
+    try {
+      await fetch(`${API_URL}/auth/refresh`, {
+        method: "POST",
+        credentials: "include",
+      });
+      const retry = await fetch(`${API_URL}${path}`, {
+        ...options,
+        headers,
+        credentials: "include",
+      });
+      const retryData = await retry.json().catch(() => null);
+      if (!retry.ok) {
+        throw new ApiError(
+          retry.status,
+          typeof retryData === "object" && retryData !== null && "message" in retryData
+            ? String((retryData as { message: unknown }).message)
+            : "Sessão expirada.",
+        );
+      }
+      return retryData as T;
+    } catch (e) {
+      if (e instanceof ApiError) throw e;
+      throw new ApiError(401, "Sessão expirada.");
+    }
+  }
 
   const data = await res.json().catch(() => null);
 
@@ -92,12 +134,6 @@ export const api = {
 
   me: () => request<User>("/user/me"),
 
-  refresh: (refreshToken: string) =>
-    request<AuthResponse>("/auth/refresh", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${refreshToken}` },
-    }),
-
   logout: () =>
     request<{ message: string }>("/auth/logout", {
       method: "POST",
@@ -121,6 +157,18 @@ export const api = {
       body: JSON.stringify({ currentPassword, newPassword }),
     }),
 
+  forgotPassword: (email: string) =>
+    request<{ message: string; token?: string }>("/auth/forgot-password", {
+      method: "POST",
+      body: JSON.stringify({ email }),
+    }),
+
+  resetPassword: (token: string, newPassword: string) =>
+    request<{ message: string }>("/auth/reset-password", {
+      method: "POST",
+      body: JSON.stringify({ token, newPassword }),
+    }),
+
   updateProfile: (name: string) =>
     request<User>("/auth/update-profile", {
       method: "POST",
@@ -128,8 +176,10 @@ export const api = {
     }),
 
   // --- Catálogo (públicos) ---
-  listAnimes: (page = 1, limit = 12) =>
-    request<Paginated<Anime>>(`/anime?page=${page}&limit=${limit}`),
+  listAnimes: (page = 1, limit = 12, search?: string) =>
+    request<Paginated<Anime>>(
+      `/anime?page=${page}&limit=${limit}${search ? `&search=${encodeURIComponent(search)}` : ""}`,
+    ),
 
   getAnime: (slug: string) => request<Anime>(`/anime/${slug}`),
 
@@ -145,15 +195,6 @@ export const api = {
     ),
 
   // --- Streaming ---
-  streamToken: (animeSlug: string, episodeNumber: number) =>
-    request<StreamTokenResponse>(
-      `/stream/token?anime=${encodeURIComponent(animeSlug)}&episode=${episodeNumber}`,
-    ),
-
-  // Source público (sem JWT) — resolve videoUrl + re-extrai da fonte quando
-  // necessário e devolve `src` apontando p/ o proxy de mídia do backend
-  // (/embed/media) com anti-hotlinking + IP-vínculo resolvidos server-side.
-  // O <video> usa este `src` direto; não há token nem login no client.
   streamSource: (animeSlug: string, episodeNumber: number) =>
     request<{
       animeSlug: string;
@@ -166,20 +207,12 @@ export const api = {
     }>(`/stream/source?anime=${encodeURIComponent(animeSlug)}&episode=${episodeNumber}`),
 
   // --- Embed / Scrape (animefire proxy backend) ---
-  // Monta a URL do proxy de embed (mesmo dominio backend, sem XFO/CSP).
-  // Genérico: funciona p/ qualquer URL http/https (animefire, animesonlinecc, ...).
   embedProxyUrl: (targetUrl: string): string =>
     `${API_URL}/embed/proxy?url=${encodeURIComponent(targetUrl)}`,
 
-  // Monta a URL do proxy de mídia (mesmo domínio backend, injeta Referer/UA
-  // anti-hotlinking + resolve IP-vínculo do token). Usado p/ .mp4/.m3u8 de
-  // CDNs externas (lightspeedst.net, googlevideo.com/videoplayback, ...).
   mediaProxyUrl: (targetUrl: string): string =>
     `${API_URL}/embed/media?url=${encodeURIComponent(targetUrl)}`,
 
-  // Scrape de episódio: extrai URLs .mp4/.m3u8 + iframes.
-  // source opcional força um adapter (animefire/animesonlinecc/meusanimes);
-  // sem source, o backend auto-detecta pelo host.
   embedScrape: (targetUrl: string, source?: string) =>
     request<{ videos: string[]; iframes: string[] }>(
       `/embed/scrape?url=${encodeURIComponent(targetUrl)}` +
@@ -206,6 +239,15 @@ export const api = {
   }) =>
     request<Anime>("/admin/anime", {
       method: "POST",
+      body: JSON.stringify(dto),
+    }),
+
+  adminUpdateAnime: (
+    slug: string,
+    dto: Partial<Pick<Anime, "title" | "synopsis" | "coverImage" | "bannerImage" | "rating" | "status" | "ageRating">>,
+  ) =>
+    request<Anime>(`/admin/anime/${slug}`, {
+      method: "PATCH",
       body: JSON.stringify(dto),
     }),
 
@@ -247,15 +289,6 @@ export const api = {
       body: JSON.stringify(dto),
     }),
 
-  adminUpdateAnime: (
-    slug: string,
-    dto: Partial<Pick<Anime, "title" | "synopsis" | "coverImage" | "bannerImage" | "rating" | "status" | "ageRating">>,
-  ) =>
-    request<Anime>(`/admin/anime/${slug}`, {
-      method: "PATCH",
-      body: JSON.stringify(dto),
-    }),
-
   adminImportAnime: (body: {
     anilistId?: number;
     search?: string;
@@ -266,14 +299,11 @@ export const api = {
       body: JSON.stringify(body),
     }),
 
-  // Upload manual: multipart/form-data não pode usar o helper request()
-  // (que força Content-Type application/json e quebra o boundary do browser).
   adminUploadVideo: async (
     slug: string,
     number: number,
     file: File,
   ): Promise<Episode> => {
-    const token = getToken();
     const formData = new FormData();
     formData.append("file", file);
 
@@ -281,7 +311,7 @@ export const api = {
       `${API_URL}/admin/episode/${slug}/${number}/upload`,
       {
         method: "POST",
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        credentials: "include",
         body: formData,
       },
     );
