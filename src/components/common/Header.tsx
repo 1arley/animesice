@@ -4,6 +4,7 @@ import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { Wordmark } from "@/components/common/Wordmark";
 import { AuthButtons } from "@/components/common/AuthButtons";
+import { NotificationBell } from "@/components/common/NotificationBell";
 
 /**
  * Cabeçalho da prateleira: wordmark à esquerda, busca ao centro, auth à direita.
@@ -39,7 +40,10 @@ export function Header() {
           />
         </form>
 
-        <AuthButtons />
+        <div className="flex items-center gap-3">
+          <NotificationBell />
+          <AuthButtons />
+        </div>
       </div>
     </header>
   );
