@@ -1,24 +1,9 @@
 import { notFound } from "next/navigation";
-import { Header } from "@/components/common/Header";
-import { SiteNav } from "@/components/common/SiteNav";
-import { Footer } from "@/components/common/Footer";
 import type { Anime } from "@/types";
-import { safeImageSrc } from "@/lib/api";
+import { safeImageSrc } from "@/lib/url";
 import { AdSlot } from "@/components/ads/AdSlot";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api";
-
-async function fetchAnime(slug: string): Promise<Anime | null> {
-  try {
-    const res = await fetch(`${API_URL}/anime/${slug}`, {
-      next: { revalidate: 60 },
-    });
-    if (!res.ok) return null;
-    return (await res.json()) as Anime;
-  } catch {
-    return null;
-  }
-}
+import { serverFetchJson } from "@/lib/api-server";
+import { isOnAir } from "@/lib/status";
 
 export default async function AnimeDetailPage({
   params,
@@ -26,21 +11,16 @@ export default async function AnimeDetailPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const anime = await fetchAnime(slug);
+  const anime = await serverFetchJson<Anime>(`/anime/${slug}`, 60);
   if (!anime) notFound();
 
   const episodes = (anime.episodes ?? []).slice().sort((a, b) => a.number - b.number);
-  const ongoing = anime.status?.toUpperCase().includes("LANC");
+  const ongoing = isOnAir(anime.status);
   const dub = anime.audio === "DUBLADO";
 
   return (
-    <>
-      <Header />
-      <SiteNav />
-
-      <main id="body-content">
-        <article className="mx-auto max-w-shelf px-4 py-6">
-          <p className="mb-4">
+    <article className="mx-auto max-w-shelf px-4 py-6">
+      <p className="mb-4">
             <a href="/" className="text-body-sm text-mist transition-colors hover:text-ice">
               ← Voltar à prateleira
             </a>
@@ -176,10 +156,6 @@ export default async function AnimeDetailPage({
               </ul>
             )}
           </section>
-        </article>
-      </main>
-
-      <Footer />
-    </>
+    </article>
   );
 }
