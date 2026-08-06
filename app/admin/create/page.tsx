@@ -6,23 +6,13 @@ import { api, ApiError } from "@/lib/api";
 import { Header } from "@/components/common/Header";
 import { SiteNav } from "@/components/common/SiteNav";
 import { Footer } from "@/components/common/Footer";
+import { AdminGate } from "@/components/common/AdminGate";
+import { isPrivileged } from "@/lib/role";
+import { slugify } from "@/lib/slug";
 import type { Anime, Genre } from "@/types";
 
-function slugify(text: string): string {
-  return text
-    .toString()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .replace(/-{2,}/g, "-")
-    .slice(0, 80);
-}
-
 export default function AdminCreateAnimePage() {
-  const { user, loading: authLoading } = useAuth();
+  const { user } = useAuth();
 
   const [title, setTitle] = useState("");
   const [slug, setSlug] = useState("");
@@ -42,7 +32,7 @@ export default function AdminCreateAnimePage() {
   const [result, setResult] = useState<Anime | null>(null);
 
   useEffect(() => {
-    if (user?.role !== "ADMIN" && user?.role !== "SUPERADMIN") return;
+    if (!isPrivileged(user)) return;
     api
       .adminListGenres()
       .then(setGenres)
@@ -87,29 +77,8 @@ export default function AdminCreateAnimePage() {
     }
   }
 
-  if (authLoading) {
-    return (
-      <>
-        <Header />
-        <SiteNav />
-        <main className="mx-auto max-w-shelf px-4 py-10 text-body-sm text-mist">Carregando...</main>
-      </>
-    );
-  }
-  if (!user || (user.role !== "ADMIN" && user.role !== "SUPERADMIN")) {
-    return (
-      <>
-        <Header />
-        <SiteNav />
-        <main className="mx-auto max-w-shelf px-4 py-10 text-body-sm text-mist">
-          Acesso negado. <a href="/login" className="text-ice">Entrar</a>.
-        </main>
-      </>
-    );
-  }
-
   return (
-    <>
+    <AdminGate>
       <Header />
       <SiteNav />
       <main className="mx-auto max-w-shelf px-4 py-6" style={{ maxWidth: 720 }}>
@@ -328,6 +297,6 @@ export default function AdminCreateAnimePage() {
         )}
       </main>
       <Footer />
-    </>
+    </AdminGate>
   );
 }

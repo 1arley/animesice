@@ -6,12 +6,14 @@ import { api, ApiError } from "@/lib/api";
 import { Header } from "@/components/common/Header";
 import { SiteNav } from "@/components/common/SiteNav";
 import { Footer } from "@/components/common/Footer";
+import { AdminGate } from "@/components/common/AdminGate";
+import { isPrivileged } from "@/lib/role";
 import type { Anime } from "@/types";
 
 type AdminAnime = Anime & { _count: { episodes: number } };
 
 export default function AdminPage() {
-  const { user, loading: authLoading } = useAuth();
+  const { user } = useAuth();
   const [animes, setAnimes] = useState<AdminAnime[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
@@ -25,7 +27,7 @@ export default function AdminPage() {
   }
 
   useEffect(() => {
-    if (user?.role !== "ADMIN" && user?.role !== "SUPERADMIN") return;
+    if (!isPrivileged(user)) return;
     loadAnimes();
   }, [user]);
 
@@ -43,37 +45,14 @@ export default function AdminPage() {
     }
   }
 
-  if (authLoading) {
-    return (
-      <>
-        <Header />
-        <SiteNav />
-        <main className="mx-auto max-w-shelf px-4 py-10 text-body-sm text-mist">Carregando...</main>
-      </>
-    );
-  }
-
-  if (!user || (user.role !== "ADMIN" && user.role !== "SUPERADMIN")) {
-    return (
-      <>
-        <Header />
-        <SiteNav />
-        <main className="mx-auto max-w-shelf px-4 py-10 text-body-sm text-mist">
-          Acesso negado. Apenas administradores.{" "}
-          <a href="/login" className="text-ice">Entrar</a>.
-        </main>
-      </>
-    );
-  }
-
   return (
-    <>
+    <AdminGate>
       <Header />
       <SiteNav />
       <main className="mx-auto max-w-shelf px-4 py-6">
         <h1 className="font-display text-display-xl text-ink">Painel admin</h1>
         <p className="mt-1 text-body-sm text-mist">
-          Logado como <span className="text-ice">{user.email}</span> ({user.role})
+          Logado como <span className="text-ice">{user?.email}</span> ({user?.role})
         </p>
 
         <div className="mt-4 flex flex-wrap gap-3">
@@ -130,6 +109,13 @@ export default function AdminPage() {
                     <td className="py-2">
                       <div className="flex gap-2">
                         <a
+                          href={`/admin/edit/${a.slug}`}
+                          className="text-caption text-ice transition-colors hover:opacity-70"
+                          title="Editar anime"
+                        >
+                          editar
+                        </a>
+                        <a
                           href={`/admin/create-episode/${a.slug}`}
                           className="text-caption text-ice transition-colors hover:opacity-70"
                           title="Criar episódio"
@@ -177,6 +163,6 @@ export default function AdminPage() {
         </p>
       </main>
       <Footer />
-    </>
+    </AdminGate>
   );
 }
