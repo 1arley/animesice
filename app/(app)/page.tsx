@@ -1,28 +1,19 @@
-import { Header } from "@/components/common/Header";
-import { SiteNav } from "@/components/common/SiteNav";
-import { Footer } from "@/components/common/Footer";
 import { AnimeCard } from "@/components/common/AnimeCard";
 import { EpisodeCard } from "@/components/common/EpisodeCard";
-import { safeImageSrc } from "@/lib/api";
+import { safeImageSrc } from "@/lib/url";
 import { AdSlot } from "@/components/ads/AdSlot";
+import { serverFetchJson } from "@/lib/api-server";
+import { isOnAir } from "@/lib/status";
 import type { Anime, Episode, Paginated } from "@/types";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api";
-
-async function fetchJson<T>(path: string): Promise<T | null> {
-  try {
-    const res = await fetch(`${API_URL}${path}`, { next: { revalidate: 60 } });
-    if (!res.ok) return null;
-    return (await res.json()) as T;
-  } catch {
-    return null;
-  }
-}
-
 export default async function HomePage() {
-  const animesRes = await fetchJson<Paginated<Anime>>(`/anime?page=1&limit=12`);
-  const latestRes = await fetchJson<(Episode & { anime: Anime })[]>(
-    `/anime/latest-episodes?limit=12`,
+  const animesRes = await serverFetchJson<Paginated<Anime>>(
+    "/anime?page=1&limit=12",
+    60,
+  );
+  const latestRes = await serverFetchJson<(Episode & { anime: Anime })[]>(
+    "/episode/latest?limit=12",
+    60,
   );
 
   const animes = animesRes?.data ?? [];
@@ -31,20 +22,15 @@ export default async function HomePage() {
   // "No ar agora": lançamentos (status LANCAMENTO), únicos por slug.
   const onAir = new Map<string, Anime>();
   for (const a of animes) {
-    if (a.status?.toUpperCase().includes("LANC")) onAir.set(a.slug, a);
+    if (isOnAir(a.status)) onAir.set(a.slug, a);
   }
   const onAirList = [...onAir.values()];
 
   return (
-    <>
-      <Header />
-      <SiteNav />
-
-      <main id="body-content">
-        <div className="mx-auto max-w-shelf px-4 py-6">
-          {/* Signature: a programação de agora, como um broadcast bug.
-              Hero = conteúdo (episódios correntes), não headline+gradient. */}
-          {onAirList.length > 0 && (
+    <div className="mx-auto max-w-shelf px-4 py-6">
+      {/* Signature: a programação de agora, como um broadcast bug.
+          Hero = conteúdo (episódios correntes), não headline+gradient. */}
+      {onAirList.length > 0 && (
             <section className="mb-8" aria-label="No ar agora">
               <Rail label="No ar agora" count={onAirList.length}>
                 {onAirList.map((anime) => (
@@ -144,11 +130,7 @@ export default async function HomePage() {
             className="mt-8 min-h-[90px]"
             label="Publicidade"
           />
-        </div>
-      </main>
-
-      <Footer />
-    </>
+      </div>
   );
 }
 

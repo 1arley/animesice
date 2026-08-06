@@ -1,23 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Header } from "@/components/common/Header";
-import { SiteNav } from "@/components/common/SiteNav";
-import { Footer } from "@/components/common/Footer";
 import { VideoPlayer } from "@/components/common/VideoPlayer";
 import { AdSlot } from "@/components/ads/AdSlot";
-import { api, ApiError } from "@/lib/api";
+import { api, ApiError, isProxyEmbed, type StreamSource } from "@/lib/api";
 import type { Episode, Anime } from "@/types";
-
-interface StreamSource {
-  animeSlug: string;
-  episodeNumber: number;
-  src: string;
-  rawVideoUrl: string | null;
-  embedUrl: string | null;
-  reextracted: boolean;
-  thumbnailUrl: string | null;
-}
 
 export default function WatchPage({
   params,
@@ -78,13 +65,8 @@ export default function WatchPage({
   }, [slug, number]);
 
   return (
-    <>
-      <Header />
-      <SiteNav />
-
-      <main id="body-content">
-        <div className="mx-auto max-w-shelf px-4 py-6">
-          {loading ? (
+    <div className="mx-auto max-w-shelf px-4 py-6">
+      {loading ? (
             <p className="text-body-sm text-mist">Carregando...</p>
           ) : error ? (
             <div>
@@ -113,7 +95,7 @@ export default function WatchPage({
 
               <div className="mt-4">
                 {/* Embed externo via proxy interno do backend (sem XFO/CSP). */}
-                {episode.embedUrl && episode.embedUrl.includes("/embed/proxy?") ? (
+                {episode.embedUrl && isProxyEmbed(episode.embedUrl) ? (
                   <VideoPlayer
                     src={""}
                     embedUrl={episode.embedUrl}
@@ -147,10 +129,7 @@ export default function WatchPage({
           ) : (
             <p className="text-body-sm text-mist">Episódio não encontrado.</p>
           )}
-        </div>
-      </main>
-      <Footer />
-    </>
+    </div>
   );
 }
 
