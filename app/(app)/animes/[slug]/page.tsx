@@ -4,6 +4,11 @@ import { safeImageSrc } from "@/lib/url";
 import { AdSlot } from "@/components/ads/AdSlot";
 import { serverFetchJson } from "@/lib/api-server";
 import { isOnAir } from "@/lib/status";
+import { CommentSection } from "@/components/common/CommentSection";
+import { FavoriteButton } from "@/components/common/FavoriteButton";
+import { RatingStars, AnimeStatsDisplay } from "@/components/common/RatingStars";
+import { AnimeCard } from "@/components/common/AnimeCard";
+import { api } from "@/lib/api";
 
 export default async function AnimeDetailPage({
   params,
@@ -15,6 +20,7 @@ export default async function AnimeDetailPage({
   if (!anime) notFound();
 
   const episodes = (anime.episodes ?? []).slice().sort((a, b) => a.number - b.number);
+  const related = await serverFetchJson<Anime[]>(`/anime/${slug}/related`, 300) ?? [];
   const ongoing = isOnAir(anime.status);
   const dub = anime.audio === "DUBLADO";
 
@@ -89,20 +95,25 @@ export default async function AnimeDetailPage({
                 )}
               </dl>
 
-              {anime.genres && anime.genres.length > 0 && (
-                <ul className="mt-4 flex flex-wrap gap-2">
-                  {anime.genres.map((g) => (
-                    <li
-                      key={g.id}
-                      className="border border-hairline px-2 py-1 font-sans text-caption text-mist"
-                    >
-                      {g.name}
-                    </li>
-                  ))}
-                </ul>
-              )}
+               {anime.genres && anime.genres.length > 0 && (
+                 <ul className="mt-4 flex flex-wrap gap-2">
+                   {anime.genres.map((g) => (
+                     <li
+                       key={g.id}
+                       className="border border-hairline px-2 py-1 font-sans text-caption text-mist"
+                     >
+                       {g.name}
+                     </li>
+                   ))}
+                 </ul>
+               )}
 
-              <section className="mt-5">
+               <div className="mt-5 flex flex-wrap items-center gap-4">
+                 <FavoriteButton slug={slug} />
+                 <AnimeStatsDisplay slug={slug} />
+               </div>
+
+               <section className="mt-5">
                 <h2 className="mb-2 font-sans text-caption font-semibold uppercase tracking-wider text-mist">
                   Sinopse
                 </h2>
@@ -121,8 +132,13 @@ export default async function AnimeDetailPage({
 
           {/* Lista de episódios: grid de números, não cards de card-img.
               Nº é conteúdo, tipográfico. */}
-          <section className="mt-10">
-            <h2 className="shelf-label">
+           <section className="mt-10 border-y border-hairline py-6">
+             <h2 className="mb-3 font-display text-body font-semibold text-ice">Avalie este anime</h2>
+             <RatingStars slug={slug} />
+           </section>
+
+           <section className="mt-10">
+             <h2 className="shelf-label">
               Episódios{" "}
               {episodes.length > 0 && (
                 <span className="shelf-label-data">{episodes.length}</span>
@@ -155,7 +171,20 @@ export default async function AnimeDetailPage({
                 })}
               </ul>
             )}
-          </section>
-    </article>
-  );
+           </section>
+
+           {related.length > 0 && (
+             <section className="mt-10">
+               <h2 className="shelf-label">Você também pode gostar</h2>
+               <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
+                 {related.map((item) => (
+                   <AnimeCard key={item.id} anime={item} />
+                 ))}
+               </div>
+             </section>
+           )}
+
+           <CommentSection animeId={anime.id} />
+     </article>
+   );
 }
