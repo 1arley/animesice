@@ -1,4 +1,5 @@
 import type { Episode, Anime } from "@/types";
+import { safeImageSrc } from "@/lib/url";
 
 type LatestEpisode = Pick<Episode, "number" | "title" | "thumbnailUrl" | "dateModified"> & {
   anime: Pick<Anime, "slug" | "title">;
@@ -14,13 +15,10 @@ function formatDate(iso?: string | null): string {
   return isNaN(d.getTime()) ? "" : d.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" });
 }
 
-/**
- * Card de episódio: frame-grab + número de episódio (tabular, Space Grotesk).
- * O nº é conteúdo (E4 vs E12 é info real), por isso é tipográfico, não badge.
- */
 export function EpisodeCard({ episode }: EpisodeCardProps) {
   const { anime } = episode;
   const href = `/animes/${anime.slug}/${episode.number}`;
+  const thumb = safeImageSrc(episode.thumbnailUrl);
 
   return (
     <a
@@ -29,9 +27,9 @@ export function EpisodeCard({ episode }: EpisodeCardProps) {
       className="group block overflow-hidden bg-panel transition-colors hover:bg-hairline"
     >
       <div className="relative" style={{ aspectRatio: "16 / 9" }}>
-        {episode.thumbnailUrl ? (
+        {thumb ? (
           <img
-            src={episode.thumbnailUrl}
+            src={thumb}
             loading="lazy"
             alt={`${anime.title} — Episódio ${episode.number}`}
             className="absolute inset-0 h-full w-full object-cover opacity-90 transition-opacity group-hover:opacity-100"

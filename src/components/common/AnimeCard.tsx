@@ -1,15 +1,9 @@
 import type { Anime } from "@/types";
+import { safeImageSrc } from "@/lib/url";
+import { statusLabel } from "@/lib/status";
 
 export interface AnimeCardProps {
   anime: Pick<Anime, "slug" | "title" | "coverImage" | "rating" | "ageRating" | "status" | "audio">;
-}
-
-/** Status -> rótulo curto da edge-tag (condensado, nao mais de ~10 chars). */
-function statusLabel(status: string): string {
-  const s = status.toUpperCase();
-  if (s.includes("LANC")) return "No ar";
-  if (s.includes("CONCL")) return "Fim";
-  return s.slice(0, 8) || "Cat";
 }
 
 /**
@@ -21,6 +15,7 @@ function statusLabel(status: string): string {
 export function AnimeCard({ anime }: AnimeCardProps) {
   const age = anime.ageRating;
   const dub = anime.audio === "DUBLADO";
+  const cover = safeImageSrc(anime.coverImage);
 
   return (
     <a
@@ -29,9 +24,9 @@ export function AnimeCard({ anime }: AnimeCardProps) {
       className="group block overflow-hidden bg-panel transition-colors hover:bg-hairline"
     >
       <div className="relative" style={{ aspectRatio: "2 / 3" }}>
-        {anime.coverImage ? (
+        {cover ? (
           <img
-            src={anime.coverImage}
+            src={cover}
             loading="lazy"
             alt={anime.title}
             className="absolute inset-0 h-full w-full object-cover opacity-95 transition-opacity group-hover:opacity-100"
