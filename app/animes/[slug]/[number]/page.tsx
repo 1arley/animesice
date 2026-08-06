@@ -5,6 +5,7 @@ import { Header } from "@/components/common/Header";
 import { SiteNav } from "@/components/common/SiteNav";
 import { Footer } from "@/components/common/Footer";
 import { VideoPlayer } from "@/components/common/VideoPlayer";
+import { AdSlot } from "@/components/ads/AdSlot";
 import { api, ApiError } from "@/lib/api";
 import type { Episode, Anime } from "@/types";
 
@@ -133,6 +134,12 @@ export default function WatchPage({
                   </p>
                 )}
               </div>
+
+              <AdSlot
+                slot="0000000004"
+                format="horizontal"
+                className="mt-4 min-h-[90px]"
+              />
 
               {/* Próximo episódio */}
               {number != null && <NextEpisode slug={slug} number={number} />}

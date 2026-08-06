@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import { Inter, Space_Grotesk } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/lib/auth-context";
+
+const ADSENSE_CLIENT = "ca-pub-2885915887212760";
 
 const fontInter = Inter({
   variable: "--font-inter",
@@ -22,6 +25,7 @@ export const metadata: Metadata = {
     template: "%s | AnimesIce",
   },
   description: "Assistir animes online em HD, legendados e dublados",
+  other: { "google-adsense-account": ADSENSE_CLIENT },
 };
 
 export default function RootLayout({
@@ -31,6 +35,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt-BR">
+      <head>
+        <Script
+          id="adsbygoogle"
+          strategy="afterInteractive"
+          src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_CLIENT}`}
+          crossOrigin="anonymous"
+        />
+      </head>
       <body
         className={`${fontInter.variable} ${fontSpaceGrotesk.variable} antialiased`}
       >
