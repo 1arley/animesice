@@ -46,14 +46,7 @@ export interface Paginated<T> {
   };
 }
 
+/** Episódio populado com o anime pai — usar em listas de "últimos episódios". */
 export interface EpisodeWithAnime extends Episode {
   anime: Anime;
-}
-
-export interface StreamTokenResponse {
-  url: string;
-  token: string;
-  expires: number;
-  ip: string;
-  episode: Episode;
 }
