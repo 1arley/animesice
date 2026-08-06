@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useAuth } from "@/lib/auth-context";
+import { isPrivileged } from "@/lib/role";
 
 export interface NavLink {
   href: string;
@@ -13,33 +15,37 @@ export interface NavItem {
   links: NavLink[];
 }
 
-// Links internos. Rotas de gênero/temporada ainda não implementadas (#) —
-// melhor que apontar para um domínio externo inexistente.
-const navItems: NavItem[] = [
-  {
-    title: "Animes",
-    links: [
-      { href: "/", title: "Início" },
-      { href: "/admin", title: "Painel admin" },
-    ],
-  },
-  {
-    title: "Conta",
-    links: [
-      { href: "/login", title: "Entrar" },
-      { href: "/register", title: "Registrar" },
-      {
-        href: "https://myanimelist.net",
-        title: "Calendário (MAL)",
-        target: "_blank",
-      },
-    ],
-  },
-];
-
 export function SiteNav() {
+  const { user } = useAuth();
   const [openGroup, setOpenGroup] = useState<string | null>(null);
   const navRef = useRef<HTMLElement | null>(null);
+
+  // Links internos. Rotas de gênero/temporada ainda não implementadas (#) —
+  // melhor que apontar para um domínio externo inexistente.
+  // "Painel admin" só existe para quem tem papel privilegiado.
+  const navItems: NavItem[] = [
+    {
+      title: "Animes",
+      links: [
+        { href: "/", title: "Início" },
+        ...(isPrivileged(user)
+          ? [{ href: "/admin", title: "Painel admin" }]
+          : []),
+      ],
+    },
+    {
+      title: "Conta",
+      links: [
+        { href: "/login", title: "Entrar" },
+        { href: "/register", title: "Registrar" },
+        {
+          href: "https://myanimelist.net",
+          title: "Calendário (MAL)",
+          target: "_blank",
+        },
+      ],
+    },
+  ];
 
   // Fecha o dropdown ao clicar fora ou ao Esc — floor de qualidade.
   useEffect(() => {

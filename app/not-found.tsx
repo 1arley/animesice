@@ -23,31 +23,26 @@ export default function NotFound() {
                 <div className='flex flex-col items-center justify-center gap-20 md:gap-28'>
                     <div className='flex flex-wrap flex-col gap-10 md:gap-12 justify-center'>
                         <div className='flex flex-col justify-center gap-2'>
-                            <h1 className='text-4xl md:text-5xl text-center md:text-left'>Página não encontrada!</h1>
-                            <p className='text-sm md:text-base font-thin dark:text-slate-400 text-slate-800'>Erro 404 - Página não encontrada</p>
+                            <h1 className='text-4xl md:text-5xl text-center md:text-left text-ink'>Página não encontrada!</h1>
+                            <p className='text-sm md:text-base text-mist'>Erro 404 - Página não encontrada</p>
                         </div>
-                        <p className='text-wrap max-w-[29rem]'>Desculpe! O conteúdo que você procura pode ter sido removido, mas novas oportunidades sempre brotam. Que tal explorar nosso site e ver o que pode florescer para você?</p>
+                        <p className='text-wrap max-w-[29rem] text-mist'>Desculpe! O conteúdo que você procura pode ter sido removido, mas novas oportunidades sempre brotam. Que tal explorar nosso site e ver o que pode florescer para você?</p>
                     </div>
                     <div className='flex flex-col md:flex-row gap-7 w-full items-center justify-center'>
-                        <button className='w-60 h-10 inline-flex items-center justify-center whitespace-nowrap bg-blue-700/70 hover:bg-blue-700/85 rounded-md font-medium'>
-                            <Link className='w-fit' href="/">Voltar para a página principal</Link>
-                        </button>
-                        <button className='w-60 h-10 inline-flex items-center justify-center whitespace-nowrap bg-blue-700/70 hover:bg-blue-700/85 rounded-md font-medium'>
+                        <button className='btn-ice w-60 h-10 inline-flex items-center justify-center whitespace-nowrap'>
                             <Link
                                 className='w-fit'
-                                href="https://animesice.io"
-                                target="_blank"
-                                rel="noopener noreferrer"
+                                href="/"
                             >
-                                Conhecer a AnimesIce
+                                Voltar à prateleira
                             </Link>
                         </button>
                     </div>
                 </div>
             </div>
             <footer className='absolute w-full bottom-4 flex flex-col space-y-2 items-center'>
-                <hr className='w-64' />
-                <p className='text-sm'>© 2026 <a className='underline text-blue-600 hover:text-blue-800 visited:text-purple-600' href='https://animesice.io' target='_blank' rel='noopener noreferrer'>AnimesIce</a>. All rights reserved.</p>
+                <hr className='w-64 border-hairline' />
+                <p className='text-sm text-mist'>© 2026 <Link className='underline text-ice hover:opacity-70' href='/'>AnimesIce</Link>. All rights reserved.</p>
             </footer>
         </div>
     )

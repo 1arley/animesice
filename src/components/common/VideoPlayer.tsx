@@ -1,19 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-
-type HlsModule = typeof import("hls.js");
-
-interface HlsInstance {
-  loadSource(src: string): void;
-  attachMedia(media: HTMLMediaElement): void;
-  destroy(): void;
-}
-
-interface HlsStatic {
-  isSupported(): boolean;
-  new (config?: Record<string, unknown>): HlsInstance;
-}
+import { useEffect, useRef } from "react";
+import type Hls from "hls.js";
+import { safeImageSrc } from "@/lib/url";
+import { isProxyEmbed } from "@/lib/api";
 
 interface VideoPlayerProps {
   /** URL da mídia. Já vem envolvida pelo proxy de mídia backend
@@ -25,49 +15,49 @@ interface VideoPlayerProps {
   embedUrl?: string | null;
 }
 
-// Proxy interno do backend: mesmo dominio, sem XFO/CSP bloqueando iframe.
-// Heuristica: URL contem "/embed/proxy?" — nao depende de XFO/PSP fallback.
-function isProxyEmbed(url: string): boolean {
-  return url.includes("/embed/proxy?");
+/**
+ * Branch puro, sem hooks: iframe (proxy interno) ou vídeo nativo/HLS.
+ * A escolha de ramo fica fora dos componentes com efeitos — regras de hooks ok.
+ */
+export function VideoPlayer({ src, posterUrl, embedUrl }: VideoPlayerProps) {
+  if (embedUrl && isProxyEmbed(embedUrl)) {
+    return <EmbedPlayer embedUrl={embedUrl} />;
+  }
+  return <NativeVideoPlayer src={src} posterUrl={posterUrl} />;
 }
 
-export function VideoPlayer({ src, posterUrl, embedUrl }: VideoPlayerProps) {
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  const iframeRef = useRef<HTMLIFrameElement | null>(null);
-  const [blocked, setBlocked] = useState(false);
+/** Modo embed interno (iframe via proxy do backend): sem XFO, carrega direto. */
+function EmbedPlayer({ embedUrl }: { embedUrl: string }) {
+  return (
+    <iframe
+      src={embedUrl}
+      title="Player"
+      allowFullScreen
+      style={{
+        width: "100%",
+        height: "70vh",
+        minHeight: 360,
+        border: 0,
+        background: "#000",
+      }}
+    />
+  );
+}
 
-  // Modo embed interno (iframe via proxy do backend): sem XFO, carrega direto.
-  // Embed externo direto foi removido (anúncios do site de origem + bloqueio XFO).
-  if (embedUrl && isProxyEmbed(embedUrl)) {
-    return (
-      <iframe
-        ref={iframeRef}
-        src={embedUrl}
-        title="Player"
-        allowFullScreen
-        style={{
-          width: "100%",
-          height: "70vh",
-          minHeight: 360,
-          border: 0,
-          background: "#000",
-        }}
-      />
-    );
-  }
+function NativeVideoPlayer({ src, posterUrl }: { src: string; posterUrl?: string }) {
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+
+  const safeSrc = safeImageSrc(src) ?? src;
+  const safePoster = safeImageSrc(posterUrl);
+  const isM3u8 = safeSrc.toLowerCase().endsWith(".m3u8");
 
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
 
-    let hls: HlsInstance | null = null;
-    let cancelled = false;
-
-    const isM3u8 = src.toLowerCase().endsWith(".m3u8");
-
     // .mp4 -> navegacao nativa; .m3u8 -> hls.js se suportado, senao nativo (Safari).
     if (!isM3u8) {
-      video.src = src;
+      video.src = safeSrc;
       return () => {
         video.removeAttribute("src");
         video.load();
@@ -76,30 +66,31 @@ export function VideoPlayer({ src, posterUrl, embedUrl }: VideoPlayerProps) {
 
     // Hls nativo (Safari/iOS): apenas apontar video.src.
     if (video.canPlayType("application/vnd.apple.mpegurl")) {
-      video.src = src;
+      video.src = safeSrc;
       return () => {
         video.removeAttribute("src");
         video.load();
       };
     }
 
-    // dinamico client-only: hls.js.
+    // Dinamico client-only: hls.js.
+    let hls: Hls | null = null;
+    let cancelled = false;
+
     import("hls.js")
-      .then((m: HlsModule) => {
+      .then(({ default: HlsCtor }) => {
         if (cancelled) return;
-        const HlsCtor = (m.default ?? (m as unknown as HlsStatic)) as HlsStatic;
         if (!HlsCtor || !HlsCtor.isSupported()) {
-          // fallback nativo caso hls.js nao suportado.
-          video.src = src;
+          video.src = safeSrc;
           return;
         }
         hls = new HlsCtor();
-        hls.loadSource(src);
+        hls.loadSource(safeSrc);
         hls.attachMedia(video);
       })
       .catch(() => {
         if (cancelled) return;
-        video.src = src;
+        video.src = safeSrc;
       });
 
     return () => {
@@ -111,13 +102,13 @@ export function VideoPlayer({ src, posterUrl, embedUrl }: VideoPlayerProps) {
       video.removeAttribute("src");
       video.load();
     };
-  }, [src]);
+  }, [safeSrc, isM3u8]);
 
   return (
     <video
       ref={videoRef}
       controls
-      poster={posterUrl}
+      poster={safePoster}
       style={{
         width: "100%",
         background: "#000",
@@ -125,31 +116,6 @@ export function VideoPlayer({ src, posterUrl, embedUrl }: VideoPlayerProps) {
       }}
     />
   );
-}
-
-// Tenta acessar contentWindow do iframe; se cross-origin bloqueado
-// (XFO/CSP), o access dispara erro -> marca como bloqueado.
-function EmbedBlockDetector({
-  iframeRef,
-  onBlocked,
-}: {
-  iframeRef: React.RefObject<HTMLIFrameElement | null>;
-  onBlocked: () => void;
-}) {
-  useEffect(() => {
-    const id = window.setTimeout(() => {
-      try {
-        if (iframeRef.current && !iframeRef.current.contentWindow) {
-          onBlocked();
-        }
-      } catch {
-        onBlocked();
-      }
-    }, 1500);
-    return () => window.clearTimeout(id);
-  }, [iframeRef, onBlocked]);
-
-  return null;
 }
 
 export default VideoPlayer;
