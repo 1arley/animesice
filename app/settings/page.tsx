@@ -6,6 +6,7 @@ import { useAuth } from "@/lib/auth-context";
 import { api, ApiError } from "@/lib/api";
 import { Header } from "@/components/common/Header";
 import { Footer } from "@/components/common/Footer";
+import { passwordError } from "@/lib/password";
 
 export default function SettingsPage() {
   const { user, loading, logout, refreshUser } = useAuth();
@@ -16,6 +17,7 @@ export default function SettingsPage() {
   const [profileLoading, setProfileLoading] = useState(false);
 
   const [newEmail, setNewEmail] = useState("");
+  const [emailPassword, setEmailPassword] = useState("");
   const [emailMsg, setEmailMsg] = useState("");
   const [emailErr, setEmailErr] = useState("");
   const [emailLoading, setEmailLoading] = useState(false);
@@ -72,12 +74,13 @@ export default function SettingsPage() {
     setEmailErr("");
     setEmailLoading(true);
     try {
-      const res = await api.changeEmail(newEmail);
+      const res = await api.changeEmail(newEmail, emailPassword);
       setEmailMsg(
         res.message ||
           "Email de confirmação enviado. Verifique sua caixa de entrada.",
       );
       setNewEmail("");
+      setEmailPassword("");
     } catch (err) {
       setEmailErr(err instanceof ApiError ? err.message : "Erro ao solicitar troca de email.");
     } finally {
@@ -90,12 +93,9 @@ export default function SettingsPage() {
     setPwMsg("");
     setPwErr("");
 
-    if (newPassword !== confirmNewPassword) {
-      setPwErr("As senhas não coincidem.");
-      return;
-    }
-    if (newPassword.length < 8) {
-      setPwErr("A senha deve ter no mínimo 8 caracteres.");
+    const pwErr = passwordError(newPassword, confirmNewPassword);
+    if (pwErr) {
+      setPwErr(pwErr);
       return;
     }
 
@@ -202,6 +202,20 @@ export default function SettingsPage() {
                     onChange={(e) => setNewEmail(e.target.value)}
                     required
                     autoComplete="email"
+                    className="field"
+                  />
+                </label>
+                <label className="block">
+                  <span className="mb-1.5 block font-sans text-caption uppercase tracking-wider text-mist">
+                    Senha atual
+                  </span>
+                  <input
+                    type="password"
+                    placeholder="••••••••"
+                    value={emailPassword}
+                    onChange={(e) => setEmailPassword(e.target.value)}
+                    required
+                    autoComplete="current-password"
                     className="field"
                   />
                 </label>
