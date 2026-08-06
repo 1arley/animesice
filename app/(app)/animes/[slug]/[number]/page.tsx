@@ -5,6 +5,8 @@ import { VideoPlayer } from "@/components/common/VideoPlayer";
 import { AdSlot } from "@/components/ads/AdSlot";
 import { api, ApiError, isProxyEmbed, type StreamSource } from "@/lib/api";
 import type { Episode, Anime } from "@/types";
+import { CommentSection } from "@/components/common/CommentSection";
+import { EpisodeChat } from "@/components/common/EpisodeChat";
 
 export default function WatchPage({
   params,
@@ -96,20 +98,24 @@ export default function WatchPage({
               <div className="mt-4">
                 {/* Embed externo via proxy interno do backend (sem XFO/CSP). */}
                 {episode.embedUrl && isProxyEmbed(episode.embedUrl) ? (
-                  <VideoPlayer
-                    src={""}
-                    embedUrl={episode.embedUrl}
-                    posterUrl={episode.thumbnailUrl ?? undefined}
-                  />
+                    <VideoPlayer
+                      src={""}
+                      embedUrl={episode.embedUrl}
+                      posterUrl={episode.thumbnailUrl ?? undefined}
+                      animeSlug={slug}
+                      episodeNumber={episode.number}
+                    />
                 ) : sourceError ? (
                   <p className="text-body-sm text-signal">{sourceError}</p>
                 ) : loadingSource ? (
                   <p className="text-body-sm text-mist">Carregando vídeo...</p>
                 ) : source ? (
-                  <VideoPlayer
-                    src={source.src}
-                    posterUrl={source.thumbnailUrl ?? episode.thumbnailUrl ?? undefined}
-                  />
+                    <VideoPlayer
+                      src={source.src}
+                      posterUrl={source.thumbnailUrl ?? episode.thumbnailUrl ?? undefined}
+                      animeSlug={slug}
+                      episodeNumber={episode.number}
+                    />
                 ) : (
                   <p className="text-body-sm text-mist">
                     Vídeo não disponível para este episódio.
@@ -123,9 +129,13 @@ export default function WatchPage({
                 className="mt-4 min-h-[90px]"
               />
 
-              {/* Próximo episódio */}
-              {number != null && <NextEpisode slug={slug} number={number} />}
-            </>
+               <EpisodeChat animeSlug={slug} episodeNumber={episode.number} />
+
+               {/* Próximo episódio */}
+               {number != null && <NextEpisode slug={slug} number={number} />}
+
+               <CommentSection episodeId={episode.id} title="Discussão do episódio" />
+             </>
           ) : (
             <p className="text-body-sm text-mist">Episódio não encontrado.</p>
           )}
