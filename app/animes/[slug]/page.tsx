@@ -3,6 +3,8 @@ import { Header } from "@/components/common/Header";
 import { SiteNav } from "@/components/common/SiteNav";
 import { Footer } from "@/components/common/Footer";
 import type { Anime } from "@/types";
+import { safeImageSrc } from "@/lib/api";
+import { AdSlot } from "@/components/ads/AdSlot";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api";
 
@@ -48,9 +50,9 @@ export default async function AnimeDetailPage({
           <div className="flex flex-col gap-6 md:flex-row">
             <div className="shrink-0 md:w-56 lg:w-64">
               <div className="overflow-hidden bg-panel" style={{ aspectRatio: "2 / 3" }}>
-                {anime.coverImage ? (
+                {safeImageSrc(anime.coverImage) ? (
                   <img
-                    src={anime.coverImage}
+                    src={safeImageSrc(anime.coverImage)}
                     alt={anime.title}
                     className="h-full w-full object-cover"
                   />
@@ -130,6 +132,12 @@ export default async function AnimeDetailPage({
               </section>
             </div>
           </div>
+
+          <AdSlot
+            slot="0000000003"
+            format="horizontal"
+            className="mt-10 min-h-[90px]"
+          />
 
           {/* Lista de episódios: grid de números, não cards de card-img.
               Nº é conteúdo, tipográfico. */}

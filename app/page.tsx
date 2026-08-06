@@ -3,6 +3,8 @@ import { SiteNav } from "@/components/common/SiteNav";
 import { Footer } from "@/components/common/Footer";
 import { AnimeCard } from "@/components/common/AnimeCard";
 import { EpisodeCard } from "@/components/common/EpisodeCard";
+import { safeImageSrc } from "@/lib/api";
+import { AdSlot } from "@/components/ads/AdSlot";
 import type { Anime, Episode, Paginated } from "@/types";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api";
@@ -59,9 +61,9 @@ export default async function HomePage() {
                         className="relative overflow-hidden bg-panel"
                         style={{ aspectRatio: "2 / 3" }}
                       >
-                        {anime.coverImage ? (
+                        {safeImageSrc(anime.coverImage) ? (
                           <img
-                            src={anime.coverImage}
+                            src={safeImageSrc(anime.coverImage)}
                             loading="lazy"
                             alt={anime.title}
                             className="absolute inset-0 h-full w-full object-cover opacity-90 transition-opacity group-hover:opacity-100"
@@ -118,6 +120,13 @@ export default async function HomePage() {
             )}
           </section>
 
+          <AdSlot
+            slot="0000000001"
+            format="horizontal"
+            className="mb-8 min-h-[90px]"
+            label="Publicidade"
+          />
+
           {animes.length > 0 && (
             <section aria-label="Destaques da semana">
               <h2 className="shelf-label">Destaques da semana</h2>
@@ -128,6 +137,13 @@ export default async function HomePage() {
               </div>
             </section>
           )}
+
+          <AdSlot
+            slot="0000000002"
+            format="horizontal"
+            className="mt-8 min-h-[90px]"
+            label="Publicidade"
+          />
         </div>
       </main>
 
