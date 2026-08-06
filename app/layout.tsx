@@ -23,7 +23,10 @@ export const metadata: Metadata = {
     template: "%s | AnimesIce",
   },
   description: "Assistir animes online em HD, legendados e dublados",
-  other: { "google-adsense-account": ADSENSE_CLIENT },
+  other: {
+    "google-adsense-account": ADSENSE_CLIENT,
+    monetag: "5b3cadc15f39db60af150e8c05e089d0",
+  },
 };
 
 export default function RootLayout({
