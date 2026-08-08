@@ -14,9 +14,13 @@ export async function serverFetchJson<T>(
 ): Promise<T | null> {
   try {
     const res = await fetch(`${API_URL}${path}`, { next: { revalidate } });
-    if (!res.ok) return null;
+    if (!res.ok) {
+      console.error(`[serverFetchJson] ${path} -> HTTP ${res.status}`);
+      return null;
+    }
     return (await res.json()) as T;
-  } catch {
+  } catch (err) {
+    console.error(`[serverFetchJson] ${path} -> ${err}`);
     return null;
   }
 }
