@@ -14,20 +14,9 @@ import type {
   WatchHistoryItem,
   NotificationItem,
   NotificationListResponse,
+  ChatMessage,
   CommentRepliesResponse,
   PublicUserProfile,
-  CalendarResponse,
-  GenreAnimesResponse,
-  AnimeFilters,
-  UserAnimeListItem,
-  CheckListResponse,
-  NotificationPreference,
-  AnimeRequestItem,
-  SiteFeedbackItem,
-  ReportListResponse,
-  ReportItem,
-  ModerationActionItem,
-  WatchStatus,
 } from "@/types";
 
 // Re-export da sanção de URL — módulo puro em url.ts; aqui por compat.
@@ -109,16 +98,6 @@ async function request<T>(
   });
 
   if (res.status === 401 && !path.startsWith("/auth/")) {
-    // Sem sessão (cookie `role` não-httpOnly do backend ausente), não adianta
-    // tentar refresh: deslogado → erro direto, sem ruído de 401 no console.
-    const hasSession =
-      typeof document !== "undefined" &&
-      document.cookie
-        .split(";")
-        .some((c) => c.trim().startsWith("role="));
-    if (!hasSession) {
-      throw new ApiError(401, "Sessão expirada.");
-    }
     try {
       await fetch(`${API_URL}/auth/refresh`, {
         method: "POST",
@@ -211,44 +190,7 @@ export const api = {
       `/anime?page=${page}&limit=${limit}${search ? `&search=${encodeURIComponent(search)}` : ""}`,
     ),
 
-  filterAnimes: (filters: AnimeFilters) => {
-    const params = new URLSearchParams();
-    if (filters.page) params.set("page", String(filters.page));
-    if (filters.limit) params.set("limit", String(filters.limit));
-    if (filters.search) params.set("search", filters.search);
-    if (filters.genres) params.set("genres", filters.genres);
-    if (filters.status) params.set("status", filters.status);
-    if (filters.audio) params.set("audio", filters.audio);
-    if (filters.format) params.set("format", filters.format);
-    if (filters.year) params.set("year", String(filters.year));
-    if (filters.season) params.set("season", filters.season);
-    if (filters.ageRating) params.set("ageRating", filters.ageRating);
-    if (filters.minScore) params.set("minScore", String(filters.minScore));
-    if (filters.maxScore) params.set("maxScore", String(filters.maxScore));
-    if (filters.sort) params.set("sort", filters.sort);
-    return request<Paginated<Anime>>(`/anime?${params.toString()}`);
-  },
-
   getAnime: (slug: string) => request<Anime>(`/anime/${slug}`),
-
-  getRandomAnime: () => request<Anime | null>(`/anime/random`),
-
-  getTopAnimes: (limit = 20) =>
-    request<Anime[]>(`/anime/top?limit=${limit}`),
-
-  getTrendingAnimes: (limit = 20, sinceDays = 7) =>
-    request<Anime[]>(`/anime/trending?limit=${limit}&sinceDays=${sinceDays}`),
-
-  getRecentlyAddedAnimes: (limit = 20) =>
-    request<Anime[]>(`/anime/recently-added?limit=${limit}`),
-
-  getCalendar: (season?: string, year?: number) =>
-    request<CalendarResponse>(
-      `/anime/calendar${season ? `?season=${season}` : ""}${year ? `${season ? "&" : "?"}year=${year}` : ""}`,
-    ),
-
-  getGenreAnimes: (slug: string, page = 1, limit = 24) =>
-    request<GenreAnimesResponse>(`/genre/${slug}/animes?page=${page}&limit=${limit}`),
 
   getEpisodes: (slug: string) =>
     request<Episode[]>(`/anime/${slug}/episodes`),
@@ -468,129 +410,4 @@ export const api = {
 
   getAnimeStats: (slug: string) =>
     request<AnimeStats>(`/anime/${slug}/stats`),
-
-  // --- User Anime List (Watchlist) ---
-  upsertAnimeList: (slug: string, body: {
-    status?: 'PLANNING' | 'WATCHING' | 'COMPLETED' | 'ON_HOLD' | 'DROPPED';
-    episodesWatched?: number;
-    score?: number;
-    notes?: string;
-    private?: boolean;
-  }) =>
-    request(`/user-anime-list/${slug}`, { method: "POST", body: JSON.stringify(body) }),
-
-  removeAnimeList: (slug: string) =>
-    request<{ message: string }>(`/user-anime-list/${slug}`, { method: "DELETE" }),
-
-  listAnimeList: (page = 1, limit = 24, status?: string) =>
-    request<Paginated<UserAnimeListItem>>(`/user-anime-list?page=${page}&limit=${limit}${status ? `&status=${status}` : ""}`),
-
-  checkAnimeList: (slug: string) =>
-    request<{ inList: boolean; status?: string }>(`/user-anime-list/${slug}/check`),
-
-  // --- Notification preferences ---
-  getNotificationPreferences: () =>
-    request<NotificationPreference[]>(`/notification/preferences`),
-
-  updateNotificationPreference: (body: {
-    typeId: string;
-    channel: string;
-    enabled: boolean;
-  }) =>
-    request<NotificationPreference>(`/notification/preferences`, { method: "PATCH", body: JSON.stringify(body) }),
-
-  // --- Recommendations ---
-  getRecommendations: (limit = 20) =>
-    request<Anime[]>(`/recommendation/me?limit=${limit}`),
-
-  getSimilar: (slug: string, limit = 12) =>
-    request<Anime[]>(`/recommendation/similar/${slug}?limit=${limit}`),
-
-  getBecauseYouWatched: (limit = 12) =>
-    request<Anime[]>(`/recommendation/because-you-watched?limit=${limit}`),
-
-  // --- Community: Anime requests ---
-  listAnimeRequests: (page = 1, limit = 20, status?: string) =>
-    request(`/anime-requests?page=${page}&limit=${limit}${status ? `&status=${status}` : ""}`),
-
-  createAnimeRequest: (body: { title: string; alternativeTitle?: string; notes?: string }) =>
-    request(`/anime-requests`, { method: "POST", body: JSON.stringify(body) }),
-
-  voteAnimeRequest: (id: string) =>
-    request(`/anime-requests/${id}/vote`, { method: "POST" }),
-
-  // --- Community: Site feedback ---
-  listFeedback: (page = 1, limit = 20, type?: string, status?: string) =>
-    request(`/feedback?page=${page}&limit=${limit}${type ? `&type=${type}` : ""}${status ? `&status=${status}` : ""}`),
-
-  createFeedback: (body: { type: 'SUGGESTION' | 'BUG' | 'REQUEST'; title: string; description: string }) =>
-    request(`/feedback`, { method: "POST", body: JSON.stringify(body) }),
-
-  upvoteFeedback: (id: string) =>
-    request(`/feedback/${id}/upvote`, { method: "POST" }),
-
-  // --- Moderation ---
-  createReport: (body: {
-    targetType: 'COMMENT' | 'ROOM_MESSAGE' | 'USER' | 'ANIME';
-    targetId: string;
-    reason: 'SPAM' | 'HARASSMENT' | 'NSFW' | 'SPOILER' | 'ILLEGAL' | 'OTHER';
-    notes?: string;
-  }) =>
-    request(`/report`, { method: "POST", body: JSON.stringify(body) }),
-
-  // --- Admin moderation ---
-  adminListReports: (page = 1, limit = 20, status?: string) =>
-    request<ReportListResponse>(`/admin/reports?page=${page}&limit=${limit}${status ? `&status=${status}` : ""}`),
-
-  adminResolveReport: (id: string, moderationNote?: string) =>
-    request<ReportItem>(`/admin/reports/${id}/resolve`, { method: "PATCH", body: JSON.stringify({ moderationNote }) }),
-
-  adminDismissReport: (id: string, moderationNote?: string) =>
-    request<ReportItem>(`/admin/reports/${id}/dismiss`, { method: "PATCH", body: JSON.stringify({ moderationNote }) }),
-
-  adminModerateUser: (userId: string, body: {
-    actionType: 'WARN' | 'MUTE' | 'BAN' | 'DELETE_CONTENT';
-    reason?: string;
-    hours?: number;
-  }) =>
-    request<ModerationActionItem>(`/admin/users/${userId}/moderate`, { method: "POST", body: JSON.stringify(body) }),
-
-  adminDeleteComment: (id: string) =>
-    request<{ message: string }>(`/admin/comments/${id}`, { method: "DELETE" }),
-
-  // --- Rooms (watch party) ---
-  createRoom: (body: { animeSlug: string; episodeNumber: number; maxParticipants?: number }) =>
-    request<RoomInfo>(`/room`, { method: "POST", body: JSON.stringify(body) }),
-
-  getRoom: (slug: string) =>
-    request<RoomInfo>(`/room/${slug}`),
-
-  getRoomMessages: (slug: string) =>
-    request<RoomMessageItem[]>(`/room/${slug}/messages`),
-
-  deleteRoom: (slug: string) =>
-    request<{ message: string }>(`/room/${slug}`, { method: "DELETE" }),
 };
-
-export interface RoomInfo {
-  id: string;
-  slug: string;
-  animeSlug: string;
-  episodeNumber: number;
-  maxParticipants: number;
-  expiresAt: string;
-  createdAt: string;
-}
-
-export interface RoomMessageItem {
-  id: string;
-  roomId: string;
-  userId: string;
-  content: string;
-  createdAt: string;
-  user: {
-    id: string;
-    name: string | null;
-    avatar: string | null;
-  };
-}
