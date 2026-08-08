@@ -28,10 +28,10 @@ function loadTurnstile(): Promise<void> {
     }
     const script = document.createElement("script");
     script.id = id;
-    script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js";
+    script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?onload=onTurnstileLoad";
     script.async = true;
     script.defer = true;
-    script.onload = () => resolve();
+    (window as any).onTurnstileLoad = () => resolve();
     script.onerror = () => reject(new Error("Falha ao carregar o captcha."));
     document.head.appendChild(script);
   });
