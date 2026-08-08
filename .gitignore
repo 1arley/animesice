@@ -6,3 +6,5 @@ dist
 !.env.local.example
 .DS_Store
 _raw
+
+tsconfig.tsbuildinfo

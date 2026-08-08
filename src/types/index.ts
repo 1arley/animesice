@@ -1,9 +1,21 @@
-// Tipos alinhados com o Prisma (backend animesice-back/schema.prisma)
+// Animesice - Tipos alinhados com o Prisma (backend animesice-back/schema.prisma)
+
+export type AnimeFormat = 'TV' | 'MOVIE' | 'OVA' | 'ONA' | 'SPECIAL' | 'MUSIC';
+export type AnimeSeason = 'WINTER' | 'SPRING' | 'SUMMER' | 'FALL';
+export type SortMode = 'recentlyAdded' | 'rating' | 'views' | 'year' | 'title';
+
+export interface AnimeSchedule {
+  id: string;
+  animeId: string;
+  dayOfWeek: number;
+  time: string | null;
+}
 
 export interface Genre {
   id: string;
   slug: string;
   name: string;
+  _count?: { animes: number };
 }
 
 export interface Episode {
@@ -31,8 +43,21 @@ export interface Anime {
   ageRating: string | null;
   status: string;
   audio: 'LEGENDADO' | 'DUBLADO';
+  format?: AnimeFormat | null;
+  year?: number | null;
+  season?: AnimeSeason | null;
+  studios?: string[];
+  themes?: string[];
+  alternativeTitles?: string[];
+  japaneseTitle?: string | null;
+  source?: string | null;
+  releaseDate?: string | null;
+  endDate?: string | null;
+  episodeCount?: number | null;
+  published?: boolean;
   genres?: Genre[];
   episodes?: Episode[];
+  animeSchedules?: AnimeSchedule[];
   createdAt: string;
   updatedAt: string;
 }
@@ -139,20 +164,6 @@ export interface NotificationListResponse {
   };
 }
 
-export interface ChatMessage {
-  id: string;
-  userId: string;
-  user: {
-    id: string;
-    name: string | null;
-    avatar: string | null;
-  };
-  animeSlug: string;
-  episodeNumber: number;
-  content: string;
-  createdAt: string;
-}
-
 export interface CommentItem {
   id: string;
   content: string;
@@ -202,4 +213,154 @@ export interface PublicUserProfile {
 /** Episódio populado com o anime pai — usar em listas de "últimos episódios". */
 export interface EpisodeWithAnime extends Episode {
   anime: Anime;
+}
+
+/** Resposta do calendário semanal. */
+export interface CalendarResponse {
+  byDay: Array<{
+    day: number;
+    label: string;
+    animes: Anime[];
+  }>;
+  unscheduled: Anime[];
+}
+
+/** Resposta de animes por gênero. */
+export interface GenreAnimesResponse {
+  genre: { id: string; name: string; slug: string };
+  data: Anime[];
+  meta: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+}
+
+/** Filtros de busca avançada. */
+export interface AnimeFilters {
+  page?: number;
+  limit?: number;
+  search?: string;
+  genres?: string;
+  status?: string;
+  audio?: string;
+  format?: string;
+  year?: number;
+  season?: string;
+  ageRating?: string;
+  minScore?: number;
+  maxScore?: number;
+  sort?: SortMode;
+}
+
+/** Watchlist item (UserAnimeList). */
+export type WatchStatus = 'PLANNING' | 'WATCHING' | 'COMPLETED' | 'ON_HOLD' | 'DROPPED';
+
+export interface UserAnimeListItem {
+  userId: string;
+  animeId: string;
+  status: WatchStatus;
+  episodesWatched: number;
+  score: number | null;
+  notes: string | null;
+  rewatchCount: number;
+  private: boolean;
+  startedAt: string | null;
+  completedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  anime: Anime;
+}
+
+export interface CheckListResponse {
+  inList: boolean;
+  status?: WatchStatus;
+}
+
+/** Notification preferences. */
+export type NotificationType = 'NEW_EPISODE' | 'COMMENT_REPLY' | 'COMMENT_LIKE' | 'MODERATION_ACTION' | 'SYSTEM';
+export type NotificationChannel = 'IN_APP' | 'EMAIL';
+
+export interface NotificationPreference {
+  id: string;
+  userId: string;
+  typeId: NotificationType;
+  channel: NotificationChannel;
+  enabled: boolean;
+}
+
+/** Moderation report. */
+export type ReportTargetType = 'COMMENT' | 'CHAT_MESSAGE' | 'USER' | 'ANIME';
+export type ReportReason = 'SPAM' | 'HARASSMENT' | 'NSFW' | 'SPOILER' | 'ILLEGAL' | 'OTHER';
+export type ReportStatusType = 'PENDING' | 'RESOLVED' | 'DISMISSED';
+export type ModerationActionType = 'WARN' | 'MUTE' | 'BAN' | 'DELETE_CONTENT';
+
+export interface ReportItem {
+  id: string;
+  reporterId: string;
+  reporter: { id: string; name: string | null };
+  moderatorId: string | null;
+  moderator: { id: string; name: string | null } | null;
+  targetType: ReportTargetType;
+  targetId: string;
+  reason: ReportReason;
+  notes: string | null;
+  status: ReportStatusType;
+  moderationNote: string | null;
+  resolvedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ReportListResponse {
+  data: ReportItem[];
+  meta: { total: number; page: number; limit: number; totalPages: number };
+}
+
+export interface ModerationActionItem {
+  id: string;
+  userId: string;
+  user: { id: string; name: string | null };
+  moderatorId: string;
+  moderator: { id: string; name: string | null };
+  actionType: ModerationActionType;
+  reason: string | null;
+  expiresAt: string | null;
+  createdAt: string;
+}
+
+/** Anime request (community). */
+export type FeedbackStatus = 'OPEN' | 'ACKNOWLEDGED' | 'RESOLVED' | 'WONT_FIX' | 'COMPLETED' | 'REJECTED';
+
+export interface AnimeRequestItem {
+  id: string;
+  userId: string;
+  user: { id: string; name: string | null; avatar: string | null };
+  title: string;
+  alternativeTitle: string | null;
+  notes: string | null;
+  status: FeedbackStatus;
+  voteCount: number;
+  hasVoted: boolean;
+  adminNote: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** Site feedback (suggestion/bug). */
+export type FeedbackType = 'SUGGESTION' | 'BUG' | 'REQUEST';
+
+export interface SiteFeedbackItem {
+  id: string;
+  userId: string;
+  user: { id: string; name: string | null; avatar: string | null };
+  type: FeedbackType;
+  title: string;
+  description: string;
+  status: FeedbackStatus;
+  adminNote: string | null;
+  upvotes: number;
+  createdAt: string;
+  updatedAt: string;
 }
