@@ -33,7 +33,10 @@ import type {
 // Re-export da sanção de URL — módulo puro em url.ts; aqui por compat.
 export { isValidRemoteUrl, safeImageSrc } from "@/lib/url";
 
-export const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api";
+const isDev = process.env.NODE_ENV !== "production";
+export const API_URL =
+  process.env.NEXT_PUBLIC_API_URL ||
+  (isDev ? "http://localhost:3001/api" : "https://api.animesice.app/api");
 
 export interface User {
   id: string;
@@ -156,7 +159,7 @@ export const api = {
       body: JSON.stringify(body),
     }),
 
-  login: (body: { email: string; password: string }) =>
+  login: (body: { email: string; password: string; turnstileToken?: string }) =>
     request<AuthResponse>("/auth/login", {
       method: "POST",
       body: JSON.stringify(body),
