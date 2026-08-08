@@ -42,13 +42,14 @@ export default function RootLayout({
           src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_CLIENT}`}
           crossOrigin="anonymous"
         />
-        {/* Push Notifications (zona 11519348) - desativado temporariamente */}
-        {/* <script
+        {/* Monetag MultiTag: in-page push (onclick) + demais formatos.
+            Push notifications continuam desativados (sw.js removido). */}
+        <script
           src="https://quge5.com/88/tag.min.js"
           data-zone="267619"
           async
           data-cfasync="false"
-        /> */}
+        />
       </head>
       <body
         className={`${fontInter.variable} ${fontSpaceGrotesk.variable} antialiased`}
