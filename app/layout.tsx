@@ -3,6 +3,7 @@ import { Inter, Space_Grotesk } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/lib/auth-context";
 import { ADSENSE_CLIENT } from "@/lib/adsense";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 const fontInter = Inter({
   variable: "--font-inter",
@@ -55,6 +56,7 @@ export default function RootLayout({
         className={`${fontInter.variable} ${fontSpaceGrotesk.variable} antialiased`}
       >
         <AuthProvider>{children}</AuthProvider>
+        <SpeedInsights />
       </body>
     </html>
   );
