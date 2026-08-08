@@ -4,6 +4,7 @@ import "./globals.css";
 import { AuthProvider } from "@/lib/auth-context";
 import { ADSENSE_CLIENT } from "@/lib/adsense";
 import { ThirdPartyScripts } from "@/components/common/ThirdPartyScripts";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 // Tipografia do "sinal da madrugada": um display de cristal (Chakra Petch)
 // para vozes, IBM Plex Sans para o corpo e IBM Plex Mono para os dados de
@@ -76,6 +77,7 @@ export default function RootLayout({
         className={`${fontChakra.variable} ${fontPlexSans.variable} ${fontPlexMono.variable} antialiased`}
       >
         <AuthProvider>{children}</AuthProvider>
+        <SpeedInsights />
         {/* Scripts de terceiros: lazyOnload + IntersectionObserver para Monetag.
             Não bloqueiam o paint inicial nem competem com o LCP. */}
         <ThirdPartyScripts />
