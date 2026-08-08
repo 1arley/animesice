@@ -13,7 +13,7 @@ import { api, type User } from "@/lib/api";
 interface AuthContextValue {
   user: User | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string, turnstileToken?: string) => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   logoutError: string | null;
@@ -37,10 +37,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .finally(() => setLoading(false));
   }, []);
 
-  const login = useCallback(async (email: string, password: string) => {
-    const res = await api.login({ email, password });
-    setUser(res.user);
-  }, []);
+  const login = useCallback(
+    async (email: string, password: string, turnstileToken?: string) => {
+      const res = await api.login({ email, password, turnstileToken });
+      setUser(res.user);
+    },
+    [],
+  );
 
   const register = useCallback(
     async (name: string, email: string, password: string) => {
