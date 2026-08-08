@@ -6,7 +6,7 @@ import { AdSlot } from "@/components/ads/AdSlot";
 import { api, ApiError, isProxyEmbed, type StreamSource } from "@/lib/api";
 import type { Episode, Anime } from "@/types";
 import { CommentSection } from "@/components/common/CommentSection";
-import { EpisodeChat } from "@/components/common/EpisodeChat";
+import { CreateRoomButton } from "@/components/common/CreateRoomButton";
 
 export default function WatchPage({
   params,
@@ -129,7 +129,7 @@ export default function WatchPage({
                 className="mt-4 min-h-[90px]"
               />
 
-               <EpisodeChat animeSlug={slug} episodeNumber={episode.number} />
+               <CreateRoomButton animeSlug={slug} episodeNumber={episode.number} />
 
                {/* Próximo episódio */}
                {number != null && <NextEpisode slug={slug} number={number} />}
