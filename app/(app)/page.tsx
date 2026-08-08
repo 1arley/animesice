@@ -5,20 +5,21 @@ import { AdSlot } from "@/components/ads/AdSlot";
 import { serverFetchJson } from "@/lib/api-server";
 import { isOnAir } from "@/lib/status";
 import { ContinueWatchingRail } from "@/components/common/ContinueWatchingRail";
+import { RecommendationsRail } from "@/components/common/RecommendationsRail";
 import type { Anime, Episode, Paginated } from "@/types";
 
 export default async function HomePage() {
-  const animesRes = await serverFetchJson<Paginated<Anime>>(
-    "/anime?page=1&limit=12",
-    60,
-  );
-  const latestRes = await serverFetchJson<(Episode & { anime: Anime })[]>(
-    "/episode/latest?limit=12",
-    60,
-  );
+  const [animesRes, latestRes, trendingRes, recentRes] = await Promise.all([
+    serverFetchJson<Paginated<Anime>>("/anime?page=1&limit=12", 60),
+    serverFetchJson<(Episode & { anime: Anime })[]>("/episode/latest?limit=12", 60),
+    serverFetchJson<Anime[]>("/anime/trending?limit=12", 300),
+    serverFetchJson<Anime[]>("/anime/recently-added?limit=12", 300),
+  ]);
 
   const animes = animesRes?.data ?? [];
   const latest = latestRes ?? [];
+  const trending = trendingRes ?? [];
+  const recent = recentRes ?? [];
 
   // "No ar agora": lançamentos (status LANCAMENTO), únicos por slug.
   const onAir = new Map<string, Anime>();
@@ -30,6 +31,7 @@ export default async function HomePage() {
   return (
     <div className="mx-auto max-w-shelf px-4 py-6">
       <ContinueWatchingRail />
+      <RecommendationsRail />
       {/* Signature: a programação de agora, como um broadcast bug.
           Hero = conteúdo (episódios correntes), não headline+gradient. */}
       {onAirList.length > 0 && (
@@ -108,12 +110,40 @@ export default async function HomePage() {
             )}
           </section>
 
+          {trending.length > 0 && (
+            <section className="mb-8" aria-label="Em alta">
+              <h2 className="shelf-label">
+                Em alta{" "}
+                <span className="shelf-label-data">{trending.length} títulos</span>
+              </h2>
+              <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
+                {trending.map((anime) => (
+                  <AnimeCard key={`trend-${anime.id}`} anime={anime} />
+                ))}
+              </div>
+            </section>
+          )}
+
           <AdSlot
             slot="0000000001"
             format="horizontal"
             className="mb-8 min-h-[90px]"
             label="Publicidade"
           />
+
+          {recent.length > 0 && (
+            <section className="mb-8" aria-label="Recentemente adicionados">
+              <h2 className="shelf-label">
+                Recentemente adicionados{" "}
+                <span className="shelf-label-data">{recent.length} títulos</span>
+              </h2>
+              <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
+                {recent.map((anime) => (
+                  <AnimeCard key={`recent-${anime.id}`} anime={anime} />
+                ))}
+              </div>
+            </section>
+          )}
 
           {animes.length > 0 && (
             <section aria-label="Destaques da semana">

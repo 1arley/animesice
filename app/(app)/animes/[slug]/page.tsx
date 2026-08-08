@@ -8,7 +8,6 @@ import { CommentSection } from "@/components/common/CommentSection";
 import { FavoriteButton } from "@/components/common/FavoriteButton";
 import { RatingStars, AnimeStatsDisplay } from "@/components/common/RatingStars";
 import { AnimeCard } from "@/components/common/AnimeCard";
-import { api } from "@/lib/api";
 
 export default async function AnimeDetailPage({
   params,
@@ -20,7 +19,14 @@ export default async function AnimeDetailPage({
   if (!anime) notFound();
 
   const episodes = (anime.episodes ?? []).slice().sort((a, b) => a.number - b.number);
-  const related = await serverFetchJson<Anime[]>(`/anime/${slug}/related`, 300) ?? [];
+  const [related, similar] = await Promise.all([
+    serverFetchJson<Anime[]>(`/anime/${slug}/related`, 300),
+    serverFetchJson<Anime[]>(`/recommendation/similar/${slug}?limit=12`, 300),
+  ]);
+  const relatedAnimes = related ?? [];
+  const similarAnimes = (similar ?? []).filter(
+    (s) => !relatedAnimes.some((r) => r.id === s.id),
+  ).slice(0, 6);
   const ongoing = isOnAir(anime.status);
   const dub = anime.audio === "DUBLADO";
 
@@ -97,15 +103,17 @@ export default async function AnimeDetailPage({
 
                {anime.genres && anime.genres.length > 0 && (
                  <ul className="mt-4 flex flex-wrap gap-2">
-                   {anime.genres.map((g) => (
-                     <li
-                       key={g.id}
-                       className="border border-hairline px-2 py-1 font-sans text-caption text-mist"
-                     >
-                       {g.name}
-                     </li>
-                   ))}
-                 </ul>
+                    {anime.genres.map((g) => (
+                      <li key={g.id}>
+                        <a
+                          href={`/generos/${g.slug}`}
+                          className="border border-hairline px-2 py-1 font-sans text-caption text-mist transition-colors hover:border-ice hover:text-ice"
+                        >
+                          {g.name}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
                )}
 
                <div className="mt-5 flex flex-wrap items-center gap-4">
@@ -173,12 +181,26 @@ export default async function AnimeDetailPage({
             )}
            </section>
 
-           {related.length > 0 && (
+           {relatedAnimes.length > 0 && (
              <section className="mt-10">
                <h2 className="shelf-label">Você também pode gostar</h2>
                <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
-                 {related.map((item) => (
+                 {relatedAnimes.map((item) => (
                    <AnimeCard key={item.id} anime={item} />
+                 ))}
+               </div>
+             </section>
+           )}
+
+           {similarAnimes.length > 0 && (
+             <section className="mt-10">
+               <h2 className="shelf-label">
+                 Animes similares{" "}
+                 <span className="shelf-label-data">{similarAnimes.length}</span>
+               </h2>
+               <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
+                 {similarAnimes.map((item) => (
+                   <AnimeCard key={`sim-${item.id}`} anime={item} />
                  ))}
                </div>
              </section>

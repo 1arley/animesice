@@ -6,6 +6,7 @@ import { useAuth } from "@/lib/auth-context";
 import { api, ApiError } from "@/lib/api";
 import { Header } from "@/components/common/Header";
 import { Footer } from "@/components/common/Footer";
+import { NotificationPreferencesSection } from "@/components/common/NotificationPreferencesSection";
 import { passwordError } from "@/lib/password";
 
 export default function SettingsPage() {
@@ -307,6 +308,8 @@ export default function SettingsPage() {
                 </div>
               </form>
             </section>
+
+            <NotificationPreferencesSection />
 
             {/* ── Account info ── */}
             <section className="border border-hairline bg-panel p-6 md:col-span-2">

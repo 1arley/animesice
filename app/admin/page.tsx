@@ -58,6 +58,7 @@ export default function AdminPage() {
         <div className="mt-4 flex flex-wrap gap-3">
           <a href="/admin/create" className="btn-ice">+ Criar anime manual</a>
           <a href="/admin/import" className="btn-ghost">Importar do AniList</a>
+          <a href="/admin/moderacao" className="btn-ghost">Moderação</a>
         </div>
 
         <h2 className="mt-8 shelf-label">

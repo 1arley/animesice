@@ -28,21 +28,30 @@ export function SiteNav() {
       title: "Animes",
       links: [
         { href: "/", title: "Início" },
+        { href: "/top", title: "Top Animes" },
+        { href: "/lancamentos", title: "Em lançamento" },
+        { href: "/calendario", title: "Calendário" },
+        { href: "/aleatorio", title: "Aleatório" },
+        { href: "/buscar?format=MOVIE", title: "Filmes" },
         ...(isPrivileged(user)
           ? [{ href: "/admin", title: "Painel admin" }]
           : []),
       ],
     },
     {
+      title: "Comunidade",
+      links: [
+        { href: "/pedidos", title: "Pedidos de anime" },
+        { href: "/sugestoes", title: "Sugestões e bugs" },
+        { href: "/regras", title: "Regras" },
+      ],
+    },
+    {
       title: "Conta",
       links: [
+        { href: "/biblioteca", title: "Minha biblioteca" },
         { href: "/login", title: "Entrar" },
         { href: "/register", title: "Registrar" },
-        {
-          href: "https://myanimelist.net",
-          title: "Calendário (MAL)",
-          target: "_blank",
-        },
       ],
     },
   ];
