@@ -8,6 +8,8 @@ import { ContinueWatchingRail } from "@/components/common/ContinueWatchingRail";
 import { RecommendationsRail } from "@/components/common/RecommendationsRail";
 import type { Anime, Episode, Paginated } from "@/types";
 
+export const dynamic = "force-dynamic";
+
 export default async function HomePage() {
   const [animesRes, latestRes, trendingRes, recentRes] = await Promise.all([
     serverFetchJson<Paginated<Anime>>("/anime?page=1&limit=12", 60),
