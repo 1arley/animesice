@@ -1,11 +1,41 @@
 "use client";
 
-import { useState, Suspense } from "react";
+import { useState, Suspense, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
 import { ApiError } from "@/lib/api";
 import { Wordmark } from "@/components/common/Wordmark";
+
+const TURNSTILE_SITEKEY =
+  process.env.NEXT_PUBLIC_TURNSTILE_SITEKEY || "0x4AAAAAAEJ2yW0QjDiK6Rmj";
+
+function loadTurnstile(): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if (typeof window === "undefined" || (window as any).turnstile) {
+      resolve();
+      return;
+    }
+    const id = "turnstile-api";
+    if (document.getElementById(id)) {
+      const interval = setInterval(() => {
+        if ((window as any).turnstile) {
+          clearInterval(interval);
+          resolve();
+        }
+      }, 50);
+      return;
+    }
+    const script = document.createElement("script");
+    script.id = id;
+    script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js";
+    script.async = true;
+    script.defer = true;
+    script.onload = () => resolve();
+    script.onerror = () => reject(new Error("Falha ao carregar o captcha."));
+    document.head.appendChild(script);
+  });
+}
 
 function LoginForm() {
   const router = useRouter();
@@ -14,19 +44,48 @@ function LoginForm() {
   const { login } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [token, setToken] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const widgetRef = useRef<HTMLDivElement>(null);
+  const widgetIdRef = useRef<string>("");
+
+  useEffect(() => {
+    loadTurnstile()
+      .then(() => {
+        const t = (window as any).turnstile;
+        if (t && widgetRef.current) {
+          t.ready(() => {
+            widgetIdRef.current = t.render(widgetRef.current, {
+              sitekey: TURNSTILE_SITEKEY,
+              action: "login",
+              callback: (tk: string) => setToken(tk || ""),
+              "expired-callback": () => setToken(""),
+            });
+          });
+        }
+      })
+      .catch((e) => setError((e as Error).message));
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+    if (!token) {
+      setError("Marque a caixa do captcha para continuar.");
+      return;
+    }
     setLoading(true);
     try {
-      await login(email, password);
+      await login(email, password, token);
       const target = safeNext(next);
       router.push(target);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Erro ao entrar. Tente novamente.");
+      if (widgetIdRef.current && (window as any).turnstile) {
+        (window as any).turnstile.reset(widgetIdRef.current);
+      }
+      setToken("");
     } finally {
       setLoading(false);
     }
@@ -76,7 +135,7 @@ function LoginForm() {
             />
           </label>
 
-          <div className="flex items-center justify-end">
+           <div className="flex items-center justify-end">
             <Link
               href="/recuperar-senha"
               className="text-caption text-mist transition-colors hover:text-ice"
@@ -84,6 +143,8 @@ function LoginForm() {
               Esqueceu a senha?
             </Link>
           </div>
+
+          <div ref={widgetRef} className="flex justify-center" />
 
           <button type="submit" disabled={loading} className="btn-ice w-full justify-center">
             {loading ? "Entrando..." : "Entrar"}
