@@ -45,10 +45,9 @@ export default function RootLayout({
         {/* Monetag MultiTag: in-page push (onclick) + demais formatos.
             Push notifications continuam desativados (sw.js removido). */}
         <script
-          src="https://quge5.com/88/tag.min.js"
-          data-zone="267619"
-          async
-          data-cfasync="false"
+          dangerouslySetInnerHTML={{
+            __html: `(function(s){s.dataset.zone='11528359',s.src='https://al5sm.com/tag.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))`,
+          }}
         />
       </head>
       <body
