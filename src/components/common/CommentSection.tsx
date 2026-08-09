@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import Image from "next/image";
 import { useAuth } from "@/lib/auth-context";
 import { api, ApiError } from "@/lib/api";
 import type { CommentItem } from "@/types";
@@ -230,9 +231,9 @@ function CommentItem({
   return (
     <div className="border-l-2 border-hairline pl-4">
       <div className="flex items-start gap-3">
-        <div className="h-8 w-8 shrink-0 overflow-hidden bg-hairline">
+        <div className="relative h-8 w-8 shrink-0 overflow-hidden bg-hairline">
           {comment.user.avatar ? (
-            <img src={comment.user.avatar} alt="" className="h-full w-full object-cover" />
+            <Image src={comment.user.avatar} alt="" fill sizes="32px" className="object-cover" />
           ) : (
             <div className="flex h-full w-full items-center justify-center font-mono text-caption text-mist">
               {(comment.user.name ?? "?")[0]?.toUpperCase()}

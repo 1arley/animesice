@@ -31,16 +31,16 @@ export function RecommendationsRail() {
   return (
     <>
       {becauseYouWatched.length > 0 && (
-        <section className="mb-8" aria-label="Porque você assistiu">
-          <h2 className="shelf-label">
+        <section className="mb-8" aria-labelledby="rail-because">
+          <h2 id="rail-because" className="shelf-label">
             Porque você assistiu{" "}
             <span className="shelf-label-data">{becauseYouWatched.length}</span>
           </h2>
           <div className="-mx-4 overflow-x-auto px-4 pb-2 [scrollbar-width:thin]">
             <div className="flex gap-3 snap-x">
-              {becauseYouWatched.map((anime) => (
+              {becauseYouWatched.map((anime, i) => (
                 <div key={`byw-${anime.id}`} className="w-[140px] shrink-0 snap-start">
-                  <AnimeCard anime={anime} />
+                  <AnimeCard anime={anime} priority={i < 3} />
                 </div>
               ))}
             </div>
@@ -49,16 +49,16 @@ export function RecommendationsRail() {
       )}
 
       {recommendations.length > 0 && (
-        <section className="mb-8" aria-label="Recomendações para você">
-          <h2 className="shelf-label">
+        <section className="mb-8" aria-labelledby="rail-foryou">
+          <h2 id="rail-foryou" className="shelf-label">
             Para você{" "}
             <span className="shelf-label-data">{recommendations.length}</span>
           </h2>
           <div className="-mx-4 overflow-x-auto px-4 pb-2 [scrollbar-width:thin]">
             <div className="flex gap-3 snap-x">
-              {recommendations.map((anime) => (
+              {recommendations.map((anime, i) => (
                 <div key={`rec-${anime.id}`} className="w-[140px] shrink-0 snap-start">
-                  <AnimeCard anime={anime} />
+                  <AnimeCard anime={anime} priority={i < 3} />
                 </div>
               ))}
             </div>
