@@ -86,7 +86,7 @@ export default function RegisterPage() {
     setLoading(true);
     try {
       await register(name, email, password, token);
-      router.push("/");
+      router.push(`/verificar-email?email=${encodeURIComponent(email)}`);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Erro ao cadastrar. Tente novamente.");
       if (widgetIdRef.current && (window as any).turnstile) {

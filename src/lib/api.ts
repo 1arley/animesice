@@ -53,7 +53,6 @@ export interface AuthResponse {
 
 export interface RegisterResponse {
   message: string;
-  user: User;
 }
 
 export class ApiError extends Error {
@@ -163,6 +162,18 @@ export const api = {
     request<AuthResponse>("/auth/login", {
       method: "POST",
       body: JSON.stringify(body),
+    }),
+
+  verifyEmail: (email: string, code: string) =>
+    request<{ message: string }>("/auth/verify-email", {
+      method: "POST",
+      body: JSON.stringify({ email, code }),
+    }),
+
+  resendVerification: (email: string) =>
+    request<{ message: string }>("/auth/resend-verification", {
+      method: "POST",
+      body: JSON.stringify({ email }),
     }),
 
   me: () => request<User>("/user/me"),
