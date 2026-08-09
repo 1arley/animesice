@@ -29,7 +29,7 @@ export default function RegrasPage() {
 
         <section>
           <h2 className="mb-2 font-display text-body font-semibold text-ice">5. Moderação</h2>
-          <p>A equipe de moderação pode remover conteúdo, silenciar ou banir usuários que violem as regras. Denúncias podem ser feitas via botão "denunciar" em comentários e mensagens de chat.</p>
+          <p>A equipe de moderação pode remover conteúdo, silenciar ou banir usuários que violem as regras. Denúncias podem ser feitas via botão &quot;denunciar&quot; em comentários e mensagens de chat.</p>
         </section>
 
         <section>
