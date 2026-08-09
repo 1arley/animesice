@@ -2,14 +2,23 @@
  * Adaptador de fetch para componentes servidor (RSC).
  * Interface única: path + revalidate -> dados | null.
  * Concentra o fetch + cache + retry + error-swallow que antes vivia em 3 cópias.
+ *
+ * API_URL_RESOLVED é uma constante resolvida em module-load:
+ *  1. INTERNAL_API_URL (server-only, não exposto ao client) — para Vercel → IP direto
+ *  2. NEXT_PUBLIC_API_URL — client + server (mesmo domínio público)
+ *  3. Fallback: localhost em dev, api.animesice.app em prod
  */
 const isDev = process.env.NODE_ENV !== "production";
-export const API_URL =
+
+const API_URL_RESOLVED =
+  process.env.INTERNAL_API_URL ||
   process.env.NEXT_PUBLIC_API_URL ||
   (isDev ? "http://localhost:3001/api" : "https://api.animesice.app/api");
 
+export const API_URL = API_URL_RESOLVED;
+
 const MAX_RETRIES = 2;
-const RETRY_DELAY_MS = 500;
+const RETRY_DELAY_MS = 800;
 
 async function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -26,6 +35,8 @@ export async function serverFetchJson<T>(
       const res = await fetch(url, {
         next: { revalidate },
         headers: { Accept: "application/json" },
+        // Vercel serverless: precisa de timeout explícito
+        signal: AbortSignal.timeout(10000),
       });
 
       if (res.ok) {
