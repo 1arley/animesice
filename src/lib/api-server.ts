@@ -33,9 +33,8 @@ export async function serverFetchJson<T>(
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     try {
       const res = await fetch(url, {
-        next: { revalidate },
+        cache: "no-store",
         headers: { Accept: "application/json" },
-        // Vercel serverless: precisa de timeout explícito
         signal: AbortSignal.timeout(10000),
       });
 
