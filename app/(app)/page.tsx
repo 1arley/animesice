@@ -12,10 +12,10 @@ export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
   const [animesRes, latestRes, trendingRes, recentRes] = await Promise.all([
-    serverFetchJson<Paginated<Anime>>("/anime?page=1&limit=12", 60),
-    serverFetchJson<(Episode & { anime: Anime })[]>("/episode/latest?limit=12", 60),
-    serverFetchJson<Anime[]>("/anime/trending?limit=12", 300),
-    serverFetchJson<Anime[]>("/anime/recently-added?limit=12", 300),
+    serverFetchJson<Paginated<Anime>>("/anime?page=1&limit=12"),
+    serverFetchJson<(Episode & { anime: Anime })[]>("/episode/latest?limit=12"),
+    serverFetchJson<Anime[]>("/anime/trending?limit=12"),
+    serverFetchJson<Anime[]>("/anime/recently-added?limit=12"),
   ]);
 
   const animes = animesRes?.data ?? [];

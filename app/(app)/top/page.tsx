@@ -12,7 +12,7 @@ export default async function TopPage({
   const sp = await searchParams;
   const limit = Math.min(Math.max(parseInt(sp.limit ?? "30", 10) || 30, 1), 100);
 
-  const animes = await serverFetchJson<Anime[]>(`/anime/top?limit=${limit}`, 300) ?? [];
+  const animes = await serverFetchJson<Anime[]>(`/anime/top?limit=${limit}`) ?? [];
 
   return (
     <div className="mx-auto max-w-shelf px-4 py-6">

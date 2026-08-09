@@ -19,7 +19,6 @@ export default async function CalendarioPage({
 
   const data = await serverFetchJson<CalendarResponse>(
     `/anime/calendar?${query.toString()}`,
-    300,
   );
 
   const byDay = data?.byDay ?? [];

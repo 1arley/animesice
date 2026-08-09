@@ -16,7 +16,6 @@ export default async function LancamentosPage({
 
   const data = await serverFetchJson<{ data: Anime[]; meta: { total: number; totalPages: number } }>(
     `/anime?page=${page}&limit=${limit}&status=LANCAMENTO&sort=rating`,
-    300,
   );
 
   const animes = data?.data ?? [];
