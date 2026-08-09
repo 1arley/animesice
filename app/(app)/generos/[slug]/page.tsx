@@ -18,7 +18,6 @@ export default async function GenrePage({
 
   const data = await serverFetchJson<GenreAnimesResponse>(
     `/genre/${slug}/animes?page=${page}&limit=${limit}`,
-    300,
   );
 
   if (!data) {

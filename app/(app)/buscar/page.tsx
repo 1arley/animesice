@@ -40,9 +40,9 @@ export default async function SearchPage({
 
   const [data, genres] = await Promise.all([
     q || sp.genres || sp.status || sp.audio || sp.format || sp.year || sp.season || sp.sort
-      ? serverFetchJson<Paginated<Anime>>(`/anime?${params.toString()}`, 30)
+      ? serverFetchJson<Paginated<Anime>>(`/anime?${params.toString()}`)
       : Promise.resolve(null),
-    serverFetchJson<Genre[]>(`/genre`, 300),
+    serverFetchJson<Genre[]>(`/genre`),
   ]);
 
   const results = data?.data ?? [];

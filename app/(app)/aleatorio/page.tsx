@@ -5,7 +5,7 @@ import { serverFetchJson } from "@/lib/api-server";
 export const dynamic = "force-dynamic";
 
 export default async function AleatorioPage() {
-  const anime = await serverFetchJson<Anime | null>(`/anime/random`, 0);
+  const anime = await serverFetchJson<Anime | null>(`/anime/random`);
 
   if (!anime) {
     return (
