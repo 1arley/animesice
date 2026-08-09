@@ -21,7 +21,7 @@ export function AnimeCard({ anime }: AnimeCardProps) {
     <a
       href={`/animes/${anime.slug}`}
       title={anime.title}
-      className="group block overflow-hidden bg-panel transition-colors hover:bg-hairline"
+      className="group block overflow-hidden bg-panel transition-all duration-200 hover:ring-1 hover:ring-ice/50 hover:ring-offset-0"
     >
       <div className="relative" style={{ aspectRatio: "2 / 3" }}>
         {cover ? (
@@ -29,7 +29,7 @@ export function AnimeCard({ anime }: AnimeCardProps) {
             src={cover}
             loading="lazy"
             alt={anime.title}
-            className="absolute inset-0 h-full w-full object-cover opacity-95 transition-opacity group-hover:opacity-100"
+            className="absolute inset-0 h-full w-full object-cover opacity-90 transition-all duration-300 group-hover:scale-105 group-hover:opacity-100"
           />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center bg-hairline">
@@ -40,18 +40,27 @@ export function AnimeCard({ anime }: AnimeCardProps) {
         )}
 
         {/* Rating: miúdo, canto sup.-dir., discrete — não cobre a arte. */}
-        {anime.rating != null && (
-          <span className="absolute right-1.5 top-1.5 bg-ink/80 px-1.5 py-0.5 font-display text-caption font-semibold text-ice tabular-nums">
+        {anime.rating != null && anime.rating > 0 && (
+          <span className="absolute right-1.5 top-1.5 bg-ink/85 px-1.5 py-0.5 font-display text-caption font-semibold text-ice tabular-nums backdrop-blur-sm transition-colors group-hover:bg-ice group-hover:text-ink">
             {anime.rating.toFixed(2)}
           </span>
         )}
 
         {/* Age rating: nota quente só quando há classificação restrita. */}
-        {age && age.includes("A16") && (
+        {age && (age.includes("A16") || age.includes("A18")) && (
           <span className="absolute left-1.5 top-1.5 bg-signal px-1.5 py-0.5 font-display text-caption font-semibold text-ink">
             {age}
           </span>
         )}
+
+        {/* Hover overlay: play icon */}
+        <div className="absolute inset-0 flex items-center justify-center bg-ink/0 opacity-0 transition-all duration-300 group-hover:bg-ink/20 group-hover:opacity-100">
+          <span className="flex h-10 w-10 items-center justify-center rounded-full border border-ice bg-ink/60 text-ice backdrop-blur-sm">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true">
+              <path d="M3 2l9 5-9 5z" />
+            </svg>
+          </span>
+        </div>
       </div>
 
       {/* Signature: ice edge-tag — status + áudio. */}
