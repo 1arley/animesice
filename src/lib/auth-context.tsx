@@ -8,13 +8,13 @@ import {
   useCallback,
   type ReactNode,
 } from "react";
-import { api, type User } from "@/lib/api";
+import { api, type User, type RegisterResponse } from "@/lib/api";
 
 interface AuthContextValue {
   user: User | null;
   loading: boolean;
   login: (email: string, password: string, turnstileToken?: string) => Promise<void>;
-  register: (name: string, email: string, password: string, turnstileToken?: string) => Promise<void>;
+  register: (name: string, email: string, password: string, turnstileToken?: string) => Promise<RegisterResponse>;
   logout: () => Promise<void>;
   logoutError: string | null;
   refreshUser: () => Promise<void>;
@@ -47,10 +47,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const register = useCallback(
     async (name: string, email: string, password: string, turnstileToken?: string) => {
-      await api.register({ name, email, password, turnstileToken });
-      await login(email, password, turnstileToken);
+      return await api.register({ name, email, password, turnstileToken });
     },
-    [login],
+    [],
   );
 
   const logout = useCallback(async () => {
