@@ -1,12 +1,41 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
 import { ApiError } from "@/lib/api";
 import { Wordmark } from "@/components/common/Wordmark";
 import { passwordError } from "@/lib/password";
+
+const TURNSTILE_SITEKEY =
+  process.env.NEXT_PUBLIC_TURNSTILE_SITEKEY || "0x4AAAAAAEJ2yW0QjDiK6Rmj";
+
+function loadTurnstile(): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if (typeof window === "undefined" || (window as any).turnstile) {
+      resolve();
+      return;
+    }
+    const id = "turnstile-api";
+    if (document.getElementById(id)) {
+      const interval = setInterval(() => {
+        if ((window as any).turnstile) {
+          clearInterval(interval);
+          resolve();
+        }
+      }, 50);
+      return;
+    }
+    const script = document.createElement("script");
+    script.id = id;
+    script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?onload=onTurnstileLoad";
+    script.async = false;
+    (window as any).onTurnstileLoad = () => resolve();
+    script.onerror = () => reject(new Error("Falha ao carregar o captcha."));
+    document.head.appendChild(script);
+  });
+}
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -15,8 +44,29 @@ export default function RegisterPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [token, setToken] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const widgetRef = useRef<HTMLDivElement>(null);
+  const widgetIdRef = useRef<string>("");
+
+  useEffect(() => {
+    loadTurnstile()
+      .then(() => {
+        const t = (window as any).turnstile;
+        if (t && widgetRef.current) {
+          t.ready(() => {
+            widgetIdRef.current = t.render(widgetRef.current, {
+              sitekey: TURNSTILE_SITEKEY,
+              action: "register",
+              callback: (tk: string) => setToken(tk || ""),
+              "expired-callback": () => setToken(""),
+            });
+          });
+        }
+      })
+      .catch((e) => setError((e as Error).message));
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -28,12 +78,21 @@ export default function RegisterPage() {
       return;
     }
 
+    if (!token) {
+      setError("Marque a caixa do captcha para continuar.");
+      return;
+    }
+
     setLoading(true);
     try {
-      await register(name, email, password);
+      await register(name, email, password, token);
       router.push("/");
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Erro ao cadastrar. Tente novamente.");
+      if (widgetIdRef.current && (window as any).turnstile) {
+        (window as any).turnstile.reset(widgetIdRef.current);
+      }
+      setToken("");
     } finally {
       setLoading(false);
     }
@@ -112,6 +171,8 @@ export default function RegisterPage() {
               className="field"
             />
           </label>
+
+          <div ref={widgetRef} className="flex justify-center" />
 
           <button type="submit" disabled={loading} className="btn-ice w-full justify-center">
             {loading ? "Cadastrando..." : "Cadastrar"}
