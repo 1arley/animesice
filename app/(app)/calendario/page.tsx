@@ -2,6 +2,8 @@ import type { Anime, CalendarResponse } from "@/types";
 import { serverFetchJson } from "@/lib/api-server";
 import { safeImageSrc } from "@/lib/url";
 
+export const dynamic = "force-dynamic";
+
 export default async function CalendarioPage({
   searchParams,
 }: {

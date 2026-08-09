@@ -282,9 +282,9 @@ export const api = {
     ),
 
   // --- Admin (protegido ROLE=ADMIN) ---
-  adminListAnimes: (page = 1, limit = 50) =>
+  adminListAnimes: (page = 1, limit = 50, search?: string) =>
     request<Paginated<Anime & { _count: { episodes: number } }>>(
-      `/admin/animes?page=${page}&limit=${limit}`,
+      `/admin/animes?page=${page}&limit=${limit}${search ? `&search=${encodeURIComponent(search)}` : ""}`,
     ),
 
   adminCreateAnime: (dto: {

@@ -38,6 +38,22 @@
     outline: 2px solid theme("colors.ice");
     outline-offset: 2px;
   }
+
+  /* Scrollbar styling */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: theme("colors.ink");
+  }
+  ::-webkit-scrollbar-thumb {
+    background: theme("colors.hairline");
+    border-radius: 4px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #2a3344;
+  }
 }
 
 @layer components {
@@ -120,10 +136,11 @@
     font-weight: 500;
     border: 1px solid theme("colors.hairline");
     cursor: pointer;
-    transition: border-color 120ms ease;
+    transition: border-color 120ms ease, background 120ms ease;
   }
   .btn-ghost:hover {
     border-color: theme("colors.ice");
+    background: rgba(69, 240, 224, 0.05);
   }
 
   /* Field do formulário (admin / auth) — substitui o form-control Bootstrap. */
@@ -131,7 +148,7 @@
     width: 100%;
     padding: 0.625rem 0.75rem;
     background: theme("colors.panel");
-    color: theme("colors.mist");
+    color: theme("colors.ink");
     border: 1px solid theme("colors.hairline");
     font-family: theme("fontFamily.sans");
     font-size: theme("fontSize.body-sm");
@@ -143,5 +160,22 @@
   .field:focus {
     outline: none;
     border-color: theme("colors.ice");
+  }
+
+  /* Skeleton loading placeholder */
+  .skeleton {
+    background: linear-gradient(
+      90deg,
+      theme("colors.panel") 0%,
+      theme("colors.hairline") 50%,
+      theme("colors.panel") 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+  }
+
+  @keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
   }
 }
