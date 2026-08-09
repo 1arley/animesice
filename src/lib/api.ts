@@ -153,7 +153,7 @@ async function request<T>(
 }
 
 export const api = {
-  register: (body: { name: string; email: string; password: string }) =>
+  register: (body: { name: string; email: string; password: string; turnstileToken?: string }) =>
     request<RegisterResponse>("/auth/register", {
       method: "POST",
       body: JSON.stringify(body),
