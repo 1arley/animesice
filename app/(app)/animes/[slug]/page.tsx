@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import type { Anime } from "@/types";
 import { safeImageSrc } from "@/lib/url";
 import { AdSlot } from "@/components/ads/AdSlot";
-import { serverFetchJson } from "@/lib/api-server";
+import { serverFetchJson, API_URL } from "@/lib/api-server";
 import { isOnAir } from "@/lib/status";
 import { CommentSection } from "@/components/common/CommentSection";
 import { FavoriteButton } from "@/components/common/FavoriteButton";
@@ -17,7 +17,10 @@ export default async function AnimeDetailPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
+  const apiUrl = `${API_URL}/anime/${slug}`;
+  console.log(`[AnimeDetailPage] slug=${slug} apiUrl=${apiUrl}`);
   const anime = await serverFetchJson<Anime>(`/anime/${slug}`, 60);
+  console.log(`[AnimeDetailPage] anime=${anime ? anime.title : 'NULL'}`);
   if (!anime) notFound();
 
   const episodes = (anime.episodes ?? []).slice().sort((a, b) => a.number - b.number);
