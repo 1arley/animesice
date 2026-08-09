@@ -6,7 +6,7 @@ export const metadata = {
 export default function DmcaPage() {
   return (
     <article className="mx-auto max-w-shelf px-4 py-8" style={{ maxWidth: 720 }}>
-          <h1 className="font-display text-display-xl text-ink">DMCA & Contato</h1>
+          <h1 className="font-display text-display-xl text-snow">DMCA & Contato</h1>
 
           <div className="mt-6 space-y-4 text-body text-mist">
             <p>
@@ -17,7 +17,7 @@ export default function DmcaPage() {
               removido mediante notificação válida.
             </p>
 
-            <h2 className="font-display text-display-lg text-ink">
+            <h2 className="font-display text-display-lg text-snow">
               Notificação de direitos autorais
             </h2>
             <p>
@@ -31,7 +31,7 @@ export default function DmcaPage() {
               <li>Declaração de boa-fé e assinatura (física ou eletrônica).</li>
             </ul>
 
-            <h2 className="font-display text-display-lg text-ink">Canal</h2>
+            <h2 className="font-display text-display-lg text-snow">Canal</h2>
             <p>
               Email: <code className="text-mist">dmca@animesice.local</code>
               <br />

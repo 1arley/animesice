@@ -2,8 +2,10 @@
 @tailwind components;
 @tailwind utilities;
 
-/* AnimesIce — design system autoral (prateleira + grade de programação).
-   Sem CSS crawled: tokens em tailwind.config.ts. */
+/* AnimesIce — "Sinal da madrugada".
+   A prateleira é um canal de TV frio, noite adentro: fundo de vácuo,
+   uma única nota de gelo (ice) como a marca, e dados em mono de EPG.
+   Sem CSS crawled: tokens em tailwind.config.ts, atmosfera aqui. */
 
 @layer base {
   :root {
@@ -18,8 +20,48 @@
     text-rendering: optimizeLegibility;
   }
 
+  /* Atmosfera de estúdio vazio: um brilho frio lá em cima, como o
+     monitor ligado sem programa ainda. */
   body {
     font-family: theme("fontFamily.sans");
+    background:
+      radial-gradient(
+        1000px 460px at 50% -10%,
+        rgba(69, 240, 224, 0.05),
+        transparent 65%
+      ),
+      theme("colors.ink");
+    background-attachment: fixed;
+  }
+
+  /* Vinheta: apaga as bordas da tela, concentra o olhar na grade. */
+  body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 59;
+    pointer-events: none;
+    background: radial-gradient(
+      125% 95% at 50% 42%,
+      transparent 62%,
+      rgba(2, 4, 8, 0.5) 100%
+    );
+  }
+
+  /* Correção de contraste raiz: qualquer título sem classe explícita
+     precisa ser legível sobre o fundo — snow, não o ink (que é o fundo). */
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    color: theme("colors.snow");
+  }
+
+  ::selection {
+    background: theme("colors.ice");
+    color: theme("colors.ink");
   }
 
   img,
@@ -49,59 +91,96 @@
   }
   ::-webkit-scrollbar-thumb {
     background: theme("colors.hairline");
-    border-radius: 4px;
+    border-radius: 0;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: #2a3344;
+    background: #2c3a4e;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
   }
 }
 
 @layer components {
-  /* Prateleira: section label. Hairline embaixo = trilho da prateleira.
-     Não usa numeradores (01/02) — o conteúdo é um catálogo, não um processo. */
+  /* Prateleira: section label. O quadrado de gelo abre a linha como um
+     channel-bug; o hairline embaixo é o trilho. Mono = voz de EPG. */
   .shelf-label {
     display: flex;
     align-items: baseline;
     gap: 0.625rem;
-    font-family: theme("fontFamily.sans");
+    font-family: theme("fontFamily.mono");
     font-size: theme("fontSize.body-sm");
-    font-weight: 600;
-    letter-spacing: 0.08em;
+    font-weight: 500;
+    letter-spacing: 0.12em;
     text-transform: uppercase;
-    color: theme("colors.mist");
+    color: theme("colors.snow");
     padding-bottom: 0.625rem;
     margin-bottom: 1.25rem;
     border-bottom: 1px solid theme("colors.hairline");
   }
 
+  .shelf-label::before {
+    content: "";
+    flex: none;
+    align-self: center;
+    width: 0.4rem;
+    height: 0.4rem;
+    background: theme("colors.ice");
+  }
+
   .shelf-label-data {
-    font-family: theme("fontFamily.display");
+    font-family: theme("fontFamily.mono");
     letter-spacing: 0;
     text-transform: none;
     font-weight: 500;
     color: theme("colors.ice");
   }
 
-  /* Signature: a ice edge-tag.
-     Tira inferior cyan-aqua em cada card de poster, carregando
-     status + áudio. É o price-tag da prateleira / broadcast bug. */
+  /* Signature: o ident de transmissão.
+     Onde antes era só status+áudio, agora é a bug de canto de tela de
+     um canal de anime: gelo preenchido, canto cortado, mono apertado. */
   .edge-tag {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 0.5rem;
-    padding: 0.375rem 0.5rem;
+    padding: 0.4rem 0.55rem;
     background: theme("colors.ice");
     color: theme("colors.ink");
-    font-family: theme("fontFamily.display");
+    font-family: theme("fontFamily.mono");
     font-size: theme("fontSize.caption");
-    font-weight: 600;
-    letter-spacing: 0.04em;
+    font-weight: 500;
+    letter-spacing: 0.06em;
     text-transform: uppercase;
     line-height: 1.2;
+    clip-path: polygon(
+      0 0,
+      100% 0,
+      100% calc(100% - 0.5rem),
+      calc(100% - 0.5rem) 100%,
+      0 100%
+    );
   }
 
-  /* Botão primário: accent ice. Usado com restrição (não cobre de cyan). */
+  /* Ponto "ao vivo" do ident: pisca em quadrado como o ON AIR da TV. */
+  .edge-tag-live {
+    display: inline-block;
+    width: 0.4rem;
+    height: 0.4rem;
+    margin-right: 0.35rem;
+    background: currentColor;
+    animation: blink 1.6s steps(1) infinite;
+  }
+
+  /* Botão primário: accent ice. Mono e em caixa alta — voz de console.
+     Usado com restrição (não cobre de cyan). */
   .btn-ice {
     display: inline-flex;
     align-items: center;
@@ -110,9 +189,11 @@
     padding: 0.5rem 1rem;
     background: theme("colors.ice");
     color: theme("colors.ink");
-    font-family: theme("fontFamily.sans");
+    font-family: theme("fontFamily.mono");
     font-size: theme("fontSize.body-sm");
-    font-weight: 600;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
     border: 1px solid theme("colors.ice");
     cursor: pointer;
     transition: background 120ms ease, color 120ms ease;
@@ -131,35 +212,70 @@
     padding: 0.5rem 1rem;
     background: transparent;
     color: theme("colors.ice");
-    font-family: theme("fontFamily.sans");
+    font-family: theme("fontFamily.mono");
     font-size: theme("fontSize.body-sm");
     font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
     border: 1px solid theme("colors.hairline");
     cursor: pointer;
     transition: border-color 120ms ease, background 120ms ease;
   }
   .btn-ghost:hover {
     border-color: theme("colors.ice");
-    background: rgba(69, 240, 224, 0.05);
+    background: rgba(69, 240, 224, 0.06);
   }
 
-  /* Field do formulário (admin / auth) — substitui o form-control Bootstrap. */
+  /* Field do formulário (admin / auth).
+     O texto do input é snow — antes era ink, que sumia no fundo panel. */
   .field {
     width: 100%;
-    padding: 0.625rem 0.75rem;
+    padding: 0.6rem 0.75rem;
     background: theme("colors.panel");
-    color: theme("colors.ink");
+    color: theme("colors.snow");
     border: 1px solid theme("colors.hairline");
     font-family: theme("fontFamily.sans");
     font-size: theme("fontSize.body-sm");
-    transition: border-color 120ms ease;
+    transition: border-color 120ms ease, background 120ms ease;
   }
   .field::placeholder {
-    color: #5a6675;
+    color: #5c6a7c;
   }
   .field:focus {
     outline: none;
     border-color: theme("colors.ice");
+    background: theme("colors.slate");
+  }
+
+  /* Varredura de sinal nos cards: um traço de gelo desce pelo poster
+     no hover, como o refresh do CRT. Não é zoom genérico — é sinal. */
+  .card-scan {
+    position: relative;
+    overflow: hidden;
+  }
+  .card-scan::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(
+      to bottom,
+      transparent 0%,
+      rgba(69, 240, 224, 0.08) 44%,
+      rgba(69, 240, 224, 0.22) 50%,
+      rgba(69, 240, 224, 0.08) 56%,
+      transparent 100%
+    );
+    transform: translateY(-105%);
+    transition: transform 0.7s cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+  .group:hover .card-scan::after {
+    transform: translateY(105%);
+  }
+
+  /* Subida de página: a grade entra em cascata, como o sinal ligando. */
+  .reveal {
+    animation: rise 0.55s cubic-bezier(0.2, 0.65, 0.25, 1) both;
   }
 
   /* Skeleton loading placeholder */
@@ -167,7 +283,7 @@
     background: linear-gradient(
       90deg,
       theme("colors.panel") 0%,
-      theme("colors.hairline") 50%,
+      theme("colors.slate") 50%,
       theme("colors.panel") 100%
     );
     background-size: 200% 100%;
@@ -177,5 +293,15 @@
   @keyframes shimmer {
     0% { background-position: 200% 0; }
     100% { background-position: -200% 0; }
+  }
+
+  @keyframes rise {
+    0% { opacity: 0; transform: translateY(10px); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.1; }
   }
 }

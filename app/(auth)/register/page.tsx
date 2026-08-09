@@ -102,7 +102,7 @@ export default function RegisterPage() {
     <div className="w-full max-w-sm border border-hairline bg-panel p-8">
         <div className="mb-6 text-center">
           <Wordmark className="text-2xl" />
-          <h1 className="mt-4 font-display text-display-lg text-ink">Cadastrar</h1>
+          <h1 className="mt-4 font-display text-display-lg text-snow">Cadastrar</h1>
         </div>
 
         {error && (

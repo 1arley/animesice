@@ -110,7 +110,7 @@ export default function ModerationPage() {
       <Header />
       <SiteNav />
       <main className="mx-auto max-w-shelf px-4 py-6">
-        <h1 className="font-display text-display-xl text-ink">Moderação</h1>
+        <h1 className="font-display text-display-xl text-snow">Moderação</h1>
         <p className="mt-1 text-body-sm text-mist">
           Gerenciar denúncias e aplicar ações a usuários.
         </p>
@@ -126,7 +126,7 @@ export default function ModerationPage() {
             <button
               key={s}
               onClick={() => setStatusFilter(s)}
-              className={`px-3 py-1.5 font-display text-caption uppercase tracking-wider transition-colors ${
+              className={`px-3 py-1.5 font-mono text-caption uppercase tracking-wider transition-colors ${
                 statusFilter === s
                   ? "border border-ice text-ice"
                   : "border border-hairline text-mist hover:text-ice"
@@ -149,14 +149,14 @@ export default function ModerationPage() {
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="border border-hairline px-2 py-0.5 font-display text-caption uppercase tracking-wider text-mist">
+                        <span className="border border-hairline px-2 py-0.5 font-mono text-caption uppercase tracking-wider text-mist">
                           {TARGET_LABELS[report.targetType] ?? report.targetType}
                         </span>
-                        <span className="border border-hairline px-2 py-0.5 font-display text-caption uppercase tracking-wider text-mist">
+                        <span className="border border-hairline px-2 py-0.5 font-mono text-caption uppercase tracking-wider text-mist">
                           {REASON_LABELS[report.reason] ?? report.reason}
                         </span>
                         <span
-                          className={`px-2 py-0.5 font-display text-caption uppercase tracking-wider ${
+                          className={`px-2 py-0.5 font-mono text-caption uppercase tracking-wider ${
                             report.status === "PENDING"
                               ? "text-ice"
                               : report.status === "RESOLVED"
@@ -173,11 +173,11 @@ export default function ModerationPage() {
                       {report.notes && (
                         <p className="mt-1 text-body-sm text-mist">{report.notes}</p>
                       )}
-                      <p className="mt-2 font-display text-caption text-mist">
+                      <p className="mt-2 font-mono text-caption text-mist">
                         Denunciante: {report.reporter.name ?? "—"} · {new Date(report.createdAt).toLocaleString("pt-BR")}
                       </p>
                       {report.moderator && (
-                        <p className="font-display text-caption text-mist">
+                        <p className="font-mono text-caption text-mist">
                           Moderador: {report.moderator.name ?? "—"} · {new Date(report.resolvedAt ?? "").toLocaleString("pt-BR")}
                         </p>
                       )}
@@ -262,7 +262,7 @@ export default function ModerationPage() {
 
       {noteModal && (
         <Modal onClose={() => setNoteModal(null)}>
-          <h2 className="font-display text-display-lg text-ink">
+          <h2 className="font-display text-display-lg text-snow">
             {noteModal.action === "resolve" ? "Resolver denúncia" : "Rejeitar denúncia"}
           </h2>
           <p className="mt-1 text-body-sm text-mist">
@@ -288,7 +288,7 @@ export default function ModerationPage() {
 
       {moderateUserModal && (
         <Modal onClose={() => setModerateUserModal(null)}>
-          <h2 className="font-display text-display-lg text-ink">Moderar usuário</h2>
+          <h2 className="font-display text-display-lg text-snow">Moderar usuário</h2>
           <p className="mt-1 text-body-sm text-mist">
             Usuário: <code className="text-ice">{moderateUserModal}</code>
           </p>

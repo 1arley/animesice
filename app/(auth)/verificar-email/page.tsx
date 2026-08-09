@@ -65,7 +65,7 @@ function VerifyEmailForm() {
     <div className="w-full max-w-sm border border-hairline bg-panel p-8">
       <div className="mb-6 text-center">
         <Wordmark className="text-2xl" />
-        <h1 className="mt-4 font-display text-display-lg text-ink">Verificar Email</h1>
+        <h1 className="mt-4 font-display text-display-lg text-snow">Verificar Email</h1>
         <p className="mt-2 text-body-sm text-mist">
           Digite o código de 8 dígitos enviado para seu email.
         </p>

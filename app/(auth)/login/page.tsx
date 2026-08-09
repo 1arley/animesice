@@ -80,7 +80,12 @@ function LoginForm() {
       const target = safeNext(next);
       router.push(target);
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Erro ao entrar. Tente novamente.");
+      const msg = err instanceof ApiError ? err.message : "Erro ao entrar. Tente novamente.";
+      if (msg.includes("não verificada") || msg.includes("Verifique seu email")) {
+        router.push(`/verificar-email?email=${encodeURIComponent(email)}`);
+        return;
+      }
+      setError(msg);
       if (widgetIdRef.current && (window as any).turnstile) {
         (window as any).turnstile.reset(widgetIdRef.current);
       }
@@ -94,7 +99,7 @@ function LoginForm() {
     <div className="w-full max-w-sm border border-hairline bg-panel p-8">
         <div className="mb-6 text-center">
           <Wordmark className="text-2xl" />
-          <h1 className="mt-4 font-display text-display-lg text-ink">Entrar</h1>
+          <h1 className="mt-4 font-display text-display-lg text-snow">Entrar</h1>
         </div>
 
         {error && (

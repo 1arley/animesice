@@ -39,7 +39,7 @@ export function RecommendationsRail() {
           <div className="-mx-4 overflow-x-auto px-4 pb-2 [scrollbar-width:thin]">
             <div className="flex gap-3 snap-x">
               {becauseYouWatched.map((anime) => (
-                <div key={`byw-${anime.id}`} className="min-w-[140px] shrink-0 snap-start">
+                <div key={`byw-${anime.id}`} className="w-[140px] shrink-0 snap-start">
                   <AnimeCard anime={anime} />
                 </div>
               ))}
@@ -57,7 +57,7 @@ export function RecommendationsRail() {
           <div className="-mx-4 overflow-x-auto px-4 pb-2 [scrollbar-width:thin]">
             <div className="flex gap-3 snap-x">
               {recommendations.map((anime) => (
-                <div key={`rec-${anime.id}`} className="min-w-[140px] shrink-0 snap-start">
+                <div key={`rec-${anime.id}`} className="w-[140px] shrink-0 snap-start">
                   <AnimeCard anime={anime} />
                 </div>
               ))}

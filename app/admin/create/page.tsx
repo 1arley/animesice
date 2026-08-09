@@ -87,7 +87,7 @@ export default function AdminCreateAnimePage() {
             ← Painel
           </a>
         </p>
-        <h1 className="font-display text-display-xl text-ink">Criar anime manual</h1>
+        <h1 className="font-display text-display-xl text-snow">Criar anime manual</h1>
         <p className="mt-2 text-body-sm text-mist">
           Cadastro manual de anime. Para metadados automáticos (capa, sinopse,
           gêneros), use a{" "}
@@ -276,7 +276,7 @@ export default function AdminCreateAnimePage() {
         {result && (
           <div className="mt-6 border border-hairline bg-panel p-4">
             <p className="text-body-sm text-ice">Anime criado com sucesso!</p>
-            <p className="mt-1 text-body text-ink">
+            <p className="mt-1 text-body text-snow">
               <strong>{result.title}</strong>{" "}
               <code className="text-mist">/{result.slug}</code>
             </p>

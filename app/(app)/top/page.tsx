@@ -26,7 +26,7 @@ export default async function TopPage({
         <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
           {animes.map((anime, i) => (
             <div key={anime.id} className="relative">
-              <span className="absolute left-1.5 top-1.5 z-10 bg-ink/80 px-1.5 py-0.5 font-display text-caption font-bold text-ice tabular-nums">
+              <span className="absolute left-1.5 top-1.5 z-10 bg-ink/80 px-1.5 py-0.5 font-mono text-caption font-bold text-ice tabular-nums">
                 #{i + 1}
               </span>
               <AnimeCard anime={anime} />

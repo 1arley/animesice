@@ -57,10 +57,10 @@ export function ContinueWatchingRail() {
                     />
                   </div>
                 </div>
-                <h3 className="mt-1.5 line-clamp-1 font-sans text-body-sm font-medium text-mist transition-colors group-hover:text-ice">
+                <h3 className="mt-1.5 line-clamp-1 font-sans text-body-sm font-medium text-snow transition-colors group-hover:text-ice">
                   {item.anime.title}
                 </h3>
-                <p className="font-display text-caption text-mist">
+                <p className="font-mono text-caption text-mist">
                   EP {item.episode.number}
                 </p>
               </a>

@@ -41,20 +41,20 @@ export default function SugestoesPage() {
       {user ? (
         <form onSubmit={handleSubmit} className="mb-8 max-w-lg space-y-3 border border-hairline bg-panel p-4">
           <div>
-            <label className="mb-1 block font-display text-caption uppercase tracking-wider text-mist">
+            <label className="mb-1 block font-mono text-caption uppercase tracking-wider text-mist">
               Tipo
             </label>
             <select
               value={type}
               onChange={(e) => setType(e.target.value as "SUGGESTION" | "BUG")}
-              className="w-full border border-hairline bg-ink px-3 py-2 text-body text-ice"
+              className="field"
             >
               <option value="SUGGESTION">Sugestão</option>
               <option value="BUG">Bug</option>
             </select>
           </div>
           <div>
-            <label className="mb-1 block font-display text-caption uppercase tracking-wider text-mist">
+            <label className="mb-1 block font-mono text-caption uppercase tracking-wider text-mist">
               Título
             </label>
             <input
@@ -63,12 +63,12 @@ export default function SugestoesPage() {
               onChange={(e) => setTitle(e.target.value)}
               maxLength={200}
               required
-              className="w-full border border-hairline bg-ink px-3 py-2 text-body text-ice"
+              className="field"
               placeholder="Resumo curto"
             />
           </div>
           <div>
-            <label className="mb-1 block font-display text-caption uppercase tracking-wider text-mist">
+            <label className="mb-1 block font-mono text-caption uppercase tracking-wider text-mist">
               Descrição
             </label>
             <textarea
@@ -77,7 +77,7 @@ export default function SugestoesPage() {
               maxLength={2000}
               rows={5}
               required
-              className="w-full border border-hairline bg-ink px-3 py-2 text-body text-ice"
+              className="field"
               placeholder="Descreva em detalhes..."
             />
           </div>

@@ -6,7 +6,7 @@ export const metadata = {
 export default function PrivacidadePage() {
   return (
     <article className="mx-auto max-w-shelf px-4 py-8" style={{ maxWidth: 720 }}>
-          <h1 className="font-display text-display-xl text-ink">
+          <h1 className="font-display text-display-xl text-snow">
             Política de Privacidade
           </h1>
           <p className="mt-1 text-caption text-mist">Última atualização: 2026</p>
@@ -17,7 +17,7 @@ export default function PrivacidadePage() {
               dados coletamos, por quê, e como você pode controlar o uso.
             </p>
 
-            <h2 className="font-display text-display-lg text-ink">Dados coletados</h2>
+            <h2 className="font-display text-display-lg text-snow">Dados coletados</h2>
             <ul className="list-disc pl-5 space-y-1">
               <li>
                 <strong>Conta</strong>: nome, email e senha (hash) fornecidos no
@@ -33,7 +33,7 @@ export default function PrivacidadePage() {
               </li>
             </ul>
 
-            <h2 className="font-display text-display-lg text-ink">
+            <h2 className="font-display text-display-lg text-snow">
               O que não coletamos
             </h2>
             <p>
@@ -41,7 +41,7 @@ export default function PrivacidadePage() {
               Pixel, etc.), não vendemos dados e não cross-domain cookies.
             </p>
 
-            <h2 className="font-display text-display-lg text-ink">
+            <h2 className="font-display text-display-lg text-snow">
               Seus direitos (LGPD)
             </h2>
             <ul className="list-disc pl-5 space-y-1">

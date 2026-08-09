@@ -93,7 +93,7 @@ export default function AdminEditEpisodePage({
             ← Painel
           </a>
         </p>
-        <h1 className="font-display text-display-xl text-ink">Editar episódio</h1>
+        <h1 className="font-display text-display-xl text-snow">Editar episódio</h1>
         {episode && (
           <p className="mt-1 text-body-sm text-mist">
             {episode.anime.title} — EP {episode.number}

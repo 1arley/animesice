@@ -93,7 +93,7 @@ export default async function SearchPage({
 
             {/* Search input in sidebar */}
             <fieldset>
-              <legend className="mb-2 font-display text-caption uppercase tracking-wider text-mist">
+              <legend className="mb-2 font-mono text-caption uppercase tracking-wider text-mist">
                 Busca
               </legend>
               <input
@@ -107,12 +107,12 @@ export default async function SearchPage({
 
             {genres && genres.length > 0 && (
               <fieldset>
-                <legend className="mb-2 font-display text-caption uppercase tracking-wider text-mist">
+                <legend className="mb-2 font-mono text-caption uppercase tracking-wider text-mist">
                   Gêneros
                 </legend>
                 <div className="max-h-48 space-y-1 overflow-y-auto [scrollbar-width:thin]">
                   {genres.map((g) => (
-                    <label key={g.id} className="flex cursor-pointer items-center gap-2 text-body-sm text-mist transition-colors hover:text-ink">
+                    <label key={g.id} className="flex cursor-pointer items-center gap-2 text-body-sm text-mist transition-colors hover:text-ice">
                       <input
                         type="checkbox"
                         name="genres"
@@ -122,7 +122,7 @@ export default async function SearchPage({
                       />
                       {g.name}
                       {g._count && (
-                        <span className="font-display text-caption text-mist/60 tabular-nums">
+                        <span className="font-mono text-caption text-mist/60 tabular-nums">
                           {g._count.animes}
                         </span>
                       )}
@@ -133,7 +133,7 @@ export default async function SearchPage({
             )}
 
             <fieldset>
-              <legend className="mb-2 font-display text-caption uppercase tracking-wider text-mist">
+              <legend className="mb-2 font-mono text-caption uppercase tracking-wider text-mist">
                 Áudio
               </legend>
               <select name="audio" defaultValue={sp.audio ?? ""} className="field">
@@ -144,7 +144,7 @@ export default async function SearchPage({
             </fieldset>
 
             <fieldset>
-              <legend className="mb-2 font-display text-caption uppercase tracking-wider text-mist">
+              <legend className="mb-2 font-mono text-caption uppercase tracking-wider text-mist">
                 Formato
               </legend>
               <select name="format" defaultValue={sp.format ?? ""} className="field">
@@ -158,7 +158,7 @@ export default async function SearchPage({
             </fieldset>
 
             <fieldset>
-              <legend className="mb-2 font-display text-caption uppercase tracking-wider text-mist">
+              <legend className="mb-2 font-mono text-caption uppercase tracking-wider text-mist">
                 Status
               </legend>
               <select name="status" defaultValue={sp.status ?? ""} className="field">
@@ -169,7 +169,7 @@ export default async function SearchPage({
             </fieldset>
 
             <fieldset>
-              <legend className="mb-2 font-display text-caption uppercase tracking-wider text-mist">
+              <legend className="mb-2 font-mono text-caption uppercase tracking-wider text-mist">
                 Ano
               </legend>
               <select name="year" defaultValue={sp.year ?? ""} className="field">
@@ -181,7 +181,7 @@ export default async function SearchPage({
             </fieldset>
 
             <fieldset>
-              <legend className="mb-2 font-display text-caption uppercase tracking-wider text-mist">
+              <legend className="mb-2 font-mono text-caption uppercase tracking-wider text-mist">
                 Temporada
               </legend>
               <select name="season" defaultValue={sp.season ?? ""} className="field">
@@ -194,7 +194,7 @@ export default async function SearchPage({
             </fieldset>
 
             <fieldset>
-              <legend className="mb-2 font-display text-caption uppercase tracking-wider text-mist">
+              <legend className="mb-2 font-mono text-caption uppercase tracking-wider text-mist">
                 Ordenar por
               </legend>
               <select name="sort" defaultValue={sp.sort ?? "rating"} className="field">
@@ -231,7 +231,7 @@ export default async function SearchPage({
           ) : (
             <>
               <p className="mb-4 font-sans text-body-sm text-mist">
-                <span className="font-display font-semibold text-ice tabular-nums">{total}</span> resultado{total !== 1 ? "s" : ""} — página {page} de {totalPages}
+                <span className="font-mono font-semibold text-ice tabular-nums">{total}</span> resultado{total !== 1 ? "s" : ""} — página {page} de {totalPages}
               </p>
               <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
                 {results.map((a) => (
@@ -247,7 +247,7 @@ export default async function SearchPage({
                 ) : (
                   <span className="btn-ghost opacity-40">← Anterior</span>
                 )}
-                <span className="font-display text-body-sm text-mist tabular-nums">
+                <span className="font-mono text-body-sm text-mist tabular-nums">
                   {page} / {totalPages}
                 </span>
                 {page < totalPages ? (

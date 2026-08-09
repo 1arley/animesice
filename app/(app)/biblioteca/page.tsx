@@ -154,7 +154,7 @@ export default function LibraryPage() {
                 </div>
                 <div>
                   <p className="font-sans text-body font-medium text-ice">{item.anime.title}</p>
-                  <p className="font-display text-caption text-mist">
+                  <p className="font-mono text-caption text-mist">
                     EP {item.episode.number} · {item.completed ? "Concluído" : "Em andamento"}
                   </p>
                 </div>
@@ -171,13 +171,13 @@ export default function LibraryPage() {
               <AnimeCard anime={item.anime} />
               <button
                 onClick={() => removeFromList(item.anime.slug)}
-                className="absolute left-1 top-1 bg-ink/80 px-1.5 py-0.5 font-display text-caption font-semibold text-signal opacity-0 transition-opacity group-hover:opacity-100 hover:bg-signal hover:text-ink"
+                className="absolute left-1 top-1 bg-ink/80 px-1.5 py-0.5 font-mono text-caption font-semibold text-signal opacity-0 transition-opacity group-hover:opacity-100 hover:bg-signal hover:text-ink"
                 title="Remover da lista"
               >
                 ×
               </button>
               {item.score != null && (
-                <span className="absolute right-1 bottom-1 bg-ink/80 px-1 py-0.5 font-display text-caption text-ice tabular-nums">
+                <span className="absolute right-1 bottom-1 bg-ink/80 px-1 py-0.5 font-mono text-caption text-ice tabular-nums">
                   {item.score}/10
                 </span>
               )}

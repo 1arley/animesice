@@ -230,11 +230,11 @@ function CommentItem({
   return (
     <div className="border-l-2 border-hairline pl-4">
       <div className="flex items-start gap-3">
-        <div className="h-8 w-8 shrink-0 overflow-hidden rounded-full bg-hairline">
+        <div className="h-8 w-8 shrink-0 overflow-hidden bg-hairline">
           {comment.user.avatar ? (
             <img src={comment.user.avatar} alt="" className="h-full w-full object-cover" />
           ) : (
-            <div className="flex h-full w-full items-center justify-center font-display text-caption text-mist">
+            <div className="flex h-full w-full items-center justify-center font-mono text-caption text-mist">
               {(comment.user.name ?? "?")[0]?.toUpperCase()}
             </div>
           )}
@@ -244,7 +244,7 @@ function CommentItem({
             <span className="font-sans text-body-sm font-medium text-ice">
               {comment.user.name ?? "Anônimo"}
             </span>
-            <span className="font-display text-caption text-mist">
+            <span className="font-mono text-caption text-mist">
               {new Date(comment.createdAt).toLocaleDateString("pt-BR")}
             </span>
             {comment.edited && (
@@ -257,20 +257,29 @@ function CommentItem({
           <div className="mt-2 flex items-center gap-4">
             <button
               onClick={() => onLike(comment.id)}
-              className="font-display text-caption text-mist transition-colors hover:text-ice"
+              className="inline-flex items-center gap-1 font-mono text-caption text-mist transition-colors hover:text-ice"
             >
-              ♥ {likeCount > 0 ? likeCount : ""}
+              <svg width="12" height="12" viewBox="0 0 16 16" aria-hidden="true">
+                <path
+                  d="M8 13.5S1.5 9.7 1.5 5.5A3.3 3.3 0 0 1 8 4a3.3 3.3 0 0 1 6.5 1.5C14.5 9.7 8 13.5 8 13.5Z"
+                  fill="currentColor"
+                  stroke="currentColor"
+                  strokeWidth="1"
+                  strokeLinejoin="round"
+                />
+              </svg>
+              {likeCount > 0 ? likeCount : ""}
             </button>
             <button
               onClick={() => setShowReplyForm(!showReplyForm)}
-              className="font-display text-caption text-mist transition-colors hover:text-ice"
+              className="font-mono text-caption text-mist transition-colors hover:text-ice"
             >
               Responder
             </button>
             {isOwner && (
               <button
                 onClick={() => onDelete(comment.id)}
-                className="font-display text-caption text-mist transition-colors hover:text-signal"
+                className="font-mono text-caption text-mist transition-colors hover:text-signal"
               >
                 Excluir
               </button>
@@ -278,7 +287,7 @@ function CommentItem({
             {replyCount > replies.length && !showAllReplies && (
               <button
                 onClick={loadAllReplies}
-                className="font-display text-caption text-mist transition-colors hover:text-ice"
+                className="font-mono text-caption text-mist transition-colors hover:text-ice"
               >
                 Ver {replyCount} respostas
               </button>
@@ -309,7 +318,7 @@ function CommentItem({
                     <span className="font-sans text-body-sm font-medium text-ice">
                       {r.user.name ?? "Anônimo"}
                     </span>
-                    <span className="font-display text-caption text-mist">
+                    <span className="font-mono text-caption text-mist">
                       {new Date(r.createdAt).toLocaleDateString("pt-BR")}
                     </span>
                   </div>

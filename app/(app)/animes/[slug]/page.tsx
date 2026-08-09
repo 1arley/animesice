@@ -71,7 +71,7 @@ export default async function AnimeDetailPage({
               />
             ) : (
               <div className="flex h-full items-center justify-center bg-hairline">
-                <span className="font-display text-caption uppercase tracking-wider text-mist">
+                <span className="font-mono text-caption uppercase tracking-wider text-mist">
                   sem capa
                 </span>
               </div>
@@ -82,20 +82,27 @@ export default async function AnimeDetailPage({
         <div className="flex-1">
           {/* Status badge above title */}
           <div className="mb-2 flex items-center gap-2">
-            <span className={`px-2 py-0.5 font-display text-caption font-semibold uppercase tracking-wider ${ongoing ? "bg-ice text-ink" : "border border-hairline text-mist"}`}>
-              {ongoing ? "No ar" : "Finalizado"}
+            <span className={`px-2 py-0.5 font-mono text-caption font-medium uppercase tracking-wider ${ongoing ? "bg-ice text-ink" : "border border-hairline text-mist"}`}>
+              {ongoing ? (
+                <>
+                  <span className="edge-tag-live" aria-hidden="true" />
+                  No ar
+                </>
+              ) : (
+                "Finalizado"
+              )}
             </span>
-            <span className="font-display text-caption uppercase tracking-wider text-mist">
+            <span className="font-mono text-caption uppercase tracking-wider text-mist">
               {dub ? "Dublado" : "Legendado"}
             </span>
             {anime.format && (
-              <span className="font-display text-caption uppercase tracking-wider text-mist">
+              <span className="font-mono text-caption uppercase tracking-wider text-mist">
                 · {anime.format}
               </span>
             )}
           </div>
 
-          <h1 className="font-display text-display-lg text-ink md:text-display-xl">{anime.title}</h1>
+          <h1 className="font-display text-display-lg text-snow md:text-display-xl">{anime.title}</h1>
 
           {anime.japaneseTitle && (
             <p className="mt-1 font-sans text-body-sm text-mist">{anime.japaneseTitle}</p>
@@ -105,50 +112,50 @@ export default async function AnimeDetailPage({
           <dl className="mt-4 flex flex-wrap gap-x-6 gap-y-3 border-y border-hairline py-3">
             {anime.rating != null && anime.rating > 0 && (
               <div>
-                <dt className="font-display text-caption uppercase tracking-wider text-mist">
+                <dt className="font-mono text-caption uppercase tracking-wider text-mist">
                   Nota
                 </dt>
-                <dd className="font-display text-body font-semibold text-ice tabular-nums">
+                <dd className="font-mono text-body font-medium text-ice tabular-nums">
                   {anime.rating.toFixed(2)}
                 </dd>
               </div>
             )}
             {anime.year && (
               <div>
-                <dt className="font-display text-caption uppercase tracking-wider text-mist">
+                <dt className="font-mono text-caption uppercase tracking-wider text-mist">
                   Ano
                 </dt>
-                <dd className="font-sans text-body-sm font-medium text-ink tabular-nums">
+                <dd className="font-mono text-body-sm font-medium text-snow tabular-nums">
                   {anime.year}
                 </dd>
               </div>
             )}
             {episodes.length > 0 && (
               <div>
-                <dt className="font-display text-caption uppercase tracking-wider text-mist">
+                <dt className="font-mono text-caption uppercase tracking-wider text-mist">
                   Episódios
                 </dt>
-                <dd className="font-sans text-body-sm font-medium text-ink tabular-nums">
+                <dd className="font-mono text-body-sm font-medium text-snow tabular-nums">
                   {episodes.length}
                 </dd>
               </div>
             )}
             {anime.ageRating && (
               <div>
-                <dt className="font-display text-caption uppercase tracking-wider text-mist">
+                <dt className="font-mono text-caption uppercase tracking-wider text-mist">
                   Classe
                 </dt>
-                <dd className="font-sans text-body-sm font-medium text-ink">
+                <dd className="font-mono text-body-sm font-medium text-snow">
                   {anime.ageRating}
                 </dd>
               </div>
             )}
             {anime.studios && anime.studios.length > 0 && (
               <div>
-                <dt className="font-display text-caption uppercase tracking-wider text-mist">
+                <dt className="font-mono text-caption uppercase tracking-wider text-mist">
                   Estúdio
                 </dt>
-                <dd className="font-sans text-body-sm font-medium text-ink">
+                <dd className="font-mono text-body-sm font-medium text-snow">
                   {anime.studios.join(", ")}
                 </dd>
               </div>
@@ -232,10 +239,10 @@ export default async function AnimeDetailPage({
                     }`}
                     title={`Episódio ${ep.number}${available ? "" : " — sem vídeo"}`}
                   >
-                    <span className="font-display text-body font-semibold text-mist tabular-nums transition-colors group-hover:text-ice">
+                    <span className="font-mono text-body font-medium text-mist tabular-nums transition-colors group-hover:text-ice">
                       {ep.number}
                     </span>
-                    <span className="block font-display text-caption uppercase tracking-wider text-mist">
+                    <span className="block font-mono text-caption uppercase tracking-wider text-mist">
                       ep
                     </span>
                   </a>

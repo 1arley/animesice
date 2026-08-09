@@ -85,10 +85,10 @@ export default function AdminCreateEpisodePage({
             ← Painel
           </a>
         </p>
-        <h1 className="font-display text-display-xl text-ink">Criar episódio</h1>
+        <h1 className="font-display text-display-xl text-snow">Criar episódio</h1>
         {anime && (
           <p className="mt-1 text-body-sm text-mist">
-            <strong className="text-ink">{anime.title}</strong>{" "}
+            <strong className="text-snow">{anime.title}</strong>{" "}
             <code className="text-mist">/{anime.slug}</code>
             <br />
             <a href={`/animes/${anime.slug}`} className="text-ice transition-colors hover:opacity-70">
@@ -190,7 +190,7 @@ export default function AdminCreateEpisodePage({
         {result && (
           <div className="mt-6 border border-hairline bg-panel p-4">
             <p className="text-body-sm text-ice">Episódio criado com sucesso!</p>
-            <p className="mt-1 text-body text-ink">
+            <p className="mt-1 text-body text-snow">
               EP {result.number}
               {result.title ? ` — ${result.title}` : ""}
             </p>

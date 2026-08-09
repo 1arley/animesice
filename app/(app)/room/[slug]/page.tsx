@@ -143,7 +143,7 @@ export default function RoomPage({
 
       <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
         <div>
-          <h1 className="font-display text-display-lg text-ink">
+          <h1 className="font-display text-display-lg text-snow">
             {episode ? episode.anime.title : "Carregando..."}
           </h1>
           <p className="mt-1 font-display text-body-sm font-medium text-ice tabular-nums">
@@ -169,7 +169,7 @@ export default function RoomPage({
 
         <div className="flex h-[480px] flex-col border border-hairline bg-panel">
           <div className="flex items-center justify-between border-b border-hairline px-3 py-2">
-            <span className="font-display text-body-sm font-semibold text-ice">
+            <span className="font-mono text-body-sm font-medium text-ice">
               Chat da sala
             </span>
             <div className="flex items-center gap-2">

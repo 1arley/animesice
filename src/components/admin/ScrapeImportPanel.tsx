@@ -107,7 +107,7 @@ export function ScrapeImportPanel({ onUseVideo, onUseIframe }: ScrapeImportPanel
 
       {scrapeVideos.length > 0 && (
         <div className="mt-3">
-          <span className="font-display text-caption uppercase tracking-wider text-mist">
+          <span className="font-mono text-caption uppercase tracking-wider text-mist">
             Vídeos .mp4 encontrados
           </span>
           <ul className="mt-1.5 space-y-1">
@@ -135,7 +135,7 @@ export function ScrapeImportPanel({ onUseVideo, onUseIframe }: ScrapeImportPanel
 
       {scrapeIframes.length > 0 && (
         <div className="mt-3">
-          <span className="font-display text-caption uppercase tracking-wider text-mist">
+          <span className="font-mono text-caption uppercase tracking-wider text-mist">
             Iframes encontrados
           </span>
           <ul className="mt-1.5 space-y-1">
