@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
 import { isPrivileged } from "@/lib/role";
+import { Wordmark } from "@/components/common/Wordmark";
 
 interface FooterLink { href: string; title: string; external?: boolean; }
 
@@ -27,10 +28,7 @@ export function Footer() {
     <footer className="mt-12 border-t border-hairline bg-ink">
       <div className="mx-auto grid max-w-shelf gap-8 px-4 py-10 sm:grid-cols-2 md:grid-cols-4">
         <div className="sm:col-span-2 md:col-span-1">
-          <p className="font-display text-lg font-semibold text-ink">
-            Animes<span className="text-ice">&#183;</span>
-            <span className="text-ice">Ice</span>
-          </p>
+          <Wordmark className="text-lg" />
           <p className="mt-3 max-w-xs text-caption text-mist">
             Prateleira de streaming. Não hospedamos vídeo — todo conteúdo é
             provido de terceiros não afiliados.
@@ -44,7 +42,7 @@ export function Footer() {
 
       <div className="border-t border-hairline">
         <div className="mx-auto flex max-w-shelf flex-col gap-1 px-4 py-4 text-caption text-mist sm:flex-row sm:items-center sm:justify-between">
-          <p>© {new Date().getFullYear()} AnimesIce</p>
+          <p suppressHydrationWarning>© {new Date().getFullYear()} AnimesIce</p>
           <p>
             <Link href="/privacidade" className="transition-colors hover:text-ice">Privacidade</Link>
             <span className="mx-2 text-hairline">·</span>
@@ -60,7 +58,7 @@ function FooterCol({ title, links }: { title: string; links: FooterLink[] }) {
   if (links.length === 0) return null;
   return (
     <div>
-      <h2 className="mb-3 font-sans text-caption font-semibold uppercase tracking-wider text-mist">
+      <h2 className="mb-3 font-mono text-caption font-semibold uppercase tracking-wider text-mist">
         {title}
       </h2>
       <ul className="space-y-2">

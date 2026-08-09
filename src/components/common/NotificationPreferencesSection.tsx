@@ -71,7 +71,7 @@ export function NotificationPreferencesSection() {
   return (
     <section className="border border-hairline bg-panel p-6 md:col-span-2">
       <div className="mb-4">
-        <h2 className="font-display text-display-lg text-ink">Notificações</h2>
+        <h2 className="font-display text-display-lg text-snow">Notificações</h2>
         <p className="text-body-sm text-mist">
           Escolha o que você quer receber e por onde.
         </p>

@@ -64,9 +64,17 @@ export function NotificationBell() {
         className="relative font-display text-body text-mist transition-colors hover:text-ice"
         aria-label="Notificações"
       >
-        🔔
+        <svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+          <path
+            d="M4 15h12M5.5 15V9a4.5 4.5 0 1 1 9 0v6M8.5 17.5a1.5 1.5 0 0 0 3 0"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-ice px-1 font-display text-[0.6rem] font-bold text-ink">
+          <span className="absolute -top-1 -right-1 flex h-4 min-w-[1rem] items-center justify-center bg-ice px-1 font-mono text-[0.6rem] font-bold text-ink tabular-nums">
             {unreadCount > 9 ? "9+" : unreadCount}
           </span>
         )}
@@ -81,7 +89,7 @@ export function NotificationBell() {
             {unreadCount > 0 && (
               <button
                 onClick={markAllRead}
-                className="font-display text-caption text-mist hover:text-ice"
+                className="font-mono text-caption text-mist hover:text-ice"
               >
                 Marcar todas como lidas
               </button>
@@ -105,7 +113,7 @@ export function NotificationBell() {
                   {n.body && (
                     <p className="mt-0.5 text-caption text-mist">{n.body}</p>
                   )}
-                  <p className="mt-0.5 font-display text-caption text-mist">
+                  <p className="mt-0.5 font-mono text-caption text-mist">
                     {new Date(n.createdAt).toLocaleDateString("pt-BR")}
                   </p>
                 </a>
@@ -114,7 +122,7 @@ export function NotificationBell() {
           </div>
           <a
             href="/notificacoes"
-            className="block border-t border-hairline px-3 py-2 text-center font-display text-caption text-mist hover:text-ice"
+            className="block border-t border-hairline px-3 py-2 text-center font-mono text-caption text-mist hover:text-ice"
           >
             Ver todas
           </a>

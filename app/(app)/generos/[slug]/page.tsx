@@ -54,7 +54,7 @@ export default async function GenrePage({
             ) : (
               <span className="btn-ghost opacity-40">← Anterior</span>
             )}
-            <span className="font-display text-body-sm text-mist tabular-nums">
+            <span className="font-mono text-body-sm text-mist tabular-nums">
               {page} / {meta.totalPages}
             </span>
             {page < meta.totalPages ? (

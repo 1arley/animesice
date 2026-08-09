@@ -23,7 +23,7 @@ export default function NotFound() {
                 <div className='flex flex-col items-center justify-center gap-20 md:gap-28'>
                     <div className='flex flex-wrap flex-col gap-10 md:gap-12 justify-center'>
                         <div className='flex flex-col justify-center gap-2'>
-                            <h1 className='text-4xl md:text-5xl text-center md:text-left text-ink'>Página não encontrada!</h1>
+                            <h1 className='text-4xl md:text-5xl text-center md:text-left text-snow'>Página não encontrada!</h1>
                             <p className='text-sm md:text-base text-mist'>Erro 404 - Página não encontrada</p>
                         </div>
                         <p className='text-wrap max-w-[29rem] text-mist'>Desculpe! O conteúdo que você procura pode ter sido removido, mas novas oportunidades sempre brotam. Que tal explorar nosso site e ver o que pode florescer para você?</p>

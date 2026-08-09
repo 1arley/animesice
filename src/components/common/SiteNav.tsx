@@ -92,7 +92,7 @@ export function SiteNav() {
                 aria-expanded={isOpen}
                 aria-haspopup="true"
                 onClick={() => setOpenGroup(isOpen ? null : item.title)}
-                className="flex items-center gap-1.5 px-3 py-3 text-body-sm font-medium text-mist transition-colors hover:text-ice data-[open=true]:text-ice"
+                className="flex items-center gap-1.5 border-x border-transparent px-3 py-3 font-mono text-body-sm uppercase tracking-wider text-mist transition-colors hover:text-ice data-[open=true]:border-x-hairline data-[open=true]:bg-panel data-[open=true]:text-ice"
                 data-open={isOpen}
               >
                 {item.title}
@@ -116,7 +116,7 @@ export function SiteNav() {
                       target={link.target || "_self"}
                       rel={link.target === "_blank" ? "noopener noreferrer" : undefined}
                       role="menuitem"
-                      className="block px-4 py-2 text-body-sm text-mist transition-colors hover:bg-ink hover:text-ice"
+                      className="block border-l-2 border-transparent px-4 py-2 font-mono text-body-sm text-mist transition-colors hover:border-ice hover:bg-slate hover:text-ice"
                     >
                       {link.title}
                     </a>
@@ -133,7 +133,7 @@ export function SiteNav() {
         <button
           type="button"
           onClick={() => setMobileOpen(!mobileOpen)}
-          className="flex items-center gap-2 py-3 text-body-sm font-medium text-mist transition-colors hover:text-ice"
+          className="flex items-center gap-2 py-3 font-mono text-body-sm uppercase tracking-wider text-mist transition-colors hover:text-ice"
           aria-expanded={mobileOpen}
           aria-label="Menu de navegação"
         >
@@ -153,7 +153,7 @@ export function SiteNav() {
         <div className="border-t border-hairline px-4 py-3 sm:hidden">
           {navItems.map((item) => (
             <div key={item.title} className="mb-3">
-              <h2 className="mb-1.5 font-display text-caption uppercase tracking-wider text-mist">
+              <h2 className="mb-1.5 font-mono text-caption uppercase tracking-wider text-mist">
                 {item.title}
               </h2>
               <ul className="space-y-0.5">
@@ -163,7 +163,7 @@ export function SiteNav() {
                       href={link.href}
                       target={link.target || "_self"}
                       rel={link.target === "_blank" ? "noopener noreferrer" : undefined}
-                      className="block py-1.5 text-body-sm text-mist transition-colors hover:text-ice"
+                      className="block py-1.5 font-mono text-body-sm text-mist transition-colors hover:text-ice"
                       onClick={() => setMobileOpen(false)}
                     >
                       {link.title}

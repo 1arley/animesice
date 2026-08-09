@@ -78,7 +78,7 @@ export default function AdminPage() {
       <Header />
       <SiteNav />
       <main className="mx-auto max-w-shelf px-4 py-6">
-        <h1 className="font-display text-display-xl text-ink">Painel admin</h1>
+        <h1 className="font-display text-display-xl text-snow">Painel admin</h1>
         <p className="mt-1 text-body-sm text-mist">
           Logado como <span className="text-ice">{user?.email}</span> ({user?.role})
         </p>
@@ -99,7 +99,7 @@ export default function AdminPage() {
             placeholder="Buscar por título ou slug…"
             value={search}
             onChange={(e) => handleSearchChange(e.target.value)}
-            className="ml-auto w-full max-w-xs border border-hairline bg-panel px-3 py-1.5 text-body-sm text-ink placeholder:text-mist focus:border-ice focus:outline-none"
+            className="ml-auto w-full max-w-xs border border-hairline bg-panel px-3 py-1.5 text-body-sm text-snow placeholder:text-mist focus:border-ice focus:outline-none"
           />
         </div>
 

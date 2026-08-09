@@ -109,10 +109,10 @@ export default function AdminEditAnimePage({
             ← Painel
           </a>
         </p>
-        <h1 className="font-display text-display-xl text-ink">Editar anime</h1>
+        <h1 className="font-display text-display-xl text-snow">Editar anime</h1>
         {anime && (
           <p className="mt-1 text-body-sm text-mist">
-            <strong className="text-ink">{anime.title}</strong>{" "}
+            <strong className="text-snow">{anime.title}</strong>{" "}
             <code className="text-mist">/{anime.slug}</code>
             <br />
             <a href={`/animes/${anime.slug}`} className="text-ice transition-colors hover:opacity-70">

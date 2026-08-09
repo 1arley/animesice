@@ -53,8 +53,8 @@ export function CreateRoomButton({
   if (room) {
     const link = `${window.location.origin}/room/${room.slug}`;
     return (
-      <div className="mt-4 rounded-lg border border-hairline bg-panel p-4">
-        <p className="font-display text-body-sm font-semibold text-ice">
+      <div className="mt-4 border border-hairline bg-panel p-4">
+        <p className="font-mono text-body-sm font-semibold text-ice">
           Sala criada!
         </p>
         <p className="mt-1 text-caption text-mist">
@@ -89,7 +89,11 @@ export function CreateRoomButton({
         disabled={loading}
         className="btn-ghost"
       >
-        {loading ? "Criando..." : "🎬 Criar sala de watch party"}
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true">
+          <rect x="1" y="2" width="12" height="10" stroke="currentColor" strokeWidth="1.2" fill="none" />
+          <path d="M6 5l3.5 2-3.5 2z" />
+        </svg>
+        {loading ? "Criando..." : "Criar sala de watch party"}
       </button>
       {error && (
         <p className="mt-2 text-caption text-signal">{error}</p>

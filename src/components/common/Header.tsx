@@ -1,18 +1,35 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useState, useEffect, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { Wordmark } from "@/components/common/Wordmark";
 import { AuthButtons } from "@/components/common/AuthButtons";
 import { NotificationBell } from "@/components/common/NotificationBell";
 
 /**
- * Cabeçalho da prateleira: wordmark à esquerda, busca ao centro, auth à direita.
+ * Cabeçalho da prateleira: wordmark à esquerda, busca ao centro,
+ * auth à direita. Entre wordmark e busca, o relógio de transmissão —
+ * a madrugada do canal contada ao vivo, em mono.
  */
 export function Header() {
   const router = useRouter();
   const [q, setQ] = useState("");
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
+  const [now, setNow] = useState<Date | null>(null);
+
+  useEffect(() => {
+    const tick = () => setNow(new Date());
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  const hhmm = now
+    ? now.toLocaleTimeString("pt-BR", {
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    : "--:--";
 
   function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -35,15 +52,32 @@ export function Header() {
       <div className="mx-auto flex max-w-shelf items-center justify-between gap-4 px-4 py-3">
         <Wordmark className="text-xl" />
 
+        {/* Relógio de transmissão: a única nota quente do cabeçalho. */}
+        <div className="hidden items-center gap-2 font-mono text-caption uppercase tracking-wider text-mist md:flex">
+          <span className="h-1.5 w-1.5 animate-blink bg-signal" aria-hidden="true" />
+          <span className="text-signal">Ao vivo</span>
+          <time className="tabular-nums text-ice" dateTime={now?.toISOString()}>
+            {hhmm}
+          </time>
+        </div>
+
         {/* Desktop search */}
-        <form onSubmit={onSubmit} role="search" className="hidden flex-1 max-w-md sm:block">
+        <form
+          onSubmit={onSubmit}
+          role="search"
+          className="hidden flex-1 max-w-md sm:block"
+        >
           <label htmlFor="header-search" className="sr-only">
             Buscar animes
           </label>
           <div className="relative">
             <svg
               className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-mist"
-              width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"
+              width="16"
+              height="16"
+              viewBox="0 0 16 16"
+              fill="none"
+              aria-hidden="true"
             >
               <circle cx="7" cy="7" r="5" stroke="currentColor" strokeWidth="1.5" />
               <path d="M11 11l3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
@@ -88,7 +122,11 @@ export function Header() {
           <div className="relative">
             <svg
               className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-mist"
-              width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"
+              width="16"
+              height="16"
+              viewBox="0 0 16 16"
+              fill="none"
+              aria-hidden="true"
             >
               <circle cx="7" cy="7" r="5" stroke="currentColor" strokeWidth="1.5" />
               <path d="M11 11l3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />

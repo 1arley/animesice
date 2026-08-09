@@ -43,7 +43,7 @@ export default async function LancamentosPage({
             ) : (
               <span className="btn-ghost opacity-40">← Anterior</span>
             )}
-            <span className="font-display text-body-sm text-mist tabular-nums">
+            <span className="font-mono text-body-sm text-mist tabular-nums">
               {page} / {totalPages}
             </span>
             {page < totalPages ? (

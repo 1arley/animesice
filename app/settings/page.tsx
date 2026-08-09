@@ -128,7 +128,7 @@ export default function SettingsPage() {
             {/* ── Profile ── */}
             <section className="border border-hairline bg-panel p-6">
               <div className="mb-4">
-                <h2 className="font-display text-display-lg text-ink">Perfil</h2>
+                <h2 className="font-display text-display-lg text-snow">Perfil</h2>
                 <p className="text-body-sm text-mist">
                   Atualize seu nome de exibição.
                 </p>
@@ -172,7 +172,7 @@ export default function SettingsPage() {
             {/* ── Change Email ── */}
             <section className="border border-hairline bg-panel p-6">
               <div className="mb-4">
-                <h2 className="font-display text-display-lg text-ink">Email</h2>
+                <h2 className="font-display text-display-lg text-snow">Email</h2>
                 <p className="text-body-sm text-mist">
                   Email atual: <span className="text-ice">{user.email}</span>
                   <br />
@@ -233,7 +233,7 @@ export default function SettingsPage() {
             {/* ── Change Password ── */}
             <section className="border border-hairline bg-panel p-6 md:col-span-2">
               <div className="mb-4">
-                <h2 className="font-display text-display-lg text-ink">Senha</h2>
+                <h2 className="font-display text-display-lg text-snow">Senha</h2>
                 <p className="text-body-sm text-mist">
                   Altere sua senha. Após a troca, você será deslogado de outras
                   sessões.
@@ -314,7 +314,7 @@ export default function SettingsPage() {
             {/* ── Account info ── */}
             <section className="border border-hairline bg-panel p-6 md:col-span-2">
               <div className="mb-2">
-                <h2 className="font-display text-display-lg text-ink">Conta</h2>
+                <h2 className="font-display text-display-lg text-snow">Conta</h2>
               </div>
               <dl className="grid grid-cols-2 gap-4 text-body-sm">
                 <div>

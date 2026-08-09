@@ -53,7 +53,7 @@ export default function AdminImportPage() {
             ← Painel
           </a>
         </p>
-        <h1 className="font-display text-display-xl text-ink">Importar do AniList</h1>
+        <h1 className="font-display text-display-xl text-snow">Importar do AniList</h1>
         <p className="mt-2 text-body-sm text-mist">
           Busca metadados do anime no AniList (capa, banner, sinopse, gêneros,
           episódios) e cria no catálogo.
@@ -73,7 +73,7 @@ export default function AdminImportPage() {
             />
           </label>
 
-          <p className="text-center font-display text-caption text-mist">— ou —</p>
+          <p className="text-center font-mono text-caption text-mist">— ou —</p>
 
           <label className="block">
             <span className="mb-1.5 block font-sans text-caption uppercase tracking-wider text-mist">
@@ -118,7 +118,7 @@ export default function AdminImportPage() {
         {result && (
           <div className="mt-6 border border-hairline bg-panel p-4">
             <p className="text-body-sm text-ice">Importado com sucesso!</p>
-            <p className="mt-1 text-body text-ink">
+            <p className="mt-1 text-body text-snow">
               <strong>{result.title}</strong>{" "}
               <code className="text-mist">/{result.slug}</code>
             </p>

@@ -19,7 +19,7 @@ export default function PublicProfilePage({ params }: { params: Promise<{ id: st
     <div className="mx-auto max-w-shelf px-4 py-8">
       <section className="max-w-2xl border border-hairline bg-panel p-6">
         <div className="flex items-center gap-4">
-          <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full bg-hairline font-display text-display-lg text-mist">
+          <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden bg-hairline font-mono text-display-lg text-mist">
             {profile.avatar ? <img src={profile.avatar} alt="" className="h-full w-full object-cover" /> : (profile.name ?? "?")[0]?.toUpperCase()}
           </div>
           <div>
@@ -40,5 +40,5 @@ export default function PublicProfilePage({ params }: { params: Promise<{ id: st
 }
 
 function Stat({ label, value }: { label: string; value: number }) {
-  return <div><dt className="font-display text-caption uppercase text-mist">{label}</dt><dd className="font-display text-body font-semibold text-ice">{value}</dd></div>;
+  return <div><dt className="font-mono text-caption uppercase text-mist">{label}</dt><dd className="font-display text-body font-semibold text-ice">{value}</dd></div>;
 }

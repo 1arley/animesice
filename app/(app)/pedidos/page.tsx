@@ -41,7 +41,7 @@ export default function PedidosPage() {
       {user ? (
         <form onSubmit={handleSubmit} className="mb-8 max-w-lg space-y-3 border border-hairline bg-panel p-4">
           <div>
-            <label className="mb-1 block font-display text-caption uppercase tracking-wider text-mist">
+            <label className="mb-1 block font-mono text-caption uppercase tracking-wider text-mist">
               Título do anime
             </label>
             <input
@@ -50,12 +50,12 @@ export default function PedidosPage() {
               onChange={(e) => setTitle(e.target.value)}
               maxLength={200}
               required
-              className="w-full border border-hairline bg-ink px-3 py-2 text-body text-ice"
+              className="field"
               placeholder="Ex: Frieren: Beyond Journey's End"
             />
           </div>
           <div>
-            <label className="mb-1 block font-display text-caption uppercase tracking-wider text-mist">
+            <label className="mb-1 block font-mono text-caption uppercase tracking-wider text-mist">
               Notas (opcional)
             </label>
             <textarea
@@ -63,7 +63,7 @@ export default function PedidosPage() {
               onChange={(e) => setNotes(e.target.value)}
               maxLength={1000}
               rows={3}
-              className="w-full border border-hairline bg-ink px-3 py-2 text-body text-ice"
+              className="field"
               placeholder="Link MAL, AniList, ou detalhes..."
             />
           </div>
