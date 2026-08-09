@@ -3,6 +3,7 @@ import { Chakra_Petch, IBM_Plex_Mono, IBM_Plex_Sans } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/lib/auth-context";
 import { ADSENSE_CLIENT } from "@/lib/adsense";
+import { ThirdPartyScripts } from "@/components/common/ThirdPartyScripts";
 
 // Tipografia do "sinal da madrugada": um display de cristal (Chakra Petch)
 // para vozes, IBM Plex Sans para o corpo e IBM Plex Mono para os dados de
@@ -63,23 +64,21 @@ export default function RootLayout({
   return (
     <html lang="pt-BR">
       <head>
-        <script
-          async
-          src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_CLIENT}`}
-          crossOrigin="anonymous"
-        />
-        {/* Monetag MultiTag: in-page push (onclick) + demais formatos.
-            Push notifications continuam desativados (sw.js removido). */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `(function(s){s.dataset.zone='11528359',s.src='https://al5sm.com/tag.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))`,
-          }}
-        />
+        {/* Preconnect hints no <head>: abre handshake TCP+TLS cedo sem
+            baixar nada. Economiza ~150-300 ms no primeiro request. */}
+        <link rel="preconnect" href="https://pagead2.googlesyndication.com" crossOrigin="anonymous" />
+        <link rel="preconnect" href="https://fundingchoicesmessages.google.com" crossOrigin="anonymous" />
+        <link rel="preconnect" href="https://al5sm.com" crossOrigin="anonymous" />
+        <link rel="preconnect" href="https://static.cloudflareinsights.com" crossOrigin="anonymous" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
       </head>
       <body
         className={`${fontChakra.variable} ${fontPlexSans.variable} ${fontPlexMono.variable} antialiased`}
       >
         <AuthProvider>{children}</AuthProvider>
+        {/* Scripts de terceiros: lazyOnload + IntersectionObserver para Monetag.
+            Não bloqueiam o paint inicial nem competem com o LCP. */}
+        <ThirdPartyScripts />
       </body>
     </html>
   );
