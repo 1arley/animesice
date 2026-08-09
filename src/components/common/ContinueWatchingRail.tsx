@@ -1,9 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import { useAuth } from "@/lib/auth-context";
 import type { ContinueWatchingItem } from "@/types";
 import { API_URL } from "@/lib/api";
+import { safeImageSrc } from "@/lib/url";
 
 export function ContinueWatchingRail() {
   const { user } = useAuth();
@@ -22,17 +24,18 @@ export function ContinueWatchingRail() {
   if (!user || loading || items.length === 0) return null;
 
   return (
-    <section className="mb-8" aria-label="Continue assistindo">
-      <h2 className="shelf-label">
+    <section className="mb-8" aria-labelledby="rail-continue">
+      <h2 id="rail-continue" className="shelf-label">
         Continue assistindo{" "}
         <span className="shelf-label-data">{items.length}</span>
       </h2>
       <div className="-mx-4 overflow-x-auto px-4 pb-2 [scrollbar-width:thin]">
         <div className="flex gap-3 snap-x">
-          {items.map((item) => {
+          {items.map((item, i) => {
             const progressPercent = item.duration
               ? Math.min((item.progress / item.duration) * 100, 100)
               : 0;
+            const thumb = safeImageSrc(item.episode.thumbnailUrl);
             return (
               <a
                 key={item.episodeId}
@@ -40,12 +43,15 @@ export function ContinueWatchingRail() {
                 className="group block min-w-[200px] shrink-0 snap-start"
               >
                 <div className="relative overflow-hidden bg-panel" style={{ aspectRatio: "16 / 9" }}>
-                  {item.episode.thumbnailUrl ? (
-                    <img
-                      src={item.episode.thumbnailUrl}
+                  {thumb ? (
+                    <Image
+                      src={thumb}
                       alt={item.anime.title}
-                      loading="lazy"
-                      className="absolute inset-0 h-full w-full object-cover opacity-90 transition-opacity group-hover:opacity-100"
+                      fill
+                      sizes="(max-width: 480px) 50vw, 200px"
+                      priority={i < 2}
+                      className="object-cover opacity-90 transition-opacity group-hover:opacity-100"
+                      quality={75}
                     />
                   ) : (
                     <div className="absolute inset-0 bg-hairline" />
@@ -57,9 +63,9 @@ export function ContinueWatchingRail() {
                     />
                   </div>
                 </div>
-                <h3 className="mt-1.5 line-clamp-1 font-sans text-body-sm font-medium text-snow transition-colors group-hover:text-ice">
+                <span className="mt-1.5 line-clamp-1 block font-sans text-body-sm font-medium text-snow transition-colors group-hover:text-ice">
                   {item.anime.title}
-                </h3>
+                </span>
                 <p className="font-mono text-caption text-mist">
                   EP {item.episode.number}
                 </p>

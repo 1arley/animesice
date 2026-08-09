@@ -1,9 +1,15 @@
+import Image from "next/image";
 import type { Anime } from "@/types";
 import { safeImageSrc } from "@/lib/url";
 import { statusLabel, isOnAir } from "@/lib/status";
 
 export interface AnimeCardProps {
   anime: Pick<Anime, "slug" | "title" | "coverImage" | "rating" | "ageRating" | "status" | "audio">;
+  /**
+   * Posição na prateleira. Imagens above-the-fold (0..3) recebem `priority`
+   * para acelerar o LCP; o resto usa lazy nativo.
+   */
+  priority?: boolean;
 }
 
 /**
@@ -11,8 +17,11 @@ export interface AnimeCardProps {
  * Signature: o ident de transmissão (edge-tag) na borda inferior carregando
  * status + áudio. Hover = varredura de sinal (card-scan), não zoom genérico.
  * A arte preenche o card; a UI fica fora da arte.
+ *
+ * Performance: usa next/image → AVIF/WebP automático. `sizes` correto garante
+ * que o browser baixe o asset certo para a viewport, sem pedir 1 MB em mobile.
  */
-export function AnimeCard({ anime }: AnimeCardProps) {
+export function AnimeCard({ anime, priority = false }: AnimeCardProps) {
   const age = anime.ageRating;
   const dub = anime.audio === "DUBLADO";
   const onAir = isOnAir(anime.status);
@@ -26,11 +35,14 @@ export function AnimeCard({ anime }: AnimeCardProps) {
     >
       <div className="card-scan relative" style={{ aspectRatio: "2 / 3" }}>
         {cover ? (
-          <img
+          <Image
             src={cover}
-            loading="lazy"
             alt={anime.title}
-            className="absolute inset-0 h-full w-full object-cover opacity-90 transition-opacity duration-300 group-hover:opacity-100"
+            fill
+            sizes="(max-width: 480px) 33vw, (max-width: 768px) 25vw, (max-width: 1024px) 20vw, 16vw"
+            priority={priority}
+            className="object-cover opacity-90 transition-opacity duration-300 group-hover:opacity-100"
+            quality={75}
           />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center bg-hairline">
@@ -67,9 +79,9 @@ export function AnimeCard({ anime }: AnimeCardProps) {
       </div>
 
       {/* Título abaixo da edge-tag, fora da arte. */}
-      <h3 className="line-clamp-2 px-2 py-2 font-sans text-body-sm font-medium text-snow transition-colors group-hover:text-ice">
+      <span className="line-clamp-2 block px-2 py-2 font-sans text-body-sm font-medium text-snow transition-colors group-hover:text-ice">
         {anime.title}
-      </h3>
+      </span>
     </a>
   );
 }

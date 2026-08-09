@@ -28,6 +28,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [logoutError, setLogoutError] = useState<string | null>(null);
 
   useEffect(() => {
+    // Evita requisição desnecessária /user/me que retorna 401 e gera erro no console.
+    // O backend envia um cookie `role` (não-httpOnly) quando há sessão ativa.
+    const hasRoleCookie = typeof document !== "undefined" && document.cookie.includes("role=");
+    if (!hasRoleCookie) {
+      setUser(null);
+      setLoading(false);
+      return;
+    }
+
     api
       .me()
       .then(setUser)
