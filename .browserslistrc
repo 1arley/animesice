@@ -1,0 +1,25 @@
+# Browsers suportados em produção.
+#
+# AnimesIce: público BR, mobile-first. Chrome/Safari/Firefox/Edge dos últimos
+# 2 anos já cobrem >99% dos visitantes. Nada de IE11, nada de polyfills de
+# Array.prototype.at/flat/flatMap, Object.fromEntries/hasOwn, String
+# .trimEnd/trimStart — todos são Baseline desde 2020+.
+#
+# Isso faz o SWC/Next pular 11.7 KiB de polyfills por chunk (sinalizado
+# pelo Lighthouse em "JavaScript legado").
+
+[production]
+last 2 Chrome versions
+last 2 Firefox versions
+last 2 Safari versions
+last 2 Edge versions
+last 2 iOS major versions
+not dead
+not IE 11
+not op_mini all
+not IE_Mob 11
+
+[development]
+last 1 Chrome version
+last 1 Firefox version
+last 1 Safari version
