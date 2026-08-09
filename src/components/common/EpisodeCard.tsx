@@ -1,3 +1,4 @@
+import Image from "next/image";
 import type { Episode, Anime } from "@/types";
 import { safeImageSrc } from "@/lib/url";
 
@@ -7,6 +8,7 @@ type LatestEpisode = Pick<Episode, "number" | "title" | "thumbnailUrl" | "dateMo
 
 export interface EpisodeCardProps {
   episode: LatestEpisode;
+  priority?: boolean;
 }
 
 function formatDate(iso?: string | null): string {
@@ -15,7 +17,7 @@ function formatDate(iso?: string | null): string {
   return isNaN(d.getTime()) ? "" : d.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" });
 }
 
-export function EpisodeCard({ episode }: EpisodeCardProps) {
+export function EpisodeCard({ episode, priority = false }: EpisodeCardProps) {
   const { anime } = episode;
   const href = `/animes/${anime.slug}/${episode.number}`;
   const thumb = safeImageSrc(episode.thumbnailUrl);
@@ -28,11 +30,13 @@ export function EpisodeCard({ episode }: EpisodeCardProps) {
     >
       <div className="card-scan relative" style={{ aspectRatio: "16 / 9" }}>
         {thumb ? (
-          <img
+          <Image
             src={thumb}
-            loading="lazy"
             alt={`${anime.title} — Episódio ${episode.number}`}
-            className="absolute inset-0 h-full w-full object-cover opacity-90 transition-opacity group-hover:opacity-100"
+            fill
+            sizes="(max-width: 480px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 16vw"
+            priority={priority}
+            className="object-cover opacity-90 transition-opacity group-hover:opacity-100"
           />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center bg-hairline">
@@ -49,9 +53,9 @@ export function EpisodeCard({ episode }: EpisodeCardProps) {
       </div>
 
       <div className="flex items-baseline justify-between gap-2 px-2 py-2">
-        <h3 className="line-clamp-1 flex-1 font-sans text-body-sm font-medium text-snow transition-colors group-hover:text-ice">
+        <span className="line-clamp-1 flex-1 font-sans text-body-sm font-medium text-snow transition-colors group-hover:text-ice">
           {anime.title}
-        </h3>
+        </span>
         {episode.dateModified && (
           <time
             dateTime={episode.dateModified}
