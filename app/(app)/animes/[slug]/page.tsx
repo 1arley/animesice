@@ -19,14 +19,14 @@ export default async function AnimeDetailPage({
   const { slug } = await params;
   const apiUrl = `${API_URL}/anime/${slug}`;
   console.log(`[AnimeDetailPage] slug=${slug} apiUrl=${apiUrl}`);
-  const anime = await serverFetchJson<Anime>(`/anime/${slug}`, 60);
+  const anime = await serverFetchJson<Anime>(`/anime/${slug}`);
   console.log(`[AnimeDetailPage] anime=${anime ? anime.title : 'NULL'}`);
   if (!anime) notFound();
 
   const episodes = (anime.episodes ?? []).slice().sort((a, b) => a.number - b.number);
   const [related, similar] = await Promise.all([
-    serverFetchJson<Anime[]>(`/anime/${slug}/related`, 300),
-    serverFetchJson<Anime[]>(`/recommendation/similar/${slug}?limit=12`, 300),
+    serverFetchJson<Anime[]>(`/anime/${slug}/related`),
+    serverFetchJson<Anime[]>(`/recommendation/similar/${slug}?limit=12`),
   ]);
   const relatedAnimes = related ?? [];
   const similarAnimes = (similar ?? []).filter(
