@@ -79,7 +79,7 @@ export default async function CalendarioPage({
                           {anime.title}
                         </p>
                         {(anime.animeSchedules?.find((s) => s.dayOfWeek === day.day)?.time) && (
-                          <p className="font-display text-caption text-mist tabular-nums">
+                          <p className="font-mono text-caption text-mist tabular-nums">
                             {anime.animeSchedules!.find((s) => s.dayOfWeek === day.day)!.time}
                           </p>
                         )}

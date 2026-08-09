@@ -35,7 +35,7 @@ function ConfirmEmailContent() {
 
   return (
     <div className="border border-hairline bg-panel p-8 text-center">
-      <h1 className="mb-4 font-display text-display-lg text-ink">
+      <h1 className="mb-4 font-display text-display-lg text-snow">
         Confirmação de email
       </h1>
 

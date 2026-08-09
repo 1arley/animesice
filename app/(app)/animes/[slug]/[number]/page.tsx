@@ -88,10 +88,10 @@ export default function WatchPage({
                 </a>
               </p>
 
-              <h1 className="font-display text-display-lg text-ink">
+              <h1 className="font-display text-display-lg text-snow">
                 {episode.anime.title}
               </h1>
-              <p className="mt-1 font-display text-body-sm font-medium text-ice tabular-nums">
+              <p className="mt-1 font-mono text-body-sm font-medium text-ice tabular-nums">
                 EP {episode.number}
               </p>
 

@@ -1,6 +1,5 @@
 import { AnimeCard } from "@/components/common/AnimeCard";
 import { EpisodeCard } from "@/components/common/EpisodeCard";
-import { safeImageSrc } from "@/lib/url";
 import { AdSlot } from "@/components/ads/AdSlot";
 import { serverFetchJson } from "@/lib/api-server";
 import { isOnAir } from "@/lib/status";
@@ -37,48 +36,18 @@ export default async function HomePage() {
       {/* Signature: a programação de agora, como um broadcast bug.
           Hero = conteúdo (episódios correntes), não headline+gradient. */}
       {onAirList.length > 0 && (
-            <section className="mb-8" aria-label="No ar agora">
+            <section className="reveal mb-8" aria-label="No ar agora">
               <Rail label="No ar agora" count={onAirList.length}>
                 {onAirList.map((anime) => (
-                  <article
-                    key={anime.id}
-                    className="min-w-[140px] shrink-0 snap-start"
-                  >
-                    <a
-                      href={`/animes/${anime.slug}`}
-                      className="group block"
-                      title={`${anime.title} — em lançamento`}
-                    >
-                      <div
-                        className="relative overflow-hidden bg-panel"
-                        style={{ aspectRatio: "2 / 3" }}
-                      >
-                        {safeImageSrc(anime.coverImage) ? (
-                          <img
-                            src={safeImageSrc(anime.coverImage)}
-                            loading="lazy"
-                            alt={anime.title}
-                            className="absolute inset-0 h-full w-full object-cover opacity-90 transition-opacity group-hover:opacity-100"
-                          />
-                        ) : (
-                          <div className="absolute inset-0 bg-hairline" />
-                        )}
-                        {/* Carimbo de "no ar" — a única nota cyan viva. */}
-                        <span className="absolute left-0 top-0 bg-ice px-1.5 py-0.5 font-display text-caption font-semibold uppercase tracking-wider text-ink">
-                          No ar
-                        </span>
-                      </div>
-                      <h3 className="mt-1.5 line-clamp-1 font-sans text-body-sm font-medium text-mist transition-colors group-hover:text-ice">
-                        {anime.title}
-                      </h3>
-                    </a>
-                  </article>
+                  <div key={anime.id} className="w-[140px] shrink-0 snap-start">
+                    <AnimeCard anime={anime} />
+                  </div>
                 ))}
               </Rail>
             </section>
           )}
 
-          <section className="mb-8" aria-label="Em lançamento">
+          <section className="reveal mb-8" style={{ animationDelay: "60ms" }} aria-label="Em lançamento">
             <h1 className="shelf-label">
               Em lançamento{" "}
               <span className="shelf-label-data">{animes.length} títulos</span>
@@ -96,7 +65,7 @@ export default async function HomePage() {
             )}
           </section>
 
-          <section className="mb-8" aria-label="Últimos episódios">
+          <section className="reveal mb-8" style={{ animationDelay: "120ms" }} aria-label="Últimos episódios">
             <h2 className="shelf-label">
               Últimos episódios{" "}
               <span className="shelf-label-data">{latest.length} novos</span>
@@ -113,7 +82,7 @@ export default async function HomePage() {
           </section>
 
           {trending.length > 0 && (
-            <section className="mb-8" aria-label="Em alta">
+            <section className="reveal mb-8" style={{ animationDelay: "180ms" }} aria-label="Em alta">
               <h2 className="shelf-label">
                 Em alta{" "}
                 <span className="shelf-label-data">{trending.length} títulos</span>
@@ -129,12 +98,12 @@ export default async function HomePage() {
           <AdSlot
             slot="0000000001"
             format="horizontal"
-            className="mb-8 min-h-[90px]"
+            className="reveal mb-8 min-h-[90px]"
             label="Publicidade"
           />
 
           {recent.length > 0 && (
-            <section className="mb-8" aria-label="Recentemente adicionados">
+            <section className="reveal mb-8" style={{ animationDelay: "240ms" }} aria-label="Recentemente adicionados">
               <h2 className="shelf-label">
                 Recentemente adicionados{" "}
                 <span className="shelf-label-data">{recent.length} títulos</span>
@@ -148,7 +117,7 @@ export default async function HomePage() {
           )}
 
           {animes.length > 0 && (
-            <section aria-label="Destaques da semana">
+            <section className="reveal" style={{ animationDelay: "300ms" }} aria-label="Destaques da semana">
               <h2 className="shelf-label">Destaques da semana</h2>
               <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
                 {animes.slice(0, 6).map((anime) => (
@@ -161,7 +130,7 @@ export default async function HomePage() {
           <AdSlot
             slot="0000000002"
             format="horizontal"
-            className="mt-8 min-h-[90px]"
+            className="reveal mt-8 min-h-[90px]"
             label="Publicidade"
           />
       </div>

@@ -38,7 +38,8 @@ export function FavoriteButton({ slug }: FavoriteButtonProps) {
   if (!user) {
     return (
       <a href="/login" className="btn-ghost">
-        ♡ Favoritar
+        <HeartIcon filled={false} />
+        Favoritar
       </a>
     );
   }
@@ -49,7 +50,28 @@ export function FavoriteButton({ slug }: FavoriteButtonProps) {
       disabled={loading}
       className={`btn-ice ${favorited ? "opacity-80" : ""}`}
     >
-      {loading ? "..." : favorited ? "♥ Favoritado" : "♡ Favoritar"}
+      {loading ? (
+        "..."
+      ) : (
+        <>
+          <HeartIcon filled={favorited} />
+          {favorited ? "Favoritado" : "Favoritar"}
+        </>
+      )}
     </button>
+  );
+}
+
+function HeartIcon({ filled }: { filled: boolean }) {
+  return (
+    <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true">
+      <path
+        d="M8 13.5S1.5 9.7 1.5 5.5A3.3 3.3 0 0 1 8 4a3.3 3.3 0 0 1 6.5 1.5C14.5 9.7 8 13.5 8 13.5Z"
+        fill={filled ? "currentColor" : "none"}
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinejoin="round"
+      />
+    </svg>
   );
 }

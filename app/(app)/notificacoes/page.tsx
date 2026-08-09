@@ -49,7 +49,7 @@ export default function NotificationsPage() {
             <a key={n.id} href={n.linkUrl ?? "#"} onClick={() => !n.read && markRead(n.id)} className={`block border border-hairline p-4 hover:border-ice ${n.read ? "bg-panel" : "border-ice/50 bg-ice/5"}`}>
               <p className="font-sans text-body font-medium text-ice">{n.title}</p>
               {n.body && <p className="mt-1 text-body-sm text-mist">{n.body}</p>}
-              <p className="mt-2 font-display text-caption text-mist">{new Date(n.createdAt).toLocaleString("pt-BR")}</p>
+              <p className="mt-2 font-mono text-caption text-mist">{new Date(n.createdAt).toLocaleString("pt-BR")}</p>
             </a>
           ))}
         </div>
