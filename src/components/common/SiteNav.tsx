@@ -18,11 +18,9 @@ export interface NavItem {
 export function SiteNav() {
   const { user } = useAuth();
   const [openGroup, setOpenGroup] = useState<string | null>(null);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const navRef = useRef<HTMLElement | null>(null);
 
-  // Links internos. Rotas de gênero/temporada ainda não implementadas (#) —
-  // melhor que apontar para um domínio externo inexistente.
-  // "Painel admin" só existe para quem tem papel privilegiado.
   const navItems: NavItem[] = [
     {
       title: "Animes",
@@ -56,15 +54,18 @@ export function SiteNav() {
     },
   ];
 
-  // Fecha o dropdown ao clicar fora ou ao Esc — floor de qualidade.
   useEffect(() => {
     function onClick(e: MouseEvent) {
       if (navRef.current && !navRef.current.contains(e.target as Node)) {
         setOpenGroup(null);
+        setMobileOpen(false);
       }
     }
     function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") setOpenGroup(null);
+      if (e.key === "Escape") {
+        setOpenGroup(null);
+        setMobileOpen(false);
+      }
     }
     document.addEventListener("mousedown", onClick);
     document.addEventListener("keydown", onKey);
@@ -80,7 +81,8 @@ export function SiteNav() {
       className="border-b border-hairline bg-ink"
       aria-label="Navegação principal"
     >
-      <div className="mx-auto flex max-w-shelf items-stretch gap-1 px-4">
+      {/* Desktop nav */}
+      <div className="mx-auto hidden max-w-shelf items-stretch gap-1 px-4 sm:flex">
         {navItems.map((item) => {
           const isOpen = openGroup === item.title;
           return (
@@ -95,26 +97,17 @@ export function SiteNav() {
               >
                 {item.title}
                 <svg
-                  width="10"
-                  height="10"
-                  viewBox="0 0 10 10"
-                  fill="none"
+                  width="10" height="10" viewBox="0 0 10 10" fill="none"
                   aria-hidden="true"
                   className={`transition-transform ${isOpen ? "rotate-180" : ""}`}
                 >
-                  <path
-                    d="M2 3.5L5 6.5L8 3.5"
-                    stroke="currentColor"
-                    strokeWidth="1.4"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
+                  <path d="M2 3.5L5 6.5L8 3.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               </button>
               {isOpen && (
                 <div
                   role="menu"
-                  className="absolute left-0 top-full z-50 min-w-40 border border-hairline bg-panel py-1"
+                  className="absolute left-0 top-full z-50 min-w-40 border border-hairline bg-panel py-1 shadow-lg shadow-black/40"
                 >
                   {item.links.map((link) => (
                     <a
@@ -134,6 +127,54 @@ export function SiteNav() {
           );
         })}
       </div>
+
+      {/* Mobile nav toggle */}
+      <div className="mx-auto flex max-w-shelf items-center px-4 sm:hidden">
+        <button
+          type="button"
+          onClick={() => setMobileOpen(!mobileOpen)}
+          className="flex items-center gap-2 py-3 text-body-sm font-medium text-mist transition-colors hover:text-ice"
+          aria-expanded={mobileOpen}
+          aria-label="Menu de navegação"
+        >
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" className="text-mist">
+            {mobileOpen ? (
+              <path d="M5 5l10 10M15 5L5 15" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+            ) : (
+              <path d="M3 6h14M3 10h14M3 14h14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+            )}
+          </svg>
+          Navegação
+        </button>
+      </div>
+
+      {/* Mobile nav drawer */}
+      {mobileOpen && (
+        <div className="border-t border-hairline px-4 py-3 sm:hidden">
+          {navItems.map((item) => (
+            <div key={item.title} className="mb-3">
+              <h2 className="mb-1.5 font-display text-caption uppercase tracking-wider text-mist">
+                {item.title}
+              </h2>
+              <ul className="space-y-0.5">
+                {item.links.map((link) => (
+                  <li key={link.href + link.title}>
+                    <a
+                      href={link.href}
+                      target={link.target || "_self"}
+                      rel={link.target === "_blank" ? "noopener noreferrer" : undefined}
+                      className="block py-1.5 text-body-sm text-mist transition-colors hover:text-ice"
+                      onClick={() => setMobileOpen(false)}
+                    >
+                      {link.title}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+      )}
     </nav>
   );
 }

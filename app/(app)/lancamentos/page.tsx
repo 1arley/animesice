@@ -3,6 +3,8 @@ import type { Anime } from "@/types";
 import { serverFetchJson } from "@/lib/api-server";
 import type { AnimeFilters } from "@/types";
 
+export const dynamic = "force-dynamic";
+
 export default async function LancamentosPage({
   searchParams,
 }: {

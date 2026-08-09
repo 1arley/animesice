@@ -2,6 +2,8 @@ import { AnimeCard } from "@/components/common/AnimeCard";
 import type { GenreAnimesResponse } from "@/types";
 import { serverFetchJson } from "@/lib/api-server";
 
+export const dynamic = "force-dynamic";
+
 export default async function GenrePage({
   params,
   searchParams,
