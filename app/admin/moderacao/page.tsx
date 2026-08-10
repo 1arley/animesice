@@ -174,11 +174,11 @@ export default function ModerationPage() {
                         <p className="mt-1 text-body-sm text-mist">{report.notes}</p>
                       )}
                       <p className="mt-2 font-mono text-caption text-mist">
-                        Denunciante: {report.reporter.name ?? "—"} · {new Date(report.createdAt).toLocaleString("pt-BR")}
+                        Denunciante: {report.reporter.userName ?? report.reporter.name ?? "—"} · {new Date(report.createdAt).toLocaleString("pt-BR")}
                       </p>
                       {report.moderator && (
                         <p className="font-mono text-caption text-mist">
-                          Moderador: {report.moderator.name ?? "—"} · {new Date(report.resolvedAt ?? "").toLocaleString("pt-BR")}
+                          Moderador: {report.moderator.userName ?? report.moderator.name ?? "—"} · {new Date(report.resolvedAt ?? "").toLocaleString("pt-BR")}
                         </p>
                       )}
                       {report.moderationNote && (

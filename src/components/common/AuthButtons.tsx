@@ -3,6 +3,14 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
+import { Avatar } from "@/components/common/Avatar";
+
+function displayName(user: {
+  userName: string | null;
+  name: string | null;
+}) {
+  return user.userName || user.name || "Usuário";
+}
 
 export function AuthButtons() {
   const { user, logout, logoutError } = useAuth();
@@ -15,8 +23,12 @@ export function AuthButtons() {
   if (user) {
     return (
       <div className="flex items-center gap-3">
-        <Link href="/settings" className="text-body-sm text-mist transition-colors hover:text-ice">
-          {user.name}
+        <Link
+          href="/settings"
+          className="flex items-center gap-2 text-body-sm text-mist transition-colors hover:text-ice"
+        >
+          <Avatar name={displayName(user)} src={user.avatar} size={28} />
+          {displayName(user)}
         </Link>
         <button
           onClick={async () => {

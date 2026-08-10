@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { isPrivileged } from "@/lib/role";
+import { Avatar } from "@/components/common/Avatar";
 
 export interface NavLink {
   href: string;
@@ -15,11 +16,29 @@ export interface NavItem {
   links: NavLink[];
 }
 
+function displayName(user: {
+  userName: string | null;
+  name: string | null;
+}) {
+  return user.userName || user.name || "Usuário";
+}
+
 export function SiteNav() {
   const { user } = useAuth();
   const [openGroup, setOpenGroup] = useState<string | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const navRef = useRef<HTMLElement | null>(null);
+
+  const contaLinks: NavLink[] = user
+    ? [
+        { href: "/settings", title: "Configurações" },
+        { href: "/biblioteca", title: "Minha biblioteca" },
+      ]
+    : [
+        { href: "/biblioteca", title: "Minha biblioteca" },
+        { href: "/login", title: "Entrar" },
+        { href: "/register", title: "Registrar" },
+      ];
 
   const navItems: NavItem[] = [
     {
@@ -46,11 +65,7 @@ export function SiteNav() {
     },
     {
       title: "Conta",
-      links: [
-        { href: "/biblioteca", title: "Minha biblioteca" },
-        { href: "/login", title: "Entrar" },
-        { href: "/register", title: "Registrar" },
-      ],
+      links: contaLinks,
     },
   ];
 
@@ -126,6 +141,17 @@ export function SiteNav() {
             </div>
           );
         })}
+        {user && (
+          <a
+            href="/settings"
+            className="ml-auto flex items-center gap-2 px-3 py-3 font-mono text-body-sm uppercase tracking-wider text-mist transition-colors hover:text-ice"
+          >
+            <Avatar name={displayName(user)} src={user.avatar} size={24} />
+            <span className="max-w-40 truncate normal-case">
+              {displayName(user)}
+            </span>
+          </a>
+        )}
       </div>
 
       {/* Mobile nav toggle */}
@@ -151,6 +177,18 @@ export function SiteNav() {
       {/* Mobile nav drawer */}
       {mobileOpen && (
         <div className="border-t border-hairline px-4 py-3 sm:hidden">
+          {user && (
+            <a
+              href="/settings"
+              onClick={() => setMobileOpen(false)}
+              className="mb-4 flex items-center gap-3 border-b border-hairline pb-4"
+            >
+              <Avatar name={displayName(user)} src={user.avatar} size={32} />
+              <span className="font-sans text-body-sm font-medium text-ice">
+                {displayName(user)}
+              </span>
+            </a>
+          )}
           {navItems.map((item) => (
             <div key={item.title} className="mb-3">
               <h2 className="mb-1.5 font-mono text-caption uppercase tracking-wider text-mist">

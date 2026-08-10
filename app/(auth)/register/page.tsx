@@ -41,6 +41,7 @@ export default function RegisterPage() {
   const router = useRouter();
   const { register } = useAuth();
   const [name, setName] = useState("");
+  const [userName, setUserName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -68,6 +69,14 @@ export default function RegisterPage() {
       .catch((e) => setError((e as Error).message));
   }, []);
 
+  function userNameError(): string | null {
+    if (!userName) return null;
+    if (!/^[a-z0-9_-]{3,20}$/.test(userName)) {
+      return "Apelido: 3-20 caracteres, apenas minúsculas, números, _ ou -.";
+    }
+    return null;
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
@@ -78,6 +87,12 @@ export default function RegisterPage() {
       return;
     }
 
+    const unErr = userNameError();
+    if (unErr) {
+      setError(unErr);
+      return;
+    }
+
     if (!token) {
       setError("Marque a caixa do captcha para continuar.");
       return;
@@ -85,7 +100,7 @@ export default function RegisterPage() {
 
     setLoading(true);
     try {
-      await register(name, email, password, token);
+      await register(name, email, password, token, userName || undefined);
       router.push(`/verificar-email?email=${encodeURIComponent(email)}`);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Erro ao cadastrar. Tente novamente.");
@@ -125,6 +140,28 @@ export default function RegisterPage() {
               autoComplete="name"
               className="field"
             />
+          </label>
+
+          <label className="block">
+            <span className="mb-1.5 block font-sans text-caption uppercase tracking-wider text-mist">
+              Apelido{" "}
+              <span className="normal-case text-mist/70">(opcional)</span>
+            </span>
+            <input
+              type="text"
+              placeholder="ex: john_doe"
+              value={userName}
+              onChange={(e) =>
+                setUserName(
+                  e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, ""),
+                )
+              }
+              autoComplete="username"
+              className="field"
+            />
+            <span className="mt-1 block font-mono text-caption text-mist/70">
+              3-20 caracteres: minúsculas, números, _ ou -. Pode definir depois.
+            </span>
           </label>
 
           <label className="block">

@@ -191,7 +191,7 @@ export default function RoomPage({
             {messages.map((msg) => (
               <div key={msg.id} className="text-body-sm">
                 <span className="font-sans font-medium text-ice">
-                  {msg.user.name ?? "Anônimo"}:
+                  {msg.user.userName ?? msg.user.name ?? "Anônimo"}:
                 </span>{" "}
                 <span className="text-mist">{msg.content}</span>
               </div>
