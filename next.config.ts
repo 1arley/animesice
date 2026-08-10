@@ -6,12 +6,12 @@ import type { NextConfig } from "next";
  */
 const cspHeader = `
   default-src 'self';
-  script-src 'self' 'unsafe-inline' 'unsafe-eval' https://pagead2.googlesyndication.com https://fundingchoicesmessages.google.com https://al5sm.com https://static.cloudflareinsights.com https://ep1.adtrafficquality.google https://ep2.adtrafficquality.google;
+  script-src 'self' 'unsafe-inline' 'unsafe-eval' https://pagead2.googlesyndication.com https://fundingchoicesmessages.google.com https://al5sm.com https://static.cloudflareinsights.com https://ep1.adtrafficquality.google https://ep2.adtrafficquality.google https://challenges.cloudflare.com;
   style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
   img-src 'self' blob: data: https://cdn.myanimelist.net https://*.myanimelist.net https://meusanimes.blog https://*.meusanimes.blog https://pagead2.googlesyndication.com https://*.doubleclick.net https://*.google.com https://*.google.com.br;
   font-src 'self' data: https://fonts.gstatic.com;
-  connect-src 'self' https://api.animesice.app https://pagead2.googlesyndication.com https://fundingchoicesmessages.google.com https://al5sm.com https://static.cloudflareinsights.com https://ep1.adtrafficquality.google https://ep2.adtrafficquality.google;
-  frame-src 'self' https://googleads.g.doubleclick.net https://pagead2.googlesyndication.com https://fundingchoicesmessages.google.com https://*.google.com;
+  connect-src 'self' https://api.animesice.app https://pagead2.googlesyndication.com https://fundingchoicesmessages.google.com https://al5sm.com https://static.cloudflareinsights.com https://ep1.adtrafficquality.google https://ep2.adtrafficquality.google https://challenges.cloudflare.com;
+  frame-src 'self' https://googleads.g.doubleclick.net https://pagead2.googlesyndication.com https://fundingchoicesmessages.google.com https://*.google.com https://challenges.cloudflare.com;
   object-src 'none';
   base-uri 'self';
   form-action 'self';
