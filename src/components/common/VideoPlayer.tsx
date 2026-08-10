@@ -19,9 +19,19 @@ interface VideoPlayerProps {
   episodeNumber?: number;
 }
 
+/** Embed do YouTube (youtube-nocookie.com/embed/<id>): fonte sem .mp4
+ *  server-side (YouTube bloqueia IPs datacenter). Reproduz via iframe no
+ *  browser do usuário — mesmo mecanismo que a fonte (meusanimes) usa. */
+export function isYouTubeEmbed(url: string): boolean {
+  return /youtube(?:-nocookie)?\.com\/(?:embed|watch|shorts)\//i.test(url);
+}
+
 export function VideoPlayer({ src, posterUrl, embedUrl, animeSlug, episodeNumber }: VideoPlayerProps) {
   if (embedUrl && isProxyEmbed(embedUrl)) {
     return <EmbedPlayer embedUrl={embedUrl} animeSlug={animeSlug} episodeNumber={episodeNumber} />;
+  }
+  if (src && isYouTubeEmbed(src)) {
+    return <EmbedPlayer embedUrl={src} animeSlug={animeSlug} episodeNumber={episodeNumber} />;
   }
   return <NativeVideoPlayer src={src} posterUrl={posterUrl} animeSlug={animeSlug} episodeNumber={episodeNumber} />;
 }
