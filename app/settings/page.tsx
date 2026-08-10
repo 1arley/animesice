@@ -1,21 +1,44 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { api, ApiError } from "@/lib/api";
 import { Header } from "@/components/common/Header";
 import { Footer } from "@/components/common/Footer";
 import { NotificationPreferencesSection } from "@/components/common/NotificationPreferencesSection";
 import { passwordError } from "@/lib/password";
+import { Avatar } from "@/components/common/Avatar";
+
+const AVATAR_MAX_BYTES = 50 * 1024;
+const AVATAR_ACCEPT = ["image/jpeg", "image/jpg", "image/png"];
+
+function displayName(user: { userName: string | null; name: string | null }) {
+  return user.userName || user.name || "Usuário";
+}
 
 export default function SettingsPage() {
+  const router = useRouter();
   const { user, loading, logout, refreshUser } = useAuth();
 
   const [newName, setNewName] = useState(user?.name ?? "");
+  const [newUserName, setNewUserName] = useState(user?.userName ?? "");
   const [profileMsg, setProfileMsg] = useState("");
   const [profileErr, setProfileErr] = useState("");
   const [profileLoading, setProfileLoading] = useState(false);
+
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarMsg, setAvatarMsg] = useState("");
+  const [avatarErr, setAvatarErr] = useState("");
+  const [avatarLoading, setAvatarLoading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [bio, setBio] = useState(user?.bio ?? "");
+  const [bioMsg, setBioMsg] = useState("");
+  const [bioErr, setBioErr] = useState("");
+  const [bioLoading, setBioLoading] = useState(false);
 
   const [newEmail, setNewEmail] = useState("");
   const [emailPassword, setEmailPassword] = useState("");
@@ -42,7 +65,7 @@ export default function SettingsPage() {
     return (
       <div className="flex min-h-screen items-center justify-center px-4">
         <div className="max-w-sm border border-hairline bg-panel p-8 text-center">
-          <p className="text-body text-mist mb-4">
+          <p className="text-body mb-4 text-mist">
             Você precisa estar logado para acessar as configurações.
           </p>
           <Link href="/login" className="btn-ice w-full justify-center">
@@ -59,13 +82,101 @@ export default function SettingsPage() {
     setProfileErr("");
     setProfileLoading(true);
     try {
-      await api.updateProfile(newName);
+      await api.updateProfile({
+        name: newName,
+        ...(newUserName ? { userName: newUserName } : {}),
+      });
       await refreshUser();
-      setProfileMsg("Nome atualizado com sucesso.");
+      setProfileMsg("Perfil atualizado com sucesso.");
     } catch (err) {
-      setProfileErr(err instanceof ApiError ? err.message : "Erro ao atualizar.");
+      setProfileErr(
+        err instanceof ApiError ? err.message : "Erro ao atualizar.",
+      );
     } finally {
       setProfileLoading(false);
+    }
+  }
+
+  function handleFilePicked(e: React.ChangeEvent<HTMLInputElement>) {
+    setAvatarMsg("");
+    setAvatarErr("");
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const mime = file.type.toLowerCase();
+    if (!AVATAR_ACCEPT.includes(mime)) {
+      setAvatarErr("Formato inválido. Aceitos: JPG ou PNG.");
+      return;
+    }
+    if (file.size > AVATAR_MAX_BYTES) {
+      setAvatarErr("Imagem muito grande. Máximo: 50KB.");
+      return;
+    }
+
+    setAvatarFile(file);
+    setAvatarPreview(URL.createObjectURL(file));
+  }
+
+  async function handleAvatarUpload(e: React.FormEvent) {
+    e.preventDefault();
+    if (!avatarFile) return;
+    setAvatarMsg("");
+    setAvatarErr("");
+    setAvatarLoading(true);
+    try {
+      await api.uploadAvatar(avatarFile);
+      await refreshUser();
+      setAvatarFile(null);
+      setAvatarPreview(null);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      setAvatarMsg("Avatar atualizado com sucesso.");
+    } catch (err) {
+      setAvatarErr(
+        err instanceof ApiError ? err.message : "Erro ao enviar a imagem.",
+      );
+    } finally {
+      setAvatarLoading(false);
+    }
+  }
+
+  function cancelAvatarPreview() {
+    setAvatarFile(null);
+    setAvatarPreview(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  }
+
+  async function handleAvatarRemove() {
+    setAvatarMsg("");
+    setAvatarErr("");
+    setAvatarLoading(true);
+    try {
+      await api.deleteAvatar();
+      await refreshUser();
+      setAvatarMsg("Avatar removido.");
+    } catch (err) {
+      setAvatarErr(
+        err instanceof ApiError ? err.message : "Erro ao remover a imagem.",
+      );
+    } finally {
+      setAvatarLoading(false);
+    }
+  }
+
+  async function handleBioSave(e: React.FormEvent) {
+    e.preventDefault();
+    setBioMsg("");
+    setBioErr("");
+    setBioLoading(true);
+    try {
+      await api.updateProfileMeta({ bio });
+      await refreshUser();
+      setBioMsg("Bio atualizada com sucesso.");
+    } catch (err) {
+      setBioErr(
+        err instanceof ApiError ? err.message : "Erro ao salvar a bio.",
+      );
+    } finally {
+      setBioLoading(false);
     }
   }
 
@@ -130,7 +241,7 @@ export default function SettingsPage() {
               <div className="mb-4">
                 <h2 className="font-display text-display-lg text-snow">Perfil</h2>
                 <p className="text-body-sm text-mist">
-                  Atualize seu nome de exibição.
+                  Nome de exibição e apelido público.
                 </p>
               </div>
 
@@ -159,6 +270,27 @@ export default function SettingsPage() {
                     className="field"
                   />
                 </label>
+                <label className="block">
+                  <span className="mb-1.5 block font-sans text-caption uppercase tracking-wider text-mist">
+                    Apelido{" "}
+                    <span className="normal-case text-mist/70">(opcional)</span>
+                  </span>
+                  <input
+                    type="text"
+                    placeholder="ex: john_doe"
+                    value={newUserName}
+                    onChange={(e) =>
+                      setNewUserName(
+                        e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, ""),
+                      )
+                    }
+                    autoComplete="username"
+                    className="field"
+                  />
+                  <span className="mt-1 block font-mono text-caption text-mist/70">
+                    3-20 caracteres: minúsculas, números, _ ou -.
+                  </span>
+                </label>
                 <button
                   type="submit"
                   disabled={profileLoading}
@@ -166,6 +298,127 @@ export default function SettingsPage() {
                 >
                   {profileLoading ? "Salvando..." : "Salvar"}
                 </button>
+              </form>
+            </section>
+
+            {/* ── Avatar ── */}
+            <section className="border border-hairline bg-panel p-6">
+              <div className="mb-4">
+                <h2 className="font-display text-display-lg text-snow">Avatar</h2>
+                <p className="text-body-sm text-mist">
+                  JPG ou PNG, até 50KB. Sem foto, usamos a inicial do seu
+                  nome.
+                </p>
+              </div>
+
+              {avatarMsg && (
+                <div className="mb-4 border border-ice/40 bg-ice/10 p-3 text-body-sm text-ice">
+                  {avatarMsg}
+                </div>
+              )}
+              {avatarErr && (
+                <div className="mb-4 border border-signal/40 bg-signal/10 p-3 text-body-sm text-signal">
+                  {avatarErr}
+                </div>
+              )}
+
+              <div className="flex items-center gap-4">
+                <Avatar
+                  name={displayName(user)}
+                  src={avatarPreview ?? user.avatar}
+                  size={72}
+                />
+                <div className="space-y-2">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png"
+                    className="hidden"
+                    onChange={handleFilePicked}
+                  />
+                  {avatarPreview && avatarFile ? (
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={handleAvatarUpload}
+                        disabled={avatarLoading}
+                        className="btn-ice"
+                      >
+                        {avatarLoading ? "Enviando..." : "Salvar nova foto"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={cancelAvatarPreview}
+                        disabled={avatarLoading}
+                        className="btn-ghost"
+                      >
+                        Cancelar
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="btn-ghost"
+                    >
+                      Alterar foto
+                    </button>
+                  )}
+                  {user.avatar && !avatarPreview && (
+                    <button
+                      type="button"
+                      onClick={handleAvatarRemove}
+                      disabled={avatarLoading}
+                      className="btn-ghost"
+                    >
+                      Remover foto
+                    </button>
+                  )}
+                </div>
+              </div>
+            </section>
+
+            {/* ── Bio ── */}
+            <section className="border border-hairline bg-panel p-6">
+              <div className="mb-4">
+                <h2 className="font-display text-display-lg text-snow">Bio</h2>
+                <p className="text-body-sm text-mist">
+                  Sobre você — aparece no seu perfil público.
+                </p>
+              </div>
+
+              {bioMsg && (
+                <div className="mb-4 border border-ice/40 bg-ice/10 p-3 text-body-sm text-ice">
+                  {bioMsg}
+                </div>
+              )}
+              {bioErr && (
+                <div className="mb-4 border border-signal/40 bg-signal/10 p-3 text-body-sm text-signal">
+                  {bioErr}
+                </div>
+              )}
+
+              <form onSubmit={handleBioSave} className="space-y-4">
+                <textarea
+                  value={bio}
+                  onChange={(e) => setBio(e.target.value.slice(0, 500))}
+                  maxLength={500}
+                  rows={4}
+                  placeholder="Fale um pouco sobre você..."
+                  className="field resize-none"
+                />
+                <div className="flex items-center justify-between gap-4">
+                  <span className="font-mono text-caption text-mist/70">
+                    {bio.length}/500
+                  </span>
+                  <button
+                    type="submit"
+                    disabled={bioLoading}
+                    className="btn-ice"
+                  >
+                    {bioLoading ? "Salvando..." : "Salvar bio"}
+                  </button>
+                </div>
               </form>
             </section>
 
@@ -348,7 +601,10 @@ export default function SettingsPage() {
               </dl>
               <div className="mt-4 border-t border-hairline pt-4">
                 <button
-                  onClick={logout}
+                  onClick={async () => {
+                    await logout();
+                    router.push("/");
+                  }}
                   className="btn-ghost"
                 >
                   Encerrar sessão

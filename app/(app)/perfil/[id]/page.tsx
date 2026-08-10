@@ -20,10 +20,13 @@ export default function PublicProfilePage({ params }: { params: Promise<{ id: st
       <section className="max-w-2xl border border-hairline bg-panel p-6">
         <div className="flex items-center gap-4">
           <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden bg-hairline font-mono text-display-lg text-mist">
-            {profile.avatar ? <img src={profile.avatar} alt="" className="h-full w-full object-cover" /> : (profile.name ?? "?")[0]?.toUpperCase()}
+            {profile.avatar ? <img src={profile.avatar} alt="" className="h-full w-full object-cover" /> : (profile.userName ?? profile.name ?? "?")[0]?.toUpperCase()}
           </div>
           <div>
-            <h1 className="font-display text-display-lg text-ice">{profile.name ?? "Usuário"}</h1>
+            <h1 className="font-display text-display-lg text-ice">{profile.userName ?? profile.name ?? "Usuário"}</h1>
+            {profile.userName && profile.name && (
+              <p className="text-body-sm text-mist">{profile.name}</p>
+            )}
             <p className="text-body-sm text-mist">Membro desde {new Date(profile.createdAt).toLocaleDateString("pt-BR")}</p>
           </div>
         </div>

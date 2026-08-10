@@ -14,7 +14,7 @@ interface AuthContextValue {
   user: User | null;
   loading: boolean;
   login: (email: string, password: string, turnstileToken?: string) => Promise<void>;
-  register: (name: string, email: string, password: string, turnstileToken?: string) => Promise<RegisterResponse>;
+  register: (name: string, email: string, password: string, turnstileToken?: string, userName?: string) => Promise<RegisterResponse>;
   logout: () => Promise<void>;
   logoutError: string | null;
   refreshUser: () => Promise<void>;
@@ -55,8 +55,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const register = useCallback(
-    async (name: string, email: string, password: string, turnstileToken?: string) => {
-      return await api.register({ name, email, password, turnstileToken });
+    async (name: string, email: string, password: string, turnstileToken?: string, userName?: string) => {
+      return await api.register({ name, email, password, turnstileToken, ...(userName ? { userName } : {}) });
     },
     [],
   );

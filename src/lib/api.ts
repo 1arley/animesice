@@ -42,6 +42,9 @@ export interface User {
   id: string;
   email: string;
   name: string;
+  userName: string | null;
+  avatar: string | null;
+  bio: string | null;
   role: string;
   createdAt: string;
   updatedAt: string;
@@ -160,7 +163,13 @@ async function request<T>(
 }
 
 export const api = {
-  register: (body: { name: string; email: string; password: string; turnstileToken?: string }) =>
+  register: (body: {
+    name: string;
+    email: string;
+    password: string;
+    userName?: string;
+    turnstileToken?: string;
+  }) =>
     request<RegisterResponse>("/auth/register", {
       method: "POST",
       body: JSON.stringify(body),
@@ -221,10 +230,10 @@ export const api = {
       body: JSON.stringify({ token, newPassword }),
     }),
 
-  updateProfile: (name: string) =>
+  updateProfile: (body: { name?: string; userName?: string }) =>
     request<User>("/auth/update-profile", {
       method: "POST",
-      body: JSON.stringify({ name }),
+      body: JSON.stringify(body),
     }),
 
   // --- Catálogo (públicos) ---
@@ -482,8 +491,30 @@ export const api = {
   getPublicProfile: (userId: string) =>
     request<PublicUserProfile>(`/user/${userId}/profile`),
 
-  updateProfileMeta: (data: { avatar?: string; bio?: string }) =>
+  updateProfileMeta: (data: { avatar?: string; bio?: string; userName?: string }) =>
     request<User>(`/user/me/profile-meta`, { method: "POST", body: JSON.stringify(data) }),
+
+  uploadAvatar: async (file: File): Promise<User> => {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const res = await fetch(`${API_URL}/user/me/avatar`, {
+      method: "POST",
+      credentials: "include",
+      body: formData,
+    });
+
+    const data = await res.json().catch(() => null);
+
+    if (!res.ok) {
+      throw new ApiError(res.status, readErrorMessage(data));
+    }
+
+    return data as User;
+  },
+
+  deleteAvatar: () =>
+    request<User>(`/user/me/avatar`, { method: "DELETE" }),
 
   getRelatedAnime: (slug: string) =>
     request<Anime[]>(`/anime/${slug}/related`),
@@ -613,6 +644,7 @@ export interface RoomMessageItem {
   user: {
     id: string;
     name: string | null;
+    userName: string | null;
     avatar: string | null;
   };
 }

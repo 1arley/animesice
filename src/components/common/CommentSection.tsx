@@ -1,10 +1,10 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import Image from "next/image";
 import { useAuth } from "@/lib/auth-context";
 import { api, ApiError } from "@/lib/api";
 import type { CommentItem } from "@/types";
+import { Avatar } from "@/components/common/Avatar";
 
 interface CommentSectionProps {
   animeId?: string;
@@ -109,14 +109,21 @@ export function CommentSection({ animeId, episodeId, title = "Comentários" }: C
 
       {user ? (
         <form onSubmit={handleSubmit} className="mb-6">
-          <textarea
-            value={newComment}
-            onChange={(e) => setNewComment(e.target.value)}
-            placeholder="Escreva um comentário..."
-            maxLength={1000}
-            rows={3}
-            className="field w-full resize-none"
-          />
+          <div className="flex items-start gap-3">
+            <Avatar
+              name={user.userName || user.name}
+              src={user.avatar}
+              size={32}
+            />
+            <textarea
+              value={newComment}
+              onChange={(e) => setNewComment(e.target.value)}
+              placeholder="Escreva um comentário..."
+              maxLength={1000}
+              rows={3}
+              className="field w-full resize-none"
+            />
+          </div>
           <div className="mt-2 flex items-center justify-between">
             <span className="text-caption text-mist">
               {newComment.length}/1000
@@ -231,19 +238,15 @@ function CommentItem({
   return (
     <div className="border-l-2 border-hairline pl-4">
       <div className="flex items-start gap-3">
-        <div className="relative h-8 w-8 shrink-0 overflow-hidden bg-hairline">
-          {comment.user.avatar ? (
-            <Image src={comment.user.avatar} alt="" fill sizes="32px" className="object-cover" />
-          ) : (
-            <div className="flex h-full w-full items-center justify-center font-mono text-caption text-mist">
-              {(comment.user.name ?? "?")[0]?.toUpperCase()}
-            </div>
-          )}
-        </div>
+        <Avatar
+          name={comment.user.userName || comment.user.name}
+          src={comment.user.avatar}
+          size={32}
+        />
         <div className="flex-1">
           <div className="flex items-center gap-2">
             <span className="font-sans text-body-sm font-medium text-ice">
-              {comment.user.name ?? "Anônimo"}
+              {comment.user.userName || comment.user.name || "Anônimo"}
             </span>
             <span className="font-mono text-caption text-mist">
               {new Date(comment.createdAt).toLocaleDateString("pt-BR")}
@@ -316,8 +319,13 @@ function CommentItem({
               {replies.map((r) => (
                 <div key={r.id} className="border-l-2 border-hairline pl-3">
                   <div className="flex items-center gap-2">
+                    <Avatar
+                      name={r.user.userName || r.user.name}
+                      src={r.user.avatar}
+                      size={20}
+                    />
                     <span className="font-sans text-body-sm font-medium text-ice">
-                      {r.user.name ?? "Anônimo"}
+                      {r.user.userName || r.user.name || "Anônimo"}
                     </span>
                     <span className="font-mono text-caption text-mist">
                       {new Date(r.createdAt).toLocaleDateString("pt-BR")}

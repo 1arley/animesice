@@ -171,6 +171,7 @@ export interface CommentItem {
   user: {
     id: string;
     name: string | null;
+    userName: string | null;
     avatar: string | null;
   };
   animeId: string | null;
@@ -199,6 +200,7 @@ export interface CommentRepliesResponse {
 export interface PublicUserProfile {
   id: string;
   name: string | null;
+  userName: string | null;
   avatar: string | null;
   bio: string | null;
   createdAt: string;
@@ -299,9 +301,9 @@ export type ModerationActionType = 'WARN' | 'MUTE' | 'BAN' | 'DELETE_CONTENT';
 export interface ReportItem {
   id: string;
   reporterId: string;
-  reporter: { id: string; name: string | null };
+  reporter: { id: string; name: string | null; userName: string | null };
   moderatorId: string | null;
-  moderator: { id: string; name: string | null } | null;
+  moderator: { id: string; name: string | null; userName: string | null } | null;
   targetType: ReportTargetType;
   targetId: string;
   reason: ReportReason;
@@ -321,9 +323,9 @@ export interface ReportListResponse {
 export interface ModerationActionItem {
   id: string;
   userId: string;
-  user: { id: string; name: string | null };
+  user: { id: string; name: string | null; userName: string | null };
   moderatorId: string;
-  moderator: { id: string; name: string | null };
+  moderator: { id: string; name: string | null; userName: string | null };
   actionType: ModerationActionType;
   reason: string | null;
   expiresAt: string | null;
@@ -336,7 +338,7 @@ export type FeedbackStatus = 'OPEN' | 'ACKNOWLEDGED' | 'RESOLVED' | 'WONT_FIX' |
 export interface AnimeRequestItem {
   id: string;
   userId: string;
-  user: { id: string; name: string | null; avatar: string | null };
+  user: { id: string; name: string | null; userName: string | null; avatar: string | null };
   title: string;
   alternativeTitle: string | null;
   notes: string | null;
@@ -354,7 +356,7 @@ export type FeedbackType = 'SUGGESTION' | 'BUG' | 'REQUEST';
 export interface SiteFeedbackItem {
   id: string;
   userId: string;
-  user: { id: string; name: string | null; avatar: string | null };
+  user: { id: string; name: string | null; userName: string | null; avatar: string | null };
   type: FeedbackType;
   title: string;
   description: string;

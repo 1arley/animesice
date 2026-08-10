@@ -103,7 +103,7 @@ export default function LibraryPage() {
     <div className="mx-auto max-w-shelf px-4 py-8">
       <h1 className="shelf-label">
         Minha biblioteca{" "}
-        <span className="shelf-label-data">{user.name ?? user.email}</span>
+        <span className="shelf-label-data">{user.userName ?? user.name ?? user.email}</span>
       </h1>
 
       <div className="mb-6 flex flex-wrap gap-3 border-b border-hairline">
