@@ -15,10 +15,12 @@ export function Footer() {
     { href: "/", title: "Início" },
     ...(isAdmin ? [{ href: "/admin", title: "Painel admin" }] : []),
   ];
-  const conta: FooterLink[] = [
-    { href: "/login", title: "Entrar" },
-    { href: "/register", title: "Registrar" },
-  ];
+  const conta: FooterLink[] = user
+    ? [{ href: "/settings", title: "Configurações" }]
+    : [
+        { href: "/login", title: "Entrar" },
+        { href: "/register", title: "Registrar" },
+      ];
   const referencia: FooterLink[] = [
     { href: "https://myanimelist.net", title: "MyAnimeList", external: true },
     { href: "https://jikan.moe", title: "Jikan API", external: true },
