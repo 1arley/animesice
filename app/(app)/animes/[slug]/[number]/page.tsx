@@ -132,7 +132,7 @@ export default function WatchPage({
                <CreateRoomButton animeSlug={slug} episodeNumber={episode.number} />
 
                {/* Próximo episódio */}
-               {number != null && <NextEpisode slug={slug} number={number} />}
+               {number != null && <NextEpisode slug={slug} number={number} episodeCount={episode.anime.episodeCount} />}
 
                <CommentSection episodeId={episode.id} title="Discussão do episódio" />
              </>
@@ -143,14 +143,29 @@ export default function WatchPage({
   );
 }
 
-function NextEpisode({ slug, number }: { slug: string; number: number }) {
+function NextEpisode({
+  slug,
+  number,
+  episodeCount,
+}: {
+  slug: string;
+  number: number;
+  episodeCount?: number | null;
+}) {
   const [hasNext, setHasNext] = useState<boolean | null>(null);
   useEffect(() => {
+    // Último episódio conhecido: não consulta o próximo (evita 404 desnecessário
+    // p/ filmes/séries completas). Quando episodeCount é desconhecido, o 404 da
+    // consulta abaixo é tratado como "não há próximo" — nunca como falha.
+    if (episodeCount != null && number >= episodeCount) {
+      setHasNext(false);
+      return;
+    }
     api
       .getEpisode(slug, number + 1)
       .then(() => setHasNext(true))
       .catch(() => setHasNext(false));
-  }, [slug, number]);
+  }, [slug, number, episodeCount]);
   if (hasNext === null || !hasNext) return null;
   return (
     <p className="mt-3">
