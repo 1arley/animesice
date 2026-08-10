@@ -95,6 +95,27 @@ export function readErrorMessage(
   return fallback;
 }
 
+let isRefreshing = false;
+let refreshPromise: Promise<void> | null = null;
+
+async function ensureRefresh(): Promise<void> {
+  if (isRefreshing && refreshPromise) return refreshPromise;
+  isRefreshing = true;
+  refreshPromise = (async () => {
+    try {
+      const res = await fetch(`${API_URL}/auth/refresh`, {
+        method: "POST",
+        credentials: "include",
+      });
+      if (!res.ok) throw new ApiError(res.status, "Sessão expirada.");
+    } finally {
+      isRefreshing = false;
+      refreshPromise = null;
+    }
+  })();
+  return refreshPromise;
+}
+
 async function request<T>(
   path: string,
   options: RequestInit = {},
@@ -104,38 +125,25 @@ async function request<T>(
     ...((options.headers as Record<string, string>) || {}),
   };
 
-  const res = await fetch(`${API_URL}${path}`, {
-    ...options,
-    headers,
-    credentials: "include",
-  });
+  const exec = () =>
+    fetch(`${API_URL}${path}`, {
+      ...options,
+      headers,
+      credentials: "include",
+    });
+
+  let res = await exec();
 
   if (res.status === 401 && !path.startsWith("/auth/")) {
-    // Sem sessão (cookie `role` não-httpOnly do backend ausente), não adianta
-    // tentar refresh: deslogado → erro direto, sem ruído de 401 no console.
     const hasSession =
       typeof document !== "undefined" &&
-      document.cookie
-        .split(";")
-        .some((c) => c.trim().startsWith("role="));
+      document.cookie.split(";").some((c) => c.trim().startsWith("role="));
     if (!hasSession) {
       throw new ApiError(401, "Sessão expirada.");
     }
     try {
-      await fetch(`${API_URL}/auth/refresh`, {
-        method: "POST",
-        credentials: "include",
-      });
-      const retry = await fetch(`${API_URL}${path}`, {
-        ...options,
-        headers,
-        credentials: "include",
-      });
-      const retryData = await retry.json().catch(() => null);
-      if (!retry.ok) {
-        throw new ApiError(retry.status, readErrorMessage(retryData, "Sessão expirada."));
-      }
-      return retryData as T;
+      await ensureRefresh();
+      res = await exec();
     } catch (e) {
       if (e instanceof ApiError) throw e;
       throw new ApiError(401, "Sessão expirada.");
