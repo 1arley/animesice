@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import type { PublicUserProfile } from "@/types";
-import { CommentItem } from "@/components/common/CommentSection";
+import { CommentRow } from "@/components/common/CommentSection";
 import { Modal } from "@/components/common/Modal";
 import Image from "next/image";
 
@@ -31,7 +31,19 @@ export default function PublicProfilePage({ params }: { params: Promise<{ id: st
   const [reportSubmitting, setReportSubmitting] = useState(false);
 
   useEffect(() => {
-    params.then(({ id }) => api.getPublicProfile(id).then(setProfile).catch(() => setError(true)));
+    // params can be a plain object or a Promise depending on SSR vs client usage — normalize both.
+    const load = async () => {
+      try {
+        const p = await (params as any);
+        const id = p?.id ?? (params as any).id;
+        if (!id) throw new Error('missing id');
+        const prof = await api.getPublicProfile(id);
+        setProfile(prof);
+      } catch (e) {
+        setError(true);
+      }
+    };
+    load();
   }, [params]);
 
   useEffect(() => {
@@ -130,7 +142,7 @@ export default function PublicProfilePage({ params }: { params: Promise<{ id: st
             {!loadingList && comments.length === 0 && <div className="border border-hairline bg-panel p-4 text-mist">Nenhum comentário público.</div>}
 
             {comments.map((c: any) => (
-              <CommentItem
+              <CommentRow
                 key={c.id}
                 comment={c}
                 currentUserId={undefined}
