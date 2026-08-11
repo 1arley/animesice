@@ -8,7 +8,7 @@ import { RecommendationsRail } from "@/components/common/RecommendationsRail";
 import { SectionLabel } from "@/components/common/SectionLabel";
 import type { Anime, Episode, Paginated } from "@/types";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 60;
 
 export default async function HomePage() {
   const [animesRes, latestRes, trendingRes, recentRes] = await Promise.all([
