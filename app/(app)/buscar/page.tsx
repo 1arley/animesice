@@ -2,7 +2,7 @@ import { AnimeCard } from "@/components/common/AnimeCard";
 import type { Anime, Genre, Paginated, SortMode } from "@/types";
 import { serverFetchJson } from "@/lib/api-server";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 60;
 
 const YEARS = [2026, 2025, 2024, 2023, 2022, 2021, 2020, 2019, 2018, 2017, 2016, 2015, 2014, 2013, 2012, 2011, 2010, 2009, 2008, 2007, 2006, 2005, 2004, 2003, 2002, 2001, 2000];
 
@@ -241,7 +241,14 @@ export default async function SearchPage({
 
               <nav className="mt-8 flex items-center gap-3" aria-label="Paginação">
                 {page > 1 ? (
-                  <a href={`/buscar?${new URLSearchParams({ ...sp, page: String(page - 1) }).toString()}`} className="btn-ghost">
+                  <a
+                    href={`/buscar?${(() => {
+                      const p = new URLSearchParams(sp as Record<string, string>);
+                      p.set("page", String(page - 1));
+                      return p.toString();
+                    })()}`}
+                    className="btn-ghost"
+                  >
                     ← Anterior
                   </a>
                 ) : (
@@ -251,7 +258,14 @@ export default async function SearchPage({
                   {page} / {totalPages}
                 </span>
                 {page < totalPages ? (
-                  <a href={`/buscar?${new URLSearchParams({ ...sp, page: String(page + 1) }).toString()}`} className="btn-ghost">
+                  <a
+                    href={`/buscar?${(() => {
+                      const p = new URLSearchParams(sp as Record<string, string>);
+                      p.set("page", String(page + 1));
+                      return p.toString();
+                    })()}`}
+                    className="btn-ghost"
+                  >
                     Próxima →
                   </a>
                 ) : (
