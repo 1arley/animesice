@@ -35,6 +35,38 @@ export function Footer() {
             Prateleira de streaming. Não hospedamos vídeo — todo conteúdo é
             provido de terceiros não afiliados.
           </p>
+          <a
+            href="https://ko-fi.com/iarley"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-4 inline-flex items-center gap-2 border border-signal/60 bg-signal/10 px-3 py-2 font-mono text-caption font-medium uppercase tracking-wider text-signal transition-colors hover:bg-signal hover:text-ink"
+          >
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 16 16"
+              fill="none"
+              aria-hidden="true"
+            >
+              <path
+                d="M3 6h7v4.5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6z"
+                stroke="currentColor"
+                strokeWidth="1.3"
+              />
+              <path
+                d="M10 6.5h1.25A1.75 1.75 0 0 1 13 8.25v.5a1.75 1.75 0 0 1-1.75 1.75H10"
+                stroke="currentColor"
+                strokeWidth="1.3"
+              />
+              <path
+                d="M5.5 2.5c0-.5.5-.75.5-1.25M7.75 2.5c0-.5.5-.75.5-1.25"
+                stroke="currentColor"
+                strokeWidth="1.3"
+                strokeLinecap="round"
+              />
+            </svg>
+            Apoie no Ko-fi
+          </a>
         </div>
 
         <FooterCol title="Navegar" links={navigate} />
