@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { isPrivileged } from "@/lib/role";
+import { displayName } from "@/lib/displayName";
 import { Avatar } from "@/components/common/Avatar";
 
 export interface NavLink {
@@ -14,13 +15,6 @@ export interface NavLink {
 export interface NavItem {
   title: string;
   links: NavLink[];
-}
-
-function displayName(user: {
-  userName: string | null;
-  name: string | null;
-}) {
-  return user.userName || user.name || "Usuário";
 }
 
 export function SiteNav() {

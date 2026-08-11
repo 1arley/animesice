@@ -6,35 +6,7 @@ import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
 import { ApiError } from "@/lib/api";
 import { Wordmark } from "@/components/common/Wordmark";
-
-const TURNSTILE_SITEKEY =
-  process.env.NEXT_PUBLIC_TURNSTILE_SITEKEY || "0x4AAAAAAEJ2yW0QjDiK6Rmj";
-
-function loadTurnstile(): Promise<void> {
-  return new Promise((resolve, reject) => {
-    if (typeof window === "undefined" || (window as any).turnstile) {
-      resolve();
-      return;
-    }
-    const id = "turnstile-api";
-    if (document.getElementById(id)) {
-      const interval = setInterval(() => {
-        if ((window as any).turnstile) {
-          clearInterval(interval);
-          resolve();
-        }
-      }, 50);
-      return;
-    }
-    const script = document.createElement("script");
-    script.id = id;
-    script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?onload=onTurnstileLoad";
-    script.async = false;
-    (window as any).onTurnstileLoad = () => resolve();
-    script.onerror = () => reject(new Error("Falha ao carregar o captcha."));
-    document.head.appendChild(script);
-  });
-}
+import { TURNSTILE_SITEKEY, loadTurnstile } from "@/lib/turnstile";
 
 function LoginForm() {
   const router = useRouter();
@@ -52,10 +24,11 @@ function LoginForm() {
   useEffect(() => {
     loadTurnstile()
       .then(() => {
-        const t = (window as any).turnstile;
-        if (t && widgetRef.current) {
+        const t = window.turnstile;
+        const el = widgetRef.current;
+        if (t && el) {
           t.ready(() => {
-            widgetIdRef.current = t.render(widgetRef.current, {
+            widgetIdRef.current = t.render(el, {
               sitekey: TURNSTILE_SITEKEY,
               action: "login",
               callback: (tk: string) => setToken(tk || ""),
@@ -86,8 +59,8 @@ function LoginForm() {
         return;
       }
       setError(msg);
-      if (widgetIdRef.current && (window as any).turnstile) {
-        (window as any).turnstile.reset(widgetIdRef.current);
+      if (widgetIdRef.current && window.turnstile) {
+        window.turnstile.reset(widgetIdRef.current);
       }
       setToken("");
     } finally {

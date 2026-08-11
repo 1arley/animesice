@@ -3,14 +3,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
+import { displayName } from "@/lib/displayName";
 import { Avatar } from "@/components/common/Avatar";
-
-function displayName(user: {
-  userName: string | null;
-  name: string | null;
-}) {
-  return user.userName || user.name || "Usuário";
-}
 
 export function AuthButtons() {
   const { user, logout, logoutError } = useAuth();

@@ -138,7 +138,7 @@ export function AnimeStatsDisplay({ slug }: { slug: string }) {
   return (
     <div className="flex gap-4">
       <span className="inline-flex items-center gap-1 font-mono text-body-sm text-mist">
-        <HeartIcon className="text-signal" />
+        <HeartIcon filled className="text-signal" />
         {stats.favorites} favorito{stats.favorites !== 1 ? "s" : ""}
       </span>
       {stats.ratingCount > 0 && stats.ratingAverage != null && (
@@ -171,7 +171,7 @@ function StarIcon({ filled, className = "" }: { filled: boolean; className?: str
   );
 }
 
-function HeartIcon({ className = "" }: { className?: string }) {
+function HeartIcon({ filled, className = "" }: { filled?: boolean; className?: string }) {
   return (
     <svg
       width="12"
