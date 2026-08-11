@@ -78,8 +78,9 @@ export function CommentSection({ animeId, episodeId, title = "Comentários" }: C
 
   async function handleLike(id: string) {
     if (!user) return;
+    setError("");
     try {
-      await api.toggleCommentLike(id);
+      const res = await api.toggleCommentLike(id);
       setComments((prev) =>
         prev.map((c) =>
           c.id === id
@@ -87,14 +88,14 @@ export function CommentSection({ animeId, episodeId, title = "Comentários" }: C
                 ...c,
                 _count: {
                   ...(c._count ?? { likes: 0, replies: 0 }),
-                  likes: c._count?.likes ?? 0,
+                  likes: Math.max(0, (c._count?.likes ?? 0) + (res.liked ? 1 : -1)),
                 },
               }
-            : c
-        )
+            : c,
+        ),
       );
-    } catch {
-      // silent fail
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Erro ao curtir.");
     }
   }
 
@@ -154,7 +155,7 @@ export function CommentSection({ animeId, episodeId, title = "Comentários" }: C
       ) : (
         <div className="space-y-4">
           {comments.map((comment) => (
-            <CommentItem
+            <CommentRow
               key={comment.id}
               comment={comment}
               currentUserId={user?.id}
@@ -182,7 +183,7 @@ export function CommentSection({ animeId, episodeId, title = "Comentários" }: C
   );
 }
 
-export function CommentItem({
+export function CommentRow({
   comment,
   currentUserId,
   onDelete,
@@ -202,10 +203,16 @@ export function CommentItem({
   const [replies, setReplies] = useState<CommentItem[]>(comment.replies ?? []);
   const [replyCount, setReplyCount] = useState(comment._count?.replies ?? 0);
   const [showAllReplies, setShowAllReplies] = useState(false);
+  const [replyError, setReplyError] = useState("");
 
   async function handleReply(e: React.FormEvent) {
     e.preventDefault();
     if (!reply.trim()) return;
+    if (!currentUserId) {
+      setReplyError("Faça login para responder.");
+      return;
+    }
+    setReplyError("");
     try {
       const newReply = await api.createComment({
         content: reply,
@@ -217,8 +224,8 @@ export function CommentItem({
       setReplyCount((prev) => prev + 1);
       setReply("");
       setShowReplyForm(false);
-    } catch {
-      // silent
+    } catch (err) {
+      setReplyError(err instanceof ApiError ? err.message : "Não foi possível enviar a resposta.");
     }
   }
 
@@ -227,8 +234,8 @@ export function CommentItem({
       const res = await api.getCommentReplies(comment.id);
       setReplies(res.data);
       setShowAllReplies(true);
-    } catch {
-      // silent
+    } catch (err) {
+      setReplyError(err instanceof ApiError ? err.message : "Não foi possível carregar as respostas.");
     }
   }
 
@@ -297,6 +304,15 @@ export function CommentItem({
               </button>
             )}
           </div>
+
+          {replyError && (
+            <p className="mt-2 text-caption text-signal">
+              {replyError}{" "}
+              {!currentUserId && (
+                <a href="/login" className="text-ice underline">Ir para login</a>
+              )}
+            </p>
+          )}
 
           {showReplyForm && currentUserId && (
             <form onSubmit={handleReply} className="mt-3">
