@@ -2,14 +2,15 @@ import { notFound } from "next/navigation";
 import type { Anime } from "@/types";
 import { safeImageSrc } from "@/lib/url";
 import { AdSlot } from "@/components/ads/AdSlot";
-import { serverFetchJson, API_URL } from "@/lib/api-server";
+import { serverFetchJson } from "@/lib/api-server";
 import { isOnAir } from "@/lib/status";
 import { CommentSection } from "@/components/common/CommentSection";
 import { FavoriteButton } from "@/components/common/FavoriteButton";
 import { RatingStars, AnimeStatsDisplay } from "@/components/common/RatingStars";
 import { AnimeCard } from "@/components/common/AnimeCard";
+import Image from "next/image";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 60;
 
 export default async function AnimeDetailPage({
   params,
@@ -17,10 +18,7 @@ export default async function AnimeDetailPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const apiUrl = `${API_URL}/anime/${slug}`;
-  console.log(`[AnimeDetailPage] slug=${slug} apiUrl=${apiUrl}`);
   const anime = await serverFetchJson<Anime>(`/anime/${slug}`);
-  console.log(`[AnimeDetailPage] anime=${anime ? anime.title : 'NULL'}`);
   if (!anime) notFound();
 
   const episodes = (anime.episodes ?? []).slice().sort((a, b) => a.number - b.number);
@@ -48,11 +46,14 @@ export default async function AnimeDetailPage({
       {/* Banner hero — backdrop with gradient overlay */}
       {banner && (
         <div className="relative mb-6 overflow-hidden" style={{ aspectRatio: "21 / 9", maxHeight: "320px" }}>
-          <img
+          <Image
             src={banner}
             alt=""
+            fill
+            sizes="100vw"
+            priority
             aria-hidden="true"
-            className="absolute inset-0 h-full w-full object-cover opacity-30"
+            className="object-cover opacity-30"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-ink via-ink/60 to-transparent" />
           <div className="absolute inset-0 bg-gradient-to-r from-ink/80 via-transparent to-transparent" />
@@ -62,12 +63,15 @@ export default async function AnimeDetailPage({
       {/* Cabeça: capa + identidade. UI emoldura a arte, não compete. */}
       <div className={`flex flex-col gap-6 ${banner ? "mt-[-120px] relative z-10" : ""} md:flex-row`}>
         <div className="shrink-0 md:w-48 lg:w-56">
-          <div className="overflow-hidden bg-panel shadow-lg shadow-black/40" style={{ aspectRatio: "2 / 3" }}>
+          <div className="relative overflow-hidden bg-panel shadow-lg shadow-black/40" style={{ aspectRatio: "2 / 3" }}>
             {cover ? (
-              <img
+              <Image
                 src={cover}
                 alt={anime.title}
-                className="h-full w-full object-cover"
+                fill
+                sizes="(max-width: 768px) 50vw, 256px"
+                priority
+                className="object-cover"
               />
             ) : (
               <div className="flex h-full items-center justify-center bg-hairline">
