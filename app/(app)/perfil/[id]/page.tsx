@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
-import type { PublicUserProfile } from "@/types";
+import type { PublicUserProfile, CommentItem, UserRating, Anime } from "@/types";
 import { CommentRow } from "@/components/common/CommentSection";
 import { Modal } from "@/components/common/Modal";
 import Image from "next/image";
@@ -12,15 +12,15 @@ export default function PublicProfilePage({ params }: { params: Promise<{ id: st
   const [error, setError] = useState(false);
 
   const [activeTab, setActiveTab] = useState<'overview'|'comments'|'ratings'|'favorites'>('overview');
-  const [comments, setComments] = useState<any[]>([]);
+  const [comments, setComments] = useState<CommentItem[]>([]);
   const [commentsPage, setCommentsPage] = useState(1);
   const [commentsHasMore, setCommentsHasMore] = useState(false);
 
-  const [ratings, setRatings] = useState<any[]>([]);
+  const [ratings, setRatings] = useState<UserRating[]>([]);
   const [ratingsPage, setRatingsPage] = useState(1);
   const [ratingsHasMore, setRatingsHasMore] = useState(false);
 
-  const [favorites, setFavorites] = useState<any[]>([]);
+  const [favorites, setFavorites] = useState<Anime[]>([]);
   const [favoritesPage, setFavoritesPage] = useState(1);
   const [favoritesHasMore, setFavoritesHasMore] = useState(false);
 
@@ -141,7 +141,7 @@ export default function PublicProfilePage({ params }: { params: Promise<{ id: st
             {loadingList && <div className="text-mist">Carregando...</div>}
             {!loadingList && comments.length === 0 && <div className="border border-hairline bg-panel p-4 text-mist">Nenhum comentário público.</div>}
 
-            {comments.map((c: any) => (
+            {comments.map((c: CommentItem) => (
               <CommentRow
                 key={c.id}
                 comment={c}
@@ -186,11 +186,11 @@ export default function PublicProfilePage({ params }: { params: Promise<{ id: st
           <div className="space-y-3">
             {loadingList && <div className="text-mist">Carregando...</div>}
             {!loadingList && ratings.length === 0 && <div className="border border-hairline bg-panel p-4 text-mist">Nenhuma avaliação pública.</div>}
-            {ratings.map((r: any) => (
+            {ratings.map((r: UserRating) => (
               <div key={r.id || r.anime?.id} className="border border-hairline bg-panel p-4">
                 <div className="flex items-center gap-3">
                   <div className="flex-1">
-                    <div className="font-semibold text-ice">{r.anime?.title ?? r.animeTitle ?? '—'}</div>
+                    <div className="font-semibold text-ice">{r.anime?.title ?? '—'}</div>
                     <div className="text-mist text-sm">Nota: {r.score} • {new Date(r.createdAt).toLocaleDateString()}</div>
                     {r.review && <div className="mt-2 text-body text-mist whitespace-pre-line">{r.review}</div>}
                   </div>
@@ -223,7 +223,7 @@ export default function PublicProfilePage({ params }: { params: Promise<{ id: st
           <div className="grid grid-cols-2 gap-3">
             {loadingList && <div className="text-mist">Carregando...</div>}
             {!loadingList && favorites.length === 0 && <div className="border border-hairline bg-panel p-4 text-mist">Nenhum favorito público.</div>}
-            {favorites.map((a: any) => (
+            {favorites.map((a: Anime) => (
               <div key={a.id} className="border border-hairline bg-panel p-3 flex items-center gap-3">
                 <Image src={a.coverImage ?? '/images/animesice-mascot.svg'} alt={a.title || 'cover'} width={48} height={72} className="object-cover" />
                 <div>
