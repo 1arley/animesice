@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Header } from "@/components/common/Header";
 import { Footer } from "@/components/common/Footer";
 import { Avatar } from "@/components/common/Avatar";
+import Image from "next/image";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import type { WatchHistoryItem } from "@/types";
@@ -78,7 +79,7 @@ export default function MyProfilePage() {
               {history.map((h) => (
                 <div key={h.episodeId} className="border border-hairline bg-panel p-4">
                   <div className="flex items-center gap-4">
-                    <img src={h.anime.coverImage ?? "/images/animesice-mascot.svg"} alt="" className="h-12 w-8 object-cover" />
+                    <Image src={h.anime.coverImage ?? "/images/animesice-mascot.svg"} alt={h.anime.title || 'cover'} width={48} height={72} className="object-cover" />
                     <div className="flex-1">
                       <div className="flex items-center justify-between">
                         <div>

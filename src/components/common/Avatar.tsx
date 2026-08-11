@@ -10,8 +10,12 @@ interface AvatarProps {
  * Usa <img> cru de propósito — avatares vêm de hosts arbitrários (Supabase
  * Storage) e previews blob:; o otimizador do next/image não lida bem com ambos.
  */
+import Image from "next/image";
+
 export function Avatar({ name, src, size = 32, className = "" }: AvatarProps) {
   const fallback = (name ?? "?")[0]?.toUpperCase() || "?";
+
+  const canUseNextImage = !!src && (src.startsWith("http://") || src.startsWith("https://") || src.startsWith("/"));
 
   return (
     <div
@@ -19,8 +23,12 @@ export function Avatar({ name, src, size = 32, className = "" }: AvatarProps) {
       style={{ width: size, height: size, borderRadius: "9999px" }}
     >
       {src ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={src} alt="" className="h-full w-full object-cover" />
+        canUseNextImage ? (
+          <Image src={src as string} alt="avatar" width={size} height={size} className="h-full w-full object-cover" />
+        ) : (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={src} alt="" className="h-full w-full object-cover" />
+        )
       ) : (
         <span style={{ fontSize: Math.max(Math.round(size * 0.4), 10) }}>
           {fallback}
