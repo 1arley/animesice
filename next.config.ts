@@ -8,7 +8,7 @@ const cspHeader = `
   default-src 'self';
   script-src 'self' 'unsafe-inline' 'unsafe-eval' https://pagead2.googlesyndication.com https://fundingchoicesmessages.google.com https://al5sm.com https://static.cloudflareinsights.com https://ep1.adtrafficquality.google https://ep2.adtrafficquality.google https://challenges.cloudflare.com;
   style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
-  img-src 'self' blob: data: https://cdn.myanimelist.net https://*.myanimelist.net https://meusanimes.blog https://*.meusanimes.blog https://svuaszdqsgztnetefcex.supabase.co https://pagead2.googlesyndication.com https://*.doubleclick.net https://*.google.com https://*.google.com.br;
+  img-src 'self' blob: data: https://cdn.myanimelist.net https://*.myanimelist.net https://meusanimes.blog https://*.meusanimes.blog https://svuaszdqsgztnetefcex.supabase.co https://pagead2.googlesyndication.com https://*.doubleclick.net https://*.google.com https://*.google.com.br https://*.anilist.co;
   font-src 'self' data: https://fonts.gstatic.com;
   media-src 'self' blob: data: https://api.animesice.app;
   connect-src 'self' https://api.animesice.app https://pagead2.googlesyndication.com https://fundingchoicesmessages.google.com https://al5sm.com https://static.cloudflareinsights.com https://ep1.adtrafficquality.google https://ep2.adtrafficquality.google https://challenges.cloudflare.com;
@@ -28,6 +28,7 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "**.myanimelist.net" },
       { protocol: "https", hostname: "meusanimes.blog" },
       { protocol: "https", hostname: "**.meusanimes.blog" },
+      { protocol: "https", hostname: "**.anilist.co" },
     ],
     formats: ["image/avif", "image/webp"],
     minimumCacheTTL: 60 * 60 * 24 * 60, // 60 dias
