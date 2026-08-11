@@ -491,6 +491,16 @@ export const api = {
   getPublicProfile: (userId: string) =>
     request<PublicUserProfile>(`/user/${userId}/profile`),
 
+  // --- Public user endpoints (profile details, comments, ratings, favorites) ---
+  getUserComments: (userId: string, page = 1, limit = 20) =>
+    request<CommentItem[]>(`/user/${userId}/comments?page=${page}&limit=${limit}`),
+
+  getUserRatings: (userId: string, page = 1, limit = 20) =>
+    request<any[]>(`/user/${userId}/ratings?page=${page}&limit=${limit}`),
+
+  getUserFavorites: (userId: string, page = 1, limit = 24) =>
+    request<Paginated<Anime>>(`/user/${userId}/favorites?page=${page}&limit=${limit}`),
+
   updateProfileMeta: (data: { avatar?: string; bio?: string; userName?: string }) =>
     request<User>(`/user/me/profile-meta`, { method: "POST", body: JSON.stringify(data) }),
 

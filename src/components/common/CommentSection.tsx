@@ -182,7 +182,7 @@ export function CommentSection({ animeId, episodeId, title = "Comentários" }: C
   );
 }
 
-function CommentItem({
+export function CommentItem({
   comment,
   currentUserId,
   onDelete,
