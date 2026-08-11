@@ -470,8 +470,8 @@ export const api = {
       body: JSON.stringify({ progress, duration, completed }),
     }),
 
-  getContinueWatching: (limit = 12) =>
-    request<ContinueWatchingItem[]>(`/watch-history/continue?limit=${limit}`),
+  getContinueWatching: (limit = 12, signal?: AbortSignal) =>
+    request<ContinueWatchingItem[]>(`/watch-history/continue?limit=${limit}`, signal ? { signal } : undefined),
 
   getWatchHistory: (page = 1, limit = 24) =>
     request<Paginated<WatchHistoryItem>>(`/watch-history?page=${page}&limit=${limit}`),
@@ -479,8 +479,8 @@ export const api = {
   incrementViews: (slug: string, episodeNumber: number) =>
     request<{ message: string }>(`/episode/${slug}/${episodeNumber}/views`, { method: "POST" }),
 
-  listNotifications: (page = 1, limit = 20, unread = false) =>
-    request<NotificationListResponse>(`/notification?page=${page}&limit=${limit}${unread ? "&unread=true" : ""}`),
+  listNotifications: (page = 1, limit = 20, unread = false, signal?: AbortSignal) =>
+    request<NotificationListResponse>(`/notification?page=${page}&limit=${limit}${unread ? "&unread=true" : ""}`, signal ? { signal } : undefined),
 
   markNotificationRead: (id: string) =>
     request<NotificationItem>(`/notification/${id}/read`, { method: "PATCH" }),
