@@ -87,6 +87,21 @@ export interface RatingStats {
   max: number | null;
 }
 
+/** Avaliação de um usuário em perfil público (com o anime pai). */
+export interface UserRating {
+  id: string;
+  score: number;
+  review: string | null;
+  createdAt: string;
+  updatedAt: string;
+  anime: {
+    id: string;
+    slug: string;
+    title: string;
+    coverImage: string | null;
+  };
+}
+
 export interface AnimeStats {
   favorites: number;
   ratingAverage: number | null;

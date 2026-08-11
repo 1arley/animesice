@@ -9,14 +9,11 @@ import { Header } from "@/components/common/Header";
 import { Footer } from "@/components/common/Footer";
 import { NotificationPreferencesSection } from "@/components/common/NotificationPreferencesSection";
 import { passwordError } from "@/lib/password";
+import { displayName } from "@/lib/displayName";
 import { Avatar } from "@/components/common/Avatar";
 
 const AVATAR_MAX_BYTES = 50 * 1024;
 const AVATAR_ACCEPT = ["image/jpeg", "image/jpg", "image/png"];
-
-function displayName(user: { userName: string | null; name: string | null }) {
-  return user.userName || user.name || "Usuário";
-}
 
 export default function SettingsPage() {
   const router = useRouter();

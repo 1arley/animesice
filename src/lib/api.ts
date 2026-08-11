@@ -6,6 +6,7 @@ import type {
   CommentItem,
   Rating,
   RatingStats,
+  UserRating,
   AnimeStats,
   ToggleFavoriteResponse,
   CheckFavoriteResponse,
@@ -496,7 +497,7 @@ export const api = {
     request<CommentItem[]>(`/user/${userId}/comments?page=${page}&limit=${limit}`),
 
   getUserRatings: (userId: string, page = 1, limit = 20) =>
-    request<any[]>(`/user/${userId}/ratings?page=${page}&limit=${limit}`),
+    request<UserRating[]>(`/user/${userId}/ratings?page=${page}&limit=${limit}`),
 
   getUserFavorites: (userId: string, page = 1, limit = 24) =>
     request<Paginated<Anime>>(`/user/${userId}/favorites?page=${page}&limit=${limit}`),
