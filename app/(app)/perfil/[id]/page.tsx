@@ -5,6 +5,7 @@ import { api } from "@/lib/api";
 import type { PublicUserProfile } from "@/types";
 import { CommentItem } from "@/components/common/CommentSection";
 import { Modal } from "@/components/common/Modal";
+import Image from "next/image";
 
 export default function PublicProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const [profile, setProfile] = useState<PublicUserProfile | null>(null);
@@ -90,7 +91,7 @@ export default function PublicProfilePage({ params }: { params: Promise<{ id: st
       <section className="max-w-2xl border border-hairline bg-panel p-6">
         <div className="flex items-center gap-4">
           <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden bg-hairline font-mono text-display-lg text-mist">
-            {profile.avatar ? <img src={profile.avatar} alt="" className="h-full w-full object-cover" /> : (profile.userName ?? profile.name ?? "?")[0]?.toUpperCase()}
+            {profile.avatar ? <Image src={profile.avatar} alt={profile.userName ?? profile.name ?? 'avatar'} width={64} height={64} className="h-full w-full object-cover" /> : (profile.userName ?? profile.name ?? "?")[0]?.toUpperCase()}
           </div>
           <div>
             <h1 className="font-display text-display-lg text-ice">{profile.userName ?? profile.name ?? "Usuário"}</h1>
@@ -212,7 +213,7 @@ export default function PublicProfilePage({ params }: { params: Promise<{ id: st
             {!loadingList && favorites.length === 0 && <div className="border border-hairline bg-panel p-4 text-mist">Nenhum favorito público.</div>}
             {favorites.map((a: any) => (
               <div key={a.id} className="border border-hairline bg-panel p-3 flex items-center gap-3">
-                <img src={a.coverImage ?? '/images/animesice-mascot.svg'} alt="" className="h-12 w-8 object-cover" />
+                <Image src={a.coverImage ?? '/images/animesice-mascot.svg'} alt={a.title || 'cover'} width={48} height={72} className="object-cover" />
                 <div>
                   <div className="font-semibold text-ice">{a.title}</div>
                   <div className="text-mist text-sm">{a.year ?? ''} {a.format ?? ''}</div>
