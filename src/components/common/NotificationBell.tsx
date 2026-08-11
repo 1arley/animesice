@@ -1,9 +1,11 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useAuth } from "@/lib/auth-context";
-import { api, API_URL } from "@/lib/api";
+import { api } from "@/lib/api";
 import type { NotificationItem } from "@/types";
+
+const POLL_INTERVAL = 30000;
 
 export function NotificationBell() {
   const { user } = useAuth();
@@ -12,28 +14,33 @@ export function NotificationBell() {
   const [open, setOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement | null>(null);
 
-  useEffect(() => {
-    if (!user) return;
-    fetch(`${API_URL}/notification?limit=5`, { credentials: "include" })
-      .then((r) => r.json())
+  const fetchNotifications = useCallback((signal?: AbortSignal) => {
+    api.listNotifications(1, 5, false, signal)
       .then((data) => {
         setNotifications(data.data ?? []);
         setUnreadCount(data.unreadCount ?? 0);
       })
-      .catch(() => {});
+      .catch((err) => {
+        if (err instanceof DOMException && err.name === "AbortError") return;
+        // silent
+      });
+  }, []);
+
+  useEffect(() => {
+    if (!user) return;
+
+    const ac = new AbortController();
+    fetchNotifications(ac.signal);
 
     const interval = setInterval(() => {
-      fetch(`${API_URL}/notification?limit=5`, { credentials: "include" })
-        .then((r) => r.json())
-        .then((data) => {
-          setNotifications(data.data ?? []);
-          setUnreadCount(data.unreadCount ?? 0);
-        })
-        .catch(() => {});
-    }, 30000);
+      fetchNotifications(ac.signal);
+    }, POLL_INTERVAL);
 
-    return () => clearInterval(interval);
-  }, [user]);
+    return () => {
+      clearInterval(interval);
+      ac.abort();
+    };
+  }, [user, fetchNotifications]);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {

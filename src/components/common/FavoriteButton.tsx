@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/auth-context";
-import { api, API_URL } from "@/lib/api";
+import { api } from "@/lib/api";
 
 interface FavoriteButtonProps {
   slug: string;
@@ -14,12 +14,12 @@ export function FavoriteButton({ slug }: FavoriteButtonProps) {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (user) {
-      fetch(`${API_URL}/favorite/${slug}/check`, { credentials: "include" })
-        .then((r) => r.json())
-        .then((data) => setFavorited(data.favorited))
-        .catch(() => {});
-    }
+    if (!user) return;
+    let cancelled = false;
+    api.checkFavorite(slug)
+      .then((data) => { if (!cancelled) setFavorited(data.favorited); })
+      .catch(() => {});
+    return () => { cancelled = true; };
   }, [slug, user]);
 
   async function handleToggle() {

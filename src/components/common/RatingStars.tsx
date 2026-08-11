@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/lib/auth-context";
-import { api, API_URL } from "@/lib/api";
+import { api } from "@/lib/api";
 import type { RatingStats, AnimeStats } from "@/types";
 
 interface RatingStarsProps {
@@ -17,18 +17,31 @@ export function RatingStars({ slug }: RatingStarsProps) {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    fetch(`${API_URL}/rating/stats/${slug}`)
-      .then((r) => r.json())
-      .then(setStats)
+    let cancelled = false;
+
+    api.getRatingStats(slug)
+      .then((s) => { if (!cancelled) setStats(s); })
       .catch(() => {});
 
     if (user) {
-      fetch(`${API_URL}/rating/me/${slug}`, { credentials: "include" })
-        .then((r) => r.json())
-        .then((data) => data && setUserScore(data.score))
+      api.getUserRating(slug)
+        .then((r) => {
+          if (!cancelled && r) setUserScore(r.score);
+        })
         .catch(() => {});
     }
+
+    return () => { cancelled = true; };
   }, [slug, user]);
+
+  const refreshStats = useCallback(async () => {
+    try {
+      const s = await api.getRatingStats(slug);
+      setStats(s);
+    } catch {
+      // silent
+    }
+  }, [slug]);
 
   async function handleRate(score: number) {
     if (!user || loading) return;
@@ -37,10 +50,7 @@ export function RatingStars({ slug }: RatingStarsProps) {
     try {
       await api.rateAnime(slug, score);
       setUserScore(score);
-
-      const res = await fetch(`${API_URL}/rating/stats/${slug}`);
-      const newStats = await res.json();
-      setStats(newStats);
+      await refreshStats();
     } catch {
       // silent
     } finally {
@@ -54,8 +64,7 @@ export function RatingStars({ slug }: RatingStarsProps) {
     try {
       await api.removeRating(slug);
       setUserScore(null);
-      const res = await fetch(`${API_URL}/rating/stats/${slug}`);
-      setStats(await res.json());
+      await refreshStats();
     } catch {
       // silent
     } finally {
@@ -117,10 +126,11 @@ export function AnimeStatsDisplay({ slug }: { slug: string }) {
   const [stats, setStats] = useState<AnimeStats | null>(null);
 
   useEffect(() => {
-    fetch(`${API_URL}/anime/${slug}/stats`)
-      .then((r) => r.json())
-      .then(setStats)
+    let cancelled = false;
+    api.getAnimeStats(slug)
+      .then((s) => { if (!cancelled) setStats(s); })
       .catch(() => {});
+    return () => { cancelled = true; };
   }, [slug]);
 
   if (!stats) return null;
@@ -172,7 +182,7 @@ function HeartIcon({ className = "" }: { className?: string }) {
     >
       <path
         d="M8 13.5S1.5 9.7 1.5 5.5A3.3 3.3 0 0 1 8 4a3.3 3.3 0 0 1 6.5 1.5C14.5 9.7 8 13.5 8 13.5Z"
-        fill="currentColor"
+        fill={filled ? "currentColor" : "none"}
         stroke="currentColor"
         strokeWidth="1"
         strokeLinejoin="round"

@@ -1,25 +1,41 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
+import { usePathname } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
+import { api } from "@/lib/api";
 import type { ContinueWatchingItem } from "@/types";
-import { API_URL } from "@/lib/api";
 import { safeImageSrc } from "@/lib/url";
 
 export function ContinueWatchingRail() {
   const { user } = useAuth();
+  const pathname = usePathname();
   const [items, setItems] = useState<ContinueWatchingItem[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (!user) return;
-    fetch(`${API_URL}/watch-history/continue?limit=12`, { credentials: "include" })
-      .then((r) => r.json())
-      .then((data) => setItems(Array.isArray(data) ? data : []))
-      .catch(() => {})
+  const fetchContinue = useCallback((signal?: AbortSignal) => {
+    return api.getContinueWatching(12, signal)
+      .then((data) => {
+        setItems(Array.isArray(data) ? data : []);
+      })
+      .catch((err) => {
+        if (err instanceof DOMException && err.name === "AbortError") return;
+        setItems([]);
+      })
       .finally(() => setLoading(false));
-  }, [user]);
+  }, []);
+
+  useEffect(() => {
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+    const ac = new AbortController();
+    setLoading(true);
+    fetchContinue(ac.signal);
+    return () => ac.abort();
+  }, [user, pathname, fetchContinue]);
 
   if (!user || loading || items.length === 0) return null;
 
