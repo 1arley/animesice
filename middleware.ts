@@ -1,27 +1,22 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { isPrivilegedRole } from "@/lib/role";
 
 /**
- * Server-side gate para rotas autenticadas (/admin/**, /settings, /biblioteca).
- * Backend deve setar um cookie `role` legível (não-httpOnly) junto do cookie
- * httpOnly de auth no login/refresh. Negamos cedo aqui — a authority final
- * continua no backend (endpoints re-validam via cookie httpOnly).
+ * Middleware para rotas do Next.js.
  *
- * /settings/confirm-email fica de fora: o link chega por email e pode ser
- * aberto sem sessão ativa.
+ * NOTA DE SEGURANÇA:
+ * Cookies manipuláveis no client-side (como `role`) não fornecem garantia
+ * de autorização e criam uma falsa sensação de segurança se usados no Edge/Middleware.
+ *
+ * A autorização das rotas administrativas (`/admin/**`) e protegidas (`/settings`, `/biblioteca`)
+ * é delegada com segurança para:
+ * 1. O Client Component `AdminGate` (ou validação de contexto/SWR no client), que verifica a sessão do usuário via API segura.
+ * 2. As rotas de API do Backend, que re-validam obrigatoriamente os tokens em cookies `httpOnly` / JWT em cada request.
+ *
+ * Mantemos o middleware limpo e performático sem verificações ingênuas baseadas em cookies não-httpOnly.
  */
 export async function middleware(req: NextRequest) {
   if (req.nextUrl.pathname.startsWith("/settings/confirm-email")) {
     return NextResponse.next();
-  }
-
-  const role = req.cookies.get("role")?.value;
-
-  if (!isPrivilegedRole(role)) {
-    const loginUrl = req.nextUrl.clone();
-    loginUrl.pathname = "/login";
-    loginUrl.searchParams.set("next", req.nextUrl.pathname);
-    return NextResponse.redirect(loginUrl);
   }
 
   return NextResponse.next();
