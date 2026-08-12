@@ -42,8 +42,8 @@ export default async function HomePage() {
       */}
       <h1 className="sr-only">Prateleira — Animes no ar, lançamentos e destaques</h1>
 
-      {/* Âncora da primeira dobra: o destaque da semana abre o canal. */}
-      {trending.length > 0 && <HomeHero anime={trending[0]} />}
+      {/* Âncora da primeira dobra: os destaques se revezam em carrossel. */}
+      {trending.length > 0 && <HomeHero animes={trending.slice(0, 6)} />}
 
       <ContinueWatchingRail />
       <RecommendationsRail />
