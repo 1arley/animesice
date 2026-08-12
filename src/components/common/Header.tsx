@@ -54,7 +54,7 @@ export function Header() {
         <Wordmark className="text-xl" />
 
         {/* Relógio de transmissão: a única nota quente do cabeçalho. */}
-        <div className="hidden items-center gap-2 font-mono text-caption uppercase tracking-wider text-mist md:flex">
+        <div className="hidden items-center gap-2 font-mono text-caption uppercase tracking-wider text-mist md:flex" aria-hidden="true">
           <span className="h-1.5 w-1.5 animate-blink bg-signal" aria-hidden="true" />
           <span className="text-signal">Ao vivo</span>
           <time className="tabular-nums text-ice" dateTime={now?.toISOString()}>

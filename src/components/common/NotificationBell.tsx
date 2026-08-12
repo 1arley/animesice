@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
 import { api } from "@/lib/api";
 import type { NotificationItem } from "@/types";
@@ -107,7 +108,7 @@ export function NotificationBell() {
               <p className="px-3 py-4 text-body-sm text-mist">Sem notificações.</p>
             ) : (
               notifications.map((n) => (
-                <a
+                <Link
                   key={n.id}
                   href={n.linkUrl ?? "#"}
                   className={`block border-b border-hairline px-3 py-2 transition-colors hover:bg-hairline/50 ${
@@ -123,16 +124,16 @@ export function NotificationBell() {
                   <p className="mt-0.5 font-mono text-caption text-mist">
                     {new Date(n.createdAt).toLocaleDateString("pt-BR")}
                   </p>
-                </a>
+                </Link>
               ))
             )}
           </div>
-          <a
+          <Link
             href="/notificacoes"
             className="block border-t border-hairline px-3 py-2 text-center font-mono text-caption text-mist hover:text-ice"
           >
             Ver todas
-          </a>
+          </Link>
         </div>
       )}
     </div>

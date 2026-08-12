@@ -1,12 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
 import { api, ApiError } from "@/lib/api";
-import { Header } from "@/components/common/Header";
-import { SiteNav } from "@/components/common/SiteNav";
-import { Footer } from "@/components/common/Footer";
-import { AdminGate } from "@/components/common/AdminGate";
 import { isPrivileged } from "@/lib/role";
 import { slugify } from "@/lib/slug";
 import type { Anime, Genre } from "@/types";
@@ -78,22 +75,19 @@ export default function AdminCreateAnimePage() {
   }
 
   return (
-    <AdminGate>
-      <Header />
-      <SiteNav />
-      <main className="mx-auto max-w-shelf px-4 py-6" style={{ maxWidth: 720 }}>
-        <p className="mb-4">
-          <a href="/admin" className="text-body-sm text-mist transition-colors hover:text-ice">
-            ← Painel
-          </a>
-        </p>
+    <div className="mx-auto px-4 py-6" style={{ maxWidth: 720 }}>
+      <p className="mb-4">
+        <Link href="/admin" className="text-body-sm text-mist transition-colors hover:text-ice">
+          ← Painel
+        </Link>
+      </p>
         <h1 className="font-display text-display-xl text-snow">Criar anime manual</h1>
         <p className="mt-2 text-body-sm text-mist">
           Cadastro manual de anime. Para metadados automáticos (capa, sinopse,
           gêneros), use a{" "}
-          <a href="/admin/import" className="text-ice transition-colors hover:opacity-70">
+          <Link href="/admin/import" className="text-ice transition-colors hover:opacity-70">
             importação do AniList
-          </a>.
+          </Link>.
         </p>
 
         <form onSubmit={submit} className="mt-6 space-y-4">
@@ -281,22 +275,20 @@ export default function AdminCreateAnimePage() {
               <code className="text-mist">/{result.slug}</code>
             </p>
             <p className="mt-2 flex gap-3 text-body-sm">
-              <a href={`/animes/${result.slug}`} className="text-ice transition-colors hover:opacity-70">
+              <Link href={`/animes/${result.slug}`} className="text-ice transition-colors hover:opacity-70">
                 ver no site
-              </a>
+              </Link>
               <span className="text-hairline">·</span>
-              <a href={`/admin/episode/${result.slug}/1`} className="text-ice transition-colors hover:opacity-70">
+              <Link href={`/admin/episode/${result.slug}/1`} className="text-ice transition-colors hover:opacity-70">
                 editar ep 1
-              </a>
+              </Link>
               <span className="text-hairline">·</span>
-              <a href={`/admin/create-episode/${result.slug}`} className="text-ice transition-colors hover:opacity-70">
+              <Link href={`/admin/create-episode/${result.slug}`} className="text-ice transition-colors hover:opacity-70">
                 criar episódio
-              </a>
+              </Link>
             </p>
           </div>
         )}
-      </main>
-      <Footer />
-    </AdminGate>
+    </div>
   );
 }

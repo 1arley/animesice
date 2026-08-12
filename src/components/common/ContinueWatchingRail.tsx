@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { api } from "@/lib/api";
@@ -53,7 +54,7 @@ export function ContinueWatchingRail() {
               : 0;
             const thumb = safeImageSrc(item.episode.thumbnailUrl);
             return (
-              <a
+              <Link
                 key={item.episodeId}
                 href={`/animes/${item.anime.slug}/${item.episode.number}`}
                 className="group block min-w-[200px] shrink-0 snap-start"
@@ -85,7 +86,7 @@ export function ContinueWatchingRail() {
                 <p className="font-mono text-caption text-mist">
                   EP {item.episode.number}
                 </p>
-              </a>
+              </Link>
             );
           })}
         </div>

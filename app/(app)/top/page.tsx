@@ -1,8 +1,15 @@
 import { AnimeCard } from "@/components/common/AnimeCard";
+import type { Metadata } from "next";
 import type { Anime } from "@/types";
 import { serverFetchJson } from "@/lib/api-server";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
+
+export const metadata: Metadata = {
+  title: "Top Animes",
+  description: "Os animes mais bem avaliados da plataforma, ranqueados por nota.",
+  alternates: { canonical: "/top" },
+};
 
 export default async function TopPage({
   searchParams,
@@ -12,7 +19,7 @@ export default async function TopPage({
   const sp = await searchParams;
   const limit = Math.min(Math.max(parseInt(sp.limit ?? "30", 10) || 30, 1), 100);
 
-  const animes = await serverFetchJson<Anime[]>(`/anime/top?limit=${limit}`) ?? [];
+  const animes = await serverFetchJson<Anime[]>(`/anime/top?limit=${limit}`, { cache: "force-cache", next: { revalidate: 300, tags: ["top"] } }) ?? [];
 
   return (
     <div className="mx-auto max-w-shelf px-4 py-6">
