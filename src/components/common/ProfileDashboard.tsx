@@ -2,10 +2,10 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { api, type User } from "@/lib/api";
 import { displayName } from "@/lib/displayName";
 import { Avatar } from "@/components/common/Avatar";
+import { PosterTile } from "@/components/profile/PosterTile";
 import type {
   PublicUserProfile,
   CommentItem,
@@ -122,7 +122,7 @@ export function ProfileDashboard({ user }: { user: User }) {
       </div>
 
       <dl className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <DashStat label="Comentários" value={stats?.comments} href={`${profileUrl}?tab=comments`} />
+        <DashStat label="Comentários" value={stats?.comments} href={`${profileUrl}?tab=activity`} />
         <DashStat label="Avaliações" value={stats?.ratings} href={`${profileUrl}?tab=ratings`} />
         <DashStat label="Favoritos" value={stats?.favorites} href={`${profileUrl}?tab=favorites`} />
         <DashStat label="Episódios" value={stats?.watchHistories} />
@@ -142,24 +142,14 @@ export function ProfileDashboard({ user }: { user: User }) {
               .
             </div>
           ) : (
-            <div className="flex gap-2 overflow-x-auto pb-1">
-              {favorites.map((f) => (
-                <Link
+            <div className="grid grid-cols-6 gap-2">
+              {favorites.slice(0, 6).map((f) => (
+                <PosterTile
                   key={f.anime.id}
-                  href={`/animes/${f.anime.slug}`}
-                  className="shrink-0"
+                  slug={f.anime.slug}
                   title={f.anime.title}
-                >
-                  <div className="h-24 w-16 overflow-hidden">
-                    <Image
-                      src={f.anime.coverImage ?? "/images/animesice-mascot.svg"}
-                      alt={f.anime.title || "cover"}
-                      width={64}
-                      height={96}
-                      className="h-full w-full object-cover"
-                    />
-                  </div>
-                </Link>
+                  coverImage={f.anime.coverImage}
+                />
               ))}
             </div>
           )}

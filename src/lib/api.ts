@@ -19,6 +19,7 @@ import type {
   PublicUserProfile,
   PublicAnimeListItem,
   PublicFavoriteItem,
+  PublicActivityEvent,
   CalendarResponse,
   GenreAnimesResponse,
   AnimeFilters,
@@ -514,6 +515,11 @@ export const api = {
   getUserAnimeList: (identifier: string, page = 1, limit = 24, status?: string) =>
     request<Paginated<PublicAnimeListItem>>(
       `/users/${identifier}/anime-list?page=${page}&limit=${limit}${status ? `&status=${status}` : ""}`,
+    ),
+
+  getUserActivity: (identifier: string, page = 1, limit = 20) =>
+    request<Paginated<PublicActivityEvent>>(
+      `/users/${identifier}/activity?page=${page}&limit=${limit}`,
     ),
 
   updateProfileMeta: (data: { avatar?: string; bio?: string; userName?: string; myAnimeList?: string }) =>
