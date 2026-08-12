@@ -25,9 +25,11 @@ jobs:
       - run: npx eslint app src --ext .ts,.tsx
       # Build com a API de produção (as páginas com fallback não quebram o
       # build se a API estiver fora — o serverFetchJson tem fallbacks).
+      # NEXT_PUBLIC_API_URL precisa do sufixo /api (global prefix do backend)
+      # — api.ts normaliza mesmo sem ele, mas o build de CI testa o valor real.
       - run: npm run build
         env:
-          NEXT_PUBLIC_API_URL: https://api.animesice.app
+          NEXT_PUBLIC_API_URL: https://api.animesice.app/api
           INCLUDE_LOCAL_API: "0"
 
   e2e:

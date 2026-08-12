@@ -43,9 +43,25 @@ import type {
 export { isValidRemoteUrl, safeImageSrc } from "@/lib/url";
 
 const isDev = process.env.NODE_ENV !== "production";
-export const API_URL =
-  process.env.NEXT_PUBLIC_API_URL ||
-  (isDev ? "http://localhost:3001/api" : "https://api.animesice.app/api");
+
+/**
+ * Normaliza a base da API: o backend usa o global prefix `api` (NestJS
+ * setGlobalPrefix). Se o NEXT_PUBLIC_API_URL vier sem o sufixo (ex.:
+ * "https://api.animesice.app"), a gente acrescenta — um env errado não pode
+ * derrubar todas as chamadas (404 em tudo).
+ */
+function normalizeApiUrl(raw: string | undefined): string {
+  const base = (raw ?? "").trim().replace(/\/$/, "");
+  if (!base) {
+    return isDev
+      ? "http://localhost:3001/api"
+      : "https://api.animesice.app/api";
+  }
+  // Aceita origens com path (ex.: /api, /v1/api) — só evita duplicar o sufixo.
+  return base.endsWith("/api") ? base : `${base}/api`;
+}
+
+export const API_URL = normalizeApiUrl(process.env.NEXT_PUBLIC_API_URL);
 
 export interface User {
   id: string;
