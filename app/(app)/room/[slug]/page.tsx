@@ -37,10 +37,13 @@ export default function RoomPage({
     setLoading(true);
     setSource(null);
     setSourceError(null);
+    let gotRoom = false;
     api
       .getRoom(slug)
       .then((r) => {
+        gotRoom = true;
         setRoom(r);
+        setLoadingSource(true);
         return Promise.all([
           api.getEpisode(r.animeSlug, r.episodeNumber),
           api.streamSource(r.animeSlug, r.episodeNumber),
@@ -52,7 +55,7 @@ export default function RoomPage({
       })
       .catch((e) => {
         const msg = e instanceof ApiError ? e.message : "Sala não encontrada ou expirada.";
-        if (room) {
+        if (gotRoom) {
           setSourceError(msg);
         } else {
           setError(msg);

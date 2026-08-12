@@ -1,6 +1,6 @@
 import Image from "next/image";
 import type { Anime } from "@/types";
-import { safeImageSrc } from "@/lib/url";
+import { upgradeImageUrl } from "@/lib/url";
 import { isOnAir } from "@/lib/status";
 
 /**
@@ -15,9 +15,10 @@ import { isOnAir } from "@/lib/status";
  * (zero CLS), next/image com sizes por viewport.
  */
 export function HomeHero({ anime }: { anime: Anime }) {
-  const art = anime.bannerImage
-    ? safeImageSrc(anime.bannerImage)
-    : safeImageSrc(anime.coverImage);
+  // upgradeImageUrl: a capa que o seed guarda é a miniatura MAL (~600px);
+  // subimos p/ o nível maior quando a fonte oferece (AniList extraLarge/MAL l).
+  const art =
+    upgradeImageUrl(anime.bannerImage) ?? upgradeImageUrl(anime.coverImage);
   const onAir = isOnAir(anime.status);
 
   return (
@@ -35,7 +36,7 @@ export function HomeHero({ anime }: { anime: Anime }) {
               priority
               sizes="(max-width: 768px) 100vw, 92vw"
               className="object-cover opacity-75 transition-opacity duration-500 group-hover:opacity-100"
-              quality={80}
+              quality={85}
             />
           ) : (
             <div className="absolute inset-0 bg-gradient-to-br from-panel to-ink" />
