@@ -6,6 +6,7 @@ import { isOnAir } from "@/lib/status";
 import { ContinueWatchingRail } from "@/components/common/ContinueWatchingRail";
 import { RecommendationsRail } from "@/components/common/RecommendationsRail";
 import { SectionLabel } from "@/components/common/SectionLabel";
+import { HomeHero } from "@/components/common/HomeHero";
 import type { Anime, Episode, Paginated } from "@/types";
 
 export const revalidate = 60;
@@ -40,6 +41,9 @@ export default async function HomePage() {
           h3 = títulos de cards (AnimeCard/EpisodeCard)
       */}
       <h1 className="sr-only">Prateleira — Animes no ar, lançamentos e destaques</h1>
+
+      {/* Âncora da primeira dobra: o destaque da semana abre o canal. */}
+      {trending.length > 0 && <HomeHero anime={trending[0]} />}
 
       <ContinueWatchingRail />
       <RecommendationsRail />
@@ -165,7 +169,7 @@ function Rail({
   return (
     <>
       <SectionLabel id={labelId}>{label} <span className="shelf-label-data">{count}</span></SectionLabel>
-      <div className="-mx-4 overflow-x-auto px-4 pb-2 [scrollbar-width:thin]">
+      <div className="scrollbar-none -mx-4 overflow-x-auto px-4 pb-2">
         <div className="flex gap-3 snap-x">{children}</div>
       </div>
     </>

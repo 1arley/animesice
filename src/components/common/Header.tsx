@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Wordmark } from "@/components/common/Wordmark";
 import { AuthButtons } from "@/components/common/AuthButtons";
 import { NotificationBell } from "@/components/common/NotificationBell";
+import { KoFiLink } from "@/components/common/KoFiLink";
 
 /**
  * Cabeçalho da prateleira: wordmark à esquerda, busca ao centro,
@@ -99,7 +100,7 @@ export function Header() {
           <button
             type="button"
             onClick={() => setMobileSearchOpen(!mobileSearchOpen)}
-            className="sm:hidden"
+            className="p-2.5 sm:hidden"
             aria-label="Buscar"
             aria-expanded={mobileSearchOpen}
           >
@@ -108,6 +109,8 @@ export function Header() {
               <path d="M14 14l4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
             </svg>
           </button>
+          {/* Apoio: discreto, ícone só — não pede, apenas existe. */}
+          <KoFiLink variant="header" />
           <NotificationBell />
           <AuthButtons />
         </div>

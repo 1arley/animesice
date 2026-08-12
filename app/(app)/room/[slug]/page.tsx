@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { api, ApiError, type RoomInfo, type RoomMessageItem } from "@/lib/api";
+import { api, ApiError, isProxyEmbed, type RoomInfo, type RoomMessageItem, type StreamSource } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import type { Episode, Anime } from "@/types";
 import { VideoPlayer } from "@/components/common/VideoPlayer";
+import { EpisodeLoadingState } from "@/components/common/EpisodeLoadingState";
 import { io, Socket } from "socket.io-client";
 
 export default function RoomPage({
@@ -16,6 +17,9 @@ export default function RoomPage({
   const [slug, setSlug] = useState("");
   const [room, setRoom] = useState<RoomInfo | null>(null);
   const [episode, setEpisode] = useState<(Episode & { anime: Anime }) | null>(null);
+  const [source, setSource] = useState<StreamSource | null>(null);
+  const [sourceError, setSourceError] = useState<string | null>(null);
+  const [loadingSource, setLoadingSource] = useState(false);
   const [messages, setMessages] = useState<RoomMessageItem[]>([]);
   const [input, setInput] = useState("");
   const [connected, setConnected] = useState(false);
@@ -31,30 +35,45 @@ export default function RoomPage({
   useEffect(() => {
     if (!slug) return;
     setLoading(true);
+    setSource(null);
+    setSourceError(null);
     api
       .getRoom(slug)
       .then((r) => {
         setRoom(r);
-        return api.getEpisode(r.animeSlug, r.episodeNumber);
+        return Promise.all([
+          api.getEpisode(r.animeSlug, r.episodeNumber),
+          api.streamSource(r.animeSlug, r.episodeNumber),
+        ]);
       })
-      .then((ep) => setEpisode(ep))
-      .catch((e) =>
-        setError(
-          e instanceof ApiError ? e.message : "Sala não encontrada ou expirada.",
-        ),
-      )
-      .finally(() => setLoading(false));
+      .then(([ep, src]) => {
+        setEpisode(ep);
+        setSource(src);
+      })
+      .catch((e) => {
+        const msg = e instanceof ApiError ? e.message : "Sala não encontrada ou expirada.";
+        if (room) {
+          setSourceError(msg);
+        } else {
+          setError(msg);
+        }
+      })
+      .finally(() => {
+        setLoading(false);
+        setLoadingSource(false);
+      });
   }, [slug]);
 
   useEffect(() => {
     if (!slug || !user || !room) return;
 
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
-    // socket.io conecta na ORIGEM do backend (sem o sufixo /api) — o gateway
-    // expõe o namespace /room no mesmo host/porta do HTTP. Com NEXT_PUBLIC_API_URL
-    // = "http://host:porta/api", o sufixo /api quebraria o namespace.
+    // socket.io v4: `${origin}/room` → namespace="/room", path="/socket.io/".
     const origin = apiUrl.replace(/\/api\/?$/, "");
-    const socket = io(`${origin}/room`, { withCredentials: true });
+    const socket = io(`${origin}/room`, {
+      withCredentials: true,
+      transports: ["websocket", "polling"],
+    });
     socketRef.current = socket;
 
     socket.on("connect", () => {
@@ -155,11 +174,22 @@ export default function RoomPage({
           </p>
 
           <div className="mt-4">
-            {episode && episode.embedUrl ? (
+            {episode && source && isProxyEmbed(source.src) ? (
               <VideoPlayer
                 src={""}
-                embedUrl={episode.embedUrl}
-                posterUrl={episode.thumbnailUrl ?? undefined}
+                embedUrl={source.src}
+                posterUrl={source.thumbnailUrl ?? episode.thumbnailUrl ?? undefined}
+                animeSlug={room.animeSlug}
+                episodeNumber={room.episodeNumber}
+              />
+            ) : sourceError ? (
+              <p className="text-body-sm text-signal">{sourceError}</p>
+            ) : loadingSource ? (
+              <EpisodeLoadingState />
+            ) : source ? (
+              <VideoPlayer
+                src={source.src}
+                posterUrl={source.thumbnailUrl ?? episode?.thumbnailUrl ?? undefined}
                 animeSlug={room.animeSlug}
                 episodeNumber={room.episodeNumber}
               />
