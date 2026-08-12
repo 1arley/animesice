@@ -87,11 +87,10 @@ export interface RatingStats {
   max: number | null;
 }
 
-/** Avaliação de um usuário em perfil público (com o anime pai). */
+/** Avaliação de um usuário em perfil público (com o anime pai).
+ *  Rating usa chave composta (userId + animeId) — não tem id nem review. */
 export interface UserRating {
-  id: string;
   score: number;
-  review: string | null;
   createdAt: string;
   updatedAt: string;
   anime: {
@@ -196,6 +195,7 @@ export interface CommentItem {
   createdAt: string;
   updatedAt: string;
   replies?: CommentItem[];
+  anime?: { slug: string; title: string } | null;
   _count?: {
     likes: number;
     replies: number;
@@ -218,12 +218,50 @@ export interface PublicUserProfile {
   userName: string | null;
   avatar: string | null;
   bio: string | null;
+  myAnimeList: string | null;
   createdAt: string;
   _count: {
     comments: number;
     ratings: number;
     favorites: number;
     watchHistories: number;
+  };
+}
+
+/** Item de favorito público (registro do favorito + anime pai). */
+export interface PublicFavoriteItem {
+  createdAt: string;
+  anime: {
+    id: string;
+    slug: string;
+    title: string;
+    coverImage: string | null;
+    year: number | null;
+    format: AnimeFormat | null;
+  };
+}
+
+/** Item da biblioteca (anime list) pública de um usuário. */
+export interface PublicAnimeListItem {
+  userId: string;
+  animeId: string;
+  status: WatchStatus;
+  episodesWatched: number;
+  score: number | null;
+  rewatchCount: number;
+  private: boolean;
+  startedAt: string | null;
+  completedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  anime: {
+    id: string;
+    slug: string;
+    title: string;
+    coverImage: string | null;
+    year: number | null;
+    format: AnimeFormat | null;
+    genres?: Genre[];
   };
 }
 
@@ -305,6 +343,15 @@ export interface NotificationPreference {
   typeId: NotificationType;
   channel: NotificationChannel;
   enabled: boolean;
+}
+
+/** Privacidade do perfil público (backend /settings/privacy). */
+export interface PrivacySettings {
+  profilePublic: boolean;
+  showActivity: boolean;
+  showFavorites: boolean;
+  showRatings: boolean;
+  privateAnimeLists: number;
 }
 
 /** Moderation report. */
