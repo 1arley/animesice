@@ -1,3 +1,4 @@
+import Image from "next/image";
 import type { Anime, CalendarResponse } from "@/types";
 import { serverFetchJson } from "@/lib/api-server";
 import { safeImageSrc } from "@/lib/url";
@@ -62,18 +63,7 @@ export default async function CalendarioPage({
                       href={`/animes/${anime.slug}`}
                       className="flex items-center gap-2 px-3 py-2 transition-colors hover:bg-ink"
                     >
-                      {safeImageSrc(anime.coverImage) ? (
-                        <div className="h-12 w-8 shrink-0 overflow-hidden bg-hairline">
-                          <img
-                            src={safeImageSrc(anime.coverImage)}
-                            alt={anime.title}
-                            loading="lazy"
-                            className="h-full w-full object-cover"
-                          />
-                        </div>
-                      ) : (
-                        <div className="h-12 w-8 shrink-0 bg-hairline" />
-                      )}
+                      <PosterThumb anime={anime} />
                       <div className="min-w-0">
                         <p className="line-clamp-1 font-sans text-body-sm font-medium text-mist transition-colors hover:text-ice">
                           {anime.title}
@@ -113,5 +103,25 @@ export default async function CalendarioPage({
         </section>
       )}
     </div>
+  );
+}
+
+/** Miniatura 2:3 do calendário (next/image, lazy, dimensões fixas — zero CLS). */
+function PosterThumb({ anime }: { anime: Anime }) {
+  const cover = safeImageSrc(anime.coverImage);
+  return cover ? (
+    <div className="h-12 w-8 shrink-0 overflow-hidden bg-hairline">
+      <Image
+        src={cover}
+        alt={anime.title}
+        width={32}
+        height={48}
+        sizes="32px"
+        loading="lazy"
+        className="h-full w-full object-cover"
+      />
+    </div>
+  ) : (
+    <div className="h-12 w-8 shrink-0 bg-hairline" />
   );
 }

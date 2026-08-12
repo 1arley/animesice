@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import Image from "next/image";
 import { useAuth } from "@/lib/auth-context";
 import { api, ApiError } from "@/lib/api";
+import { safeImageSrc } from "@/lib/url";
 import { AnimeCard } from "@/components/common/AnimeCard";
-import type { Anime, Paginated, WatchHistoryItem, UserAnimeListItem, WatchStatus } from "@/types";
+import type { Anime, WatchHistoryItem, UserAnimeListItem, WatchStatus } from "@/types";
 
 type Tab = "watching" | "planning" | "completed" | "on_hold" | "dropped" | "favorites" | "history";
 
@@ -142,23 +144,7 @@ export default function LibraryPage() {
         history.length > 0 ? (
           <div className="space-y-3">
             {history.map((item) => (
-              <a
-                key={item.episodeId}
-                href={`/animes/${item.anime.slug}/${item.episode.number}`}
-                className="flex items-center gap-4 border border-hairline bg-panel p-3 hover:border-ice"
-              >
-                <div className="h-14 w-10 shrink-0 overflow-hidden bg-hairline">
-                  {item.anime.coverImage && (
-                    <img src={item.anime.coverImage} alt="" className="h-full w-full object-cover" />
-                  )}
-                </div>
-                <div>
-                  <p className="font-sans text-body font-medium text-ice">{item.anime.title}</p>
-                  <p className="font-mono text-caption text-mist">
-                    EP {item.episode.number} · {item.completed ? "Concluído" : "Em andamento"}
-                  </p>
-                </div>
-              </a>
+              <HistoryRow key={item.episodeId} item={item} />
             ))}
           </div>
         ) : (
@@ -188,6 +174,35 @@ export default function LibraryPage() {
         <EmptyState text={`Sua lista de "${TAB_LABELS[tab]}" está vazia.`} />
       )}
     </div>
+  );
+}
+
+function HistoryRow({ item }: { item: WatchHistoryItem }) {
+  const cover = safeImageSrc(item.anime.coverImage);
+  return (
+    <a
+      href={`/animes/${item.anime.slug}/${item.episode.number}`}
+      className="flex items-center gap-4 border border-hairline bg-panel p-3 hover:border-ice"
+    >
+      <div className="h-14 w-10 shrink-0 overflow-hidden bg-hairline">
+        {cover && (
+          <Image
+            src={cover}
+            alt=""
+            width={40}
+            height={56}
+            sizes="40px"
+            className="h-full w-full object-cover"
+          />
+        )}
+      </div>
+      <div>
+        <p className="font-sans text-body font-medium text-ice">{item.anime.title}</p>
+        <p className="font-mono text-caption text-mist">
+          EP {item.episode.number} · {item.completed ? "Concluído" : "Em andamento"}
+        </p>
+      </div>
+    </a>
   );
 }
 
