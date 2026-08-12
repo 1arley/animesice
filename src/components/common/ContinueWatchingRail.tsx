@@ -8,6 +8,7 @@ import { useAuth } from "@/lib/auth-context";
 import { api } from "@/lib/api";
 import type { ContinueWatchingItem } from "@/types";
 import { safeImageSrc } from "@/lib/url";
+import { SpotlightCard } from "@/components/core/SpotlightCard";
 
 export function ContinueWatchingRail() {
   const { user } = useAuth();
@@ -54,10 +55,13 @@ export function ContinueWatchingRail() {
               : 0;
             const thumb = safeImageSrc(item.episode.thumbnailUrl);
             return (
-              <Link
+              <SpotlightCard
                 key={item.episodeId}
+                className="h-full min-w-[200px] shrink-0 snap-start"
+              >
+              <Link
                 href={`/animes/${item.anime.slug}/${item.episode.number}`}
-                className="group block min-w-[200px] shrink-0 snap-start"
+                className="group block overflow-hidden bg-panel"
               >
                 <div className="relative overflow-hidden bg-panel" style={{ aspectRatio: "16 / 9" }}>
                   {thumb ? (
@@ -87,6 +91,7 @@ export function ContinueWatchingRail() {
                   EP {item.episode.number}
                 </p>
               </Link>
+              </SpotlightCard>
             );
           })}
         </div>

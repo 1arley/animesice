@@ -3,6 +3,7 @@ import Link from "next/link";
 import type { Episode, Anime } from "@/types";
 import { safeImageSrc } from "@/lib/url";
 import { formatDate } from "@/lib/time";
+import { SpotlightCard } from "@/components/core/SpotlightCard";
 
 type LatestEpisode = Pick<Episode, "number" | "title" | "thumbnailUrl" | "dateModified"> & {
   anime: Pick<Anime, "slug" | "title">;
@@ -19,6 +20,7 @@ export function EpisodeCard({ episode, priority = false }: EpisodeCardProps) {
   const thumb = safeImageSrc(episode.thumbnailUrl);
 
   return (
+    <SpotlightCard className="h-full">
     <Link
       href={href}
       title={`${anime.title} — Episódio ${episode.number}`}
@@ -62,5 +64,6 @@ export function EpisodeCard({ episode, priority = false }: EpisodeCardProps) {
         )}
       </div>
     </Link>
+    </SpotlightCard>
   );
 }

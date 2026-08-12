@@ -1,10 +1,19 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { TextLoop } from "@/components/core/TextLoop";
 
 /** Tempo "normal" de espera, em segundos. A partir daqui a mensagem muda
  *  e sugerimos recarregar a página. */
 const LIMIT_SECONDS = 15;
+
+/** Mensagens que se revezam enquanto o sinal chega — voz do canal. */
+const LOADING_PHRASES = [
+  "Carregando o episódio…",
+  "Sintonizando o sinal…",
+  "Ajustando a antena…",
+  "Buscando o melhor servidor…",
+];
 
 /**
  * Estado de carregamento do player: mensagem amigável (pipoca 🍿) com um
@@ -34,7 +43,7 @@ export function EpisodeLoadingState() {
           className="mr-2 inline-block h-2 w-2 animate-blink bg-ice align-middle"
           aria-hidden="true"
         />
-        Carregando o episódio…
+        <TextLoop texts={LOADING_PHRASES} interval={2600} fixedHeight />
       </p>
       <p className="max-w-md text-body-sm text-mist">
         Às vezes demora de 5 a 15 segundos — vai pegando uma pipoca que o

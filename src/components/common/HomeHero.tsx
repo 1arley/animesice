@@ -6,6 +6,9 @@ import Link from "next/link";
 import type { Anime } from "@/types";
 import { upgradeImageUrl } from "@/lib/url";
 import { isOnAir } from "@/lib/status";
+import { Aurora } from "@/components/core/Aurora";
+import { BlurText } from "@/components/core/BlurText";
+import { ShinyText } from "@/components/core/ShinyText";
 
 const ROTATE_MS = 6000;
 
@@ -54,7 +57,12 @@ export function HomeHero({ animes }: { animes: Anime[] }) {
       onBlur={() => setPaused(false)}
     >
       <div className="relative">
-        <Slide key={current.id} anime={current} priority={index === 0} />
+        <Slide
+          key={current.id}
+          anime={current}
+          priority={index === 0}
+          reduceMotion={reduceMotion}
+        />
 
         {count > 1 && (
           <div className="absolute bottom-3 right-4 z-10 flex gap-1.5">
@@ -77,7 +85,15 @@ export function HomeHero({ animes }: { animes: Anime[] }) {
   );
 }
 
-function Slide({ anime, priority }: { anime: Anime; priority: boolean }) {
+function Slide({
+  anime,
+  priority,
+  reduceMotion,
+}: {
+  anime: Anime;
+  priority: boolean;
+  reduceMotion: boolean;
+}) {
   // upgradeImageUrl: a capa que o seed guarda é a miniatura MAL (~600px);
   // subimos p/ o nível maior quando a fonte oferece (AniList extraLarge/MAL l).
   const art =
@@ -90,6 +106,17 @@ function Slide({ anime, priority }: { anime: Anime; priority: boolean }) {
       className="group relative block overflow-hidden border border-hairline bg-panel animate-fade"
     >
       <div className="relative aspect-[16/10] sm:aspect-[21/9] lg:aspect-[2.4/1]">
+        {/* Aurora da madrugada: a faixa de gelo atrás da arte — o sinal
+            no céu. WebGL; some com prefers-reduced-motion (gradiente fica). */}
+        {!reduceMotion && (
+          <Aurora
+            className="absolute inset-0 opacity-60"
+            speed={0.7}
+            amplitude={0.8}
+            blend={0.75}
+          />
+        )}
+
         {art ? (
           <Image
             src={art}
@@ -111,7 +138,14 @@ function Slide({ anime, priority }: { anime: Anime; priority: boolean }) {
         <div className="absolute inset-0 flex flex-col justify-end p-4 sm:p-6 lg:p-8">
           <span className="mb-3 inline-flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-caption font-medium uppercase tracking-wider text-ice">
             <span className="h-1 w-1 bg-ice" aria-hidden="true" />
-            Destaque da madrugada
+            {/* Brilho de neve varrendo a legenda — o "sinal" passando. */}
+            <ShinyText
+              text="Destaque da madrugada"
+              color="#45F0E0"
+              shineColor="#E9EFF5"
+              speed={5}
+              spread={100}
+            />
             {onAir && (
               <span className="inline-flex items-center gap-1.5 text-signal">
                 <span
@@ -123,12 +157,23 @@ function Slide({ anime, priority }: { anime: Anime; priority: boolean }) {
             )}
           </span>
 
-          <h2
-            id="hero-title"
-            className="max-w-xl font-display text-2xl font-bold tracking-tight text-snow sm:text-3xl lg:text-4xl"
-          >
-            {anime.title}
-          </h2>
+          {reduceMotion ? (
+            <h2
+              id="hero-title"
+              className="max-w-xl font-display text-2xl font-bold tracking-tight text-snow sm:text-3xl lg:text-4xl"
+            >
+              {anime.title}
+            </h2>
+          ) : (
+            <BlurText
+              as="h2"
+              id="hero-title"
+              text={anime.title}
+              delay={70}
+              stepDuration={0.28}
+              className="max-w-xl font-display text-2xl font-bold tracking-tight text-snow sm:text-3xl lg:text-4xl"
+            />
+          )}
 
           {anime.synopsis && (
             <p className="mt-2 line-clamp-2 max-w-xl text-body-sm text-mist sm:line-clamp-3">
