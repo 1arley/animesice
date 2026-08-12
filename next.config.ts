@@ -13,7 +13,7 @@ const cspHeader = `
   img-src 'self' blob: data: https://cdn.myanimelist.net https://*.myanimelist.net https://meusanimes.blog https://*.meusanimes.blog https://svuaszdqsgztnetefcex.supabase.co https://pagead2.googlesyndication.com https://*.doubleclick.net https://*.google.com https://*.google.com.br https://*.anilist.co;
   font-src 'self' data: https://fonts.gstatic.com;
   media-src 'self' blob: data: https://api.animesice.app;
-  connect-src 'self' https://api.animesice.app https://pagead2.googlesyndication.com https://fundingchoicesmessages.google.com https://al5sm.com https://static.cloudflareinsights.com https://ep1.adtrafficquality.google https://ep2.adtrafficquality.google https://challenges.cloudflare.com${localConnect};
+  connect-src 'self' https://api.animesice.app wss://api.animesice.app https://pagead2.googlesyndication.com https://fundingchoicesmessages.google.com https://al5sm.com https://static.cloudflareinsights.com https://ep1.adtrafficquality.google https://ep2.adtrafficquality.google https://challenges.cloudflare.com${localConnect};
   frame-src 'self' https://googleads.g.doubleclick.net https://pagead2.googlesyndication.com https://*.googlesyndication.com https://fundingchoicesmessages.google.com https://*.google.com https://www.youtube.com https://www.youtube-nocookie.com https://challenges.cloudflare.com;
   object-src 'none';
   base-uri 'self';
