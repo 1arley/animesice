@@ -1,3 +1,10 @@
+# [1.1.0](https://github.com/1arley/animesice/compare/v1.0.1...v1.1.0) (2026-08-12)
+
+
+### Features
+
+* **admin:** modularize admin pages and expand management api ([791c006](https://github.com/1arley/animesice/commit/791c006084b156338f6fa21752db7cc1c7609f88))
+
 ## [1.0.1](https://github.com/1arley/animesice/compare/v1.0.0...v1.0.1) (2026-08-12)
 
 
