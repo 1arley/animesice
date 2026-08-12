@@ -262,8 +262,49 @@ export interface PublicAnimeListItem {
     year: number | null;
     format: AnimeFormat | null;
     genres?: Genre[];
+    /** Total de episódios do anime — progresso real do usuário (ep. assistidos / total). */
+    episodeCount?: number | null;
   };
 }
+
+/** Anime pai compacto dentro de um evento de atividade. */
+export interface ActivityAnime {
+  slug: string;
+  title: string;
+  coverImage: string | null;
+}
+
+/**
+ * Evento do feed público de atividade de um usuário (GET /users/:id/activity).
+ * União discriminada por `type` — cada forma carrega só os dados do evento.
+ */
+export type PublicActivityEvent =
+  | {
+      type: "watch";
+      episodeNumber: number;
+      anime: ActivityAnime;
+      createdAt: string;
+    }
+  | {
+      type: "rating";
+      score: number;
+      anime: ActivityAnime;
+      createdAt: string;
+    }
+  | {
+      type: "favorite";
+      anime: ActivityAnime;
+      createdAt: string;
+    }
+  | {
+      type: "comment";
+      id: string;
+      content: string;
+      edited: boolean;
+      likeCount: number;
+      anime: { slug: string; title: string } | null;
+      createdAt: string;
+    };
 
 /** Episódio populado com o anime pai — usar em listas de "últimos episódios". */
 export interface EpisodeWithAnime extends Episode {

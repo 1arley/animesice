@@ -278,6 +278,68 @@
     animation: rise 0.55s cubic-bezier(0.2, 0.65, 0.25, 1) both;
   }
 
+  /* Esconde a scrollbar mantendo o scroll — para rails e tabs roláveis. */
+  .scrollbar-none {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Cover padrão do perfil — derivado da identidade do site, sem imagem:
+     o mesmo brilho frio do body, com uma faixa de sinal de gelo cortando
+     a base. Extensível: um cover personalizado substitui via <img> no
+     ProfileHero quando existir. */
+  .profile-cover {
+    position: relative;
+    overflow: hidden;
+    background:
+      radial-gradient(
+        1000px 420px at 50% -20%,
+        rgba(69, 240, 224, 0.10),
+        transparent 65%
+      ),
+      linear-gradient(
+        180deg,
+        rgba(20, 29, 41, 0.9) 0%,
+        rgba(14, 20, 29, 0.85) 42%,
+        theme("colors.ink") 100%
+      );
+  }
+
+  /* Faixa de sinal: uma linha de gelo correndo pela base do cover. */
+  .profile-cover::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(69, 240, 224, 0.55) 32%,
+      rgba(69, 240, 224, 0.12) 68%,
+      transparent
+    );
+  }
+
+  /* Grade tênue de estúdio: hairlines verticais como trilho de prateleira. */
+  .profile-cover::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background-image: repeating-linear-gradient(
+      90deg,
+      transparent 0,
+      transparent calc(25% - 1px),
+      rgba(28, 37, 52, 0.7) 25%
+    );
+    background-size: 25% 100%;
+  }
+
   /* Skeleton loading placeholder */
   .skeleton {
     background: linear-gradient(
