@@ -1,12 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
 import { api, ApiError } from "@/lib/api";
-import { Header } from "@/components/common/Header";
-import { SiteNav } from "@/components/common/SiteNav";
-import { Footer } from "@/components/common/Footer";
-import { AdminGate } from "@/components/common/AdminGate";
 import { isPrivileged } from "@/lib/role";
 import type { Episode, Anime } from "@/types";
 
@@ -76,24 +73,21 @@ export default function AdminCreateEpisodePage({
   }
 
   return (
-    <AdminGate>
-      <Header />
-      <SiteNav />
-      <main className="mx-auto max-w-shelf px-4 py-6" style={{ maxWidth: 720 }}>
-        <p className="mb-4">
-          <a href="/admin" className="text-body-sm text-mist transition-colors hover:text-ice">
-            ← Painel
-          </a>
-        </p>
+    <div className="mx-auto px-4 py-6" style={{ maxWidth: 720 }}>
+      <p className="mb-4">
+        <Link href="/admin" className="text-body-sm text-mist transition-colors hover:text-ice">
+          ← Painel
+        </Link>
+      </p>
         <h1 className="font-display text-display-xl text-snow">Criar episódio</h1>
         {anime && (
           <p className="mt-1 text-body-sm text-mist">
             <strong className="text-snow">{anime.title}</strong>{" "}
             <code className="text-mist">/{anime.slug}</code>
             <br />
-            <a href={`/animes/${anime.slug}`} className="text-ice transition-colors hover:opacity-70">
+            <Link href={`/animes/${anime.slug}`} className="text-ice transition-colors hover:opacity-70">
               ver no site
-            </a>
+            </Link>
           </p>
         )}
 
@@ -195,24 +189,22 @@ export default function AdminCreateEpisodePage({
               {result.title ? ` — ${result.title}` : ""}
             </p>
             <p className="mt-2 flex gap-3 text-body-sm">
-              <a
+              <Link
                 href={`/admin/episode/${slug}/${result.number}`}
                 className="text-ice transition-colors hover:opacity-70"
               >
                 editar episódio
-              </a>
+              </Link>
               <span className="text-hairline">·</span>
-              <a
+              <Link
                 href={`/animes/${slug}/${result.number}`}
                 className="text-ice transition-colors hover:opacity-70"
               >
                 ver no site
-              </a>
+              </Link>
             </p>
           </div>
         )}
-      </main>
-      <Footer />
-    </AdminGate>
+    </div>
   );
 }

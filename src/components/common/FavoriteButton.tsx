@@ -1,8 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
 import { api } from "@/lib/api";
+import { HeartIcon } from "@/components/ui/icons";
 
 interface FavoriteButtonProps {
   slug: string;
@@ -37,10 +39,10 @@ export function FavoriteButton({ slug }: FavoriteButtonProps) {
 
   if (!user) {
     return (
-      <a href="/login" className="btn-ghost">
+      <Link href="/login" className="btn-ghost">
         <HeartIcon filled={false} />
         Favoritar
-      </a>
+      </Link>
     );
   }
 
@@ -59,19 +61,5 @@ export function FavoriteButton({ slug }: FavoriteButtonProps) {
         </>
       )}
     </button>
-  );
-}
-
-function HeartIcon({ filled }: { filled: boolean }) {
-  return (
-    <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true">
-      <path
-        d="M8 13.5S1.5 9.7 1.5 5.5A3.3 3.3 0 0 1 8 4a3.3 3.3 0 0 1 6.5 1.5C14.5 9.7 8 13.5 8 13.5Z"
-        fill={filled ? "currentColor" : "none"}
-        stroke="currentColor"
-        strokeWidth="1.4"
-        strokeLinejoin="round"
-      />
-    </svg>
   );
 }

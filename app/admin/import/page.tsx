@@ -1,11 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { api, ApiError } from "@/lib/api";
-import { Header } from "@/components/common/Header";
-import { SiteNav } from "@/components/common/SiteNav";
-import { Footer } from "@/components/common/Footer";
-import { AdminGate } from "@/components/common/AdminGate";
 import type { Anime } from "@/types";
 
 export default function AdminImportPage() {
@@ -44,15 +41,12 @@ export default function AdminImportPage() {
   }
 
   return (
-    <AdminGate>
-      <Header />
-      <SiteNav />
-      <main className="mx-auto max-w-shelf px-4 py-6" style={{ maxWidth: 720 }}>
-        <p className="mb-4">
-          <a href="/admin" className="text-body-sm text-mist transition-colors hover:text-ice">
-            ← Painel
-          </a>
-        </p>
+    <div className="mx-auto px-4 py-6" style={{ maxWidth: 720 }}>
+      <p className="mb-4">
+        <Link href="/admin" className="text-body-sm text-mist transition-colors hover:text-ice">
+          ← Painel
+        </Link>
+      </p>
         <h1 className="font-display text-display-xl text-snow">Importar do AniList</h1>
         <p className="mt-2 text-body-sm text-mist">
           Busca metadados do anime no AniList (capa, banner, sinopse, gêneros,
@@ -123,18 +117,16 @@ export default function AdminImportPage() {
               <code className="text-mist">/{result.slug}</code>
             </p>
             <p className="mt-2 flex gap-3 text-body-sm">
-              <a href={`/animes/${result.slug}`} className="text-ice transition-colors hover:opacity-70">
+              <Link href={`/animes/${result.slug}`} className="text-ice transition-colors hover:opacity-70">
                 ver no site
-              </a>
+              </Link>
               <span className="text-hairline">·</span>
-              <a href={`/admin/episode/${result.slug}/1`} className="text-ice transition-colors hover:opacity-70">
+              <Link href={`/admin/episode/${result.slug}/1`} className="text-ice transition-colors hover:opacity-70">
                 editar ep 1
-              </a>
+              </Link>
             </p>
           </div>
         )}
-      </main>
-      <Footer />
-    </AdminGate>
+    </div>
   );
 }

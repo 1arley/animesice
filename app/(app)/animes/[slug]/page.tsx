@@ -1,5 +1,7 @@
 import { notFound } from "next/navigation";
+import Link from "next/link";
 import type { Metadata } from "next";
+import { cache } from "react";
 import type { Anime } from "@/types";
 import { safeImageSrc, upgradeImageUrl } from "@/lib/url";
 import { AdSlot } from "@/components/ads/AdSlot";
@@ -10,8 +12,11 @@ import { FavoriteButton } from "@/components/common/FavoriteButton";
 import { RatingStars, AnimeStatsDisplay } from "@/components/common/RatingStars";
 import { AnimeCard } from "@/components/common/AnimeCard";
 import Image from "next/image";
+import { SITE_URL } from "@/lib/site";
 
 export const revalidate = 60;
+
+const getAnime = cache(async (slug: string) => serverFetchJson<Anime>(`/anime/${slug}`, { cache: "force-cache", next: { revalidate: 60, tags: [`anime:${slug}`] } }));
 
 export async function generateMetadata({
   params,
@@ -19,25 +24,29 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const anime = await serverFetchJson<Anime>(`/anime/${slug}`);
+  const anime = await getAnime(slug);
   if (!anime) return {};
 
   const description = anime.synopsis
     ? anime.synopsis.slice(0, 160)
     : `Assistir ${anime.title} online em HD, legendado${anime.audio === "DUBLADO" ? " e dublado" : ""}.`;
+  const ogImage = upgradeImageUrl(anime.bannerImage) ?? upgradeImageUrl(anime.coverImage);
 
   return {
     title: anime.title,
     description,
+    alternates: { canonical: `/animes/${slug}` },
     openGraph: {
       title: anime.title,
       description,
       type: "video.tv_show",
+      ...(ogImage ? { images: [{ url: ogImage }] } : {}),
     },
     twitter: {
       card: "summary_large_image",
       title: anime.title,
       description,
+      ...(ogImage ? { images: [ogImage] } : {}),
     },
   };
 }
@@ -48,13 +57,13 @@ export default async function AnimeDetailPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const anime = await serverFetchJson<Anime>(`/anime/${slug}`);
+  const anime = await getAnime(slug);
   if (!anime) notFound();
 
   const episodes = (anime.episodes ?? []).slice().sort((a, b) => a.number - b.number);
   const [related, similar] = await Promise.all([
-    serverFetchJson<Anime[]>(`/anime/${slug}/related`),
-    serverFetchJson<Anime[]>(`/recommendation/similar/${slug}?limit=12`),
+    serverFetchJson<Anime[]>(`/anime/${slug}/related`, { cache: "force-cache", next: { revalidate: 300, tags: [`related:${slug}`] } }),
+    serverFetchJson<Anime[]>(`/recommendation/similar/${slug}?limit=12`, { cache: "force-cache", next: { revalidate: 300, tags: [`similar:${slug}`] } }),
   ]);
   const relatedAnimes = related ?? [];
   const similarAnimes = (similar ?? []).filter(
@@ -71,9 +80,9 @@ export default async function AnimeDetailPage({
   return (
     <article className="mx-auto max-w-shelf px-4 py-6">
       <p className="mb-4">
-        <a href="/" className="text-body-sm text-mist transition-colors hover:text-ice">
+        <Link href="/" className="text-body-sm text-mist transition-colors hover:text-ice">
           ← Voltar à prateleira
-        </a>
+        </Link>
       </p>
 
       {/* Banner hero — backdrop with gradient overlay */}
@@ -203,12 +212,12 @@ export default async function AnimeDetailPage({
             <ul className="mt-4 flex flex-wrap gap-2">
               {anime.genres.map((g) => (
                 <li key={g.id}>
-                  <a
+                  <Link
                     href={`/generos/${g.slug}`}
                     className="border border-hairline px-2.5 py-1 font-sans text-caption text-mist transition-colors hover:border-ice hover:text-ice"
                   >
                     {g.name}
-                  </a>
+                  </Link>
                 </li>
               ))}
             </ul>
@@ -216,7 +225,7 @@ export default async function AnimeDetailPage({
 
           <div className="mt-5 flex flex-wrap items-center gap-4">
             {episodes.length > 0 && (
-              <a
+              <Link
                 href={`/animes/${slug}/${episodes[0].number}`}
                 className="btn-ice"
               >
@@ -224,7 +233,7 @@ export default async function AnimeDetailPage({
                   <path d="M3 2l9 5-9 5z" />
                 </svg>
                 Assistir ep. 1
-              </a>
+              </Link>
             )}
             <FavoriteButton slug={slug} />
             <AnimeStatsDisplay slug={slug} />
@@ -269,7 +278,7 @@ export default async function AnimeDetailPage({
               const available = ep.videoUrl ?? ep.embedUrl;
               return (
                 <li key={ep.id}>
-                  <a
+                  <Link
                     href={`/animes/${slug}/${ep.number}`}
                     className={`group block border border-hairline bg-panel px-1 py-2 text-center transition-all hover:border-ice hover:bg-hairline/50 ${
                       available ? "" : "opacity-40"
@@ -282,7 +291,7 @@ export default async function AnimeDetailPage({
                     <span className="block font-mono text-caption uppercase tracking-wider text-mist">
                       ep
                     </span>
-                  </a>
+                  </Link>
                 </li>
               );
             })}
@@ -316,6 +325,23 @@ export default async function AnimeDetailPage({
       )}
 
       <CommentSection animeId={anime.id} />
+
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "TVSeries",
+            name: anime.title,
+            ...(anime.synopsis ? { description: anime.synopsis.slice(0, 300) } : {}),
+            ...(anime.year ? { startDate: String(anime.year) } : {}),
+            ...(cover ? { image: cover } : {}),
+            ...(anime.genres?.length ? { genre: anime.genres.map((g) => g.name).join(", ") } : {}),
+            ...(anime.studios?.length ? { productionCompany: { "@type": "Organization", name: anime.studios.join(", ") } } : {}),
+            ...(anime.rating ? { aggregateRating: { "@type": "AggregateRating", ratingValue: anime.rating, bestRating: 10, ratingCount: 1 } } : {}),
+          }),
+        }}
+      />
     </article>
   );
 }

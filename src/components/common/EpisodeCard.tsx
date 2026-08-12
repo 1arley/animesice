@@ -1,6 +1,8 @@
 import Image from "next/image";
+import Link from "next/link";
 import type { Episode, Anime } from "@/types";
 import { safeImageSrc } from "@/lib/url";
+import { formatDate } from "@/lib/time";
 
 type LatestEpisode = Pick<Episode, "number" | "title" | "thumbnailUrl" | "dateModified"> & {
   anime: Pick<Anime, "slug" | "title">;
@@ -11,19 +13,13 @@ export interface EpisodeCardProps {
   priority?: boolean;
 }
 
-function formatDate(iso?: string | null): string {
-  if (!iso) return "";
-  const d = new Date(iso);
-  return isNaN(d.getTime()) ? "" : d.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" });
-}
-
 export function EpisodeCard({ episode, priority = false }: EpisodeCardProps) {
   const { anime } = episode;
   const href = `/animes/${anime.slug}/${episode.number}`;
   const thumb = safeImageSrc(episode.thumbnailUrl);
 
   return (
-    <a
+    <Link
       href={href}
       title={`${anime.title} — Episódio ${episode.number}`}
       className="group block overflow-hidden bg-panel transition-colors hover:bg-hairline"
@@ -65,6 +61,6 @@ export function EpisodeCard({ episode, priority = false }: EpisodeCardProps) {
           </time>
         )}
       </div>
-    </a>
+    </Link>
   );
 }

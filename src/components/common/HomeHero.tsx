@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import type { Anime } from "@/types";
 import { upgradeImageUrl } from "@/lib/url";
 import { isOnAir } from "@/lib/status";
@@ -84,7 +85,7 @@ function Slide({ anime, priority }: { anime: Anime; priority: boolean }) {
   const onAir = isOnAir(anime.status);
 
   return (
-    <a
+    <Link
       href={`/animes/${anime.slug}`}
       className="group relative block overflow-hidden border border-hairline bg-panel animate-fade"
     >
@@ -162,6 +163,6 @@ function Slide({ anime, priority }: { anime: Anime; priority: boolean }) {
           </div>
         </div>
       </div>
-    </a>
+    </Link>
   );
 }

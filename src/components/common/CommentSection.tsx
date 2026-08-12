@@ -1,8 +1,10 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
 import { api, ApiError } from "@/lib/api";
+import { HeartIcon } from "@/components/ui/icons";
 import type { CommentItem } from "@/types";
 import { Avatar } from "@/components/common/Avatar";
 
@@ -66,13 +68,24 @@ export function CommentSection({ animeId, episodeId, title = "Comentários" }: C
     }
   }
 
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+
   async function handleDelete(id: string) {
-    if (!confirm("Excluir este comentário?")) return;
+    if (!confirmDeleteId) {
+      setConfirmDeleteId(id);
+      return;
+    }
+    if (id !== confirmDeleteId) {
+      setConfirmDeleteId(id);
+      return;
+    }
     try {
       await api.deleteComment(id);
       setComments((prev) => prev.filter((c) => c.id !== id));
+      setConfirmDeleteId(null);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Erro ao excluir.");
+      setConfirmDeleteId(null);
     }
   }
 
@@ -140,7 +153,7 @@ export function CommentSection({ animeId, episodeId, title = "Comentários" }: C
         </form>
       ) : (
         <p className="mb-4 text-body-sm text-mist">
-          <a href="/login" className="text-ice underline">Entre</a> para comentar.
+          <Link href="/login" className="text-ice underline">Entre</Link> para comentar.
         </p>
       )}
 
@@ -163,6 +176,8 @@ export function CommentSection({ animeId, episodeId, title = "Comentários" }: C
               onLike={handleLike}
               animeId={animeId}
               episodeId={episodeId}
+              confirmingDelete={confirmDeleteId === comment.id}
+              onCancelDelete={() => setConfirmDeleteId(null)}
             />
           ))}
           {hasMore && (
@@ -190,6 +205,8 @@ export function CommentRow({
   onLike,
   animeId,
   episodeId,
+  confirmingDelete,
+  onCancelDelete,
 }: {
   comment: CommentItem;
   currentUserId?: string;
@@ -197,6 +214,8 @@ export function CommentRow({
   onLike: (id: string) => void;
   animeId?: string;
   episodeId?: string;
+  confirmingDelete: boolean;
+  onCancelDelete: () => void;
 }) {
   const [showReplyForm, setShowReplyForm] = useState(false);
   const [reply, setReply] = useState("");
@@ -270,15 +289,7 @@ export function CommentRow({
               onClick={() => onLike(comment.id)}
               className="inline-flex items-center gap-1 font-mono text-caption text-mist transition-colors hover:text-ice"
             >
-              <svg width="12" height="12" viewBox="0 0 16 16" aria-hidden="true">
-                <path
-                  d="M8 13.5S1.5 9.7 1.5 5.5A3.3 3.3 0 0 1 8 4a3.3 3.3 0 0 1 6.5 1.5C14.5 9.7 8 13.5 8 13.5Z"
-                  fill="currentColor"
-                  stroke="currentColor"
-                  strokeWidth="1"
-                  strokeLinejoin="round"
-                />
-              </svg>
+              <HeartIcon filled />
               {likeCount > 0 ? likeCount : ""}
             </button>
             <button
@@ -288,12 +299,29 @@ export function CommentRow({
               Responder
             </button>
             {isOwner && (
-              <button
-                onClick={() => onDelete(comment.id)}
-                className="font-mono text-caption text-mist transition-colors hover:text-signal"
-              >
-                Excluir
-              </button>
+              confirmingDelete ? (
+                <span className="inline-flex items-center gap-2">
+                  <button
+                    onClick={() => onDelete(comment.id)}
+                    className="font-mono text-caption text-signal transition-colors hover:opacity-70"
+                  >
+                    Confirmar?
+                  </button>
+                  <button
+                    onClick={onCancelDelete}
+                    className="font-mono text-caption text-mist transition-colors hover:text-ice"
+                  >
+                    Cancelar
+                  </button>
+                </span>
+              ) : (
+                <button
+                  onClick={() => onDelete(comment.id)}
+                  className="font-mono text-caption text-mist transition-colors hover:text-signal"
+                >
+                  Excluir
+                </button>
+              )
             )}
             {replyCount > replies.length && !showAllReplies && (
               <button
@@ -309,7 +337,7 @@ export function CommentRow({
             <p className="mt-2 text-caption text-signal">
               {replyError}{" "}
               {!currentUserId && (
-                <a href="/login" className="text-ice underline">Ir para login</a>
+                <Link href="/login" className="text-ice underline">Ir para login</Link>
               )}
             </p>
           )}

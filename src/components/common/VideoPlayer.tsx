@@ -17,6 +17,8 @@ interface VideoPlayerProps {
   /** Para rastreamento de progresso */
   animeSlug?: string;
   episodeNumber?: number;
+  /** Título para acessibilidade do iframe */
+  animeTitle?: string;
 }
 
 /** Embed do YouTube (youtube-nocookie.com/embed/<id>): fonte sem .mp4
@@ -26,18 +28,22 @@ export function isYouTubeEmbed(url: string): boolean {
   return /youtube(?:-nocookie)?\.com\/(?:embed|watch|shorts)\//i.test(url);
 }
 
-export function VideoPlayer({ src, posterUrl, embedUrl, animeSlug, episodeNumber }: VideoPlayerProps) {
+export function VideoPlayer({ src, posterUrl, embedUrl, animeSlug, episodeNumber, animeTitle }: VideoPlayerProps) {
   if (embedUrl && isProxyEmbed(embedUrl)) {
-    return <EmbedPlayer embedUrl={embedUrl} animeSlug={animeSlug} episodeNumber={episodeNumber} />;
+    return <EmbedPlayer embedUrl={embedUrl} animeSlug={animeSlug} episodeNumber={episodeNumber} animeTitle={animeTitle} />;
   }
   if (src && isYouTubeEmbed(src)) {
-    return <EmbedPlayer embedUrl={src} animeSlug={animeSlug} episodeNumber={episodeNumber} />;
+    return <EmbedPlayer embedUrl={src} animeSlug={animeSlug} episodeNumber={episodeNumber} animeTitle={animeTitle} />;
   }
-  return <NativeVideoPlayer src={src} posterUrl={posterUrl} animeSlug={animeSlug} episodeNumber={episodeNumber} />;
+  return <NativeVideoPlayer src={src} posterUrl={posterUrl} animeSlug={animeSlug} episodeNumber={episodeNumber} animeTitle={animeTitle} />;
 }
 
 /** Modo embed interno (iframe via proxy do backend): sem XFO, carrega direto. */
-function EmbedPlayer({ embedUrl, animeSlug, episodeNumber }: { embedUrl: string; animeSlug?: string; episodeNumber?: number }) {
+function EmbedPlayer({ embedUrl, animeSlug, episodeNumber, animeTitle }: { embedUrl: string; animeSlug?: string; episodeNumber?: number; animeTitle?: string }) {
+  const title = animeTitle && episodeNumber != null
+    ? `${animeTitle} — Episódio ${episodeNumber}`
+    : "Player de vídeo";
+
   useEffect(() => {
     if (!animeSlug || episodeNumber == null) return;
     fetch(`${API_URL}/episode/${animeSlug}/${episodeNumber}/views`, {
@@ -49,7 +55,7 @@ function EmbedPlayer({ embedUrl, animeSlug, episodeNumber }: { embedUrl: string;
   return (
     <iframe
       src={embedUrl}
-      title="Player"
+      title={title}
       allowFullScreen
       style={{
         width: "100%",
@@ -62,7 +68,7 @@ function EmbedPlayer({ embedUrl, animeSlug, episodeNumber }: { embedUrl: string;
   );
 }
 
-function NativeVideoPlayer({ src, posterUrl, animeSlug, episodeNumber }: { src: string; posterUrl?: string; animeSlug?: string; episodeNumber?: number }) {
+function NativeVideoPlayer({ src, posterUrl, animeSlug, episodeNumber, animeTitle }: { src: string; posterUrl?: string; animeSlug?: string; episodeNumber?: number; animeTitle?: string }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const { user } = useAuth();
 
@@ -193,6 +199,7 @@ function NativeVideoPlayer({ src, posterUrl, animeSlug, episodeNumber }: { src: 
       ref={videoRef}
       controls
       poster={safePoster}
+      aria-label={animeTitle && episodeNumber != null ? `${animeTitle} — Episódio ${episodeNumber}` : "Player de vídeo"}
       style={{
         width: "100%",
         background: "#000",

@@ -1,9 +1,17 @@
 import { AnimeCard } from "@/components/common/AnimeCard";
+import { Pagination } from "@/components/ui/Pagination";
+import type { Metadata } from "next";
 import type { Anime } from "@/types";
 import { serverFetchJson } from "@/lib/api-server";
 import type { AnimeFilters } from "@/types";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
+
+export const metadata: Metadata = {
+  title: "Em lançamento",
+  description: "Animes em lançamento — novos episódios a cada semana.",
+  alternates: { canonical: "/lancamentos" },
+};
 
 export default async function LancamentosPage({
   searchParams,
@@ -16,6 +24,7 @@ export default async function LancamentosPage({
 
   const data = await serverFetchJson<{ data: Anime[]; meta: { total: number; totalPages: number } }>(
     `/anime?page=${page}&limit=${limit}&status=LANCAMENTO&sort=rating`,
+    { cache: "force-cache", next: { revalidate: 300, tags: ["lancamentos"] } },
   );
 
   const animes = data?.data ?? [];
@@ -37,21 +46,11 @@ export default async function LancamentosPage({
               <AnimeCard key={anime.id} anime={anime} />
             ))}
           </div>
-          <nav className="mt-8 flex items-center gap-3" aria-label="Paginação">
-            {page > 1 ? (
-              <a href={`/lancamentos?page=${page - 1}`} className="btn-ghost">← Anterior</a>
-            ) : (
-              <span className="btn-ghost opacity-40">← Anterior</span>
-            )}
-            <span className="font-mono text-body-sm text-mist tabular-nums">
-              {page} / {totalPages}
-            </span>
-            {page < totalPages ? (
-              <a href={`/lancamentos?page=${page + 1}`} className="btn-ghost">Próxima →</a>
-            ) : (
-              <span className="btn-ghost opacity-40">Próxima →</span>
-            )}
-          </nav>
+          <Pagination
+            page={page}
+            totalPages={totalPages}
+            hrefFor={(p) => `/lancamentos?page=${p}`}
+          />
         </>
       )}
     </div>

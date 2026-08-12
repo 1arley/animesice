@@ -2,12 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
 import { api, ApiError } from "@/lib/api";
-import { Header } from "@/components/common/Header";
-import { SiteNav } from "@/components/common/SiteNav";
-import { Footer } from "@/components/common/Footer";
-import { AdminGate } from "@/components/common/AdminGate";
 import { isPrivileged } from "@/lib/role";
 import type { Anime } from "@/types";
 
@@ -100,24 +97,21 @@ export default function AdminEditAnimePage({
   }
 
   return (
-    <AdminGate>
-      <Header />
-      <SiteNav />
-      <main className="mx-auto max-w-shelf px-4 py-6" style={{ maxWidth: 720 }}>
-        <p className="mb-4">
-          <a href="/admin" className="text-body-sm text-mist transition-colors hover:text-ice">
-            ← Painel
-          </a>
-        </p>
+    <div className="mx-auto px-4 py-6" style={{ maxWidth: 720 }}>
+      <p className="mb-4">
+        <Link href="/admin" className="text-body-sm text-mist transition-colors hover:text-ice">
+          ← Painel
+        </Link>
+      </p>
         <h1 className="font-display text-display-xl text-snow">Editar anime</h1>
         {anime && (
           <p className="mt-1 text-body-sm text-mist">
             <strong className="text-snow">{anime.title}</strong>{" "}
             <code className="text-mist">/{anime.slug}</code>
             <br />
-            <a href={`/animes/${anime.slug}`} className="text-ice transition-colors hover:opacity-70">
+            <Link href={`/animes/${anime.slug}`} className="text-ice transition-colors hover:opacity-70">
               ver no site
-            </a>
+            </Link>
           </p>
         )}
 
@@ -246,8 +240,6 @@ export default function AdminEditAnimePage({
             </div>
           </form>
         )}
-      </main>
-      <Footer />
-    </AdminGate>
+    </div>
   );
 }
