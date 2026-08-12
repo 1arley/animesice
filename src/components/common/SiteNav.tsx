@@ -52,9 +52,11 @@ export function SiteNav() {
     {
       title: "Comunidade",
       links: [
-        { href: "/pedidos", title: "Pedidos de anime" },
-        { href: "/sugestoes", title: "Sugestões e bugs" },
-        { href: "/regras", title: "Regras" },
+        { href: "/comunidade/feed", title: "Feed" },
+        { href: "/comunidade/usuarios", title: "Usuários" },
+        { href: "/comunidade/pedidos", title: "Pedidos de anime" },
+        { href: "/comunidade/sugestoes", title: "Sugestões e bugs" },
+        { href: "/comunidade/regras", title: "Regras" },
       ],
     },
     {

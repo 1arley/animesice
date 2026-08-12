@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
 import { api } from "@/lib/api";
 import { HeartIcon } from "@/components/ui/icons";
+import { ClickSpark } from "@/components/core/ClickSpark";
 
 interface FavoriteButtonProps {
   slug: string;
@@ -37,29 +38,34 @@ export function FavoriteButton({ slug }: FavoriteButtonProps) {
     }
   }
 
+  // Faísca de gelo no clique — micro-interação da ação de favoritar.
   if (!user) {
     return (
-      <Link href="/login" className="btn-ghost">
-        <HeartIcon filled={false} />
-        Favoritar
-      </Link>
+      <ClickSpark className="w-fit">
+        <Link href="/login" className="btn-ghost">
+          <HeartIcon filled={false} />
+          Favoritar
+        </Link>
+      </ClickSpark>
     );
   }
 
   return (
-    <button
-      onClick={handleToggle}
-      disabled={loading}
-      className={`btn-ice ${favorited ? "opacity-80" : ""}`}
-    >
-      {loading ? (
-        "..."
-      ) : (
-        <>
-          <HeartIcon filled={favorited} />
-          {favorited ? "Favoritado" : "Favoritar"}
-        </>
-      )}
-    </button>
+    <ClickSpark className="w-fit">
+      <button
+        onClick={handleToggle}
+        disabled={loading}
+        className={`btn-ice ${favorited ? "opacity-80" : ""}`}
+      >
+        {loading ? (
+          "..."
+        ) : (
+          <>
+            <HeartIcon filled={favorited} />
+            {favorited ? "Favoritado" : "Favoritar"}
+          </>
+        )}
+      </button>
+    </ClickSpark>
   );
 }

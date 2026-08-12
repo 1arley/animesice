@@ -33,6 +33,10 @@ import type {
   ModerationActionItem,
   WatchStatus,
   PrivacySettings,
+  SocialPost,
+  PostCommentItem,
+  FeedItem,
+  UserSearchResult,
 } from "@/types";
 
 // Re-export da sanção de URL — módulo puro em url.ts; aqui por compat.
@@ -619,6 +623,88 @@ export const api = {
 
   upvoteFeedback: (id: string) =>
     request(`/feedback/${id}/upvote`, { method: "POST" }),
+
+  // --- Social: posts do feed ---
+  createPost: (body: { content: string; animeId?: string }) =>
+    request<SocialPost>("/social/posts", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+
+  getFeed: (page = 1, limit = 20, scope: "global" | "following" = "global") =>
+    request<Paginated<FeedItem>>(
+      `/social/feed?page=${page}&limit=${limit}&scope=${scope}`,
+    ),
+
+  getPost: (id: string) => request<SocialPost>(`/social/posts/${id}`),
+
+  deletePost: (id: string) =>
+    request<{ message: string }>(`/social/posts/${id}`, {
+      method: "DELETE",
+    }),
+
+  togglePostLike: (id: string) =>
+    request<{ liked: boolean }>(`/social/posts/${id}/like`, {
+      method: "POST",
+    }),
+
+  getPostComments: (id: string, page = 1, limit = 20) =>
+    request<Paginated<PostCommentItem>>(
+      `/social/posts/${id}/comments?page=${page}&limit=${limit}`,
+    ),
+
+  createPostComment: (postId: string, content: string) =>
+    request<PostCommentItem>(`/social/posts/${postId}/comments`, {
+      method: "POST",
+      body: JSON.stringify({ content }),
+    }),
+
+  sharePost: (id: string) =>
+    request<{ shared: boolean; shareCount: number }>(
+      `/social/posts/${id}/share`,
+      { method: "POST" },
+    ),
+
+  // --- Social: follow ---
+  toggleFollow: (userId: string) =>
+    request<{ following: boolean }>(`/social/follow/${userId}`, {
+      method: "POST",
+    }),
+
+  checkFollow: (userId: string) =>
+    request<{ following: boolean }>(`/social/follow/check/${userId}`),
+
+  getFollowing: (page = 1, limit = 20) =>
+    request<Paginated<UserSearchResult>>(
+      `/social/following?page=${page}&limit=${limit}`,
+    ),
+
+  /** Lista pública de seguidores de um usuário (perfil público). */
+  getFollowers: (userId: string, page = 1, limit = 20) =>
+    request<Paginated<UserSearchResult>>(
+      `/social/followers/${userId}?page=${page}&limit=${limit}`,
+    ),
+
+  /** Lista pública de quem um usuário segue (perfil público). */
+  getFollowingForUser: (userId: string, page = 1, limit = 20) =>
+    request<Paginated<UserSearchResult>>(
+      `/social/following/${userId}?page=${page}&limit=${limit}`,
+    ),
+
+  // --- Social: diretório de usuários ---
+  searchUsers: (params: {
+    search?: string;
+    sort?: string;
+    page?: number;
+    limit?: number;
+  }) => {
+    const qs = new URLSearchParams();
+    if (params.search) qs.set("search", params.search);
+    if (params.sort) qs.set("sort", params.sort);
+    if (params.page) qs.set("page", String(params.page));
+    if (params.limit) qs.set("limit", String(params.limit));
+    return request<Paginated<UserSearchResult>>(`/users?${qs.toString()}`);
+  },
 
   // --- Moderation ---
   createReport: (body: {

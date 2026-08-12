@@ -44,7 +44,44 @@ export function ProfileHero({
     kind: "ok" | "err";
     text: string;
   } | null>(null);
+  const [following, setFollowing] = useState<boolean | null>(null);
+  const [followBusy, setFollowBusy] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
+
+  const isOwnProfile = !!user && user.id === profile.id;
+  const showFollowButton = !!user && !isOwnProfile;
+
+  // Estado inicial do follow — só quando faz sentido (logado, outro perfil).
+  useEffect(() => {
+    if (!showFollowButton) return;
+    let cancelled = false;
+    api
+      .checkFollow(profile.id)
+      .then((res) => {
+        if (!cancelled) setFollowing(res.following);
+      })
+      .catch(() => {
+        if (!cancelled) setFollowing(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [showFollowButton, profile.id]);
+
+  async function handleToggleFollow() {
+    if (!user || followBusy) return;
+    setFollowBusy(true);
+    const before = following;
+    setFollowing(!following);
+    try {
+      const res = await api.toggleFollow(profile.id);
+      setFollowing(res.following);
+    } catch {
+      setFollowing(before);
+    } finally {
+      setFollowBusy(false);
+    }
+  }
 
   const displayName = profile.name?.trim() || profile.userName || "Usuário";
   const memberSince = formatDate(profile.createdAt);
@@ -215,6 +252,24 @@ export function ProfileHero({
               )}
             </div>
           </div>
+
+          {showFollowButton && (
+            <button
+              type="button"
+              onClick={handleToggleFollow}
+              disabled={followBusy || following === null}
+              aria-pressed={following === true}
+              className={`btn-ghost shrink-0 self-start ${
+                following ? "border-ice/60 text-ice" : ""
+              }`}
+            >
+              {followBusy
+                ? "…"
+                : following
+                  ? "Seguindo ✓"
+                  : "Seguir"}
+            </button>
+          )}
         </div>
       </div>
 

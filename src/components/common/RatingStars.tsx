@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { api } from "@/lib/api";
 import { StarIcon, HeartIcon } from "@/components/ui/icons";
+import { ClickSpark } from "@/components/core/ClickSpark";
 import type { RatingStats, AnimeStats } from "@/types";
 
 interface RatingStarsProps {
@@ -77,6 +78,9 @@ export function RatingStars({ slug }: RatingStarsProps) {
 
   return (
     <div className="flex flex-col gap-2">
+      {/* Um ClickSpark para a fileira inteira: a faísca sai no ponto exato
+          da estrela clicada — 10 canvases por página seria desperdício. */}
+      <ClickSpark className="w-fit" sparkCount={10} sparkRadius={16} sparkSize={7}>
       <div
         className="flex items-center gap-0.5"
         role="radiogroup"
@@ -115,6 +119,7 @@ export function RatingStars({ slug }: RatingStarsProps) {
           </button>
         ))}
       </div>
+      </ClickSpark>
       <div className="flex items-center gap-3">
         {stats && (
           <span className="font-display text-body-sm text-mist">

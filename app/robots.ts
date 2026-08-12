@@ -18,7 +18,7 @@ export default function robots(): MetadataRoute.Robots {
           "/settings",
           "/room",
           "/notificacoes",
-          "/pedidos",
+          "/comunidade/pedidos",
           "/api",
         ],
       },
