@@ -37,6 +37,7 @@ import type {
   PostCommentItem,
   FeedItem,
   UserSearchResult,
+  FeedbackStatus,
 } from "@/types";
 
 // Re-export da sanção de URL — módulo puro em url.ts; aqui por compat.
@@ -622,17 +623,21 @@ export const api = {
 
   // --- Community: Anime requests ---
   listAnimeRequests: (page = 1, limit = 20, status?: string) =>
-    request(`/anime-requests?page=${page}&limit=${limit}${status ? `&status=${status}` : ""}`),
+    request<Paginated<AnimeRequestItem>>(
+      `/anime-requests?page=${page}&limit=${limit}${status ? `&status=${status}` : ""}`,
+    ),
 
   createAnimeRequest: (body: { title: string; alternativeTitle?: string; notes?: string }) =>
-    request(`/anime-requests`, { method: "POST", body: JSON.stringify(body) }),
+    request<AnimeRequestItem>(`/anime-requests`, { method: "POST", body: JSON.stringify(body) }),
 
   voteAnimeRequest: (id: string) =>
-    request(`/anime-requests/${id}/vote`, { method: "POST" }),
+    request<{ voted: boolean; voteCount: number }>(`/anime-requests/${id}/vote`, { method: "POST" }),
 
   // --- Community: Site feedback ---
   listFeedback: (page = 1, limit = 20, type?: string, status?: string) =>
-    request(`/feedback?page=${page}&limit=${limit}${type ? `&type=${type}` : ""}${status ? `&status=${status}` : ""}`),
+    request<Paginated<SiteFeedbackItem>>(
+      `/feedback?page=${page}&limit=${limit}${type ? `&type=${type}` : ""}${status ? `&status=${status}` : ""}`,
+    ),
 
   createFeedback: (body: { type: 'SUGGESTION' | 'BUG' | 'REQUEST'; title: string; description: string }) =>
     request(`/feedback`, { method: "POST", body: JSON.stringify(body) }),
@@ -751,6 +756,70 @@ export const api = {
   adminDeleteComment: (id: string) =>
     request<{ message: string }>(`/admin/comments/${id}`, { method: "DELETE" }),
 
+  // --- Admin: dashboard ---
+  adminGetDashboardStats: () =>
+    request<AdminDashboardStats>(`/settings/admin/dashboard`),
+
+  // --- Admin: user management ---
+  adminListUsers: (page = 1, limit = 20, search?: string) =>
+    request<Paginated<AdminUserListItem>>(
+      `/settings/admin/users?page=${page}&limit=${limit}${search ? `&search=${encodeURIComponent(search)}` : ""}`,
+    ),
+
+  adminGetUser: (id: string) =>
+    request<AdminUserDetail>(`/settings/admin/users/${id}`),
+
+  adminDeleteUser: (id: string) =>
+    request<{ message: string }>(`/settings/admin/users/${id}`, {
+      method: "DELETE",
+    }),
+
+  adminUpdateUserRole: (id: string, role: "USER" | "ADMIN" | "SUPERADMIN") =>
+    request<AdminUserListItem>(`/settings/admin/users/${id}/role`, {
+      method: "PATCH",
+      body: JSON.stringify({ role }),
+    }),
+
+  // --- Admin: posts moderation ---
+  adminListPosts: (page = 1, limit = 20, status?: string) =>
+    request<Paginated<AdminPostItem>>(
+      `/admin/posts?page=${page}&limit=${limit}${status ? `&status=${status}` : ""}`,
+    ),
+
+  adminHidePost: (id: string) =>
+    request<{ message: string }>(`/admin/posts/${id}/hide`, {
+      method: "PATCH",
+    }),
+
+  adminDeletePost: (id: string) =>
+    request<{ message: string }>(`/admin/posts/${id}`, {
+      method: "DELETE",
+    }),
+
+  // --- Admin: anime requests ---
+  adminUpdateAnimeRequest: (id: string, status: FeedbackStatus, adminNote?: string) =>
+    request<AnimeRequestItem>(`/admin/anime-requests/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify({ status, adminNote }),
+    }),
+
+  // --- Admin: site feedback ---
+  adminUpdateFeedback: (id: string, status: FeedbackStatus, adminNote?: string) =>
+    request<SiteFeedbackItem>(`/admin/feedback/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify({ status, adminNote }),
+    }),
+
+  // --- Admin: site settings ---
+  adminGetSiteSettings: () =>
+    request<SiteSettings>(`/settings/site`),
+
+  adminUpdateSiteSettings: (body: Partial<SiteSettings>) =>
+    request<SiteSettings>(`/settings/site`, {
+      method: "PATCH",
+      body: JSON.stringify(body),
+    }),
+
   // --- Rooms (watch party) ---
   createRoom: (body: { animeSlug: string; episodeNumber: number; maxParticipants?: number }) =>
     request<RoomInfo>(`/room`, { method: "POST", body: JSON.stringify(body) }),
@@ -787,4 +856,84 @@ export interface RoomMessageItem {
     userName: string | null;
     avatar: string | null;
   };
+}
+
+export interface AdminUserListItem {
+  id: string;
+  email: string;
+  name: string | null;
+  userName: string | null;
+  role: "USER" | "ADMIN" | "SUPERADMIN";
+  isVerified: boolean;
+  suspendedUntil: string | null;
+  suspendedReason: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AdminUserDetail extends AdminUserListItem {
+  avatar: string | null;
+  bio: string | null;
+  _count: {
+    comments: number;
+    ratings: number;
+    favorites: number;
+    watchHistories: number;
+    reportsFiled: number;
+  };
+}
+
+export interface AdminDashboardStats {
+  totals: {
+    users: number;
+    animes: number;
+    episodes: number;
+    comments: number;
+    posts: number;
+    ratings: number;
+    favorites: number;
+    watchHistories: number;
+  };
+  moderation: {
+    pendingReports: number;
+    suspendedUsers: number;
+    pendingFeedbacks: number;
+    pendingAnimeRequests: number;
+  };
+  weekly: {
+    newUsers: number;
+    newPosts: number;
+    newComments: number;
+  };
+  admins: number;
+}
+
+export interface AdminPostItem {
+  id: string;
+  content: string;
+  status: "VISIBLE" | "HIDDEN_BY_MOD";
+  createdAt: string;
+  updatedAt: string;
+  user: {
+    id: string;
+    name: string | null;
+    userName: string | null;
+    avatar: string | null;
+  };
+  anime: {
+    id: string;
+    slug: string;
+    title: string;
+  } | null;
+  _count: {
+    likes: number;
+    comments: number;
+  };
+}
+
+export interface SiteSettings {
+  siteName: string;
+  siteDescription: string;
+  registrationOpen: boolean;
+  maintenanceMode: boolean;
 }
