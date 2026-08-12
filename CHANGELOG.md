@@ -1,3 +1,10 @@
+## [1.0.1](https://github.com/1arley/animesice/compare/v1.0.0...v1.0.1) (2026-08-12)
+
+
+### Bug Fixes
+
+* **api:** normalize NEXT_PUBLIC_API_URL com o sufixo /api ([6e36371](https://github.com/1arley/animesice/commit/6e363717e1f04d8ac431e9d2a75a49ace83ff530))
+
 # 1.0.0 (2026-08-12)
 
 
