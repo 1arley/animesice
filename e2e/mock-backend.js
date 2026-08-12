@@ -31,6 +31,8 @@ const server = http.createServer((req, res) => {
   if (req.method === 'GET' && userFavsMatch) return json(res, emptyPage(1, 24));
   const userAnimeListMatch = p && (p.match(/^\/api\/users\/([^/]+)\/anime-list$/) || p.match(/^\/users\/([^/]+)\/anime-list$/));
   if (req.method === 'GET' && userAnimeListMatch) return json(res, emptyPage(1, 24));
+  const userActivityMatch = p && (p.match(/^\/api\/users\/([^/]+)\/activity$/) || p.match(/^\/users\/([^/]+)\/activity$/));
+  if (req.method === 'GET' && userActivityMatch) return json(res, emptyPage());
 
   if (req.method === 'POST' && (p === '/api/report' || p === '/report')) {
     let body = '';

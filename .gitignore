@@ -8,3 +8,9 @@ dist
 _raw
 
 tsconfig.tsbuildinfo
+
+# Playwright artifacts
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/

@@ -22,12 +22,13 @@ export default defineConfig({
     },
   ],
   webServer: {
-    // Start a lightweight mock backend then start the Next.js server with the API URL
-    // Ensures SSR requests from the Next server reach the mock-backend during tests.
-    // Start mock backend, set INCLUDE_LOCAL_API so the dev server relaxes CSP for localhost mock, and start Next with NEXT_PUBLIC_API_URL pointing at the mock backend for SSR.
-    command: "sh -c \"node e2e/mock-backend.js >/tmp/mock-backend.log 2>&1 & echo $! > /tmp/mock-backend.pid; INCLUDE_LOCAL_API=1 NEXT_PUBLIC_API_URL=http://localhost:3001 npm run start\"",
+    // Start a lightweight mock backend then build + start Next.js pointing at it.
+    // The CSP (next.config.ts) relaxes connect-src for localhost:3001 ONLY when
+    // INCLUDE_LOCAL_API=1 is present at BUILD time (headers are baked into the
+    // build) — so the build must run inside this command, with the env vars set.
+    command: "sh -c \"node e2e/mock-backend.js >/tmp/mock-backend.log 2>&1 & echo $! > /tmp/mock-backend.pid; INCLUDE_LOCAL_API=1 NEXT_PUBLIC_API_URL=http://localhost:3001 npm run build >/tmp/next-build.log 2>&1 && INCLUDE_LOCAL_API=1 NEXT_PUBLIC_API_URL=http://localhost:3001 npm run start\"",
     url: "http://localhost:3000",
     reuseExistingServer: !process.env.CI,
-    timeout: 120 * 1000,
+    timeout: 240 * 1000,
   },
 });

@@ -1,83 +1,79 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import Link from "next/link";
-import Image from "next/image";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { api, ApiError } from "@/lib/api";
+import { api } from "@/lib/api";
 import type {
   PublicUserProfile,
-  CommentItem,
+  PublicActivityEvent,
   UserRating,
   PublicFavoriteItem,
   PublicAnimeListItem,
   WatchStatus,
-  ReportReason,
 } from "@/types";
-import { CommentRow } from "@/components/common/CommentSection";
-import { Modal } from "@/components/common/Modal";
+import { ProfileHero } from "@/components/profile/ProfileHero";
+import { ProfileStats } from "@/components/profile/ProfileStats";
+import { ProfileNav, type ProfileTab } from "@/components/profile/ProfileNav";
+import { ProfileAbout } from "@/components/profile/ProfileAbout";
+import { ProfileCurrentlyWatching } from "@/components/profile/ProfileCurrentlyWatching";
+import { ProfileTaste, buildTaste } from "@/components/profile/ProfileTaste";
+import { ProfileActivity } from "@/components/profile/ProfileActivity";
+import { ProfileFavorites } from "@/components/profile/ProfileFavorites";
+import { ProfileRatings } from "@/components/profile/ProfileRatings";
+import { ProfileCollection } from "@/components/profile/ProfileCollection";
 
-const STATUS_LABELS: Record<string, string> = {
-  WATCHING: "Assistindo",
-  COMPLETED: "Completo",
-  PLANNING: "Planejado",
-  ON_HOLD: "Pausado",
-  DROPPED: "Dropado",
+const LIMIT = 24;
+
+/** Mapa de ?tab= legado (ProfileDashboard) para as tabs novas. */
+const TAB_ALIASES: Record<string, ProfileTab> = {
+  comments: "activity",
+  ratings: "ratings",
+  favorites: "favorites",
+  biblioteca: "collection",
+  overview: "overview",
+  activity: "activity",
+  collection: "collection",
 };
-
-const STATUS_FILTERS: Array<WatchStatus | "ALL"> = [
-  "ALL",
-  "WATCHING",
-  "COMPLETED",
-  "PLANNING",
-  "ON_HOLD",
-  "DROPPED",
-];
-
-const REPORT_REASONS: Array<{ value: ReportReason; label: string }> = [
-  { value: "SPAM", label: "SPAM" },
-  { value: "HARASSMENT", label: "ASSÉDIO" },
-  { value: "NSFW", label: "NSFW" },
-  { value: "SPOILER", label: "SPOILER" },
-  { value: "ILLEGAL", label: "ILLEGAL" },
-  { value: "OTHER", label: "OUTRO" },
-];
-
-type Tab = "overview" | "comments" | "ratings" | "favorites" | "biblioteca";
 
 export default function PublicProfilePage({
   params,
 }: {
   params: Promise<{ userName: string }>;
 }) {
+  const router = useRouter();
   const [profile, setProfile] = useState<PublicUserProfile | null>(null);
   const [error, setError] = useState(false);
+  const [activeTab, setActiveTab] = useState<ProfileTab>("overview");
 
-  const [activeTab, setActiveTab] = useState<Tab>("overview");
-  const [comments, setComments] = useState<CommentItem[]>([]);
-  const [commentsPage, setCommentsPage] = useState(1);
-  const [commentsHasMore, setCommentsHasMore] = useState(false);
-
-  const [ratings, setRatings] = useState<UserRating[]>([]);
-  const [ratingsPage, setRatingsPage] = useState(1);
-  const [ratingsHasMore, setRatingsHasMore] = useState(false);
-
-  const [favorites, setFavorites] = useState<PublicFavoriteItem[]>([]);
-  const [favoritesPage, setFavoritesPage] = useState(1);
-  const [favoritesHasMore, setFavoritesHasMore] = useState(false);
-
+  // --- Dados da visão geral (carregados em paralelo) ---
   const [list, setList] = useState<PublicAnimeListItem[]>([]);
-  const [listStatus, setListStatus] = useState<WatchStatus | "ALL">("ALL");
-  const [listPage, setListPage] = useState(1);
-  const [listHasMore, setListHasMore] = useState(false);
+  const [listTotal, setListTotal] = useState(0);
+  const [activity, setActivity] = useState<PublicActivityEvent[]>([]);
+  const [ratings, setRatings] = useState<UserRating[]>([]);
+  const [ratingsTotal, setRatingsTotal] = useState(0);
+  const [favorites, setFavorites] = useState<PublicFavoriteItem[]>([]);
+  const [favoritesTotal, setFavoritesTotal] = useState(0);
+  const [overviewLoading, setOverviewLoading] = useState(true);
 
-  const [loadingList, setLoadingList] = useState(false);
-  const [reportOpen, setReportOpen] = useState(false);
-  const [reportReason, setReportReason] = useState<ReportReason>("SPAM");
-  const [reportNotes, setReportNotes] = useState("");
-  const [reportSubmitting, setReportSubmitting] = useState(false);
-
-  const router = useRouter();
+  // --- Dados das tabs (lazy, sob demanda) ---
+  const [tabLoading, setTabLoading] = useState(false);
+  const [tabActivity, setTabActivity] = useState<PublicActivityEvent[]>([]);
+  const [tabActivityTotal, setTabActivityTotal] = useState(0);
+  const [tabActivityPage, setTabActivityPage] = useState(1);
+  const [tabActivityHasMore, setTabActivityHasMore] = useState(false);
+  const [tabRatings, setTabRatings] = useState<UserRating[]>([]);
+  const [tabRatingsTotal, setTabRatingsTotal] = useState(0);
+  const [tabRatingsPage, setTabRatingsPage] = useState(1);
+  const [tabRatingsHasMore, setTabRatingsHasMore] = useState(false);
+  const [tabFavorites, setTabFavorites] = useState<PublicFavoriteItem[]>([]);
+  const [tabFavoritesTotal, setTabFavoritesTotal] = useState(0);
+  const [tabFavoritesPage, setTabFavoritesPage] = useState(1);
+  const [tabFavoritesHasMore, setTabFavoritesHasMore] = useState(false);
+  const [collectionStatus, setCollectionStatus] = useState<WatchStatus | "ALL">("ALL");
+  const [tabList, setTabList] = useState<PublicAnimeListItem[]>([]);
+  const [tabListTotal, setTabListTotal] = useState(0);
+  const [tabListPage, setTabListPage] = useState(1);
+  const [tabListHasMore, setTabListHasMore] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -88,14 +84,31 @@ export default function PublicProfilePage({
         const prof = await api.getPublicProfile(userName);
         if (cancelled) return;
         setProfile(prof);
-        // URL canônica: /users/:userName. Quando o perfil tem apelido e a
-        // URL veio por id (ou por um apelido antigo), redireciona para o
-        // apelido atual — sem loop, pois a próxima carga usa o userName.
+        // URL canônica: /users/:userName.
         if (prof.userName && prof.userName !== userName) {
           router.replace(`/users/${prof.userName}`);
         }
-      } catch (e) {
+
+        // Visão geral em paralelo — sem cascata de requests.
+        const uid = prof.id;
+        const [l, a, r, f] = await Promise.all([
+          api.getUserAnimeList(uid, 1, 100),
+          api.getUserActivity(uid, 1, 8),
+          api.getUserRatings(uid, 1, 4),
+          api.getUserFavorites(uid, 1, 12),
+        ]);
+        if (cancelled) return;
+        setList(l.data ?? []);
+        setListTotal(l.meta?.total ?? 0);
+        setActivity(a.data ?? []);
+        setRatings(r.data ?? []);
+        setRatingsTotal(r.meta?.total ?? 0);
+        setFavorites(f.data ?? []);
+        setFavoritesTotal(f.meta?.total ?? 0);
+      } catch {
         if (!cancelled) setError(true);
+      } finally {
+        if (!cancelled) setOverviewLoading(false);
       }
     };
     load();
@@ -104,554 +117,288 @@ export default function PublicProfilePage({
     };
   }, [params, router]);
 
+  // ?tab= legado + rolagem suave ao trocar de aba.
   useEffect(() => {
-    if (!profile) return;
-    const uid = profile.id;
-    const withAuthor = (list: CommentItem[]): CommentItem[] =>
-      list.map((c) => ({
-        ...c,
-        userId: profile.id,
-        user: {
-          id: profile.id,
-          name: profile.name,
-          userName: profile.userName,
-          avatar: profile.avatar,
-        },
-      }));
-    async function load() {
-      setLoadingList(true);
-      try {
-        if (activeTab === "comments") {
-          const res = await api.getUserComments(uid, 1, 20);
-          setComments(withAuthor(res.data ?? []));
-          setCommentsPage(1);
-          setCommentsHasMore((res.data ?? []).length >= 20);
-        } else if (activeTab === "ratings") {
-          const res = await api.getUserRatings(uid, 1, 20);
-          setRatings(res.data ?? []);
-          setRatingsPage(1);
-          setRatingsHasMore((res.data ?? []).length >= 20);
-        } else if (activeTab === "favorites") {
-          const res = await api.getUserFavorites(uid, 1, 24);
-          setFavorites(res.data ?? []);
-          setFavoritesPage(1);
-          setFavoritesHasMore((res.data ?? []).length >= 24);
-        } else if (activeTab === "biblioteca") {
-          const res = await api.getUserAnimeList(
-            uid,
-            1,
-            24,
-            listStatus === "ALL" ? undefined : listStatus,
-          );
-          setList(res.data ?? []);
-          setListPage(1);
-          setListHasMore((res.data ?? []).length >= 24);
-        }
-      } catch (e) {
-        // ignore list errors
-      } finally {
-        setLoadingList(false);
-      }
-    }
-    load();
-  }, [activeTab, profile, listStatus]);
+    const t = new URLSearchParams(window.location.search).get("tab");
+    if (t && TAB_ALIASES[t]) setActiveTab(TAB_ALIASES[t]);
+  }, []);
 
-  if (error)
+  useEffect(() => {
+    if (activeTab === "overview") return;
+    document
+      .getElementById("profile-content")
+      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [activeTab]);
+
+  const watching = useMemo(
+    () => list.filter((i) => i.status === "WATCHING"),
+    [list],
+  );
+  const taste = useMemo(() => buildTaste(list), [list]);
+
+  if (error) {
     return (
-      <div className="mx-auto max-w-shelf px-4 py-8 text-mist">
-        Perfil não encontrado.
+      <div className="mx-auto max-w-shelf px-4 py-16 text-center">
+        <h1 className="font-display text-display-lg text-mist">
+          Perfil não encontrado.
+        </h1>
       </div>
     );
-  if (!profile)
-    return (
-      <div className="mx-auto max-w-shelf px-4 py-8 text-mist">
-        Carregando...
-      </div>
-    );
+  }
 
-  const malUrl = profile.myAnimeList
-    ? `https://myanimelist.net/profile/${encodeURIComponent(profile.myAnimeList)}`
-    : null;
+  if (!profile) {
+    return <ProfileSkeleton />;
+  }
 
-  async function handleReportSubmit() {
-    if (!profile) return;
-    const uid = profile.id;
-    setReportSubmitting(true);
+  const displayName = profile.name?.trim() || profile.userName || "Usuário";
+
+  async function loadMoreActivity() {
+    const next = tabActivityPage + 1;
     try {
-      await api.createReport({
-        targetType: "USER",
-        targetId: uid,
-        reason: reportReason,
-        notes: reportNotes || undefined,
-      });
-      setReportSubmitting(false);
-      setReportOpen(false);
-      setReportNotes("");
-      window.alert("Denúncia enviada. Obrigado.");
-    } catch (e) {
-      setReportSubmitting(false);
-      window.alert(
-        e instanceof ApiError ? e.message : "Erro ao enviar denúncia.",
+      const res = await api.getUserActivity(profile!.id, next, LIMIT);
+      setTabActivity((prev) => [...prev, ...(res.data ?? [])]);
+      setTabActivityPage(next);
+      setTabActivityHasMore(next < (res.meta?.totalPages ?? 1));
+    } catch {}
+  }
+
+  async function loadMoreRatings() {
+    const next = tabRatingsPage + 1;
+    try {
+      const res = await api.getUserRatings(profile!.id, next, LIMIT);
+      setTabRatings((prev) => [...prev, ...(res.data ?? [])]);
+      setTabRatingsPage(next);
+      setTabRatingsHasMore(next < (res.meta?.totalPages ?? 1));
+    } catch {}
+  }
+
+  async function loadMoreFavorites() {
+    const next = tabFavoritesPage + 1;
+    try {
+      const res = await api.getUserFavorites(profile!.id, next, LIMIT);
+      setTabFavorites((prev) => [...prev, ...(res.data ?? [])]);
+      setTabFavoritesPage(next);
+      setTabFavoritesHasMore(next < (res.meta?.totalPages ?? 1));
+    } catch {}
+  }
+
+  async function loadMoreList() {
+    const next = tabListPage + 1;
+    try {
+      // Respeita o filtro de status ativo — o servidor filtra e pagina.
+      const res = await api.getUserAnimeList(
+        profile!.id,
+        next,
+        LIMIT,
+        collectionStatus === "ALL" ? undefined : collectionStatus,
       );
+      setTabList((prev) => [...prev, ...(res.data ?? [])]);
+      setTabListPage(next);
+      setTabListHasMore(next < (res.meta?.totalPages ?? 1));
+    } catch {}
+  }
+
+  // Abas carregam sob demanda (primeira ativação), reutilizando os dados
+  // da visão geral quando possível — sem requests duplicados.
+  async function ensureTab(tab: ProfileTab) {
+    if (!profile) return;
+    setTabLoading(true);
+    try {
+      if (tab === "activity" && tabActivity.length === 0) {
+        const res = await api.getUserActivity(profile.id, 1, LIMIT);
+        setTabActivity(res.data ?? []);
+        setTabActivityTotal(res.meta?.total ?? 0);
+        setTabActivityPage(1);
+        setTabActivityHasMore(1 < (res.meta?.totalPages ?? 1));
+      }
+      if (tab === "ratings" && tabRatings.length === 0) {
+        const res = await api.getUserRatings(profile.id, 1, LIMIT);
+        setTabRatings(res.data ?? []);
+        setTabRatingsTotal(res.meta?.total ?? 0);
+        setTabRatingsPage(1);
+        setTabRatingsHasMore(1 < (res.meta?.totalPages ?? 1));
+      }
+      if (tab === "favorites" && tabFavorites.length === 0) {
+        const res = await api.getUserFavorites(profile.id, 1, LIMIT);
+        setTabFavorites(res.data ?? []);
+        setTabFavoritesTotal(res.meta?.total ?? 0);
+        setTabFavoritesPage(1);
+        setTabFavoritesHasMore(1 < (res.meta?.totalPages ?? 1));
+      }
+      if (tab === "collection" && tabList.length === 0) {
+        const res = await api.getUserAnimeList(
+          profile.id,
+          1,
+          LIMIT,
+          collectionStatus === "ALL" ? undefined : collectionStatus,
+        );
+        setTabList(res.data ?? []);
+        setTabListTotal(res.meta?.total ?? 0);
+        setTabListPage(1);
+        setTabListHasMore(1 < (res.meta?.totalPages ?? 1));
+      }
+    } catch {
+      // falha silenciosa — a tab mostra o estado vazio
+    } finally {
+      setTabLoading(false);
     }
+  }
+
+  async function handleCollectionStatus(s: WatchStatus | "ALL") {
+    setCollectionStatus(s);
+    if (!profile) return;
+    setTabLoading(true);
+    try {
+      const res = await api.getUserAnimeList(
+        profile.id,
+        1,
+        LIMIT,
+        s === "ALL" ? undefined : s,
+      );
+      setTabList(res.data ?? []);
+      setTabListTotal(res.meta?.total ?? 0);
+      setTabListPage(1);
+      setTabListHasMore(1 < (res.meta?.totalPages ?? 1));
+    } catch {
+      // falha silenciosa
+    } finally {
+      setTabLoading(false);
+    }
+  }
+
+  function handleNavigate(tab: ProfileTab) {
+    setActiveTab(tab);
+    ensureTab(tab);
   }
 
   return (
     <>
-      <div className="mx-auto max-w-shelf px-4 py-8">
-        <section className="max-w-2xl border border-hairline bg-panel p-6">
-          <div className="flex items-center gap-4">
-            <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden bg-hairline font-mono text-display-lg text-mist">
-              {profile.avatar ? (
-                <Image
-                  src={profile.avatar}
-                  alt={profile.userName ?? profile.name ?? "avatar"}
-                  width={64}
-                  height={64}
-                  className="h-full w-full object-cover"
-                />
-              ) : (
-                (profile.userName ?? profile.name ?? "?")[0]?.toUpperCase()
-              )}
-            </div>
-            <div>
-              <h1 className="font-display text-display-lg text-ice">
-                {profile.userName ?? profile.name ?? "Usuário"}
-              </h1>
-              {profile.userName && profile.name && (
-                <p className="text-body-sm text-mist">{profile.name}</p>
-              )}
-              <p className="text-body-sm text-mist">
-                Membro desde{" "}
-                {new Date(profile.createdAt).toLocaleDateString("pt-BR")}
-              </p>
-              {malUrl && (
-                <a
-                  href={malUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-1 inline-block font-mono text-body-sm text-ice underline decoration-hairline underline-offset-2 hover:text-snow"
-                >
-                  MyAnimeList: {profile.myAnimeList}
-                </a>
-              )}
-            </div>
-          </div>
-          {profile.bio && (
-            <p className="mt-5 whitespace-pre-line text-body text-mist">
-              {profile.bio}
-            </p>
-          )}
-          <dl className="mt-6 grid grid-cols-2 gap-4 border-t border-hairline pt-4 sm:grid-cols-4">
-            <Stat label="Comentários" value={profile._count.comments} />
-            <Stat label="Avaliações" value={profile._count.ratings} />
-            <Stat label="Favoritos" value={profile._count.favorites} />
-            <Stat label="Episódios" value={profile._count.watchHistories} />
-          </dl>
+      <ProfileHero profile={profile} />
 
-          <div className="mt-4 flex flex-wrap gap-2">
-            <TabButton
-              active={activeTab === "overview"}
-              onClick={() => setActiveTab("overview")}
-            >
-              Visão
-            </TabButton>
-            <TabButton
-              active={activeTab === "comments"}
-              onClick={() => setActiveTab("comments")}
-            >
-              Comentários
-            </TabButton>
-            <TabButton
-              active={activeTab === "ratings"}
-              onClick={() => setActiveTab("ratings")}
-            >
-              Avaliações
-            </TabButton>
-            <TabButton
-              active={activeTab === "favorites"}
-              onClick={() => setActiveTab("favorites")}
-            >
-              Favoritos
-            </TabButton>
-            <TabButton
-              active={activeTab === "biblioteca"}
-              onClick={() => setActiveTab("biblioteca")}
-            >
-              Biblioteca
-            </TabButton>
-            <div className="flex-1" />
-            <button className="btn-ghost" onClick={() => setReportOpen(true)}>
-              Denunciar usuário
-            </button>
-          </div>
-        </section>
+      <div
+        id="profile-content"
+        className="mx-auto max-w-shelf px-4 pb-16 pt-4"
+      >
+        <ProfileStats counts={profile._count} onNavigate={handleNavigate} />
 
-        <section className="mt-6 max-w-2xl">
+        <div className="mt-6">
+          <ProfileNav active={activeTab} onNavigate={handleNavigate} />
+        </div>
+
+        <div className="mt-8">
           {activeTab === "overview" && (
-            <div className="border border-hairline bg-panel p-4 text-mist">
-              {profile.bio ? (
-                <span className="whitespace-pre-line">{profile.bio}</span>
-              ) : (
-                "Sem descrição."
-              )}
+            <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] lg:gap-8">
+              {/* Coluna de identidade */}
+              <div className="space-y-10">
+                <ProfileAbout profile={profile} />
+                {taste.length > 0 && <ProfileTaste genres={taste} />}
+              </div>
+
+              {/* Coluna de atividade social */}
+              <div className="space-y-10">
+                {overviewLoading ? (
+                  <OverviewSkeleton />
+                ) : (
+                  <>
+                    <ProfileCurrentlyWatching items={watching} />
+                    <ProfileActivity
+                      events={activity}
+                      userName={displayName}
+                    />
+                    <ProfileRatings items={ratings} total={ratingsTotal} />
+                    <ProfileFavorites items={favorites} total={favoritesTotal} />
+                  </>
+                )}
+              </div>
             </div>
           )}
 
-          {activeTab === "comments" && (
-            <div className="space-y-3">
-              {loadingList && <div className="text-mist">Carregando...</div>}
-              {!loadingList && comments.length === 0 && (
-                <div className="border border-hairline bg-panel p-4 text-mist">
-                  Nenhum comentário público.
-                </div>
-              )}
-
-              {comments.map((c: CommentItem) => (
-                <CommentRow
-                  key={c.id}
-                  comment={c}
-                  currentUserId={undefined}
-                  onDelete={async (id: string) => {
-                    try {
-                      await api.deleteComment(id);
-                      setComments((prev) =>
-                        prev.filter((x) => x.id !== id),
-                      );
-                    } catch {}
-                  }}
-                  onLike={async (id: string) => {
-                    try {
-                      const res = await api.toggleCommentLike(id);
-                      setComments((prev) =>
-                        prev.map((c) =>
-                          c.id === id
-                            ? {
-                                ...c,
-                                _count: {
-                                  ...(c._count ?? { likes: 0, replies: 0 }),
-                                  likes: Math.max(
-                                    0,
-                                    (c._count?.likes ?? 0) + (res.liked ? 1 : -1),
-                                  ),
-                                },
-                              }
-                            : c,
-                        ),
-                      );
-                    } catch {}
-                  }}
-                />
-              ))}
-
-              {commentsHasMore && (
-                <button
-                  onClick={async () => {
-                    const next = commentsPage + 1;
-                    setCommentsPage(next);
-                    setLoadingList(true);
-                    try {
-                      const res = await api.getUserComments(profile!.id, next, 20);
-                      setComments((prev) => [
-                        ...prev,
-                        ...(res.data ?? []).map((c) => ({
-                          ...c,
-                          userId: profile!.id,
-                          user: {
-                            id: profile!.id,
-                            name: profile!.name,
-                            userName: profile!.userName,
-                            avatar: profile!.avatar,
-                          },
-                        })),
-                      ]);
-                      setCommentsHasMore((res.data ?? []).length >= 20);
-                    } catch {}
-                    setLoadingList(false);
-                  }}
-                  className="btn-ghost"
-                >
+          {activeTab === "activity" && (
+            <ProfileActivity
+              events={tabActivity}
+              userName={displayName}
+              title="Atividade"
+              total={tabActivityTotal}
+              loading={tabLoading && tabActivity.length === 0}
+            >
+              {tabActivityHasMore && (
+                <button onClick={loadMoreActivity} className="btn-ghost mt-4">
                   Carregar mais
                 </button>
               )}
-            </div>
+            </ProfileActivity>
           )}
 
           {activeTab === "ratings" && (
-            <div className="space-y-3">
-              {loadingList && <div className="text-mist">Carregando...</div>}
-              {!loadingList && ratings.length === 0 && (
-                <div className="border border-hairline bg-panel p-4 text-mist">
-                  Nenhuma avaliação pública.
-                </div>
-              )}
-              {ratings.map((r: UserRating) => (
-                <div
-                  key={r.anime?.id ?? r.anime?.slug}
-                  className="border border-hairline bg-panel p-4"
-                >
-                  <div className="flex items-center gap-3">
-                    <Link
-                      href={`/animes/${r.anime?.slug}`}
-                      className="h-16 w-11 shrink-0 overflow-hidden"
-                    >
-                      {r.anime?.coverImage ? (
-                        <Image
-                          src={r.anime.coverImage}
-                          alt={r.anime.title ?? "cover"}
-                          width={44}
-                          height={64}
-                          className="h-full w-full object-cover"
-                        />
-                      ) : null}
-                    </Link>
-                    <div className="flex-1">
-                      <div className="font-semibold text-ice">
-                        {r.anime?.title ?? "—"}
-                      </div>
-                      <div className="text-mist text-sm">
-                        Nota: {r.score} •{" "}
-                        {new Date(r.createdAt).toLocaleDateString()}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-
-              {ratingsHasMore && (
-                <button
-                  onClick={async () => {
-                    const next = ratingsPage + 1;
-                    setRatingsPage(next);
-                    setLoadingList(true);
-                    try {
-                      const res = await api.getUserRatings(profile!.id, next, 20);
-                      setRatings((prev) => [...prev, ...(res.data ?? [])]);
-                      setRatingsHasMore((res.data ?? []).length >= 20);
-                    } catch {}
-                    setLoadingList(false);
-                  }}
-                  className="btn-ghost"
-                >
+            <>
+              <ProfileRatings items={tabRatings} total={tabRatings.length} />
+              {tabRatingsHasMore && (
+                <button onClick={loadMoreRatings} className="btn-ghost mt-4">
                   Carregar mais
                 </button>
               )}
-            </div>
+            </>
           )}
 
           {activeTab === "favorites" && (
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-              {loadingList && <div className="text-mist">Carregando...</div>}
-              {!loadingList && favorites.length === 0 && (
-                <div className="col-span-full border border-hairline bg-panel p-4 text-mist">
-                  Nenhum favorito público.
-                </div>
-              )}
-              {favorites.map((f) => (
-                <Link
-                  key={f.anime.id}
-                  href={`/animes/${f.anime.slug}`}
-                  className="border border-hairline bg-panel p-3"
-                >
-                  <div className="aspect-[2/3] w-full overflow-hidden">
-                    <Image
-                      src={f.anime.coverImage ?? "/images/animesice-mascot.svg"}
-                      alt={f.anime.title || "cover"}
-                      width={160}
-                      height={240}
-                      className="h-full w-full object-cover"
-                    />
-                  </div>
-                  <div className="mt-2 line-clamp-2 font-semibold text-ice">
-                    {f.anime.title}
-                  </div>
-                  <div className="text-mist text-sm">
-                    {f.anime.year ?? ""} {f.anime.format ?? ""}
-                  </div>
-                </Link>
-              ))}
-
-              {favoritesHasMore && (
-                <div className="col-span-full">
-                  <button
-                    onClick={async () => {
-                      const next = favoritesPage + 1;
-                      setFavoritesPage(next);
-                      setLoadingList(true);
-                      try {
-                        const res = await api.getUserFavorites(profile!.id, next, 24);
-                        setFavorites((prev) => [...prev, ...(res.data ?? [])]);
-                        setFavoritesHasMore((res.data ?? []).length >= 24);
-                      } catch {}
-                      setLoadingList(false);
-                    }}
-                    className="btn-ghost"
-                  >
-                    Carregar mais
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
-
-          {activeTab === "biblioteca" && (
-            <div className="space-y-3">
-              <div className="flex flex-wrap gap-2">
-                {STATUS_FILTERS.map((s) => (
-                  <button
-                    key={s}
-                    onClick={() => setListStatus(s)}
-                    className={`px-3 py-1 text-caption ${
-                      listStatus === s
-                        ? "bg-ice text-panel"
-                        : "bg-panel text-mist border border-hairline"
-                    }`}
-                  >
-                    {s === "ALL" ? "Tudo" : STATUS_LABELS[s]}
-                  </button>
-                ))}
-              </div>
-
-              {loadingList && <div className="text-mist">Carregando...</div>}
-              {!loadingList && list.length === 0 && (
-                <div className="border border-hairline bg-panel p-4 text-mist">
-                  Nenhum anime público na biblioteca.
-                </div>
-              )}
-
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                {list.map((item) => (
-                  <Link
-                    key={item.animeId}
-                    href={`/animes/${item.anime.slug}`}
-                    className="border border-hairline bg-panel p-3"
-                  >
-                    <div className="aspect-[2/3] w-full overflow-hidden">
-                      <Image
-                        src={item.anime.coverImage ?? "/images/animesice-mascot.svg"}
-                        alt={item.anime.title || "cover"}
-                        width={160}
-                        height={240}
-                        className="h-full w-full object-cover"
-                      />
-                    </div>
-                    <div className="mt-2 line-clamp-2 font-semibold text-ice">
-                      {item.anime.title}
-                    </div>
-                    <div className="text-mist text-sm">
-                      {STATUS_LABELS[item.status] ?? item.status}
-                      {item.score != null ? ` • Nota ${item.score}` : ""}
-                    </div>
-                  </Link>
-                ))}
-              </div>
-
-              {listHasMore && (
-                <button
-                  onClick={async () => {
-                    const next = listPage + 1;
-                    setListPage(next);
-                    setLoadingList(true);
-                    try {
-                      const res = await api.getUserAnimeList(
-                        profile!.id,
-                        next,
-                        24,
-                        listStatus === "ALL" ? undefined : listStatus,
-                      );
-                      setList((prev) => [...prev, ...(res.data ?? [])]);
-                      setListHasMore((res.data ?? []).length >= 24);
-                    } catch {}
-                    setLoadingList(false);
-                  }}
-                  className="btn-ghost"
-                >
+            <>
+              <ProfileFavorites items={tabFavorites} total={tabFavorites.length} />
+              {tabFavoritesHasMore && (
+                <button onClick={loadMoreFavorites} className="btn-ghost mt-4">
                   Carregar mais
                 </button>
               )}
-            </div>
+            </>
           )}
-        </section>
-      </div>
 
-      <Modal open={reportOpen} onClose={() => setReportOpen(false)} title="Denunciar usuário">
-        <div>
-          <label className="mb-2 block">
-            <span className="text-caption text-mist">Motivo</span>
-            <select
-              className="field mt-1"
-              value={reportReason}
-              onChange={(e) => {
-                const reason = REPORT_REASONS.find(
-                  (r) => r.value === e.target.value,
-                );
-                if (reason) setReportReason(reason.value);
-              }}
-            >
-              {REPORT_REASONS.map((r) => (
-                <option key={r.value} value={r.value}>
-                  {r.label}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="block">
-            <span className="text-caption text-mist">Observações (opcional)</span>
-            <textarea
-              value={reportNotes}
-              onChange={(e) => setReportNotes(e.target.value)}
-              className="field mt-1 w-full resize-none"
-              rows={4}
-            />
-          </label>
-          <div className="mt-4 flex justify-end gap-2">
-            <button onClick={() => setReportOpen(false)} className="btn-ghost">
-              Cancelar
-            </button>
-            <button
-              onClick={handleReportSubmit}
-              disabled={reportSubmitting}
-              className="btn-ice"
-            >
-              {reportSubmitting ? "Enviando..." : "Enviar denúncia"}
-            </button>
-          </div>
+          {activeTab === "collection" && (
+            <>
+              <ProfileCollection
+                items={tabList}
+                total={tabListTotal}
+                status={collectionStatus}
+                onStatusChange={handleCollectionStatus}
+                loading={tabLoading}
+              />
+              {tabListHasMore && !tabLoading && (
+                <button onClick={loadMoreList} className="btn-ghost mt-4">
+                  Carregar mais
+                </button>
+              )}
+            </>
+          )}
         </div>
-      </Modal>
+      </div>
     </>
   );
 }
 
-function Stat({ label, value }: { label: string; value: number | undefined }) {
+function ProfileSkeleton() {
   return (
-    <div>
-      <dt className="font-mono text-caption uppercase text-mist">{label}</dt>
-      <dd className="font-display text-body font-semibold text-ice">
-        {value ?? "—"}
-      </dd>
+    <div className="mx-auto max-w-shelf px-4 py-16" aria-busy="true">
+      <div className="skeleton h-56 w-full" />
+      <div className="mt-6 flex items-center gap-4">
+        <div className="skeleton h-24 w-24 rounded-full" />
+        <div className="flex-1 space-y-2">
+          <div className="skeleton h-6 w-48" />
+          <div className="skeleton h-4 w-32" />
+        </div>
+      </div>
+      <div className="mt-8 grid grid-cols-2 gap-px bg-hairline sm:grid-cols-4">
+        {[0, 1, 2, 3].map((i) => (
+          <div key={i} className="skeleton h-20" />
+        ))}
+      </div>
     </div>
   );
 }
 
-function TabButton({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
-}) {
+function OverviewSkeleton() {
   return (
-    <button
-      className={`px-3 py-1 rounded ${
-        active
-          ? "bg-ice text-panel"
-          : "bg-panel text-mist border border-hairline"
-      }`}
-      onClick={onClick}
-    >
-      {children}
-    </button>
+    <div className="space-y-4" aria-busy="true">
+      <div className="skeleton h-28" />
+      <div className="skeleton h-28" />
+      <div className="skeleton h-28" />
+    </div>
   );
 }
