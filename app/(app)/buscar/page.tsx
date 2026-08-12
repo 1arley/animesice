@@ -6,40 +6,68 @@ export const revalidate = 60;
 
 const YEARS = [2026, 2025, 2024, 2023, 2022, 2021, 2020, 2019, 2018, 2017, 2016, 2015, 2014, 2013, 2012, 2011, 2010, 2009, 2008, 2007, 2006, 2005, 2004, 2003, 2002, 2001, 2000];
 
+type SearchParam = string | string[] | undefined;
+
+/** Next.js 15 entrega params repetidos como string[] (ex.: checkboxes de
+ * gênero marcados em conjunto, ou o form de /buscar que chegou a enviar
+ * `q` duplicado). Normaliza para o primeiro valor — `.trim()`/`.includes()`
+ * quebram com array. */
+function first(v: SearchParam): string | undefined {
+  return Array.isArray(v) ? v[0] : v;
+}
+
 export default async function SearchPage({
   searchParams,
 }: {
   searchParams: Promise<{
-    q?: string;
-    page?: string;
-    genres?: string;
-    status?: string;
-    audio?: string;
-    format?: string;
-    year?: string;
-    season?: string;
-    sort?: string;
+    q?: SearchParam;
+    page?: SearchParam;
+    genres?: SearchParam;
+    status?: SearchParam;
+    audio?: SearchParam;
+    format?: SearchParam;
+    year?: SearchParam;
+    season?: SearchParam;
+    sort?: SearchParam;
   }>;
 }) {
   const sp = await searchParams;
-  const q = (sp.q ?? "").trim();
-  const page = Math.max(1, Number(sp.page ?? "1") || 1);
+  const q = (first(sp.q) ?? "").trim();
+  const page = Math.max(1, Number(first(sp.page) ?? "1") || 1);
   const limit = 24;
+
+  // Múltiplos gêneros chegam como array (um checkbox por slug); o backend
+  // espera vírgula-separado, então junta explicitamente em vez de depender
+  // da coerção implícita de String().
+  const genresParam = Array.isArray(sp.genres) ? sp.genres.join(",") : sp.genres;
+  const status = first(sp.status);
+  const audio = first(sp.audio);
+  const format = first(sp.format);
+  const year = first(sp.year);
+  const season = first(sp.season);
+  const sort = first(sp.sort);
 
   const params = new URLSearchParams();
   params.set("page", String(page));
   params.set("limit", String(limit));
   if (q) params.set("search", q);
-  if (sp.genres) params.set("genres", sp.genres);
-  if (sp.status) params.set("status", sp.status);
-  if (sp.audio) params.set("audio", sp.audio);
-  if (sp.format) params.set("format", sp.format);
-  if (sp.year) params.set("year", sp.year);
-  if (sp.season) params.set("season", sp.season);
-  if (sp.sort) params.set("sort", sp.sort);
+  if (genresParam) params.set("genres", genresParam);
+  if (status) params.set("status", status);
+  if (audio) params.set("audio", audio);
+  if (format) params.set("format", format);
+  if (year) params.set("year", year);
+  if (season) params.set("season", season);
+  if (sort) params.set("sort", sort);
 
-  const [data, genres] = await Promise.all([
-    q || sp.genres || sp.status || sp.audio || sp.format || sp.year || sp.season || sp.sort
+  /** Monta URL de paginação a partir dos params já normalizados. */
+  const pageHref = (target: number) => {
+    const p = new URLSearchParams(params);
+    p.set("page", String(target));
+    return `/buscar?${p.toString()}`;
+  };
+
+  const [data, genreList] = await Promise.all([
+    q || genresParam || status || audio || format || year || season || sort
       ? serverFetchJson<Paginated<Anime>>(`/anime?${params.toString()}`)
       : Promise.resolve(null),
     serverFetchJson<Genre[]>(`/genre`),
@@ -49,16 +77,16 @@ export default async function SearchPage({
   const total = data?.meta?.total ?? 0;
   const totalPages = data?.meta?.totalPages ?? 1;
 
-  const hasQuery = q || sp.genres || sp.status || sp.audio || sp.format || sp.year || sp.season || sp.sort;
+  const hasQuery = Boolean(q || genresParam || status || audio || format || year || season || sort);
 
   // Collect active filters for display
   const activeFilters: string[] = [];
   if (q) activeFilters.push(`"${q}"`);
-  if (sp.audio) activeFilters.push(sp.audio === "DUBLADO" ? "Dublado" : "Legendado");
-  if (sp.format) activeFilters.push(sp.format);
-  if (sp.status) activeFilters.push(sp.status === "LANCAMENTO" ? "Em lançamento" : "Finalizado");
-  if (sp.year) activeFilters.push(sp.year);
-  if (sp.season) activeFilters.push(sp.season);
+  if (audio) activeFilters.push(audio === "DUBLADO" ? "Dublado" : "Legendado");
+  if (format) activeFilters.push(format);
+  if (status) activeFilters.push(status === "LANCAMENTO" ? "Em lançamento" : "Finalizado");
+  if (year) activeFilters.push(year);
+  if (season) activeFilters.push(season);
 
   return (
     <div className="mx-auto max-w-shelf px-4 py-6">
@@ -89,7 +117,8 @@ export default async function SearchPage({
         {/* Filtros */}
         <aside className="w-full shrink-0 md:w-56">
           <form className="space-y-4" method="get" action="/buscar">
-            {q && <input type="hidden" name="q" value={q} />}
+            {/* O input visível abaixo já envia name="q" — sem hidden duplicado,
+                que gerava q=...&q=... (string[] no Next 15) e quebrava o .trim(). */}
 
             {/* Search input in sidebar */}
             <fieldset>
@@ -105,19 +134,19 @@ export default async function SearchPage({
               />
             </fieldset>
 
-            {genres && genres.length > 0 && (
+            {genreList && genreList.length > 0 && (
               <fieldset>
                 <legend className="mb-2 font-mono text-caption uppercase tracking-wider text-mist">
                   Gêneros
                 </legend>
                 <div className="max-h-48 space-y-1 overflow-y-auto [scrollbar-width:thin]">
-                  {genres.map((g) => (
+                  {genreList.map((g) => (
                     <label key={g.id} className="flex cursor-pointer items-center gap-2 text-body-sm text-mist transition-colors hover:text-ice">
                       <input
                         type="checkbox"
                         name="genres"
                         value={g.slug}
-                        defaultChecked={sp.genres?.includes(g.slug)}
+                        defaultChecked={genresParam?.split(",").includes(g.slug) ?? false}
                         className="accent-ice"
                       />
                       {g.name}
@@ -136,7 +165,7 @@ export default async function SearchPage({
               <legend className="mb-2 font-mono text-caption uppercase tracking-wider text-mist">
                 Áudio
               </legend>
-              <select name="audio" defaultValue={sp.audio ?? ""} className="field">
+              <select name="audio" defaultValue={audio ?? ""} className="field">
                 <option value="">Todos</option>
                 <option value="LEGENDADO">Legendado</option>
                 <option value="DUBLADO">Dublado</option>
@@ -147,7 +176,7 @@ export default async function SearchPage({
               <legend className="mb-2 font-mono text-caption uppercase tracking-wider text-mist">
                 Formato
               </legend>
-              <select name="format" defaultValue={sp.format ?? ""} className="field">
+              <select name="format" defaultValue={format ?? ""} className="field">
                 <option value="">Todos</option>
                 <option value="TV">TV</option>
                 <option value="MOVIE">Filme</option>
@@ -161,7 +190,7 @@ export default async function SearchPage({
               <legend className="mb-2 font-mono text-caption uppercase tracking-wider text-mist">
                 Status
               </legend>
-              <select name="status" defaultValue={sp.status ?? ""} className="field">
+              <select name="status" defaultValue={status ?? ""} className="field">
                 <option value="">Todos</option>
                 <option value="LANCAMENTO">Em lançamento</option>
                 <option value="FINALIZADO">Finalizado</option>
@@ -172,7 +201,7 @@ export default async function SearchPage({
               <legend className="mb-2 font-mono text-caption uppercase tracking-wider text-mist">
                 Ano
               </legend>
-              <select name="year" defaultValue={sp.year ?? ""} className="field">
+              <select name="year" defaultValue={year ?? ""} className="field">
                 <option value="">Todos</option>
                 {YEARS.map((y) => (
                   <option key={y} value={y}>{y}</option>
@@ -184,7 +213,7 @@ export default async function SearchPage({
               <legend className="mb-2 font-mono text-caption uppercase tracking-wider text-mist">
                 Temporada
               </legend>
-              <select name="season" defaultValue={sp.season ?? ""} className="field">
+              <select name="season" defaultValue={season ?? ""} className="field">
                 <option value="">Todas</option>
                 <option value="WINTER">Inverno</option>
                 <option value="SPRING">Primavera</option>
@@ -197,7 +226,7 @@ export default async function SearchPage({
               <legend className="mb-2 font-mono text-caption uppercase tracking-wider text-mist">
                 Ordenar por
               </legend>
-              <select name="sort" defaultValue={sp.sort ?? "rating"} className="field">
+              <select name="sort" defaultValue={sort ?? "rating"} className="field">
                 <option value="rating">Nota</option>
                 <option value="recentlyAdded">Recentes</option>
                 <option value="year">Ano</option>
@@ -241,14 +270,7 @@ export default async function SearchPage({
 
               <nav className="mt-8 flex items-center gap-3" aria-label="Paginação">
                 {page > 1 ? (
-                  <a
-                    href={`/buscar?${(() => {
-                      const p = new URLSearchParams(sp as Record<string, string>);
-                      p.set("page", String(page - 1));
-                      return p.toString();
-                    })()}`}
-                    className="btn-ghost"
-                  >
+                  <a href={pageHref(page - 1)} className="btn-ghost">
                     ← Anterior
                   </a>
                 ) : (
@@ -258,14 +280,7 @@ export default async function SearchPage({
                   {page} / {totalPages}
                 </span>
                 {page < totalPages ? (
-                  <a
-                    href={`/buscar?${(() => {
-                      const p = new URLSearchParams(sp as Record<string, string>);
-                      p.set("page", String(page + 1));
-                      return p.toString();
-                    })()}`}
-                    className="btn-ghost"
-                  >
+                  <a href={pageHref(page + 1)} className="btn-ghost">
                     Próxima →
                   </a>
                 ) : (
