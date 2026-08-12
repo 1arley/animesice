@@ -58,9 +58,15 @@ module.exports = {
           "0%, 100%": { opacity: "1" },
           "50%": { opacity: "0.15" },
         },
+        // Crossfade do hero: slide entra suave, sem mover layout.
+        fade: {
+          "0%": { opacity: "0" },
+          "100%": { opacity: "1" },
+        },
       },
       animation: {
         blink: "blink 1.6s steps(1) infinite",
+        fade: "fade 600ms ease-out both",
       },
     },
   },
