@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import Link from "next/link";
 import Image from "next/image";
 import { useAuth } from "@/lib/auth-context";
 import { api, ApiError } from "@/lib/api";
@@ -94,7 +95,7 @@ export default function LibraryPage() {
   if (!user) {
     return (
       <div className="mx-auto max-w-shelf px-4 py-8 text-mist">
-        <a href="/login" className="text-ice underline">Entre</a> para acessar sua biblioteca.
+        <Link href="/login" className="text-ice underline">Entre</Link> para acessar sua biblioteca.
       </div>
     );
   }
@@ -180,7 +181,7 @@ export default function LibraryPage() {
 function HistoryRow({ item }: { item: WatchHistoryItem }) {
   const cover = safeImageSrc(item.anime.coverImage);
   return (
-    <a
+    <Link
       href={`/animes/${item.anime.slug}/${item.episode.number}`}
       className="flex items-center gap-4 border border-hairline bg-panel p-3 hover:border-ice"
     >
@@ -202,7 +203,7 @@ function HistoryRow({ item }: { item: WatchHistoryItem }) {
           EP {item.episode.number} · {item.completed ? "Concluído" : "Em andamento"}
         </p>
       </div>
-    </a>
+    </Link>
   );
 }
 

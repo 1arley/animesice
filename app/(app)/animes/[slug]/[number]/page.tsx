@@ -1,191 +1,68 @@
-"use client";
-
-import { use, useCallback, useEffect, useRef, useState } from "react";
-import { VideoPlayer } from "@/components/common/VideoPlayer";
-import { EpisodeLoadingState } from "@/components/common/EpisodeLoadingState";
-import { AdSlot } from "@/components/ads/AdSlot";
-import { api, ApiError, isProxyEmbed, type StreamSource } from "@/lib/api";
+import type { Metadata } from "next";
+import { notFound } from "next/navigation";
+import { serverFetchJson } from "@/lib/api-server";
 import type { Episode, Anime } from "@/types";
-import { CommentSection } from "@/components/common/CommentSection";
-import { CreateRoomButton } from "@/components/common/CreateRoomButton";
+import { WatchClient } from "@/components/common/WatchClient";
+import { SITE_URL } from "@/lib/site";
 
-export default function WatchPage({
+export const revalidate = 60;
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string; number: string }>;
+}): Promise<Metadata> {
+  const { slug, number } = await params;
+  const ep = await serverFetchJson<Episode & { anime: Anime }>(`/episode/${slug}/${number}`);
+  if (!ep) return {};
+
+  const title = `${ep.anime.title} — Episódio ${ep.number}`;
+  const description = `Assistir ${ep.anime.title} episódio ${ep.number} online em HD.`;
+
+  return {
+    title,
+    description,
+    alternates: { canonical: `/animes/${slug}/${number}` },
+    openGraph: {
+      title,
+      description,
+      type: "video.episode",
+      ...(ep.thumbnailUrl ? { images: [{ url: ep.thumbnailUrl }] } : {}),
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      ...(ep.thumbnailUrl ? { images: [ep.thumbnailUrl] } : {}),
+    },
+  };
+}
+
+export default async function WatchPage({
   params,
 }: {
   params: Promise<{ slug: string; number: string }>;
 }) {
-  const { slug, number: numberParam } = use(params);
+  const { slug, number: numberParam } = await params;
   const number = Number(numberParam);
-  const valid = Boolean(slug) && !Number.isNaN(number);
+  if (Number.isNaN(number)) notFound();
 
-  const [episode, setEpisode] = useState<(Episode & { anime: Anime }) | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [source, setSource] = useState<StreamSource | null>(null);
-  const [sourceError, setSourceError] = useState<string | null>(null);
-  const [loadingSource, setLoadingSource] = useState(false);
-  const loadSourceId = useRef(0);
+  const episode = await serverFetchJson<Episode & { anime: Anime }>(`/episode/${slug}/${number}`);
+  if (!episode) notFound();
 
-  useEffect(() => {
-    if (!valid) return;
-    let cancelled = false;
-    setLoading(true);
-    setError(null);
-    api
-      .getEpisode(slug, number)
-      .then((ep) => {
-        if (!cancelled) setEpisode(ep);
-      })
-      .catch((e) => {
-        if (!cancelled) setError(e instanceof ApiError ? e.message : "Erro ao carregar episódio.");
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [valid, slug, number]);
-
-  const loadSource = useCallback(async () => {
-    if (!valid) return;
-    const id = ++loadSourceId.current;
-    setLoadingSource(true);
-    setSourceError(null);
-    setSource(null);
-    try {
-      const res = await api.streamSource(slug, number);
-      if (id === loadSourceId.current) setSource(res);
-    } catch (e) {
-      if (id === loadSourceId.current) {
-        setSourceError(
-          e instanceof ApiError
-            ? e.message
-            : "Não foi possível obter o vídeo deste episódio.",
-        );
-      }
-    } finally {
-      if (id === loadSourceId.current) setLoadingSource(false);
-    }
-  }, [valid, slug, number]);
-
-  // Auto-carrega o source ao montar/trocar episódio — player pronto sem clique.
-  useEffect(() => {
-    if (!valid) return;
-    loadSource();
-  }, [loadSource, valid]);
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "TVEpisode",
+    name: `${episode.anime.title} — Episódio ${episode.number}`,
+    episodeNumber: episode.number,
+    partOfSeason: { "@type": "TVSeason", partOfSeries: { "@type": "TVSeries", name: episode.anime.title } },
+    ...(episode.thumbnailUrl ? { thumbnailUrl: episode.thumbnailUrl } : {}),
+  };
 
   return (
     <div className="mx-auto max-w-shelf px-4 py-6">
-      {loading ? (
-        <p className="text-body-sm text-mist">Carregando...</p>
-      ) : error ? (
-        <div>
-          <p className="mb-3 text-body-sm text-signal">{error}</p>
-          <a href={`/animes/${slug}`} className="btn-ghost">
-            Voltar ao anime
-          </a>
-        </div>
-      ) : episode ? (
-        <>
-          <p className="mb-3">
-            <a
-              href={`/animes/${slug}`}
-              className="text-body-sm text-mist transition-colors hover:text-ice"
-            >
-              ← Todos os episódios
-            </a>
-          </p>
-
-          <h1 className="font-display text-display-lg text-snow">
-            {episode.anime.title}
-          </h1>
-          <p className="mt-1 font-mono text-body-sm font-medium text-ice tabular-nums">
-            EP {episode.number}
-          </p>
-
-          <div className="mt-4">
-            {/* Embed externo via proxy interno do backend (sem XFO/CSP). */}
-            {episode.embedUrl && isProxyEmbed(episode.embedUrl) ? (
-              <VideoPlayer
-                src={""}
-                embedUrl={episode.embedUrl}
-                posterUrl={episode.thumbnailUrl ?? undefined}
-                animeSlug={slug}
-                episodeNumber={episode.number}
-              />
-            ) : sourceError ? (
-              <p className="text-body-sm text-signal">{sourceError}</p>
-            ) : loadingSource ? (
-              <EpisodeLoadingState />
-            ) : source ? (
-              <VideoPlayer
-                src={source.src}
-                posterUrl={source.thumbnailUrl ?? episode.thumbnailUrl ?? undefined}
-                animeSlug={slug}
-                episodeNumber={episode.number}
-              />
-            ) : (
-              <p className="text-body-sm text-mist">
-                Vídeo não disponível para este episódio.
-              </p>
-            )}
-          </div>
-
-          <AdSlot
-            slot="0000000004"
-            format="horizontal"
-            className="mt-4 min-h-[90px]"
-          />
-
-          <CreateRoomButton animeSlug={slug} episodeNumber={episode.number} />
-
-          {/* Próximo episódio */}
-          {number != null && !Number.isNaN(number) && (
-            <NextEpisode slug={slug} number={number} episodeCount={episode.anime.episodeCount} />
-          )}
-
-          <CommentSection episodeId={episode.id} title="Discussão do episódio" />
-        </>
-      ) : (
-        <p className="text-body-sm text-mist">Episódio não encontrado.</p>
-      )}
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <WatchClient slug={slug} number={number} initialEpisode={episode} />
     </div>
-  );
-}
-
-function NextEpisode({
-  slug,
-  number,
-  episodeCount,
-}: {
-  slug: string;
-  number: number;
-  episodeCount?: number | null;
-}) {
-  const [hasNext, setHasNext] = useState<boolean | null>(null);
-  useEffect(() => {
-    // Último episódio conhecido: não consulta o próximo (evita 404 desnecessário
-    // p/ filmes/séries completas). Quando episodeCount é desconhecido, o 404 da
-    // consulta abaixo é tratado como "não há próximo" — nunca como falha.
-    if (episodeCount != null && number >= episodeCount) {
-      setHasNext(false);
-      return;
-    }
-    api
-      .getEpisode(slug, number + 1)
-      .then(() => setHasNext(true))
-      .catch(() => setHasNext(false));
-  }, [slug, number, episodeCount]);
-  if (hasNext === null || !hasNext) return null;
-  return (
-    <p className="mt-3">
-      <a
-        href={`/animes/${slug}/${number + 1}`}
-        className="btn-ghost"
-      >
-        Próximo episódio →
-      </a>
-    </p>
   );
 }

@@ -1,8 +1,17 @@
 import { AnimeCard } from "@/components/common/AnimeCard";
+import { Pagination } from "@/components/ui/Pagination";
+import Link from "next/link";
+import type { Metadata } from "next";
 import type { Anime, Genre, Paginated, SortMode } from "@/types";
 import { serverFetchJson } from "@/lib/api-server";
 
 export const revalidate = 60;
+
+export const metadata: Metadata = {
+  title: "Buscar",
+  description: "Busque animes por título, gênero, ano, formato e mais.",
+  alternates: { canonical: "/buscar" },
+};
 
 const YEARS = [2026, 2025, 2024, 2023, 2022, 2021, 2020, 2019, 2018, 2017, 2016, 2015, 2014, 2013, 2012, 2011, 2010, 2009, 2008, 2007, 2006, 2005, 2004, 2003, 2002, 2001, 2000];
 
@@ -107,9 +116,9 @@ export default async function SearchPage({
               {filter}
             </span>
           ))}
-          <a href="/buscar" className="font-sans text-caption text-mist underline hover:text-ice">
+          <Link href="/buscar" className="font-sans text-caption text-mist underline hover:text-ice">
             limpar filtros
-          </a>
+          </Link>
         </div>
       )}
 
@@ -253,9 +262,9 @@ export default async function SearchPage({
           ) : results.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 text-center">
               <p className="text-body text-mist">Nenhum resultado encontrado.</p>
-              <a href="/buscar" className="mt-3 text-body-sm text-ice hover:opacity-70">
+              <Link href="/buscar" className="mt-3 text-body-sm text-ice hover:opacity-70">
                 Limpar filtros →
-              </a>
+              </Link>
             </div>
           ) : (
             <>
@@ -268,25 +277,11 @@ export default async function SearchPage({
                 ))}
               </div>
 
-              <nav className="mt-8 flex items-center gap-3" aria-label="Paginação">
-                {page > 1 ? (
-                  <a href={pageHref(page - 1)} className="btn-ghost">
-                    ← Anterior
-                  </a>
-                ) : (
-                  <span className="btn-ghost opacity-40">← Anterior</span>
-                )}
-                <span className="font-mono text-body-sm text-mist tabular-nums">
-                  {page} / {totalPages}
-                </span>
-                {page < totalPages ? (
-                  <a href={pageHref(page + 1)} className="btn-ghost">
-                    Próxima →
-                  </a>
-                ) : (
-                  <span className="btn-ghost opacity-40">Próxima →</span>
-                )}
-              </nav>
+              <Pagination
+                page={page}
+                totalPages={totalPages}
+                hrefFor={pageHref}
+              />
             </>
           )}
         </div>

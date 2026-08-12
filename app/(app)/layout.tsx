@@ -3,7 +3,7 @@ import { SiteNav } from "@/components/common/SiteNav";
 import { Footer } from "@/components/common/Footer";
 
 /**
- * Chrome da prateleira: Header + SiteNav + main (skip-anchor) + Footer.
+ * Chrome da prateleira: Header + SiteNav + skip-link + main + Footer.
  * Decisão única de composição — páginas do grupo ficam só com o conteúdo.
  */
 export default function AppLayout({
@@ -13,6 +13,12 @@ export default function AppLayout({
 }>) {
   return (
     <>
+      <a
+        href="#body-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:bg-ice focus:px-4 focus:py-2 focus:font-mono focus:text-body-sm focus:uppercase focus:text-ink"
+      >
+        Pular para conteúdo
+      </a>
       <Header />
       <SiteNav />
       <main id="body-content">{children}</main>

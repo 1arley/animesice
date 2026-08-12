@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import type { Anime } from "@/types";
 import { safeImageSrc } from "@/lib/url";
 import { statusLabel, isOnAir } from "@/lib/status";
@@ -28,7 +29,7 @@ export function AnimeCard({ anime, priority = false }: AnimeCardProps) {
   const cover = safeImageSrc(anime.coverImage);
 
   return (
-    <a
+    <Link
       href={`/animes/${anime.slug}`}
       title={anime.title}
       className="group block overflow-hidden bg-panel transition-[transform,box-shadow] duration-200 ease-out hover:-translate-y-0.5 hover:shadow-[0_12px_28px_-14px_rgba(2,4,8,0.85)] hover:ring-1 hover:ring-ice/50 active:translate-y-0 active:scale-[0.98]"
@@ -82,6 +83,6 @@ export function AnimeCard({ anime, priority = false }: AnimeCardProps) {
       <span className="line-clamp-2 block px-2 py-2 font-sans text-body-sm font-medium text-snow transition-colors group-hover:text-ice">
         {anime.title}
       </span>
-    </a>
+    </Link>
   );
 }

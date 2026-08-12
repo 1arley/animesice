@@ -2,12 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
 import { api, ApiError } from "@/lib/api";
-import { Header } from "@/components/common/Header";
-import { SiteNav } from "@/components/common/SiteNav";
-import { Footer } from "@/components/common/Footer";
-import { AdminGate } from "@/components/common/AdminGate";
 import { isPrivileged } from "@/lib/role";
 import { FieldLabel, Hint } from "@/components/admin/Field";
 import { VideoUploadPanel } from "@/components/admin/VideoUploadPanel";
@@ -84,23 +81,20 @@ export default function AdminEditEpisodePage({
   }
 
   return (
-    <AdminGate>
-      <Header />
-      <SiteNav />
-      <main className="mx-auto max-w-shelf px-4 py-6" style={{ maxWidth: 720 }}>
-        <p className="mb-4">
-          <a href="/admin" className="text-body-sm text-mist transition-colors hover:text-ice">
-            ← Painel
-          </a>
-        </p>
+    <div className="mx-auto px-4 py-6" style={{ maxWidth: 720 }}>
+      <p className="mb-4">
+        <Link href="/admin" className="text-body-sm text-mist transition-colors hover:text-ice">
+          ← Painel
+        </Link>
+      </p>
         <h1 className="font-display text-display-xl text-snow">Editar episódio</h1>
         {episode && (
           <p className="mt-1 text-body-sm text-mist">
             {episode.anime.title} — EP {episode.number}
             <br />
-            <a href={`/animes/${slug}`} className="text-ice transition-colors hover:opacity-70">
+            <Link href={`/animes/${slug}`} className="text-ice transition-colors hover:opacity-70">
               ver no site
-            </a>
+            </Link>
           </p>
         )}
 
@@ -194,8 +188,6 @@ export default function AdminEditEpisodePage({
             )}
           </form>
         )}
-      </main>
-      <Footer />
-    </AdminGate>
+    </div>
   );
 }

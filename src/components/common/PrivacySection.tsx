@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { api } from "@/lib/api";
+import { api, ApiError } from "@/lib/api";
 import type { PrivacySettings } from "@/types";
 
 const FIELDS: Array<{
@@ -40,7 +40,7 @@ export function PrivacySection() {
     api
       .getPrivacySettings()
       .then(setSettings)
-      .catch((e) => setErr(e?.message || "Erro ao carregar privacidade."));
+      .catch((e: unknown) => setErr(e instanceof ApiError ? e.message : "Erro ao carregar privacidade."));
   }, []);
 
   async function toggle(key: keyof Omit<PrivacySettings, "privateAnimeLists">, value: boolean) {
@@ -51,8 +51,8 @@ export function PrivacySection() {
       const next = await api.updatePrivacySettings({ [key]: value });
       setSettings(next);
       setMsg("Privacidade atualizada.");
-    } catch (e: any) {
-      setErr(e?.message || "Erro ao salvar.");
+    } catch (e: unknown) {
+      setErr(e instanceof ApiError ? e.message : "Erro ao salvar.");
       api
         .getPrivacySettings()
         .then(setSettings)

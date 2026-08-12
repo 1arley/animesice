@@ -1,9 +1,17 @@
 import Image from "next/image";
+import Link from "next/link";
+import type { Metadata } from "next";
 import type { Anime, CalendarResponse } from "@/types";
 import { serverFetchJson } from "@/lib/api-server";
 import { safeImageSrc } from "@/lib/url";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
+
+export const metadata: Metadata = {
+  title: "Calendário",
+  description: "Calendário semanal de animes — saiba quando cada episódio sai.",
+  alternates: { canonical: "/calendario" },
+};
 
 export default async function CalendarioPage({
   searchParams,
@@ -20,6 +28,7 @@ export default async function CalendarioPage({
 
   const data = await serverFetchJson<CalendarResponse>(
     `/anime/calendar?${query.toString()}`,
+    { cache: "force-cache", next: { revalidate: 300, tags: ["calendario"] } },
   );
 
   const byDay = data?.byDay ?? [];
@@ -36,13 +45,13 @@ export default async function CalendarioPage({
 
       <div className="mb-6 flex flex-wrap gap-2">
         {(["WINTER", "SPRING", "SUMMER", "FALL"] as const).map((s) => (
-          <a
+          <Link
             key={s}
             href={`/calendario?season=${s}`}
             className={`btn-ghost ${season === s ? "border-ice text-ice" : ""}`}
           >
             {s === "WINTER" ? "Inverno" : s === "SPRING" ? "Primavera" : s === "SUMMER" ? "Verão" : "Outono"}
-          </a>
+          </Link>
         ))}
       </div>
 
@@ -59,7 +68,7 @@ export default async function CalendarioPage({
               <ul className="divide-y divide-hairline">
                 {day.animes.map((anime) => (
                   <li key={anime.id}>
-                    <a
+                    <Link
                       href={`/animes/${anime.slug}`}
                       className="flex items-center gap-2 px-3 py-2 transition-colors hover:bg-ink"
                     >
@@ -74,7 +83,7 @@ export default async function CalendarioPage({
                           </p>
                         )}
                       </div>
-                    </a>
+                    </Link>
                   </li>
                 ))}
               </ul>
@@ -91,13 +100,13 @@ export default async function CalendarioPage({
           </h2>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
             {unscheduled.map((anime) => (
-              <a
+              <Link
                 key={anime.id}
                 href={`/animes/${anime.slug}`}
                 className="line-clamp-1 border border-hairline bg-panel px-2 py-1 font-sans text-body-sm text-mist transition-colors hover:text-ice"
               >
                 {anime.title}
-              </a>
+              </Link>
             ))}
           </div>
         </section>

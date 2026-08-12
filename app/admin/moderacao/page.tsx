@@ -3,10 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { api, ApiError } from "@/lib/api";
-import { Header } from "@/components/common/Header";
-import { SiteNav } from "@/components/common/SiteNav";
-import { Footer } from "@/components/common/Footer";
-import { AdminGate } from "@/components/common/AdminGate";
+import { Modal as SharedModal } from "@/components/common/Modal";
 import type { ReportItem, ReportStatusType } from "@/types";
 
 const STATUS_LABELS: Record<ReportStatusType | "ALL", string> = {
@@ -106,10 +103,8 @@ export default function ModerationPage() {
   }
 
   return (
-    <AdminGate>
-      <Header />
-      <SiteNav />
-      <main className="mx-auto max-w-shelf px-4 py-6">
+    <>
+      <div className="mx-auto max-w-shelf px-4 py-6">
         <h1 className="font-display text-display-xl text-snow">Moderação</h1>
         <p className="mt-1 text-body-sm text-mist">
           Gerenciar denúncias e aplicar ações a usuários.
@@ -258,14 +253,11 @@ export default function ModerationPage() {
         <p className="mt-4 text-caption text-mist">
           Logado como <span className="text-ice">{user?.email}</span> ({user?.role})
         </p>
-      </main>
+      </div>
 
       {noteModal && (
-        <Modal onClose={() => setNoteModal(null)}>
-          <h2 className="font-display text-display-lg text-snow">
-            {noteModal.action === "resolve" ? "Resolver denúncia" : "Rejeitar denúncia"}
-          </h2>
-          <p className="mt-1 text-body-sm text-mist">
+        <SharedModal open={!!noteModal} onClose={() => setNoteModal(null)} title={noteModal.action === "resolve" ? "Resolver denúncia" : "Rejeitar denúncia"}>
+          <p className="text-body-sm text-mist">
             Opcionalmente adicione uma nota de moderação.
           </p>
           <textarea
@@ -283,12 +275,11 @@ export default function ModerationPage() {
               Cancelar
             </button>
           </div>
-        </Modal>
+        </SharedModal>
       )}
 
       {moderateUserModal && (
-        <Modal onClose={() => setModerateUserModal(null)}>
-          <h2 className="font-display text-display-lg text-snow">Moderar usuário</h2>
+        <SharedModal open={!!moderateUserModal} onClose={() => setModerateUserModal(null)} title="Moderar usuário">
           <p className="mt-1 text-body-sm text-mist">
             Usuário: <code className="text-ice">{moderateUserModal}</code>
           </p>
@@ -351,26 +342,8 @@ export default function ModerationPage() {
               Cancelar
             </button>
           </div>
-        </Modal>
+        </SharedModal>
       )}
-
-      <Footer />
-    </AdminGate>
-  );
-}
-
-function Modal({ children, onClose }: { children: React.ReactNode; onClose: () => void }) {
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-ink/80 p-4"
-      onClick={onClose}
-    >
-      <div
-        className="w-full max-w-md border border-hairline bg-panel p-6"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {children}
-      </div>
-    </div>
+    </>
   );
 }

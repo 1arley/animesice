@@ -13,10 +13,10 @@ export const revalidate = 60;
 
 export default async function HomePage() {
   const [animesRes, latestRes, trendingRes, recentRes] = await Promise.all([
-    serverFetchJson<Paginated<Anime>>("/anime?page=1&limit=12"),
-    serverFetchJson<(Episode & { anime: Anime })[]>("/episode/latest?limit=12"),
-    serverFetchJson<Anime[]>("/anime/trending?limit=12"),
-    serverFetchJson<Anime[]>("/anime/recently-added?limit=12"),
+    serverFetchJson<Paginated<Anime>>("/anime?page=1&limit=12", { cache: "force-cache", next: { revalidate: 60 } }),
+    serverFetchJson<(Episode & { anime: Anime })[]>("/episode/latest?limit=12", { cache: "force-cache", next: { revalidate: 60 } }),
+    serverFetchJson<Anime[]>("/anime/trending?limit=12", { cache: "force-cache", next: { revalidate: 60 } }),
+    serverFetchJson<Anime[]>("/anime/recently-added?limit=12", { cache: "force-cache", next: { revalidate: 60 } }),
   ]);
 
   const animes = animesRes?.data ?? [];
