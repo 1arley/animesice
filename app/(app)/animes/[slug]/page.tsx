@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import type { Metadata } from "next";
 import type { Anime } from "@/types";
 import { safeImageSrc, upgradeImageUrl } from "@/lib/url";
 import { AdSlot } from "@/components/ads/AdSlot";
@@ -11,6 +12,35 @@ import { AnimeCard } from "@/components/common/AnimeCard";
 import Image from "next/image";
 
 export const revalidate = 60;
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const anime = await serverFetchJson<Anime>(`/anime/${slug}`);
+  if (!anime) return {};
+
+  const description = anime.synopsis
+    ? anime.synopsis.slice(0, 160)
+    : `Assistir ${anime.title} online em HD, legendado${anime.audio === "DUBLADO" ? " e dublado" : ""}.`;
+
+  return {
+    title: anime.title,
+    description,
+    openGraph: {
+      title: anime.title,
+      description,
+      type: "video.tv_show",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: anime.title,
+      description,
+    },
+  };
+}
 
 export default async function AnimeDetailPage({
   params,
