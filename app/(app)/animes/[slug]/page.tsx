@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import type { Anime } from "@/types";
-import { safeImageSrc } from "@/lib/url";
+import { safeImageSrc, upgradeImageUrl } from "@/lib/url";
 import { AdSlot } from "@/components/ads/AdSlot";
 import { serverFetchJson } from "@/lib/api-server";
 import { isOnAir } from "@/lib/status";
@@ -32,7 +32,10 @@ export default async function AnimeDetailPage({
   ).slice(0, 6);
   const ongoing = isOnAir(anime.status);
   const dub = anime.audio === "DUBLADO";
-  const banner = safeImageSrc(anime.bannerImage);
+  // upgradeImageUrl: sobe a resolução quando a fonte oferece (MAL l / AniList
+  // extraLarge); cover vira fallback do banner p/ nunca ficar sem arte.
+  const banner =
+    upgradeImageUrl(anime.bannerImage) ?? upgradeImageUrl(anime.coverImage);
   const cover = safeImageSrc(anime.coverImage);
 
   return (
