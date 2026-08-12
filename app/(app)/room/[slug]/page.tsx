@@ -50,7 +50,11 @@ export default function RoomPage({
     if (!slug || !user || !room) return;
 
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
-    const socket = io(`${apiUrl}/room`, { withCredentials: true });
+    // socket.io conecta na ORIGEM do backend (sem o sufixo /api) — o gateway
+    // expõe o namespace /room no mesmo host/porta do HTTP. Com NEXT_PUBLIC_API_URL
+    // = "http://host:porta/api", o sufixo /api quebraria o namespace.
+    const origin = apiUrl.replace(/\/api\/?$/, "");
+    const socket = io(`${origin}/room`, { withCredentials: true });
     socketRef.current = socket;
 
     socket.on("connect", () => {
@@ -161,7 +165,7 @@ export default function RoomPage({
               />
             ) : (
               <p className="text-body-sm text-mist">
-                Carregando vídeo...
+                Vídeo não disponível para esta sala.
               </p>
             )}
           </div>

@@ -2,6 +2,7 @@
 
 import { use, useCallback, useEffect, useRef, useState } from "react";
 import { VideoPlayer } from "@/components/common/VideoPlayer";
+import { EpisodeLoadingState } from "@/components/common/EpisodeLoadingState";
 import { AdSlot } from "@/components/ads/AdSlot";
 import { api, ApiError, isProxyEmbed, type StreamSource } from "@/lib/api";
 import type { Episode, Anime } from "@/types";
@@ -116,7 +117,7 @@ export default function WatchPage({
             ) : sourceError ? (
               <p className="text-body-sm text-signal">{sourceError}</p>
             ) : loadingSource ? (
-              <p className="text-body-sm text-mist">Carregando vídeo...</p>
+              <EpisodeLoadingState />
             ) : source ? (
               <VideoPlayer
                 src={source.src}
