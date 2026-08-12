@@ -17,6 +17,8 @@ import type {
   NotificationListResponse,
   CommentRepliesResponse,
   PublicUserProfile,
+  PublicAnimeListItem,
+  PublicFavoriteItem,
   CalendarResponse,
   GenreAnimesResponse,
   AnimeFilters,
@@ -29,6 +31,7 @@ import type {
   ReportItem,
   ModerationActionItem,
   WatchStatus,
+  PrivacySettings,
 } from "@/types";
 
 // Re-export da sanção de URL — módulo puro em url.ts; aqui por compat.
@@ -46,6 +49,7 @@ export interface User {
   userName: string | null;
   avatar: string | null;
   bio: string | null;
+  myAnimeList: string | null;
   role: string;
   createdAt: string;
   updatedAt: string;
@@ -489,20 +493,30 @@ export const api = {
   markAllNotificationsRead: () =>
     request<{ message: string }>(`/notification/read-all`, { method: "PATCH" }),
 
-  getPublicProfile: (userId: string) =>
-    request<PublicUserProfile>(`/user/${userId}/profile`),
+  // Aceita userName OU id — o backend resolve o identificador.
+  getPublicProfile: (identifier: string) =>
+    request<PublicUserProfile>(`/users/${identifier}`),
 
   // --- Public user endpoints (profile details, comments, ratings, favorites) ---
+  // Rotas públicas ficam em /users/:id/* no backend (UsersController);
+  // /user/* é o controller autenticado (me, avatar, profile-meta).
   getUserComments: (userId: string, page = 1, limit = 20) =>
-    request<CommentItem[]>(`/user/${userId}/comments?page=${page}&limit=${limit}`),
+    request<Paginated<CommentItem>>(`/users/${userId}/comments?page=${page}&limit=${limit}`),
 
   getUserRatings: (userId: string, page = 1, limit = 20) =>
-    request<UserRating[]>(`/user/${userId}/ratings?page=${page}&limit=${limit}`),
+    request<Paginated<UserRating>>(`/users/${userId}/ratings?page=${page}&limit=${limit}`),
 
   getUserFavorites: (userId: string, page = 1, limit = 24) =>
-    request<Paginated<Anime>>(`/user/${userId}/favorites?page=${page}&limit=${limit}`),
+    request<Paginated<PublicFavoriteItem>>(
+      `/users/${userId}/favorites?page=${page}&limit=${limit}`,
+    ),
 
-  updateProfileMeta: (data: { avatar?: string; bio?: string; userName?: string }) =>
+  getUserAnimeList: (identifier: string, page = 1, limit = 24, status?: string) =>
+    request<Paginated<PublicAnimeListItem>>(
+      `/users/${identifier}/anime-list?page=${page}&limit=${limit}${status ? `&status=${status}` : ""}`,
+    ),
+
+  updateProfileMeta: (data: { avatar?: string; bio?: string; userName?: string; myAnimeList?: string }) =>
     request<User>(`/user/me/profile-meta`, { method: "POST", body: JSON.stringify(data) }),
 
   uploadAvatar: async (file: File): Promise<User> => {
@@ -562,6 +576,13 @@ export const api = {
     enabled: boolean;
   }) =>
     request<NotificationPreference>(`/notification/preferences`, { method: "PATCH", body: JSON.stringify(body) }),
+
+  // --- Privacy settings ---
+  getPrivacySettings: () =>
+    request<PrivacySettings>(`/settings/privacy`),
+
+  updatePrivacySettings: (body: Partial<Omit<PrivacySettings, "privateAnimeLists">>) =>
+    request<PrivacySettings>(`/settings/privacy`, { method: "PATCH", body: JSON.stringify(body) }),
 
   // --- Recommendations ---
   getRecommendations: (limit = 20) =>

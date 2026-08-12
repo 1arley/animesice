@@ -61,7 +61,7 @@ export default function MyProfilePage() {
               <button
                 type="button"
                 className="btn-ghost"
-                onClick={() => router.push(`/perfil/${user.id}`)}
+                onClick={() => router.push(`/users/${user.userName ?? user.id}`)}
               >
                 Ver como público
               </button>

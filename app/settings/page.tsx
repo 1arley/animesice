@@ -8,6 +8,8 @@ import { api, ApiError } from "@/lib/api";
 import { Header } from "@/components/common/Header";
 import { Footer } from "@/components/common/Footer";
 import { NotificationPreferencesSection } from "@/components/common/NotificationPreferencesSection";
+import { ProfileDashboard } from "@/components/common/ProfileDashboard";
+import { PrivacySection } from "@/components/common/PrivacySection";
 import { passwordError } from "@/lib/password";
 import { displayName } from "@/lib/displayName";
 import { Avatar } from "@/components/common/Avatar";
@@ -231,6 +233,10 @@ export default function SettingsPage() {
             Configurações{" "}
             <span className="shelf-label-data">{user.email}</span>
           </h1>
+
+          <div className="mb-6">
+            <ProfileDashboard user={user} />
+          </div>
 
           <div className="space-y-6 md:grid md:grid-cols-2 md:gap-6 md:space-y-0">
             {/* ── Profile ── */}
@@ -560,6 +566,8 @@ export default function SettingsPage() {
             </section>
 
             <NotificationPreferencesSection />
+
+            <PrivacySection />
 
             {/* ── Account info ── */}
             <section className="border border-hairline bg-panel p-6 md:col-span-2">
