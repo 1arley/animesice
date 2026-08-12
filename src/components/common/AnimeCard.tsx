@@ -31,7 +31,7 @@ export function AnimeCard({ anime, priority = false }: AnimeCardProps) {
     <a
       href={`/animes/${anime.slug}`}
       title={anime.title}
-      className="group block overflow-hidden bg-panel transition-all duration-200 hover:ring-1 hover:ring-ice/50 hover:ring-offset-0"
+      className="group block overflow-hidden bg-panel transition-[transform,box-shadow] duration-200 ease-out hover:-translate-y-0.5 hover:shadow-[0_12px_28px_-14px_rgba(2,4,8,0.85)] hover:ring-1 hover:ring-ice/50 active:translate-y-0 active:scale-[0.98]"
     >
       <div className="card-scan relative" style={{ aspectRatio: "2 / 3" }}>
         {cover ? (
