@@ -15,18 +15,22 @@ const server = http.createServer((req, res) => {
   if (req.method === 'GET' && (p === '/api/anime/trending' || p === '/anime/trending')) return json(res, []);
   if (req.method === 'GET' && (p === '/api/recently-added' || p === '/anime/recently-added')) return json(res, []);
 
-  const userProfileMatch = p && p.match(/^\/api\/user\/([^/]+)\/profile$/) || (p && p.match(/^\/user\/([^/]+)\/profile$/));
+  // Perfil público — o frontend usa /users/:identifier (userName ou id).
+  const userProfileMatch = p && (p.match(/^\/api\/users\/([^/]+)$/) || p.match(/^\/users\/([^/]+)$/));
   if (req.method === 'GET' && userProfileMatch) {
     const id = userProfileMatch[1];
     return json(res, { id, name: 'Mock', userName: 'mock', avatar: null, bio: 'Bio here', createdAt: new Date().toISOString(), _count: { comments: 0, ratings: 0, favorites: 0, watchHistories: 0 } });
   }
 
-  const userCommentsMatch = p && p.match(/^\/api\/user\/([^/]+)\/comments$/) || (p && p.match(/^\/user\/([^/]+)\/comments$/));
-  if (req.method === 'GET' && userCommentsMatch) return json(res, []);
-  const userRatingsMatch = p && p.match(/^\/api\/user\/([^/]+)\/ratings$/) || (p && p.match(/^\/user\/([^/]+)\/ratings$/));
-  if (req.method === 'GET' && userRatingsMatch) return json(res, []);
-  const userFavsMatch = p && p.match(/^\/api\/user\/([^/]+)\/favorites$/) || (p && p.match(/^\/user\/([^/]+)\/favorites$/));
-  if (req.method === 'GET' && userFavsMatch) return json(res, { data: [] });
+  const emptyPage = (page = 1, limit = 20) => ({ data: [], meta: { total: 0, page, limit, totalPages: 0 } });
+  const userCommentsMatch = p && (p.match(/^\/api\/users\/([^/]+)\/comments$/) || p.match(/^\/users\/([^/]+)\/comments$/));
+  if (req.method === 'GET' && userCommentsMatch) return json(res, emptyPage());
+  const userRatingsMatch = p && (p.match(/^\/api\/users\/([^/]+)\/ratings$/) || p.match(/^\/users\/([^/]+)\/ratings$/));
+  if (req.method === 'GET' && userRatingsMatch) return json(res, emptyPage());
+  const userFavsMatch = p && (p.match(/^\/api\/users\/([^/]+)\/favorites$/) || p.match(/^\/users\/([^/]+)\/favorites$/));
+  if (req.method === 'GET' && userFavsMatch) return json(res, emptyPage(1, 24));
+  const userAnimeListMatch = p && (p.match(/^\/api\/users\/([^/]+)\/anime-list$/) || p.match(/^\/users\/([^/]+)\/anime-list$/));
+  if (req.method === 'GET' && userAnimeListMatch) return json(res, emptyPage(1, 24));
 
   if (req.method === 'POST' && (p === '/api/report' || p === '/report')) {
     let body = '';
