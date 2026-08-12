@@ -9,6 +9,7 @@ import type {
   UserRating,
   PublicFavoriteItem,
   PublicAnimeListItem,
+  UserSearchResult,
   WatchStatus,
 } from "@/types";
 import { ProfileHero } from "@/components/profile/ProfileHero";
@@ -21,6 +22,7 @@ import { ProfileActivity } from "@/components/profile/ProfileActivity";
 import { ProfileFavorites } from "@/components/profile/ProfileFavorites";
 import { ProfileRatings } from "@/components/profile/ProfileRatings";
 import { ProfileCollection } from "@/components/profile/ProfileCollection";
+import { ProfileFollowList } from "@/components/profile/ProfileFollowList";
 
 const LIMIT = 24;
 
@@ -69,6 +71,14 @@ export default function PublicProfilePage({
   const [tabFavoritesTotal, setTabFavoritesTotal] = useState(0);
   const [tabFavoritesPage, setTabFavoritesPage] = useState(1);
   const [tabFavoritesHasMore, setTabFavoritesHasMore] = useState(false);
+  const [tabFollowing, setTabFollowing] = useState<UserSearchResult[]>([]);
+  const [tabFollowingTotal, setTabFollowingTotal] = useState(0);
+  const [tabFollowingPage, setTabFollowingPage] = useState(1);
+  const [tabFollowingHasMore, setTabFollowingHasMore] = useState(false);
+  const [tabFollowers, setTabFollowers] = useState<UserSearchResult[]>([]);
+  const [tabFollowersTotal, setTabFollowersTotal] = useState(0);
+  const [tabFollowersPage, setTabFollowersPage] = useState(1);
+  const [tabFollowersHasMore, setTabFollowersHasMore] = useState(false);
   const [collectionStatus, setCollectionStatus] = useState<WatchStatus | "ALL">("ALL");
   const [tabList, setTabList] = useState<PublicAnimeListItem[]>([]);
   const [tabListTotal, setTabListTotal] = useState(0);
@@ -182,6 +192,26 @@ export default function PublicProfilePage({
     } catch {}
   }
 
+  async function loadMoreFollowing() {
+    const next = tabFollowingPage + 1;
+    try {
+      const res = await api.getFollowingForUser(profile!.id, next, LIMIT);
+      setTabFollowing((prev) => [...prev, ...(res.data ?? [])]);
+      setTabFollowingPage(next);
+      setTabFollowingHasMore(next < (res.meta?.totalPages ?? 1));
+    } catch {}
+  }
+
+  async function loadMoreFollowers() {
+    const next = tabFollowersPage + 1;
+    try {
+      const res = await api.getFollowers(profile!.id, next, LIMIT);
+      setTabFollowers((prev) => [...prev, ...(res.data ?? [])]);
+      setTabFollowersPage(next);
+      setTabFollowersHasMore(next < (res.meta?.totalPages ?? 1));
+    } catch {}
+  }
+
   async function loadMoreList() {
     const next = tabListPage + 1;
     try {
@@ -236,6 +266,20 @@ export default function PublicProfilePage({
         setTabListTotal(res.meta?.total ?? 0);
         setTabListPage(1);
         setTabListHasMore(1 < (res.meta?.totalPages ?? 1));
+      }
+      if (tab === "following" && tabFollowing.length === 0) {
+        const res = await api.getFollowingForUser(profile.id, 1, LIMIT);
+        setTabFollowing(res.data ?? []);
+        setTabFollowingTotal(res.meta?.total ?? 0);
+        setTabFollowingPage(1);
+        setTabFollowingHasMore(1 < (res.meta?.totalPages ?? 1));
+      }
+      if (tab === "followers" && tabFollowers.length === 0) {
+        const res = await api.getFollowers(profile.id, 1, LIMIT);
+        setTabFollowers(res.data ?? []);
+        setTabFollowersTotal(res.meta?.total ?? 0);
+        setTabFollowersPage(1);
+        setTabFollowersHasMore(1 < (res.meta?.totalPages ?? 1));
       }
     } catch {
       // falha silenciosa — a tab mostra o estado vazio
@@ -367,6 +411,38 @@ export default function PublicProfilePage({
               )}
             </>
           )}
+
+          {activeTab === "following" && (
+            <ProfileFollowList
+              title="Seguindo"
+              emptyText="Esta pessoa não segue ninguém ainda."
+              users={tabFollowing}
+              total={tabFollowingTotal}
+              loading={tabLoading && tabFollowing.length === 0}
+            >
+              {tabFollowingHasMore && (
+                <button onClick={loadMoreFollowing} className="btn-ghost mt-4">
+                  Carregar mais
+                </button>
+              )}
+            </ProfileFollowList>
+          )}
+
+          {activeTab === "followers" && (
+            <ProfileFollowList
+              title="Seguidores"
+              emptyText="Ninguém segue esta pessoa ainda."
+              users={tabFollowers}
+              total={tabFollowersTotal}
+              loading={tabLoading && tabFollowers.length === 0}
+            >
+              {tabFollowersHasMore && (
+                <button onClick={loadMoreFollowers} className="btn-ghost mt-4">
+                  Carregar mais
+                </button>
+              )}
+            </ProfileFollowList>
+          )}
         </div>
       </div>
     </>
@@ -384,8 +460,8 @@ function ProfileSkeleton() {
           <div className="skeleton h-4 w-32" />
         </div>
       </div>
-      <div className="mt-8 grid grid-cols-2 gap-px bg-hairline sm:grid-cols-4">
-        {[0, 1, 2, 3].map((i) => (
+      <div className="mt-8 grid grid-cols-2 gap-px bg-hairline sm:grid-cols-3 lg:grid-cols-6">
+        {[0, 1, 2, 3, 4, 5].map((i) => (
           <div key={i} className="skeleton h-20" />
         ))}
       </div>

@@ -225,6 +225,9 @@ export interface PublicUserProfile {
     ratings: number;
     favorites: number;
     watchHistories: number;
+    /** Contadores de follow — sempre presentes em /users/:id. */
+    followers: number;
+    following: number;
   };
 }
 
@@ -375,7 +378,15 @@ export interface CheckListResponse {
 }
 
 /** Notification preferences. */
-export type NotificationType = 'NEW_EPISODE' | 'COMMENT_REPLY' | 'COMMENT_LIKE' | 'MODERATION_ACTION' | 'SYSTEM';
+export type NotificationType =
+  | 'NEW_EPISODE'
+  | 'COMMENT_REPLY'
+  | 'COMMENT_LIKE'
+  | 'MODERATION_ACTION'
+  | 'SYSTEM'
+  | 'POST_LIKE'
+  | 'POST_COMMENT'
+  | 'NEW_FOLLOW';
 export type NotificationChannel = 'IN_APP' | 'EMAIL';
 
 export interface NotificationPreference {
@@ -396,7 +407,13 @@ export interface PrivacySettings {
 }
 
 /** Moderation report. */
-export type ReportTargetType = 'COMMENT' | 'CHAT_MESSAGE' | 'USER' | 'ANIME';
+export type ReportTargetType =
+  | 'COMMENT'
+  | 'CHAT_MESSAGE'
+  | 'USER'
+  | 'ANIME'
+  | 'POST'
+  | 'POST_COMMENT';
 export type ReportReason = 'SPAM' | 'HARASSMENT' | 'NSFW' | 'SPOILER' | 'ILLEGAL' | 'OTHER';
 export type ReportStatusType = 'PENDING' | 'RESOLVED' | 'DISMISSED';
 export type ModerationActionType = 'WARN' | 'MUTE' | 'BAN' | 'DELETE_CONTENT';
@@ -433,6 +450,72 @@ export interface ModerationActionItem {
   reason: string | null;
   expiresAt: string | null;
   createdAt: string;
+}
+
+/** Autor compacto (post do feed / comentário de post). */
+export interface SocialUser {
+  id: string;
+  name: string | null;
+  userName: string | null;
+  avatar: string | null;
+}
+
+/** Anime referenciado em um post do feed. */
+export interface PostAnime {
+  id: string;
+  slug: string;
+  title: string;
+  coverImage: string | null;
+}
+
+/** Post do feed social (GET /social/posts). */
+export interface SocialPost {
+  id: string;
+  content: string;
+  animeId: string | null;
+  anime: PostAnime | null;
+  user: SocialUser;
+  _count: { likes: number; comments: number };
+  hasLiked: boolean;
+  shareCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** Comentário em um post do feed. */
+export interface PostCommentItem {
+  id: string;
+  postId: string;
+  content: string;
+  user: SocialUser;
+  createdAt: string;
+}
+
+/**
+ * Item do feed social — união discriminada por `type`:
+ *  - post: texto livre de um usuário
+ *  - activity: evento público (watch/rating/favorite/comment) com o autor
+ */
+export type FeedItem =
+  | { type: "post"; post: SocialPost }
+  | { type: "activity"; event: PublicActivityEvent; user: SocialUser };
+
+/** Resultado da busca/diretório de usuários (GET /users). */
+export interface UserSearchResult {
+  id: string;
+  name: string | null;
+  userName: string | null;
+  avatar: string | null;
+  bio: string | null;
+  createdAt: string;
+  _count: {
+    comments: number;
+    ratings: number;
+    favorites: number;
+    /** Ausente nas listas de follow (/social/followers, /social/following/:id). */
+    watchHistories?: number;
+  };
+  isFollowing: boolean;
 }
 
 /** Anime request (community). */

@@ -10,6 +10,9 @@ const NOTIFICATION_LABELS: Record<NotificationType, string> = {
   COMMENT_LIKE: "Curtidas em comentários",
   MODERATION_ACTION: "Ações de moderação",
   SYSTEM: "Mensagens do sistema",
+  POST_LIKE: "Curtidas em posts",
+  POST_COMMENT: "Comentários em posts",
+  NEW_FOLLOW: "Novos seguidores",
 };
 
 const ALL_TYPES: NotificationType[] = [
@@ -18,6 +21,9 @@ const ALL_TYPES: NotificationType[] = [
   "COMMENT_LIKE",
   "MODERATION_ACTION",
   "SYSTEM",
+  "POST_LIKE",
+  "POST_COMMENT",
+  "NEW_FOLLOW",
 ];
 
 const channels: { key: NotificationChannel; label: string }[] = [

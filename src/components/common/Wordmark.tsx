@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { GradientText } from "@/components/core/GradientText";
 
 /**
  * Wordmark autoral AnimesIce.
@@ -24,7 +25,8 @@ export function Wordmark({ className = "" }: { className?: string }) {
       <span className="text-ice" aria-hidden="true">
         &#183;
       </span>
-      <span className="text-ice">Ice</span>
+      {/* "Ice" com o gradiente da marca varrendo devagar — o sinal no logo. */}
+      <GradientText className="text-[1em]">Ice</GradientText>
     </Link>
   );
 }

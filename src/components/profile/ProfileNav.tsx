@@ -5,7 +5,9 @@ export type ProfileTab =
   | "activity"
   | "ratings"
   | "collection"
-  | "favorites";
+  | "favorites"
+  | "following"
+  | "followers";
 
 const TABS: Array<{ id: ProfileTab; label: string }> = [
   { id: "overview", label: "Visão geral" },
@@ -13,6 +15,8 @@ const TABS: Array<{ id: ProfileTab; label: string }> = [
   { id: "ratings", label: "Notas" },
   { id: "collection", label: "Coleção" },
   { id: "favorites", label: "Favoritos" },
+  { id: "following", label: "Seguindo" },
+  { id: "followers", label: "Seguidores" },
 ];
 
 /**

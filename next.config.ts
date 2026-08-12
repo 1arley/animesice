@@ -39,6 +39,15 @@ const nextConfig: NextConfig = {
   compiler: {
     removeConsole: process.env.NODE_ENV === "production" ? { exclude: ["error", "warn"] } : false,
   },
+  // Rotas antigas da seção Comunidade movidas para /comunidade/*.
+  // Redirects permanentes (308) preservam URLs indexadas (sitemap/backlinks).
+  async redirects() {
+    return [
+      { source: "/pedidos", destination: "/comunidade/pedidos", permanent: true },
+      { source: "/sugestoes", destination: "/comunidade/sugestoes", permanent: true },
+      { source: "/regras", destination: "/comunidade/regras", permanent: true },
+    ];
+  },
   async headers() {
     return [
       {

@@ -3,6 +3,7 @@ import Link from "next/link";
 import type { Anime } from "@/types";
 import { safeImageSrc } from "@/lib/url";
 import { statusLabel, isOnAir } from "@/lib/status";
+import { SpotlightCard } from "@/components/core/SpotlightCard";
 
 export interface AnimeCardProps {
   anime: Pick<Anime, "slug" | "title" | "coverImage" | "rating" | "ageRating" | "status" | "audio">;
@@ -29,6 +30,7 @@ export function AnimeCard({ anime, priority = false }: AnimeCardProps) {
   const cover = safeImageSrc(anime.coverImage);
 
   return (
+    <SpotlightCard className="h-full">
     <Link
       href={`/animes/${anime.slug}`}
       title={anime.title}
@@ -84,5 +86,6 @@ export function AnimeCard({ anime, priority = false }: AnimeCardProps) {
         {anime.title}
       </span>
     </Link>
+    </SpotlightCard>
   );
 }

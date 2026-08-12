@@ -11,6 +11,8 @@ import { CommentSection } from "@/components/common/CommentSection";
 import { FavoriteButton } from "@/components/common/FavoriteButton";
 import { RatingStars, AnimeStatsDisplay } from "@/components/common/RatingStars";
 import { AnimeCard } from "@/components/common/AnimeCard";
+import { SpotlightCard } from "@/components/core/SpotlightCard";
+import { PageTitle } from "@/components/ui/PageTitle";
 import Image from "next/image";
 import { SITE_URL } from "@/lib/site";
 
@@ -148,7 +150,7 @@ export default async function AnimeDetailPage({
             )}
           </div>
 
-          <h1 className="font-display text-display-lg text-snow md:text-display-xl">{anime.title}</h1>
+          <PageTitle variant="display" text={anime.title} />
 
           {anime.japaneseTitle && (
             <p className="mt-1 font-sans text-body-sm text-mist">{anime.japaneseTitle}</p>
@@ -273,29 +275,34 @@ export default async function AnimeDetailPage({
         {episodes.length === 0 ? (
           <p className="text-body-sm text-mist">Sem episódios cadastrados.</p>
         ) : (
-          <ul className="grid grid-cols-4 gap-2 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 xl:grid-cols-12">
-            {episodes.map((ep) => {
-              const available = ep.videoUrl ?? ep.embedUrl;
-              return (
-                <li key={ep.id}>
-                  <Link
-                    href={`/animes/${slug}/${ep.number}`}
-                    className={`group block border border-hairline bg-panel px-1 py-2 text-center transition-all hover:border-ice hover:bg-hairline/50 ${
-                      available ? "" : "opacity-40"
-                    }`}
-                    title={`Episódio ${ep.number}${available ? "" : " — sem vídeo"}`}
-                  >
-                    <span className="font-mono text-body font-medium text-mist tabular-nums transition-colors group-hover:text-ice">
-                      {ep.number}
-                    </span>
-                    <span className="block font-mono text-caption uppercase tracking-wider text-mist">
-                      ep
-                    </span>
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
+          /* Painel de episódios como um controle remoto: um único glow de
+             gelo segue o cursor pela grade (raio curto, luz localizada) —
+             spotlight por chip seria ruído visual num painel utilitário. */
+          <SpotlightCard radius={140}>
+            <ul className="grid grid-cols-4 gap-2 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 xl:grid-cols-12">
+              {episodes.map((ep) => {
+                const available = ep.videoUrl ?? ep.embedUrl;
+                return (
+                  <li key={ep.id}>
+                    <Link
+                      href={`/animes/${slug}/${ep.number}`}
+                      className={`group block border border-hairline bg-panel px-1 py-2 text-center transition-all hover:border-ice hover:bg-hairline/50 ${
+                        available ? "" : "opacity-40"
+                      }`}
+                      title={`Episódio ${ep.number}${available ? "" : " — sem vídeo"}`}
+                    >
+                      <span className="font-mono text-body font-medium text-mist tabular-nums transition-colors group-hover:text-ice">
+                        {ep.number}
+                      </span>
+                      <span className="block font-mono text-caption uppercase tracking-wider text-mist">
+                        ep
+                      </span>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </SpotlightCard>
         )}
       </section>
 

@@ -1,5 +1,6 @@
 import { AnimeCard } from "@/components/common/AnimeCard";
 import { Pagination } from "@/components/ui/Pagination";
+import { PageTitle } from "@/components/ui/PageTitle";
 import Link from "next/link";
 import type { Metadata } from "next";
 import type { Anime, Genre, Paginated, SortMode } from "@/types";
@@ -99,14 +100,16 @@ export default async function SearchPage({
 
   return (
     <div className="mx-auto max-w-shelf px-4 py-6">
-      <h1 className="shelf-label">
-        Buscar{" "}
-        {hasQuery ? (
-          <span className="shelf-label-data">{total} resultado{total !== 1 ? "s" : ""}</span>
-        ) : (
-          <span className="shelf-label-data">filtros</span>
-        )}
-      </h1>
+      <PageTitle
+        text="Buscar"
+        badge={
+          hasQuery ? (
+            <>{total} resultado{total !== 1 ? "s" : ""}</>
+          ) : (
+            "filtros"
+          )
+        }
+      />
 
       {/* Active filter chips */}
       {activeFilters.length > 0 && (

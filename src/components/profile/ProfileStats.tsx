@@ -1,5 +1,6 @@
 import type { PublicUserProfile } from "@/types";
 import type { ProfileTab } from "./ProfileNav";
+import { CountUp } from "@/components/core/CountUp";
 
 interface StatItem {
   label: string;
@@ -24,10 +25,12 @@ export function ProfileStats({
     { label: "Avaliações", value: counts.ratings ?? 0, tab: "ratings" },
     { label: "Favoritos", value: counts.favorites ?? 0, tab: "favorites" },
     { label: "Comentários", value: counts.comments ?? 0, tab: "activity" },
+    { label: "Seguindo", value: counts.following ?? 0, tab: "following" },
+    { label: "Seguidores", value: counts.followers ?? 0, tab: "followers" },
   ];
 
   return (
-    <div className="grid grid-cols-2 gap-px bg-hairline sm:grid-cols-4">
+    <div className="grid grid-cols-2 gap-px bg-hairline sm:grid-cols-3 lg:grid-cols-6">
       {items.map((it) => (
         <button
           key={it.label}
@@ -38,9 +41,10 @@ export function ProfileStats({
           <span className="font-mono text-caption uppercase tracking-wider text-mist">
             {it.label}
           </span>
-          <span className="font-display text-display-lg text-snow tabular-nums transition-colors group-hover:text-ice">
-            {it.value}
-          </span>
+          <CountUp
+            to={it.value}
+            className="font-display text-display-lg text-snow tabular-nums transition-colors group-hover:text-ice"
+          />
         </button>
       ))}
     </div>

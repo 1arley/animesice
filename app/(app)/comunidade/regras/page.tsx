@@ -1,10 +1,9 @@
+import { PageTitle } from "@/components/ui/PageTitle";
+
 export default function RegrasPage() {
   return (
     <div className="mx-auto max-w-shelf px-4 py-6">
-      <h1 className="shelf-label">
-        Regras da comunidade{" "}
-        <span className="shelf-label-data">leia antes de participar</span>
-      </h1>
+      <PageTitle text="Regras da comunidade" badge="leia antes de participar" />
 
       <div className="max-w-2xl space-y-4 text-body text-mist">
         <section>
