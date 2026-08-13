@@ -25,6 +25,8 @@ export default function RoomPage({
   const [connected, setConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [deleting, setDeleting] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const socketRef = useRef<Socket | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
@@ -95,6 +97,15 @@ export default function RoomPage({
       setMessages(msgs.reverse());
     });
 
+    // Fallback: se o socket não entregar histórico em 2s, busca via REST
+    const fallbackTimer = setTimeout(() => {
+      if (messages.length === 0) {
+        api.getRoomMessages(slug)
+          .then((msgs) => setMessages(msgs))
+          .catch(() => {});
+      }
+    }, 2000);
+
     socket.on("roomFull", () => {
       setError("Sala cheia.");
       socket.disconnect();
@@ -105,6 +116,7 @@ export default function RoomPage({
     });
 
     return () => {
+      clearTimeout(fallbackTimer);
       socket.emit("leaveRoom", { slug });
       socket.disconnect();
       socketRef.current = null;
@@ -120,6 +132,20 @@ export default function RoomPage({
     if (!input.trim() || !socketRef.current?.connected || !slug) return;
     socketRef.current.emit("sendMessage", { slug, content: input });
     setInput("");
+  }
+
+  async function handleDeleteRoom() {
+    if (!slug) return;
+    setDeleting(true);
+    try {
+      await api.deleteRoom(slug);
+      window.location.href = "/";
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : "Erro ao deletar sala.");
+      setConfirmDelete(false);
+    } finally {
+      setDeleting(false);
+    }
   }
 
   if (!user) {
@@ -158,14 +184,38 @@ export default function RoomPage({
 
   return (
     <div className="mx-auto max-w-shelf px-4 py-6">
-      <p className="mb-3">
+      <div className="mb-3 flex items-center justify-between">
         <a
           href={`/animes/${room.animeSlug}/${room.episodeNumber}`}
           className="text-body-sm text-mist transition-colors hover:text-ice"
         >
           ← Voltar ao episódio
         </a>
-      </p>
+        {confirmDelete ? (
+          <div className="flex gap-2">
+            <button
+              onClick={handleDeleteRoom}
+              disabled={deleting}
+              className="btn-danger btn-sm"
+            >
+              {deleting ? "Deletando..." : "Confirmar?"}
+            </button>
+            <button
+              onClick={() => setConfirmDelete(false)}
+              className="btn-ghost btn-sm"
+            >
+              Cancelar
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={() => setConfirmDelete(true)}
+            className="btn-ghost btn-sm text-signal"
+          >
+            Deletar sala
+          </button>
+        )}
+      </div>
 
       <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
         <div>

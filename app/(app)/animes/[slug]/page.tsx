@@ -9,6 +9,7 @@ import { serverFetchJson } from "@/lib/api-server";
 import { isOnAir } from "@/lib/status";
 import { CommentSection } from "@/components/common/CommentSection";
 import { FavoriteButton } from "@/components/common/FavoriteButton";
+import { AnimeListButton } from "@/components/common/AnimeListButton";
 import { RatingStars, AnimeStatsDisplay } from "@/components/common/RatingStars";
 import { AnimeCard } from "@/components/common/AnimeCard";
 import { SpotlightCard } from "@/components/core/SpotlightCard";
@@ -238,6 +239,7 @@ export default async function AnimeDetailPage({
               </Link>
             )}
             <FavoriteButton slug={slug} />
+            <AnimeListButton slug={slug} />
             <AnimeStatsDisplay slug={slug} />
           </div>
 

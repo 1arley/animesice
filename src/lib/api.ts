@@ -832,6 +832,53 @@ export const api = {
 
   deleteRoom: (slug: string) =>
     request<{ message: string }>(`/room/${slug}`, { method: "DELETE" }),
+
+  // --- Admin: audit (SUPERADMIN) ---
+  adminGetSensitiveAccess: (resourceType = "User", days = 7) =>
+    request<AuditLogItem[]>(
+      `/admin/audit/sensitive-access?resourceType=${encodeURIComponent(resourceType)}&days=${days}`,
+    ),
+
+  // --- Admin: watchtower (SUPERADMIN) ---
+  watchtowerStatus: () =>
+    request<WatchtowerStatus>(`/admin/watchtower/status`),
+
+  watchtowerCheck: (slug: string) =>
+    request<{ anime: string; enqueued: boolean }>(
+      `/admin/watchtower/check/${encodeURIComponent(slug)}`,
+      { method: "POST" },
+    ),
+
+  watchtowerRetryJob: (id: string) =>
+    request<{ ok: boolean }>(`/admin/watchtower/jobs/${id}/retry`, {
+      method: "POST",
+    }),
+
+  watchtowerToggleSource: (id: string, disabled: boolean) =>
+    request<{ sourceId: string; disabled: boolean }>(
+      `/admin/watchtower/sources/${id}/toggle`,
+      { method: "POST", body: JSON.stringify({ disabled }) },
+    ),
+
+  watchtowerDiscover: () =>
+    request<{ created: number }>(`/admin/watchtower/discover`, {
+      method: "POST",
+    }),
+
+  watchtowerRepair: () =>
+    request<{ enqueued: number }>(`/admin/watchtower/repair`, {
+      method: "POST",
+    }),
+
+  watchtowerScanAll: (force = false) =>
+    request<{ enqueued: number; skipped: number }>(
+      `/admin/watchtower/scan-all`,
+      { method: "POST", body: JSON.stringify({ force }) },
+    ),
+
+  // --- Admin: create genre ---
+  adminCreateGenre: (body: { slug: string; name: string }) =>
+    request<Genre>(`/admin/genre`, { method: "POST", body: JSON.stringify(body) }),
 };
 
 export interface RoomInfo {
@@ -936,4 +983,38 @@ export interface SiteSettings {
   siteDescription: string;
   registrationOpen: boolean;
   maintenanceMode: boolean;
+}
+
+export interface AuditLogItem {
+  id: string;
+  action: string;
+  resourceType: string;
+  admin: {
+    email: string;
+    role: string;
+  };
+  ipAddress: string;
+  createdAt: string;
+}
+
+export interface WatchtowerJobStats {
+  pending: number;
+  running: number;
+  completed: number;
+  failed: number;
+  dead: number;
+}
+
+export interface WatchtowerSourceHealth {
+  id: string;
+  sourceId: string;
+  disabled: boolean;
+  consecutiveFailures: number;
+  lastCheckedAt: string | null;
+  lastError: string | null;
+}
+
+export interface WatchtowerStatus {
+  jobs: WatchtowerJobStats;
+  sources: WatchtowerSourceHealth[];
 }

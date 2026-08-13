@@ -346,6 +346,197 @@
     background-size: 25% 100%;
   }
 
+  /* ===== Admin Panel ===== */
+
+  /* Botão de perigo (signal/coral) */
+  .btn-danger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: theme("colors.signal");
+    color: theme("colors.ink");
+    font-family: theme("fontFamily.mono");
+    font-size: theme("fontSize.body-sm");
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    border: 1px solid theme("colors.signal");
+    cursor: pointer;
+    transition: background 120ms ease, color 120ms ease;
+  }
+  .btn-danger:hover {
+    background: transparent;
+    color: theme("colors.signal");
+  }
+  .btn-danger:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  /* Botão pequeno para ações em tabela */
+  .btn-sm {
+    padding: 0.25rem 0.6rem;
+    font-size: theme("fontSize.caption");
+    letter-spacing: 0.06em;
+  }
+
+  /* Card admin: border hairline + panel bg, com hover ice */
+  .admin-card {
+    background: theme("colors.panel");
+    border: 1px solid theme("colors.hairline");
+    transition: border-color 150ms ease, background 150ms ease;
+  }
+  .admin-card:hover {
+    border-color: rgba(69, 240, 224, 0.35);
+  }
+  .admin-card-alert {
+    border-color: rgba(255, 120, 71, 0.45);
+  }
+
+  /* Stat card: card focado em números */
+  .admin-stat {
+    padding: 1.25rem 1.5rem;
+    background: theme("colors.panel");
+    border: 1px solid theme("colors.hairline");
+    transition: border-color 150ms ease, background 150ms ease;
+  }
+  .admin-stat:hover {
+    border-color: rgba(69, 240, 224, 0.35);
+    background: theme("colors.slate");
+  }
+
+  /* Status badge: Pills de status (ativo, suspenso etc) */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.325rem;
+    padding: 0.2rem 0.55rem;
+    font-family: theme("fontFamily.mono");
+    font-size: theme("fontSize.caption");
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    border-width: 1px;
+    border-style: solid;
+  }
+  .badge-ice {
+    border-color: rgba(69, 240, 224, 0.45);
+    color: theme("colors.ice");
+    background: rgba(69, 240, 224, 0.06);
+  }
+  .badge-signal {
+    border-color: rgba(255, 120, 71, 0.45);
+    color: theme("colors.signal");
+    background: rgba(255, 120, 71, 0.06);
+  }
+  .badge-muted {
+    border-color: theme("colors.hairline");
+    color: theme("colors.mist");
+    background: transparent;
+  }
+
+  /* Dot de status */
+  .badge-dot {
+    width: 0.375rem;
+    height: 0.375rem;
+    border-radius: 9999px;
+    flex: none;
+  }
+
+  /* Tabela admin */
+  .admin-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+  .admin-table thead th {
+    text-align: left;
+    padding: 0.65rem 1rem;
+    font-family: theme("fontFamily.mono");
+    font-size: theme("fontSize.caption");
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: theme("colors.mist");
+    border-bottom: 1px solid theme("colors.hairline");
+    background: theme("colors.panel");
+    white-space: nowrap;
+  }
+  .admin-table tbody td {
+    padding: 0.65rem 1rem;
+    font-size: theme("fontSize.body-sm");
+    color: theme("colors.snow");
+    border-bottom: 1px solid theme("colors.hairline");
+    vertical-align: middle;
+  }
+  .admin-table tbody tr {
+    transition: background-color 100ms ease;
+  }
+  .admin-table tbody tr:hover {
+    background: rgba(20, 29, 41, 0.45);
+  }
+
+  /* Filtros do admin: Tabs/Botões de filtro */
+  .admin-tab {
+    padding: 0.4rem 0.875rem;
+    font-family: theme("fontFamily.mono");
+    font-size: theme("fontSize.caption");
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    border: 1px solid theme("colors.hairline");
+    color: theme("colors.mist");
+    background: transparent;
+    cursor: pointer;
+    transition: border-color 120ms ease, color 120ms ease, background 120ms ease;
+  }
+  .admin-tab:hover {
+    color: theme("colors.ice");
+    border-color: rgba(69, 240, 224, 0.4);
+  }
+  .admin-tab-active {
+    border-color: theme("colors.ice");
+    color: theme("colors.ice");
+    background: rgba(69, 240, 224, 0.06);
+  }
+
+  /* Sidebar do admin */
+  .admin-nav-item {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    padding: 0.625rem 0.875rem;
+    font-family: theme("fontFamily.mono");
+    font-size: theme("fontSize.caption");
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: theme("colors.mist");
+    border-left: 2px solid transparent;
+    transition: color 120ms ease, border-color 120ms ease, background 120ms ease;
+    cursor: pointer;
+  }
+  .admin-nav-item:hover {
+    color: theme("colors.ice");
+    background: theme("colors.slate");
+    border-left-color: rgba(69, 240, 224, 0.3);
+  }
+  .admin-nav-item-active {
+    color: theme("colors.ice");
+    background: theme("colors.slate");
+    border-left-color: theme("colors.ice");
+  }
+
+  /* Estado vazio: Empty state container */
+  .admin-empty {
+    padding: 2.5rem 1rem;
+    text-align: center;
+    color: theme("colors.mist");
+    font-size: theme("fontSize.body-sm");
+  }
+
   /* Skeleton loading placeholder */
   .skeleton {
     background: linear-gradient(
