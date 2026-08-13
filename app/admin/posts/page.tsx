@@ -24,6 +24,7 @@ export default function AdminPostsPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [actioning, setActioning] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
   const loadPosts = useCallback(async () => {
     setLoading(true);
@@ -60,6 +61,7 @@ export default function AdminPostsPage() {
     setActioning(id);
     try {
       await api.adminDeletePost(id);
+      setConfirmDelete(null);
       await loadPosts();
     } catch (e) {
       setError(e instanceof ApiError ? e.message : "Erro ao excluir post.");
@@ -69,12 +71,19 @@ export default function AdminPostsPage() {
   }
 
   const totalPages = meta?.totalPages ?? 1;
+  const total = meta?.total ?? 0;
 
   return (
     <>
-      <h1 className="font-display text-display-xl text-snow">Moderar Posts</h1>
-      <p className="mt-1 text-body-sm text-mist">
-        Listar, ocultar e excluir posts do feed da comunidade.
+      <div className="mb-2 flex items-center gap-3">
+        <h1 className="font-display text-display-xl text-snow">Posts</h1>
+        <span className="badge badge-muted">
+          <span className="badge-dot bg-ice" />
+          {total} total
+        </span>
+      </div>
+      <p className="text-body-sm text-mist">
+        Moderar posts do feed da comunidade.
       </p>
 
       {error && (
@@ -88,11 +97,7 @@ export default function AdminPostsPage() {
           <button
             key={key}
             onClick={() => { setStatusFilter(key); setPage(1); }}
-            className={`px-3 py-1.5 font-mono text-caption uppercase tracking-wider transition-colors ${
-              statusFilter === key
-                ? "border border-ice text-ice"
-                : "border border-hairline text-mist hover:text-ice"
-            }`}
+            className={`admin-tab ${statusFilter === key ? "admin-tab-active" : ""}`}
           >
             {label}
           </button>
@@ -100,24 +105,30 @@ export default function AdminPostsPage() {
       </div>
 
       {loading ? (
-        <p className="mt-4 text-body-sm text-mist">Carregando...</p>
+        <div className="admin-empty mt-4">Carregando...</div>
       ) : posts.length === 0 ? (
-        <p className="mt-4 text-body-sm text-mist">Nenhum post encontrado.</p>
+        <div className="admin-empty mt-4">Nenhum post encontrado.</div>
       ) : (
         <div className="mt-4 space-y-3">
           {posts.map((post) => (
-            <div key={post.id} className="border border-hairline bg-panel p-4">
+            <div key={post.id} className="admin-card p-4">
               <div className="flex flex-wrap items-start justify-between gap-3">
-                <div className="flex-1">
+                <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="font-mono text-caption text-mist">
+                    <span className="text-body-sm font-medium text-snow">
                       {post.user.userName ?? post.user.name ?? "—"}
                     </span>
-                    <span className={`font-mono text-caption uppercase ${
-                      post.status === "HIDDEN_BY_MOD" ? "text-signal" : "text-ice/60"
-                    }`}>
-                      {post.status === "HIDDEN_BY_MOD" ? "Oculto" : "Visível"}
-                    </span>
+                    {post.status === "HIDDEN_BY_MOD" ? (
+                      <span className="badge badge-signal">
+                        <span className="badge-dot bg-signal" />
+                        Oculto
+                      </span>
+                    ) : (
+                      <span className="badge badge-ice">
+                        <span className="badge-dot bg-ice" />
+                        Visível
+                      </span>
+                    )}
                     <span className="font-mono text-caption text-mist">
                       {post._count.likes} likes · {post._count.comments} comentários
                     </span>
@@ -125,7 +136,7 @@ export default function AdminPostsPage() {
                       {new Date(post.createdAt).toLocaleString("pt-BR")}
                     </span>
                   </div>
-                  <p className="mt-2 text-body-sm text-snow whitespace-pre-wrap break-words">
+                  <p className="mt-2 whitespace-pre-wrap break-words text-body-sm text-snow">
                     {post.content}
                   </p>
                   {post.anime && (
@@ -134,23 +145,41 @@ export default function AdminPostsPage() {
                     </p>
                   )}
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   {post.status === "VISIBLE" && (
                     <button
                       onClick={() => hidePost(post.id)}
                       disabled={actioning === post.id}
-                      className="text-caption text-signal transition-colors hover:opacity-70"
+                      className="btn-ghost btn-sm"
                     >
-                      {actioning === post.id ? "..." : "ocultar"}
+                      {actioning === post.id ? "..." : "Ocultar"}
                     </button>
                   )}
-                  <button
-                    onClick={() => deletePost(post.id)}
-                    disabled={actioning === post.id}
-                    className="text-caption text-signal transition-colors hover:opacity-70"
-                  >
-                    {actioning === post.id ? "..." : "excluir"}
-                  </button>
+                  {confirmDelete === post.id ? (
+                    <>
+                      <button
+                        onClick={() => deletePost(post.id)}
+                        disabled={actioning === post.id}
+                        className="btn-danger btn-sm"
+                      >
+                        {actioning === post.id ? "..." : "Confirmar?"}
+                      </button>
+                      <button
+                        onClick={() => setConfirmDelete(null)}
+                        className="btn-ghost btn-sm"
+                      >
+                        Cancelar
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      onClick={() => setConfirmDelete(post.id)}
+                      disabled={actioning === post.id}
+                      className="btn-ghost btn-sm text-signal"
+                    >
+                      Excluir
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
