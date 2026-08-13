@@ -54,6 +54,7 @@ export interface Anime {
   releaseDate?: string | null;
   endDate?: string | null;
   episodeCount?: number | null;
+  anilistId?: number | null;
   published?: boolean;
   genres?: Genre[];
   episodes?: Episode[];

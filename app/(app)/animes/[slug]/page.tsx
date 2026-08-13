@@ -176,6 +176,19 @@ export default async function AnimeDetailPage({
                 </dt>
                 <dd className="font-mono text-body-sm font-medium text-snow tabular-nums">
                   {anime.year}
+                  {anime.season && (
+                    <span className="text-mist">
+                      {" "}
+                      ·{" "}
+                      {anime.season === "WINTER"
+                        ? "Inverno"
+                        : anime.season === "SPRING"
+                          ? "Primavera"
+                          : anime.season === "SUMMER"
+                            ? "Verão"
+                            : "Outono"}
+                    </span>
+                  )}
                 </dd>
               </div>
             )}
@@ -206,6 +219,24 @@ export default async function AnimeDetailPage({
                 </dt>
                 <dd className="font-mono text-body-sm font-medium text-snow">
                   {anime.studios.join(", ")}
+                </dd>
+              </div>
+            )}
+            {anime.anilistId && (
+              <div>
+                <dt className="font-mono text-caption uppercase tracking-wider text-mist">
+                  AniList
+                </dt>
+                <dd className="font-mono text-body-sm font-medium text-ice tabular-nums">
+                  <Link
+                    href={`https://anilist.co/anime/${anime.anilistId}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="transition-colors hover:text-snow"
+                    title="Abrir no AniList"
+                  >
+                    #{anime.anilistId} ↗
+                  </Link>
                 </dd>
               </div>
             )}

@@ -95,6 +95,20 @@ export default function AdminWatchtowerPage() {
     });
   }
 
+  async function handleBackfillAnilist() {
+    await runAction("backfill-anilist", async () => {
+      const res = await api.watchtowerBackfillAnilist();
+      return { data: res, msg: `Backfill: ${res.matched} anime(s) casado(s) com AniList.` };
+    });
+  }
+
+  async function handleSyncSchedules() {
+    await runAction("sync-schedules", async () => {
+      const res = await api.watchtowerSyncSchedules();
+      return { data: res, msg: `Sync: ${res.synced} anime(s) com horário fixo.` };
+    });
+  }
+
   const isSuperadmin = user?.role === "SUPERADMIN";
 
   if (!isSuperadmin) {
@@ -303,6 +317,40 @@ export default function AdminWatchtowerPage() {
                 className="btn-ice mt-3"
               >
                 {actioning ? "..." : "Forçar descoberta"}
+              </button>
+            </div>
+
+            {/* Backfill de AniList */}
+            <div className="admin-card mt-3 p-4">
+              <h3 className="font-mono text-caption uppercase tracking-wider text-mist">
+                Backfill AniList (metadados)
+              </h3>
+              <p className="mt-1 text-caption text-mist">
+                Casa animes sem anilistId com AniList e grava year/season/formato.
+              </p>
+              <button
+                onClick={handleBackfillAnilist}
+                disabled={actioning}
+                className="btn-ice mt-3"
+              >
+                {actioning ? "..." : "Forçar backfill"}
+              </button>
+            </div>
+
+            {/* Sync de horários */}
+            <div className="admin-card mt-3 p-4">
+              <h3 className="font-mono text-caption uppercase tracking-wider text-mist">
+                Sincronizar horários (calendário)
+              </h3>
+              <p className="mt-1 text-caption text-mist">
+                Deriva dia + hora fixa de exibição e preenche o calendário semanal.
+              </p>
+              <button
+                onClick={handleSyncSchedules}
+                disabled={actioning}
+                className="btn-ice mt-3"
+              >
+                {actioning ? "..." : "Sincronizar"}
               </button>
             </div>
 

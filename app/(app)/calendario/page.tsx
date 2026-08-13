@@ -7,6 +7,8 @@ import { safeImageSrc } from "@/lib/url";
 
 export const revalidate = 300;
 
+const YEARS = [2026, 2025, 2024, 2023, 2022, 2021, 2020, 2019, 2018, 2017, 2016, 2015, 2014, 2013, 2012, 2011, 2010, 2009, 2008, 2007, 2006, 2005, 2004, 2003, 2002, 2001, 2000];
+
 export const metadata: Metadata = {
   title: "Calendário",
   description: "Calendário semanal de animes — saiba quando cada episódio sai.",
@@ -43,16 +45,40 @@ export default async function CalendarioPage({
         </span>
       </h1>
 
-      <div className="mb-6 flex flex-wrap gap-2">
+      <div className="mb-6 flex flex-wrap items-center gap-2">
         {(["WINTER", "SPRING", "SUMMER", "FALL"] as const).map((s) => (
           <Link
             key={s}
-            href={`/calendario?season=${s}`}
+            href={`/calendario?season=${s}${year ? `&year=${year}` : ""}`}
             className={`btn-ghost ${season === s ? "border-ice text-ice" : ""}`}
           >
             {s === "WINTER" ? "Inverno" : s === "SPRING" ? "Primavera" : s === "SUMMER" ? "Verão" : "Outono"}
           </Link>
         ))}
+
+        <label className="ml-auto flex items-center gap-2">
+          <span className="font-mono text-caption uppercase tracking-wider text-mist">
+            Ano
+          </span>
+          <select
+            className="field !w-auto py-1.5"
+            value={year || ""}
+            onChange={(e) => {
+              const y = e.target.value;
+              const q = new URLSearchParams();
+              if (y) q.set("year", y);
+              if (season) q.set("season", season);
+              window.location.href = `/calendario?${q.toString()}`;
+            }}
+          >
+            <option value="">Todos</option>
+            {YEARS.map((y) => (
+              <option key={y} value={y}>
+                {y}
+              </option>
+            ))}
+          </select>
+        </label>
       </div>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">

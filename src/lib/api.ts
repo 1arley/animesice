@@ -876,6 +876,16 @@ export const api = {
       { method: "POST", body: JSON.stringify({ force }) },
     ),
 
+  watchtowerBackfillAnilist: () =>
+    request<{ matched: number }>(`/admin/watchtower/backfill-anilist`, {
+      method: "POST",
+    }),
+
+  watchtowerSyncSchedules: () =>
+    request<{ synced: number }>(`/admin/watchtower/sync-schedules`, {
+      method: "POST",
+    }),
+
   // --- Admin: create genre ---
   adminCreateGenre: (body: { slug: string; name: string }) =>
     request<Genre>(`/admin/genre`, { method: "POST", body: JSON.stringify(body) }),
