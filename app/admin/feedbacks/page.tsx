@@ -17,12 +17,22 @@ const TYPE_LABELS: Record<string, string> = {
 };
 
 const STATUS_LABELS: Record<string, string> = {
+  ALL: "Todos",
   OPEN: "Em aberto",
   ACKNOWLEDGED: "Reconhecido",
   RESOLVED: "Resolvido",
   COMPLETED: "Concluído",
   WONT_FIX: "Não será corrigido",
   REJECTED: "Rejeitado",
+};
+
+const STATUS_BADGE: Record<string, string> = {
+  OPEN: "badge-ice",
+  ACKNOWLEDGED: "badge-ice",
+  RESOLVED: "badge-ice",
+  COMPLETED: "badge-ice",
+  WONT_FIX: "badge-muted",
+  REJECTED: "badge-signal",
 };
 
 export default function AdminFeedbacksPage() {
@@ -79,12 +89,19 @@ export default function AdminFeedbacksPage() {
   }
 
   const totalPages = meta?.totalPages ?? 1;
+  const total = meta?.total ?? 0;
 
   return (
     <>
-      <h1 className="font-display text-display-xl text-snow">Feedbacks</h1>
-      <p className="mt-1 text-body-sm text-mist">
-        Gerenciar sugestões, bugs e pedidos dos usuários.
+      <div className="mb-2 flex items-center gap-3">
+        <h1 className="font-display text-display-xl text-snow">Feedbacks</h1>
+        <span className="badge badge-muted">
+          <span className="badge-dot bg-ice" />
+          {total} total
+        </span>
+      </div>
+      <p className="text-body-sm text-mist">
+        Sugestões, bugs e pedidos enviados pela comunidade.
       </p>
 
       {error && (
@@ -93,73 +110,66 @@ export default function AdminFeedbacksPage() {
         </div>
       )}
 
-      <div className="mt-4 flex flex-wrap gap-2">
-        {Object.entries(TYPE_LABELS).map(([key, label]) => (
-          <button
-            key={key}
-            onClick={() => { setTypeFilter(key); setPage(1); }}
-            className={`px-3 py-1.5 font-mono text-caption uppercase tracking-wider transition-colors ${
-              typeFilter === key
-                ? "border border-ice text-ice"
-                : "border border-hairline text-mist hover:text-ice"
-            }`}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
-
-      <div className="mt-2 flex flex-wrap gap-2">
-        {Object.entries(STATUS_LABELS).map(([key, label]) => (
-          <button
-            key={key}
-            onClick={() => { setStatusFilter(key); setPage(1); }}
-            className={`px-3 py-1.5 font-mono text-caption uppercase tracking-wider transition-colors ${
-              statusFilter === key
-                ? "border border-ice text-ice"
-                : "border border-hairline text-mist hover:text-ice"
-            }`}
-          >
-            {label}
-          </button>
-        ))}
+      <div className="mt-4 space-y-3">
+        <div className="flex flex-wrap gap-2">
+          {Object.entries(TYPE_LABELS).map(([key, label]) => (
+            <button
+              key={key}
+              onClick={() => { setTypeFilter(key); setPage(1); }}
+              className={`admin-tab ${typeFilter === key ? "admin-tab-active" : ""}`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {Object.entries(STATUS_LABELS).map(([key, label]) => (
+            <button
+              key={key}
+              onClick={() => { setStatusFilter(key); setPage(1); }}
+              className={`admin-tab ${statusFilter === key ? "admin-tab-active" : ""}`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {loading ? (
-        <p className="mt-4 text-body-sm text-mist">Carregando...</p>
+        <div className="admin-empty mt-4">Carregando...</div>
       ) : items.length === 0 ? (
-        <p className="mt-4 text-body-sm text-mist">Nenhum feedback encontrado.</p>
+        <div className="admin-empty mt-4">Nenhum feedback encontrado.</div>
       ) : (
         <div className="mt-4 space-y-3">
           {items.map((item) => (
-            <div key={item.id} className="border border-hairline bg-panel p-4">
+            <div key={item.id} className="admin-card p-4">
               <div className="flex flex-wrap items-start justify-between gap-3">
-                <div className="flex-1">
+                <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="border border-hairline px-2 py-0.5 font-mono text-caption uppercase text-mist">
-                      {item.type}
+                    <span className="badge badge-muted">
+                      {TYPE_LABELS[item.type] ?? item.type}
                     </span>
-                    <span className={`font-mono text-caption uppercase ${
-                      item.status === "OPEN" ? "text-ice" : item.status === "COMPLETED" ? "text-ice/60" : "text-signal/60"
-                    }`}>
+                    <span className={`badge ${STATUS_BADGE[item.status] ?? "badge-muted"}`}>
                       {STATUS_LABELS[item.status] ?? item.status}
-                    </span>
-                    <span className="font-mono text-caption text-mist">
-                      {item.upvotes} upvotes
                     </span>
                     <span className="font-mono text-caption text-mist">
                       {new Date(item.createdAt).toLocaleDateString("pt-BR")}
                     </span>
                   </div>
-                  <p className="mt-2 text-body-md text-snow">{item.title}</p>
-                  <p className="mt-1 text-body-sm text-mist whitespace-pre-wrap break-words">
+                  {item.title && (
+                    <p className="mt-2 text-body-md font-medium text-snow">{item.title}</p>
+                  )}
+                  <p className="mt-2 whitespace-pre-wrap break-words text-body-sm text-mist">
                     {item.description}
                   </p>
                   {item.adminNote && (
-                    <p className="mt-1 text-body-sm text-ice/60">Nota admin: {item.adminNote}</p>
+                    <div className="mt-2 border-l-2 border-ice/30 pl-3 text-body-sm text-mist">
+                      <span className="font-mono text-caption uppercase tracking-wider text-ice/60">Nota: </span>
+                      {item.adminNote}
+                    </div>
                   )}
                   <p className="mt-2 font-mono text-caption text-mist">
-                    Por: {item.user.userName ?? item.user.name ?? "—"}
+                    Por: {item.user.userName ?? item.user.name ?? "—"} · {item.upvotes} upvotes
                   </p>
                 </div>
                 <button
@@ -206,14 +216,12 @@ export default function AdminFeedbacksPage() {
           onClose={() => setActionModal(null)}
           title="Gerenciar feedback"
         >
-          <p className="text-body-md text-snow">{actionModal.title}</p>
-          <p className="mt-1 text-caption text-mist">
-            Tipo: {actionModal.type} · {actionModal.upvotes} upvotes
-          </p>
+          <p className="text-body-md font-medium text-snow">{actionModal.title}</p>
+          <p className="mt-2 whitespace-pre-wrap text-body-sm text-mist">{actionModal.description}</p>
 
           <div className="mt-4 space-y-3">
             <div>
-              <span className="mb-1.5 block font-sans text-caption uppercase tracking-wider text-mist">
+              <span className="mb-1.5 block font-mono text-caption uppercase tracking-wider text-mist">
                 Status
               </span>
               <select
@@ -230,7 +238,7 @@ export default function AdminFeedbacksPage() {
               </select>
             </div>
             <div>
-              <span className="mb-1.5 block font-sans text-caption uppercase tracking-wider text-mist">
+              <span className="mb-1.5 block font-mono text-caption uppercase tracking-wider text-mist">
                 Nota do admin
               </span>
               <textarea
