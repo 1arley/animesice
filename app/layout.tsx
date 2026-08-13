@@ -3,6 +3,7 @@ import { Chakra_Petch, IBM_Plex_Mono, IBM_Plex_Sans } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/lib/auth-context";
 import { ToastProvider } from "@/components/common/ToastProvider";
+import { AdBlockNotice } from "@/components/ads/AdBlockNotice";
 import { ADSENSE_CLIENT } from "@/lib/adsense";
 import { SITE_URL } from "@/lib/site";
 import { ThirdPartyScripts } from "@/components/common/ThirdPartyScripts";
@@ -82,6 +83,8 @@ export default function RootLayout({
         <AuthProvider>
           <ToastProvider>{children}</ToastProvider>
         </AuthProvider>
+        {/* Soft wall: avisa sobre adblock sem bloquear o acesso. */}
+        <AdBlockNotice />
         <SpeedInsights />
         {/* Scripts de terceiros: lazyOnload + IntersectionObserver para Monetag.
             Não bloqueiam o paint inicial nem competem com o LCP. */}
