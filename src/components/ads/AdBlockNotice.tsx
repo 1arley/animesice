@@ -7,8 +7,13 @@ import { useCallback, useEffect, useState } from "react";
  * ativo, mas NUNCA bloqueia o acesso.
  *
  * Comportamento:
- *   - Detecta adblock via sonda de rede (imagem em domínio de anúncio) e
- *     presença do script do AdSense. Se o probe falhar, assume bloqueio.
+ *   - Detecta adblock por EVIDÊNCIA DUPLA: a sonda de rede (imagem em domínio
+ *     de anúncio) E o script do AdSense precisam falhar juntos para mostrar o
+ *     aviso. Qualquer sinal positivo — sonda carregou, script do AdSense
+ *     executou ou um slot foi processado — significa "sem bloqueio" e encerra
+ *     a detecção. A sonda sozinha nunca acusa: falha dela também cobre
+ *     navegadores com proteção de rastreamento (Firefox estrito, Safari ITP,
+ *     Brave Shields) e falhas de rede/região — nenhum desses é adblock.
  *   - Mostra um banner fixo na base, não-interativo no restante da página
  *     (sem overlay, sem travar scroll) — o usuário continua usando o site
  *     normalmente.
@@ -19,13 +24,16 @@ import { useCallback, useEffect, useState } from "react";
  *     bloqueador for removido (o aviso some em tempo real).
  *
  * Sem scripts de terceiros além do probe: a sonda usa apenas um `<img>`
- * para o gen_204 do AdSense (mesmo domínio já usado pelo site).
+ * para o gen_204 do AdSense (mesmo domínio já usado pelo site). O script do
+ * AdSense não é carregado aqui — apenas observado, se o site o tiver.
  */
 
 const STORAGE_KEY = "animesice:adblock-notice";
 const REMIND_AFTER_MS = 30 * 24 * 60 * 60 * 1000; // 30 dias
-const PROBE_TIMEOUT_MS = 4000;
-const ADSENSE_SCRIPT_TIMEOUT_MS = 3500;
+const POLL_MS = 200;
+const DECISION_TIMEOUT_MS = 10000;
+const PROBE_URL = "https://pagead2.googlesyndication.com/pagead/gen_204";
+const ADSENSE_SCRIPT_SELECTOR = 'script[src*="adsbygoogle.js"]';
 
 interface StoredNotice {
   dismissedAt: number;
@@ -60,40 +68,105 @@ function writeStored(dismissedAt: number) {
 /**
  * Detecta se há adblocker ativo.
  *
- * Estratégia conservadora contra falsos positivos: só confirma bloqueio
- * quando o probe de rede falha (requisição ao domínio do AdSense é barrada).
- * Se o probe carrega OU o script do AdSense executou, considera sem adblock.
- * Timeout cobre o caso de rede lenta → assume sem bloqueio (falso negativo
- * é aceitável; falso positivo não).
+ * Conservador contra falsos positivos: NUNCA acusa com base na sonda sozinha.
+ * O aviso só é confirmado quando duas evidências independentes falham:
+ *   1. a sonda de rede (`gen_204` do AdSense) é barrada; E
+ *   2. o script do AdSense (`adsbygoogle.js`) é barrado pela rede.
+ *
+ * Qualquer sinal positivo encerra a detecção como "sem bloqueio":
+ *   - a sonda carrega;
+ *   - o script do AdSense executa (`window.adsbygoogle` vira array);
+ *   - um slot já foi processado (`data-adsbygoogle-status="done"`).
+ *
+ * Isso elimina os falsos positivos antigos: falha transitória de rede, DNS,
+ * proteção de rastreamento do navegador (Firefox estrito, Safari ITP, Brave
+ * Shields) e a corrida com o script lazyOnload — nada disso mostra o aviso.
+ * O custo é um possível falso negativo (adblock exótico que só bloqueia os
+ * iframes de anúncio) — aceitável: melhor não avisar do que acusar errado.
  */
 function detectAdBlock(): Promise<boolean> {
   return new Promise((resolve) => {
     let settled = false;
-    const finish = (detected: boolean) => {
-      if (settled) return;
-      settled = true;
-      window.clearTimeout(timeout);
-      window.clearInterval(scriptTick);
-      resolve(detected);
+    let probeFailed = false;
+    let scriptBlocked = false;
+    let scriptSeen = false;
+
+    const timers: number[] = [];
+    let pollId: number | null = null;
+    let observer: MutationObserver | null = null;
+    let probe: HTMLImageElement | null = null;
+
+    const teardown = () => {
+      if (pollId !== null) window.clearInterval(pollId);
+      for (const id of timers) window.clearTimeout(id);
+      observer?.disconnect();
+      probe?.remove();
     };
 
-    // Sonda de rede: 1x1 gif do AdSense. Adblockers barram pagead2.
-    const probe = document.createElement("img");
-    probe.src = "https://pagead2.googlesyndication.com/pagead/gen_204";
+    const finish = (blocked: boolean) => {
+      if (settled) return;
+      settled = true;
+      teardown();
+      resolve(blocked);
+    };
+
+    const confirmBlocked = () => {
+      if (probeFailed && scriptBlocked) finish(true);
+    };
+
+    // Sonda de rede: falha é um SINAL, não a decisão.
+    probe = document.createElement("img");
+    probe.addEventListener("load", () => finish(false), { once: true });
+    probe.addEventListener(
+      "error",
+      () => {
+        probeFailed = true;
+        confirmBlocked();
+      },
+      { once: true },
+    );
+    probe.src = PROBE_URL;
     probe.style.cssText =
       "width:1px;height:1px;position:absolute;left:-9999px;top:-9999px;visibility:hidden";
-    probe.onload = () => finish(false);
-    probe.onerror = () => finish(true);
     document.body.appendChild(probe);
 
-    // Sinal secundário: script do AdSense já executou = não-bloqueado.
-    const scriptTick = window.setInterval(() => {
-      if (Array.isArray(window.adsbygoogle)) finish(false);
-    }, 250);
-    window.setTimeout(() => window.clearInterval(scriptTick), ADSENSE_SCRIPT_TIMEOUT_MS);
+    // Poling: script do AdSense executou ou slot foi processado =>
+    // definitivamente não-bloqueado.
+    const poll = () => {
+      if (Array.isArray(window.adsbygoogle)) return finish(false);
+      if (document.querySelector('ins.adsbygoogle[data-adsbygoogle-status="done"]')) {
+        return finish(false);
+      }
+    };
+    pollId = window.setInterval(poll, POLL_MS);
 
-    // Timeout cobre rede lenta — assume sem bloqueio (falso negativo ok).
-    const timeout = window.setTimeout(() => finish(false), PROBE_TIMEOUT_MS);
+    // Observa o <script> do AdSense: se o arquivo for barrado (adblock), o
+    // elemento dispara `error` — segunda evidência de bloqueio.
+    const observeScript = () => {
+      if (scriptSeen) return;
+      const script: HTMLScriptElement | null = document.querySelector(
+        ADSENSE_SCRIPT_SELECTOR,
+      );
+      if (!script) return;
+      scriptSeen = true;
+      script.addEventListener(
+        "error",
+        () => {
+          scriptBlocked = true;
+          confirmBlocked();
+        },
+        { once: true },
+      );
+    };
+    observeScript();
+    observer = new MutationObserver(observeScript);
+    observer.observe(document.body, { childList: true, subtree: true });
+
+    // Decisão de segurança: caso nada tenha se definido até aqui, só acusa
+    // com as DUAS evidências. Em aberto = não-bloqueado.
+    timers.push(
+      window.setTimeout(() => finish(probeFailed && scriptBlocked), DECISION_TIMEOUT_MS),
+    );
   });
 }
 
