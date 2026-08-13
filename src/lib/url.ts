@@ -25,10 +25,12 @@ export function safeImageSrc(raw: string | null | undefined): string | undefined
 
 /**
  * Sobe o nível de resolução da arte quando a fonte oferece um maior:
- * - AniList: `cover/medium` -> `cover/large` -> `cover/extraLarge` (o nível
- *   imediatamente acima do atual; banner já vem no maior disponível);
+ * - AniList cover: `cover/medium` -> `cover/large` -> `cover/extraLarge`
+ *   (banner do AniList não tem variação de tamanho — é só o arquivo).
  * - MyAnimeList: versão `l` (grande, ~600px) quando ainda é a miniatura padrão
  *   (~225px); se já é `l`, não há nível maior confiável — mantém.
+ * - WordPress (meusanimes.blog etc.): remove o sufixo `-<W>x<H>` gerado pelo
+ *   resize — a URL base aponta pro original de maior resolução.
  * Devolve undefined para URLs inválidas e a própria URL quando não há upgrade.
  */
 export function upgradeImageUrl(
@@ -37,6 +39,7 @@ export function upgradeImageUrl(
   if (!isValidRemoteUrl(raw)) return undefined;
   const url = raw.trim();
 
+  // --- AniList cover ---
   const anilist = url.match(
     /\/anilistcdn\/media\/anime\/cover\/(medium|large)\//i,
   );
@@ -45,11 +48,19 @@ export function upgradeImageUrl(
     return url.replace(anilist[0], `/anilistcdn/media/anime/cover/${target}/`);
   }
 
+  // --- MyAnimeList ---
   if (
     /^https:\/\/cdn\.myanimelist\.net\//i.test(url) &&
     !/l\.(jpg|jpeg|png|webp)$/i.test(url)
   ) {
     return url.replace(/\.(jpg|jpeg|png|webp)$/i, 'l.$1');
+  }
+
+  // --- WordPress: remove o sufixo de resize `-<W>x<H>` p/ pegar o original ---
+  // ex: .../wp-content/uploads/2025/06/hash-185x278.jpg -> ...hash.jpg
+  const wpMarker = /-(\d{2,4})x(\d{2,4})\.(jpg|jpeg|png|webp)$/i;
+  if (wpMarker.test(url)) {
+    return url.replace(wpMarker, '.$3');
   }
 
   return url;
