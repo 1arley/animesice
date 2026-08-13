@@ -31,6 +31,7 @@ export default async function SearchPage({
 }: {
   searchParams: Promise<{
     q?: SearchParam;
+    search?: SearchParam;
     page?: SearchParam;
     genres?: SearchParam;
     status?: SearchParam;
@@ -42,7 +43,9 @@ export default async function SearchPage({
   }>;
 }) {
   const sp = await searchParams;
-  const q = (first(sp.q) ?? "").trim();
+  const qFromUrl = first(sp.q);
+  const searchFromUrl = first(sp.search);
+  const q = (qFromUrl ?? searchFromUrl ?? "").trim();
   const page = Math.max(1, Number(first(sp.page) ?? "1") || 1);
   const limit = 24;
 
@@ -69,10 +72,20 @@ export default async function SearchPage({
   if (season) params.set("season", season);
   if (sort) params.set("sort", sort);
 
-  /** Monta URL de paginação a partir dos params já normalizados. */
+  /** Monta URL de paginação com os nomes públicos (q, não o search da API).
+   *  Antes usava `params` (search=...) e a página lê q= — a busca se perdia
+   *  na página 2 (0 resultados). Espelha o que o form envia. */
   const pageHref = (target: number) => {
-    const p = new URLSearchParams(params);
+    const p = new URLSearchParams();
     p.set("page", String(target));
+    if (q) p.set("q", q);
+    if (genresParam) p.set("genres", genresParam);
+    if (status) p.set("status", status);
+    if (audio) p.set("audio", audio);
+    if (format) p.set("format", format);
+    if (year) p.set("year", year);
+    if (season) p.set("season", season);
+    if (sort) p.set("sort", sort);
     return `/buscar?${p.toString()}`;
   };
 
@@ -87,7 +100,7 @@ export default async function SearchPage({
   const total = data?.meta?.total ?? 0;
   const totalPages = data?.meta?.totalPages ?? 1;
 
-  const hasQuery = Boolean(q || genresParam || status || audio || format || year || season || sort);
+  const hasQuery = Boolean(q || genresParam || status || audio || format || year || season || sort || searchFromUrl);
 
   // Collect active filters for display
   const activeFilters: string[] = [];

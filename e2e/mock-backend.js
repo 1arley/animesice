@@ -26,7 +26,43 @@ const server = http.createServer((req, res) => {
     res.end();
     return;
   }
-  if (req.method === 'GET' && (p === '/api/anime' || p === '/anime')) return json(res, []);
+  // Catálogo paginado fake — usado pelo spec de paginação do /buscar.
+  // Sem filtros retorna [] (comportamento anterior, outros specs dependem).
+  const HAS_FILTER = ['search', 'genres', 'status', 'audio', 'format', 'year', 'season', 'sort'].some(
+    (k) => parsed.query[k] !== undefined && parsed.query[k] !== '',
+  );
+  if (req.method === 'GET' && (p === '/api/anime' || p === '/anime')) {
+    if (HAS_FILTER) {
+      const page = parseInt(parsed.query.page || '1', 10);
+      const limit = parseInt(parsed.query.limit || '24', 10);
+      const total = 60;
+      const start = (page - 1) * limit;
+      const end = Math.min(start + limit, total);
+      const data = [];
+      for (let i = start; i < end; i++) {
+        data.push({
+          id: `e2e-anime-${i + 1}`,
+          slug: `e2e-anime-${i + 1}`,
+          title: `Anime E2E ${i + 1}`,
+          coverImage: null,
+          rating: 8.5,
+          ageRating: null,
+          status: 'FINALIZADO',
+          audio: 'LEGENDADO',
+        });
+      }
+      return json(res, { data, meta: { total, page, limit, totalPages: Math.ceil(total / limit) } });
+    }
+    return json(res, []);
+  }
+  // Gêneros fake — o /buscar lista checkboxes; usado pelo spec de filtros combinados.
+  if (req.method === 'GET' && (p === '/api/genre' || p === '/genre')) {
+    return json(res, [
+      { id: 'g1', slug: 'acao', name: 'Ação', _count: { animes: 12 } },
+      { id: 'g2', slug: 'comedia', name: 'Comédia', _count: { animes: 8 } },
+      { id: 'g3', slug: 'drama', name: 'Drama', _count: { animes: 5 } },
+    ]);
+  }
   if (req.method === 'GET' && (p === '/api/episode/latest' || p === '/episode/latest')) return json(res, []);
   if (req.method === 'GET' && (p === '/api/anime/trending' || p === '/anime/trending')) return json(res, []);
   if (req.method === 'GET' && (p === '/api/recently-added' || p === '/anime/recently-added')) return json(res, []);

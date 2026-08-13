@@ -1,0 +1,114 @@
+import { test, expect } from '@playwright/test';
+
+/**
+ * Paginação do /buscar — regressão: clicar em "Próxima" na página 1/3
+ * perdia a busca (links gerados com ?search= mas a página lê ?q=), então
+ * a página 2 mostrava 0 resultados / estado vazio.
+ *
+ * O mock-backend (porta 3001) devolve 60 animes paginados quando ?search=,
+ * então 24 por página → 3 páginas.
+ */
+test.describe('Buscar - paginação', () => {
+  test.beforeEach(async ({ page }) => {
+    // O título da página anima (BlurText/motion) na entrada; em paralelo o
+    // elemento da paginação nunca fica "estável" p/ clique. O tema respeita
+    // prefers-reduced-motion (renderiza estático) — desliga as animações.
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+
+    // AdBlockNotice (no layout) usa uma sonda de rede p/ detectar adblock;
+    // sem rede a sonda falha e o banner fixo na base intercepta o clique no
+    // "Próxima →". Responder a sonda com 200 = sem bloqueio, banner some.
+    await page.route('**/pagead2.googlesyndication.com/**', (route) =>
+      route.fulfill({ status: 200, contentType: 'image/gif', body: '' }),
+    );
+  });
+
+  test('avança de página mantendo a busca e os resultados', async ({ page }) => {
+    await page.goto('/buscar?q=naruto');
+
+    // Página 1: 24 cards, contador "página 1 de 3"
+    await expect(page.locator('a[href^="/animes/e2e-anime-"]')).toHaveCount(24);
+    await expect(page.getByText('página 1 de 3')).toBeVisible();
+
+    // Clica em Próxima → deve ir para página 2 mantendo q=naruto
+    await page.click('a:has-text("Próxima")');
+    await page.waitForURL('**/buscar?page=2&q=naruto');
+
+    // Página 2: mostra os cards da segunda metade e o contador atualizado
+    await expect(page.locator('a[href="/animes/e2e-anime-25"]')).toBeVisible();
+    await expect(page.locator('a[href="/animes/e2e-anime-1"]')).toHaveCount(0);
+    await expect(page.getByText('página 2 de 3')).toBeVisible();
+    await expect(page.locator('a[href^="/animes/e2e-anime-"]')).toHaveCount(24);
+
+    // O input de busca preserva o termo
+    await expect(page.locator('input[name="q"]')).toHaveValue('naruto');
+  });
+
+  test('navega de volta com Anterior sem perder a busca', async ({ page }) => {
+    await page.goto('/buscar?q=naruto&page=3');
+
+    await expect(page.getByText('página 3 de 3').first()).toBeVisible();
+    await expect(page.locator('a[href="/animes/e2e-anime-60"]').first()).toBeVisible();
+
+    await page.click('a:has-text("Anterior")');
+    await page.waitForURL('**/buscar?page=2&q=naruto');
+    await expect(page.getByText('página 2 de 3').first()).toBeVisible();
+    await expect(page.locator('a[href="/animes/e2e-anime-25"]').first()).toBeVisible();
+  });
+
+  test('busca combinada com filtros (gêneros, ano, status) mantém tudo na página 2', async ({ page }) => {
+    // q + múltiplos gêneros (array, como o form envia) + ano + status + sort
+    await page.goto('/buscar?q=naruto&genres=acao&genres=comedia&year=2024&status=LANCAMENTO&sort=rating');
+
+    // Página 1: resultados + contador + chips de filtros ativos
+    await expect(page.locator('a[href^="/animes/e2e-anime-"]')).toHaveCount(24);
+    await expect(page.getByText('página 1 de 3').first()).toBeVisible();
+    // Chips de filtros ativos (span específico, não a option do select)
+    const chips = page.locator('span[class*="border-ice/40"]');
+    await expect(chips.filter({ hasText: '"naruto"' })).toBeVisible();
+    await expect(chips.filter({ hasText: '2024' })).toBeVisible();
+    await expect(chips.filter({ hasText: 'Em lançamento' })).toBeVisible();
+
+    // Checkboxes de gênero mantêm a seleção (vindos da URL como array)
+    await expect(page.locator('input[name="genres"][value="acao"]')).toBeChecked();
+    await expect(page.locator('input[name="genres"][value="comedia"]')).toBeChecked();
+    await expect(page.locator('input[name="genres"][value="drama"]')).not.toBeChecked();
+
+    // Selects preservam ano/status/sort
+    await expect(page.locator('select[name="year"]')).toHaveValue('2024');
+    await expect(page.locator('select[name="status"]')).toHaveValue('LANCAMENTO');
+    await expect(page.locator('select[name="sort"]')).toHaveValue('rating');
+
+    // Próxima → página 2 deve manter TODOS os filtros (q, genres CSV, year, status, sort)
+    const next = page.locator('a[href*="/buscar?page=2"]');
+    await expect(next).toBeVisible();
+    await next.click();
+    await page.waitForURL('**/buscar?page=2&**');
+
+    // Confere cada filtro individualmente (a vírgula de genres vem codificada %2C)
+    const url = new URL(page.url());
+    expect(url.searchParams.get('page')).toBe('2');
+    expect(url.searchParams.get('q')).toBe('naruto');
+    expect(url.searchParams.get('genres')).toBe('acao,comedia');
+    expect(url.searchParams.get('year')).toBe('2024');
+    expect(url.searchParams.get('status')).toBe('LANCAMENTO');
+    expect(url.searchParams.get('sort')).toBe('rating');
+
+    // Resultados da página 2 (segunda metade), contador atualizado
+    await expect(page.getByText('página 2 de 3').first()).toBeVisible();
+    await expect(page.locator('a[href="/animes/e2e-anime-25"]').first()).toBeVisible();
+    await expect(page.locator('a[href^="/animes/e2e-anime-"]')).toHaveCount(24);
+
+    // Filtros continuam ativos na página 2: chips, checkboxes e selects
+    const chips2 = page.locator('span[class*="border-ice/40"]');
+    await expect(chips2.filter({ hasText: '"naruto"' })).toBeVisible();
+    await expect(chips2.filter({ hasText: '2024' })).toBeVisible();
+    await expect(chips2.filter({ hasText: 'Em lançamento' })).toBeVisible();
+    await expect(page.locator('input[name="genres"][value="acao"]')).toBeChecked();
+    await expect(page.locator('input[name="genres"][value="comedia"]')).toBeChecked();
+    await expect(page.locator('select[name="year"]')).toHaveValue('2024');
+    await expect(page.locator('select[name="status"]')).toHaveValue('LANCAMENTO');
+    await expect(page.locator('select[name="sort"]')).toHaveValue('rating');
+    await expect(page.locator('input[name="q"]')).toHaveValue('naruto');
+  });
+});
