@@ -4,10 +4,9 @@ import type { Metadata } from "next";
 import type { Anime, CalendarResponse } from "@/types";
 import { serverFetchJson } from "@/lib/api-server";
 import { safeImageSrc } from "@/lib/url";
+import { YearFilter } from "@/components/calendario/YearFilter";
 
 export const revalidate = 300;
-
-const YEARS = [2026, 2025, 2024, 2023, 2022, 2021, 2020, 2019, 2018, 2017, 2016, 2015, 2014, 2013, 2012, 2011, 2010, 2009, 2008, 2007, 2006, 2005, 2004, 2003, 2002, 2001, 2000];
 
 export const metadata: Metadata = {
   title: "Calendário",
@@ -60,24 +59,7 @@ export default async function CalendarioPage({
           <span className="font-mono text-caption uppercase tracking-wider text-mist">
             Ano
           </span>
-          <select
-            className="field !w-auto py-1.5"
-            value={year || ""}
-            onChange={(e) => {
-              const y = e.target.value;
-              const q = new URLSearchParams();
-              if (y) q.set("year", y);
-              if (season) q.set("season", season);
-              window.location.href = `/calendario?${q.toString()}`;
-            }}
-          >
-            <option value="">Todos</option>
-            {YEARS.map((y) => (
-              <option key={y} value={y}>
-                {y}
-              </option>
-            ))}
-          </select>
+          <YearFilter season={season} year={year} />
         </label>
       </div>
 
