@@ -1,3 +1,10 @@
+# [1.2.0](https://github.com/1arley/animesice/compare/v1.1.0...v1.2.0) (2026-08-13)
+
+
+### Features
+
+* **admin:** add user detail, genres, audit, watchtower pages and anime list button ([840e14f](https://github.com/1arley/animesice/commit/840e14ff15517f639f4d07245b1e2c57b6c141c6))
+
 # [1.1.0](https://github.com/1arley/animesice/compare/v1.0.1...v1.1.0) (2026-08-12)
 
 
