@@ -106,8 +106,10 @@ export default async function AnimeDetailPage({
       )}
 
       {/* Cabeça: capa + identidade. UI emoldura a arte, não compete. */}
-      <div className={`flex flex-col gap-6 ${banner ? "mt-[-120px] relative z-10" : ""} md:flex-row`}>
-        <div className="shrink-0 md:w-48 lg:w-56">
+      <div className={`flex flex-col gap-6 ${banner ? "relative z-10 -mt-12 sm:-mt-20 lg:-mt-[120px]" : ""} md:flex-row`}>
+        {/* No mobile a capa ganha largura fixa: sem isso o div aspect-ratio
+            2:3 vira 100% da coluna e o poster domina a tela. */}
+        <div className="w-36 shrink-0 sm:w-40 md:w-48 lg:w-56">
           <div className="relative overflow-hidden bg-panel shadow-lg shadow-black/40" style={{ aspectRatio: "2 / 3" }}>
             {cover ? (
               <Image

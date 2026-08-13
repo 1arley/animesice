@@ -31,21 +31,27 @@
         transparent 65%
       ),
       theme("colors.ink");
-    background-attachment: fixed;
+    /* Sem `background-attachment: fixed`: buga em iOS/Android (repaint e
+       scroll travado). O glow rola junto com o body — imperceptível. */
   }
 
   /* Vinheta: apaga as bordas da tela, concentra o olhar na grade. */
-  body::after {
-    content: "";
-    position: fixed;
-    inset: 0;
-    z-index: 59;
-    pointer-events: none;
-    background: radial-gradient(
-      125% 95% at 50% 42%,
-      transparent 62%,
-      rgba(2, 4, 8, 0.5) 100%
-    );
+  /* Vinheta só acima de 768px: em tela alta e estreita (mobile) ela
+     escurece header, conteúdo e toasts (z-index alto sobre tudo) — o
+     visual "sujo/apagado". Em desktop mantém a atmosfera de estúdio. */
+  @media (min-width: 768px) {
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: 59;
+      pointer-events: none;
+      background: radial-gradient(
+        125% 95% at 50% 42%,
+        transparent 62%,
+        rgba(2, 4, 8, 0.5) 100%
+      );
+    }
   }
 
   /* Correção de contraste raiz: qualquer título sem classe explícita

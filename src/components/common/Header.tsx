@@ -97,7 +97,11 @@ export function Header() {
           {/* Apoio: discreto, ícone só — não pede, apenas existe. */}
           <KoFiLink variant="header" />
           <NotificationBell />
-          <AuthButtons />
+          {/* Auth some da linha no mobile: fica no menu do SiteNav para a
+              primeira linha não estourar em telas <480px. */}
+          <div className="hidden sm:contents">
+            <AuthButtons />
+          </div>
         </div>
       </div>
 
