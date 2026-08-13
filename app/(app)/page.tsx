@@ -62,7 +62,7 @@ export default async function HomePage() {
 
       <section className="reveal mb-8" style={{ animationDelay: "60ms" }} aria-labelledby="shelf-lancamentos">
         <SectionLabel id="shelf-lancamentos">
-          Em lançamento{" "}
+          Melhores avaliados{" "}
           <span className="shelf-label-data">{animes.length} títulos</span>
         </SectionLabel>
         {animes.length === 0 ? (

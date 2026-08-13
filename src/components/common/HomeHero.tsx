@@ -13,6 +13,19 @@ import { ShinyText } from "@/components/core/ShinyText";
 const ROTATE_MS = 6000;
 
 /**
+ * Legenda do destaque conforme a hora do dia — evita "Destaque da madrugada"
+ * às 11h. Vai de manhã a madrugada, com tom próximo da identidade do canal.
+ */
+function highlightLabelForHour(hour: number): string {
+  if (hour >= 0 && hour < 6) return "Destaque da madrugada";
+  if (hour >= 6 && hour < 11) return "Pra ver no café da manhã";
+  if (hour >= 11 && hour < 14) return "Pra ver almoçando";
+  if (hour >= 14 && hour < 18) return "Pra ver de tarde";
+  if (hour >= 18 && hour < 22) return "Pra ver jantando";
+  return "Pra ver antes de dormir";
+}
+
+/**
  * HomeHero — "Destaque da madrugada" em carrossel.
  *
  * Âncora da primeira dobra: os animes em alta se revezam na abertura do
@@ -28,6 +41,11 @@ export function HomeHero({ animes }: { animes: Anime[] }) {
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
   const [reduceMotion, setReduceMotion] = useState(false);
+  const [label, setLabel] = useState("Destaque da madrugada");
+
+  useEffect(() => {
+    setLabel(highlightLabelForHour(new Date().getHours()));
+  }, []);
 
   useEffect(() => {
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -60,6 +78,7 @@ export function HomeHero({ animes }: { animes: Anime[] }) {
         <Slide
           key={current.id}
           anime={current}
+          label={label}
           priority={index === 0}
           reduceMotion={reduceMotion}
         />
@@ -87,10 +106,12 @@ export function HomeHero({ animes }: { animes: Anime[] }) {
 
 function Slide({
   anime,
+  label,
   priority,
   reduceMotion,
 }: {
   anime: Anime;
+  label: string;
   priority: boolean;
   reduceMotion: boolean;
 }) {
@@ -140,7 +161,7 @@ function Slide({
             <span className="h-1 w-1 bg-ice" aria-hidden="true" />
             {/* Brilho de neve varrendo a legenda — o "sinal" passando. */}
             <ShinyText
-              text="Destaque da madrugada"
+              text={label}
               color="#45F0E0"
               shineColor="#E9EFF5"
               speed={5}

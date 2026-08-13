@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { Wordmark } from "@/components/common/Wordmark";
 import { AuthButtons } from "@/components/common/AuthButtons";
@@ -16,21 +16,6 @@ export function Header() {
   const router = useRouter();
   const [q, setQ] = useState("");
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
-  const [now, setNow] = useState<Date | null>(null);
-
-  useEffect(() => {
-    const tick = () => setNow(new Date());
-    tick();
-    const id = setInterval(tick, 1000);
-    return () => clearInterval(id);
-  }, []);
-
-  const hhmm = now
-    ? now.toLocaleTimeString("pt-BR", {
-        hour: "2-digit",
-        minute: "2-digit",
-      })
-    : "--:--";
 
   function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -53,13 +38,13 @@ export function Header() {
       <div className="mx-auto flex max-w-shelf items-center justify-between gap-4 px-4 py-3">
         <Wordmark className="text-xl" />
 
-        {/* Relógio de transmissão: a única nota quente do cabeçalho. */}
-        <div className="hidden items-center gap-2 font-mono text-caption uppercase tracking-wider text-mist md:flex" aria-hidden="true">
-          <span className="h-1.5 w-1.5 animate-blink bg-signal" aria-hidden="true" />
-          <span className="text-signal">Ao vivo</span>
-          <time className="tabular-nums text-ice" dateTime={now?.toISOString()}>
-            {hhmm}
-          </time>
+        {/* Marca estática do canal, sem fingir transmissão ao vivo. */}
+        <div
+          className="hidden items-center gap-2 font-mono text-caption uppercase tracking-wider text-mist md:flex"
+          aria-hidden="true"
+        >
+          <span className="h-1.5 w-1.5 bg-ice" aria-hidden="true" />
+          <span>Sinal da madrugada</span>
         </div>
 
         {/* Desktop search */}
