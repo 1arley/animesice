@@ -38,23 +38,14 @@ app/
 │   ├── register/
 │   ├── recuperar-senha/
 │   └── redefinir-senha/
-├── (admin)/            - Admin panel group
-│   ├── layout.tsx      - (need to verify)
+├── admin/               - Admin panel (NOT a route group — plain directory)
+│   ├── layout.tsx      - Admin layout
 │   ├── page.tsx        - Admin dashboard
-│   ├── catalogo/       - Catalog management
-│   ├── configuracao/   - Configuration
-│   ├── create-episode/
-│   ├── create/
-│   ├── edit/
-│   ├── episode/
-│   ├── feedbacks/
-│   ├── generos/
-│   ├── import/
-│   ├── moderacao/
-│   ├── pedidos/
-│   ├── posts/
-│   ├── usuarios/
-│   └── watchtower/
+│   ├── auditoria/       - Audit logs
+│   ├── generos/         - Genre management
+│   ├── usuarios/        - User management
+│   │   └── [id]/       - User detail
+│   └── watchtower/      - Watchtower / monitoring
 ├── settings/           - User settings
 │   └── confirm-email/
 ├── error.tsx           - Error boundary
@@ -223,7 +214,7 @@ Comprehensive TypeScript types aligned with Prisma schema (554 lines in index.ts
 | `/users/:identifier` | (not in app dir - likely handled elsewhere) | User profile |
 | `/login` | `app/(auth)/login/page.tsx` | Auth pages |
 | `/register` | `app/(auth)/register/page.tsx` | |
-| `/admin/*` | `app/(admin)/...` | Admin panel (protected) |
+| `/admin/*` | `app/admin/...` | Admin panel (protected, NOT a route group) |
 | `/settings/*` | `app/settings/` | User settings |
 
 ### Essential Files for Understanding the Feature Architecture

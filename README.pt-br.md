@@ -33,12 +33,11 @@ Este é um projeto [Next.js](https://nextjs.org/) inicializado com [`create-next
 
 ## TechStack
 
-- Next.js: 15.1.7
+- Next.js: ^15.5.22
 - React: ^19
 - TypeScript: ^5
 - ESLint: ^9
 - TailwindCSS: ^3.4.17
-- Husky: ^9.1.7
 
 ## Primeiros Passos
 
@@ -125,6 +124,9 @@ O ESLint é uma ferramenta para identificar e relatar padrões em código ECMASc
 > O ESLint chamará erros se o código não estiver de acordo com as regras definidas no arquivo `.eslintrc.config.mjs`. Certifique-se de corrigir todos os erros antes de fazer um commit.
 
 ### Husky
+
+> [!WARNING]
+> O Husky não está configurado atualmente no `package.json` (sem script `prepare` ou devDependency). A seção abaixo descreve o fluxo pretendido caso seja re-adicionado — não assuma que hooks de commit estão ativos hoje.
 
 Husky é uma ferramenta que permite a execução de scripts antes de um commit ou push. Ele é usado para rodar o ESLint antes de um commit, rodar testes e mais. Husky está configurado para rodar o ESLint antes de um commit nesse repositório, por exemplo.
 

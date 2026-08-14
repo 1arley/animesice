@@ -30,12 +30,11 @@ This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next
 
 ## TechStack
 
-- Next.js: 15.1.7
+- Next.js: ^15.5.22
 - React: ^19
 - TypeScript: ^5
 - ESLint: ^9
 - TailwindCSS: ^3.4.17
-- Husky: ^9.1.7
 
 ## Getting Started
 
@@ -121,6 +120,9 @@ EsLint is a tool for identifying and reporting on patterns found in ECMAScript/J
 > Eslint will throw errors if the code does not follow the rules defined in `.eslintrc.config.mjs`. It is recommended to fix all linting errors before pushing your code.
 
 ### Husky
+
+> [!WARNING]
+> Husky is not currently wired up in `package.json` (no `prepare` script, no devDependency). The section below describes the intended workflow if/when it's re-added — don't assume commit hooks are active today.
 
 Husky is a tool that allows you to run scripts before committing or pushing your code. It is used to check for linting errors, run tests, and more. Husky is configured to run Eslint before committing your code in this repository, for example.
 
