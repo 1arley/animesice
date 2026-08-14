@@ -70,7 +70,7 @@ export function HeroUI({ anime, label, isMobile }: HeroUIProps) {
           </p>
         )}
 
-        {/* Meta + CTAs */}
+        {/* Meta */}
         <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 sm:mt-4">
           {anime.rating != null && anime.rating > 0 && (
             <span className="font-mono text-caption font-medium text-ice tabular-nums">
@@ -90,23 +90,27 @@ export function HeroUI({ anime, label, isMobile }: HeroUIProps) {
           <span className="font-mono text-caption uppercase tracking-wider text-mist">
             {anime.audio === "DUBLADO" ? "Dublado" : "Legendado"}
           </span>
-
-          {/* CTA primary */}
-          <Link
-            href={`/animes/${anime.slug}`}
-            className="btn-ice hidden sm:ml-auto sm:inline-flex"
-          >
-            Assistir
-          </Link>
         </div>
 
-        {/* Mobile CTA full-width */}
-        <Link
-          href={`/animes/${anime.slug}`}
-          className="btn-ice mt-3 w-full justify-center sm:hidden"
-        >
-          Assistir
-        </Link>
+        {/* CTAs alinhados à esquerda, sob o conteúdo — longe dos pontinhos
+            do carrossel (que ficam na margem direita). */}
+        <div className="mt-5 flex flex-wrap items-center gap-3">
+          <Link
+            href={`/animes/${anime.slug}`}
+            className="btn-ice flex-1 sm:flex-initial"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M8 5v14l11-7z" />
+            </svg>
+            Assistir agora
+          </Link>
+          <Link
+            href={`/animes/${anime.slug}`}
+            className="btn-ghost hidden sm:inline-flex"
+          >
+            Ver detalhes
+          </Link>
+        </div>
       </div>
     </div>
   );
