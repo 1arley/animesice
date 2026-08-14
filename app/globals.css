@@ -38,13 +38,18 @@
     min-height: 100vh;
   }
 
-  /* Vinheta atmosférica em desktop para focar a visão na grade */
+  /* Vinheta atmosférica em desktop para focar a visão na grade.
+     z-index baixo: a vinheta escurece o FUNDO, nunca o chrome interativo.
+     Com z 59 (acima do dropdown "Animes/Comunidade/Conta" = z-50 e do
+     Modal = z-50) as categorias abertas ficavam por baixo de uma camada
+     escura — "atrás" da vinheta. z-20 fica abaixo do MobileTabBar (z-30),
+     do aviso de adblock (z-40) e dos dropdowns (z-50). */
   @media (min-width: 1024px) {
     body::after {
       content: "";
       position: fixed;
       inset: 0;
-      z-index: 59;
+      z-index: 20;
       pointer-events: none;
       background: radial-gradient(
         140% 100% at 50% 50%,
