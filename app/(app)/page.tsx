@@ -70,7 +70,7 @@ export default async function HomePage() {
             Nenhum anime no catálogo ainda. Rode o seed do backend.
           </p>
         ) : (
-          <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
             {animes.map((anime, i) => (
               <AnimeCard key={anime.id} anime={anime} priority={i < 6} />
             ))}
@@ -100,9 +100,23 @@ export default async function HomePage() {
             Em alta{" "}
             <span className="shelf-label-data">{trending.length} títulos</span>
           </SectionLabel>
-          <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
             {trending.map((anime) => (
               <AnimeCard key={`trend-${anime.id}`} anime={anime} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {recent.length > 0 && (
+        <section className="reveal mb-8" style={{ animationDelay: "240ms" }} aria-labelledby="shelf-recent">
+          <SectionLabel id="shelf-recent">
+            Recentemente adicionados{" "}
+            <span className="shelf-label-data">{recent.length} títulos</span>
+          </SectionLabel>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+            {recent.map((anime) => (
+              <AnimeCard key={`recent-${anime.id}`} anime={anime} />
             ))}
           </div>
         </section>
@@ -115,24 +129,10 @@ export default async function HomePage() {
         label="Publicidade"
       />
 
-      {recent.length > 0 && (
-        <section className="reveal mb-8" style={{ animationDelay: "240ms" }} aria-labelledby="shelf-recent">
-          <SectionLabel id="shelf-recent">
-            Recentemente adicionados{" "}
-            <span className="shelf-label-data">{recent.length} títulos</span>
-          </SectionLabel>
-          <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
-            {recent.map((anime) => (
-              <AnimeCard key={`recent-${anime.id}`} anime={anime} />
-            ))}
-          </div>
-        </section>
-      )}
-
       {animes.length > 0 && (
         <section className="reveal" style={{ animationDelay: "300ms" }} aria-labelledby="shelf-highlights">
           <SectionLabel id="shelf-highlights">Destaques da semana</SectionLabel>
-          <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
             {animes.slice(0, 6).map((anime) => (
               <AnimeCard key={`week-${anime.id}`} anime={anime} />
             ))}
@@ -143,7 +143,7 @@ export default async function HomePage() {
       <AdSlot
         slot="0000000002"
         format="horizontal"
-        className="reveal mt-8 min-h-[90px]"
+        className="reveal mt-8 min-h-[90px] hidden sm:block"
         label="Publicidade"
       />
     </div>

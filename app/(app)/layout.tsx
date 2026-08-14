@@ -1,10 +1,12 @@
 import { Header } from "@/components/common/Header";
 import { SiteNav } from "@/components/common/SiteNav";
 import { Footer } from "@/components/common/Footer";
+import { MobileTabBar } from "@/components/common/MobileTabBar";
 
 /**
  * Chrome da prateleira: Header + SiteNav + skip-link + main + Footer.
  * Decisão única de composição — páginas do grupo ficam só com o conteúdo.
+ * MobileTabBar: nav inferior só <sm (o SiteNav cobre desktop/tablet).
  */
 export default function AppLayout({
   children,
@@ -21,8 +23,9 @@ export default function AppLayout({
       </a>
       <Header />
       <SiteNav />
-      <main id="body-content">{children}</main>
+      <main id="body-content" className="pb-16 sm:pb-0">{children}</main>
       <Footer />
+      <MobileTabBar />
     </>
   );
 }

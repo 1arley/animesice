@@ -57,13 +57,8 @@ function EmbedPlayer({ embedUrl, animeSlug, episodeNumber, animeTitle }: { embed
       src={embedUrl}
       title={title}
       allowFullScreen
-      style={{
-        width: "100%",
-        height: "70vh",
-        minHeight: 360,
-        border: 0,
-        background: "#000",
-      }}
+      className="video-frame"
+      style={{ border: 0 }}
     />
   );
 }
@@ -200,11 +195,7 @@ function NativeVideoPlayer({ src, posterUrl, animeSlug, episodeNumber, animeTitl
       controls
       poster={safePoster}
       aria-label={animeTitle && episodeNumber != null ? `${animeTitle} — Episódio ${episodeNumber}` : "Player de vídeo"}
-      style={{
-        width: "100%",
-        background: "#000",
-        maxHeight: "70vh",
-      }}
+      className="video-frame"
     />
   );
 }

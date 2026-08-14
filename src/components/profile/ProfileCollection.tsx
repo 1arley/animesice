@@ -80,7 +80,7 @@ export function ProfileCollection({
       ) : items.length === 0 ? (
         <p className="text-body-sm text-mist/70">Nada aqui com esse estado.</p>
       ) : (
-        <div className="grid grid-cols-4 gap-2 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-7">
+        <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7">
           {items.map((item) => {
             const totalEp = item.anime.episodeCount;
             const pct =

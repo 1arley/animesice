@@ -29,7 +29,7 @@ export function ProfileFavorites({
       <SectionLabel level={2}>
         Favoritos <span className="shelf-label-data">{total}</span>
       </SectionLabel>
-      <div className="grid grid-cols-4 gap-2 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-7">
+      <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7">
         {items.map((f) => (
           <PosterTile
             key={f.anime.id}

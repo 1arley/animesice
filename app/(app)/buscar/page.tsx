@@ -287,7 +287,7 @@ export default async function SearchPage({
               <p className="mb-4 font-sans text-body-sm text-mist">
                 <span className="font-mono font-semibold text-ice tabular-nums">{total}</span> resultado{total !== 1 ? "s" : ""} — página {page} de {totalPages}
               </p>
-              <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
                 {results.map((a) => (
                   <AnimeCard key={a.id} anime={a} />
                 ))}

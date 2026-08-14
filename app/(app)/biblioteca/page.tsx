@@ -133,7 +133,7 @@ export default function LibraryPage() {
         <p className="text-body-sm text-mist">Carregando...</p>
       ) : tab === "favorites" ? (
         favorites.length > 0 ? (
-          <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
             {favorites.map((anime) => (
               <AnimeCard key={anime.id} anime={anime} />
             ))}
@@ -152,7 +152,7 @@ export default function LibraryPage() {
           <EmptyState text="Seu histórico aparecerá aqui." />
         )
       ) : watchlist.length > 0 ? (
-        <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
           {watchlist.map((item) => (
             <div key={item.animeId} className="relative group">
               <AnimeCard anime={item.anime} />

@@ -80,7 +80,7 @@ export function Header() {
           </div>
         </form>
 
-        <div className="flex items-center gap-2 sm:gap-3">
+        <div className="flex items-center gap-1 sm:gap-3">
           {/* Mobile search toggle */}
           <button
             type="button"
@@ -94,11 +94,12 @@ export function Header() {
               <path d="M14 14l4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
             </svg>
           </button>
-          {/* Apoio: discreto, ícone só — não pede, apenas existe. */}
-          <KoFiLink variant="header" />
+          {/* Ko-fi: só desktop no header — no mobile fica no footer */}
+          <div className="hidden sm:block">
+            <KoFiLink variant="header" />
+          </div>
           <NotificationBell />
-          {/* Auth some da linha no mobile: fica no menu do SiteNav para a
-              primeira linha não estourar em telas <480px. */}
+          {/* Auth some da linha no mobile: fica no menu do SiteNav / tab bar */}
           <div className="hidden sm:contents">
             <AuthButtons />
           </div>

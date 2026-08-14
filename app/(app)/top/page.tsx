@@ -61,7 +61,7 @@ export default async function TopPage({
       {animes.length === 0 ? (
         <p className="text-body-sm text-mist">Sem animes cadastrados ainda.</p>
       ) : (
-        <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
           {rest.map((anime, i) => (
             <div key={anime.id} className="relative">
               <span className="absolute left-1.5 top-1.5 z-10 bg-ink/80 px-1.5 py-0.5 font-mono text-caption font-bold text-ice tabular-nums">

@@ -42,7 +42,7 @@ export default async function GenrePage({
         <p className="text-body-sm text-mist">Nenhum anime neste gênero.</p>
       ) : (
         <>
-          <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
             {animes.map((anime) => (
               <AnimeCard key={anime.id} anime={anime} />
             ))}

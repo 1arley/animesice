@@ -205,7 +205,7 @@ export function AdBlockNotice() {
     <div
       role="status"
       aria-live="polite"
-      className="fixed inset-x-0 bottom-0 z-40 border-t border-hairline bg-panel/95 px-4 py-3 backdrop-blur-sm"
+      className="fixed inset-x-0 bottom-14 z-40 border-t border-hairline bg-panel/95 px-4 pt-3 backdrop-blur-sm safe-bottom sm:bottom-0"
     >
       <div className="mx-auto flex max-w-shelf flex-wrap items-center gap-x-4 gap-y-2">
         <div className="min-w-0 flex-1">
