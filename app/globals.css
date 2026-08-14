@@ -2,10 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
-/* AnimesIce — "Sinal da madrugada".
-   A prateleira é um canal de TV frio, noite adentro: fundo de vácuo,
-   uma única nota de gelo (ice) como a marca, e dados em mono de EPG.
-   Sem CSS crawled: tokens em tailwind.config.ts, atmosfera aqui. */
+/* AnimesIce — Identidade Cinematográfica Premium.
+   Profundidade de estúdio, grafite profundo / preto obsidiana,
+   branco gelo cristalino e accent de gelo cirúrgico. */
 
 @layer base {
   :root {
@@ -14,32 +13,33 @@
 
   html,
   body {
-    background: theme("colors.ink");
+    background-color: theme("colors.ink");
     color: theme("colors.mist");
     -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
   }
 
-  /* Atmosfera de estúdio vazio: um brilho frio lá em cima, como o
-     monitor ligado sem programa ainda. */
+  /* Atmosfera cinematográfica: iluminação superior sutil e difusa */
   body {
     font-family: theme("fontFamily.sans");
     background:
       radial-gradient(
-        1000px 460px at 50% -10%,
-        rgba(69, 240, 224, 0.05),
+        1200px 500px at 50% -50px,
+        rgba(56, 232, 218, 0.045),
+        transparent 70%
+      ),
+      radial-gradient(
+        800px 400px at 85% 15%,
+        rgba(0, 140, 218, 0.025),
         transparent 65%
       ),
       theme("colors.ink");
-    /* Sem `background-attachment: fixed`: buga em iOS/Android (repaint e
-       scroll travado). O glow rola junto com o body — imperceptível. */
+    min-height: 100vh;
   }
 
-  /* Vinheta: apaga as bordas da tela, concentra o olhar na grade. */
-  /* Vinheta só acima de 768px: em tela alta e estreita (mobile) ela
-     escurece header, conteúdo e toasts (z-index alto sobre tudo) — o
-     visual "sujo/apagado". Em desktop mantém a atmosfera de estúdio. */
-  @media (min-width: 768px) {
+  /* Vinheta atmosférica em desktop para focar a visão na grade */
+  @media (min-width: 1024px) {
     body::after {
       content: "";
       position: fixed;
@@ -47,15 +47,14 @@
       z-index: 59;
       pointer-events: none;
       background: radial-gradient(
-        125% 95% at 50% 42%,
-        transparent 62%,
-        rgba(2, 4, 8, 0.5) 100%
+        140% 100% at 50% 50%,
+        transparent 70%,
+        rgba(4, 7, 12, 0.45) 100%
       );
     }
   }
 
-  /* Correção de contraste raiz: qualquer título sem classe explícita
-     precisa ser legível sobre o fundo — snow, não o ink (que é o fundo). */
+  /* Hierarquia tipográfica com contraste cristalino */
   h1,
   h2,
   h3,
@@ -63,6 +62,7 @@
   h5,
   h6 {
     color: theme("colors.snow");
+    letter-spacing: -0.01em;
   }
 
   ::selection {
@@ -77,7 +77,7 @@
     display: block;
   }
 
-  /* Focus visível no teclado — floor de qualidade sem anunciar. */
+  /* Acessibilidade de foco de teclado refinado */
   a:focus-visible,
   button:focus-visible,
   input:focus-visible,
@@ -87,20 +87,20 @@
     outline-offset: 2px;
   }
 
-  /* Scrollbar styling */
+  /* Scrollbars ultra-discretas */
   ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+    width: 6px;
+    height: 6px;
   }
   ::-webkit-scrollbar-track {
-    background: theme("colors.ink");
+    background: rgba(8, 12, 18, 0.6);
   }
   ::-webkit-scrollbar-thumb {
-    background: theme("colors.hairline");
-    border-radius: 0;
+    background: rgba(255, 255, 255, 0.12);
+    border-radius: 9999px;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: #2c3a4e;
+    background: rgba(56, 232, 218, 0.4);
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -115,149 +115,165 @@
 }
 
 @layer components {
-  /* Prateleira: section label. O quadrado de gelo abre a linha como um
-     channel-bug; o hairline embaixo é o trilho. Mono = voz de EPG. */
+  /* Prateleira / Section Label: tipografia editorial com traço luminoso */
   .shelf-label {
     display: flex;
-    align-items: baseline;
-    gap: 0.625rem;
-    font-family: theme("fontFamily.mono");
-    font-size: theme("fontSize.body-sm");
-    font-weight: 500;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
+    align-items: center;
+    gap: 0.75rem;
+    font-family: theme("fontFamily.display");
+    font-size: 1.125rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
     color: theme("colors.snow");
-    padding-bottom: 0.625rem;
+    padding-bottom: 0.75rem;
     margin-bottom: 1.25rem;
-    border-bottom: 1px solid theme("colors.hairline");
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    position: relative;
   }
 
   .shelf-label::before {
     content: "";
     flex: none;
-    align-self: center;
-    width: 0.4rem;
-    height: 0.4rem;
+    width: 0.25rem;
+    height: 1rem;
+    border-radius: 2px;
     background: theme("colors.ice");
+    box-shadow: 0 0 10px rgba(56, 232, 218, 0.5);
   }
 
   .shelf-label-data {
     font-family: theme("fontFamily.mono");
-    letter-spacing: 0;
-    text-transform: none;
+    font-size: 0.75rem;
     font-weight: 500;
+    letter-spacing: 0.04em;
     color: theme("colors.ice");
+    background: rgba(56, 232, 218, 0.08);
+    border: 1px solid rgba(56, 232, 218, 0.2);
+    padding: 0.15rem 0.5rem;
+    border-radius: 9999px;
+    margin-left: auto;
   }
 
-  /* Signature: o ident de transmissão.
-     Onde antes era só status+áudio, agora é a bug de canto de tela de
-     um canal de anime: gelo preenchido, canto cortado, mono apertado. */
+  /* Badge de status / metadados do card */
   .edge-tag {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 0.5rem;
-    padding: 0.4rem 0.55rem;
-    background: theme("colors.ice");
-    color: theme("colors.ink");
+    padding: 0.35rem 0.6rem;
+    background: rgba(14, 20, 29, 0.85);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    color: theme("colors.mist");
     font-family: theme("fontFamily.mono");
-    font-size: theme("fontSize.caption");
+    font-size: 0.7rem;
     font-weight: 500;
-    letter-spacing: 0.06em;
+    letter-spacing: 0.04em;
     text-transform: uppercase;
-    line-height: 1.2;
-    clip-path: polygon(
-      0 0,
-      100% 0,
-      100% calc(100% - 0.5rem),
-      calc(100% - 0.5rem) 100%,
-      0 100%
-    );
   }
 
-  /* Ponto "ao vivo" do ident: pisca em quadrado como o ON AIR da TV. */
   .edge-tag-live {
     display: inline-block;
     width: 0.4rem;
     height: 0.4rem;
     margin-right: 0.35rem;
-    background: currentColor;
+    border-radius: 9999px;
+    background: theme("colors.signal");
+    box-shadow: 0 0 6px theme("colors.signal");
     animation: blink 1.6s steps(1) infinite;
   }
 
-  /* Botão primário: accent ice. Mono e em caixa alta — voz de console.
-     Usado com restrição (não cobre de cyan). */
+  /* Botão primário: accent ice com acabamento premium */
   .btn-ice {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
-    padding: 0.5rem 1rem;
+    padding: 0.55rem 1.15rem;
     background: theme("colors.ice");
     color: theme("colors.ink");
-    font-family: theme("fontFamily.mono");
+    font-family: theme("fontFamily.sans");
     font-size: theme("fontSize.body-sm");
-    font-weight: 500;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    border: 1px solid theme("colors.ice");
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 2px 10px rgba(56, 232, 218, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.3);
     cursor: pointer;
-    transition: background 120ms ease, color 120ms ease;
+    transition: all 180ms cubic-bezier(0.16, 1, 0.3, 1);
   }
   .btn-ice:hover {
-    background: transparent;
-    color: theme("colors.ice");
+    background: theme("colors.ice-bright");
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px rgba(56, 232, 218, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+    color: theme("colors.ink");
+  }
+  .btn-ice:active {
+    transform: translateY(0);
+    scale: 0.98;
   }
 
-  /* Botão fantasma: contorno hairline, sem preenchimento. */
+  /* Botão secundário / fantasma */
   .btn-ghost {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
-    padding: 0.5rem 1rem;
-    background: transparent;
-    color: theme("colors.ice");
-    font-family: theme("fontFamily.mono");
-    font-size: theme("fontSize.body-sm");
-    font-weight: 500;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    border: 1px solid theme("colors.hairline");
-    cursor: pointer;
-    transition: border-color 120ms ease, background 120ms ease;
-  }
-  .btn-ghost:hover {
-    border-color: theme("colors.ice");
-    background: rgba(69, 240, 224, 0.06);
-  }
-
-  /* Field do formulário (admin / auth).
-     O texto do input é snow — antes era ink, que sumia no fundo panel. */
-  .field {
-    width: 100%;
-    padding: 0.6rem 0.75rem;
-    background: theme("colors.panel");
+    padding: 0.55rem 1.15rem;
+    background: rgba(255, 255, 255, 0.04);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
     color: theme("colors.snow");
-    border: 1px solid theme("colors.hairline");
     font-family: theme("fontFamily.sans");
     font-size: theme("fontSize.body-sm");
-    transition: border-color 120ms ease, background 120ms ease;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    cursor: pointer;
+    transition: all 180ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .btn-ghost:hover {
+    border-color: rgba(56, 232, 218, 0.4);
+    background: rgba(56, 232, 218, 0.08);
+    color: theme("colors.ice");
+    transform: translateY(-1px);
+  }
+  .btn-ghost:active {
+    transform: translateY(0);
+    scale: 0.98;
+  }
+
+  /* Inputs e formulários */
+  .field {
+    width: 100%;
+    padding: 0.65rem 0.85rem;
+    background: rgba(14, 20, 29, 0.7);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    color: theme("colors.snow");
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    font-family: theme("fontFamily.sans");
+    font-size: theme("fontSize.body-sm");
+    transition: all 180ms ease;
   }
   .field::placeholder {
-    color: #5c6a7c;
+    color: #64748B;
   }
   .field:focus {
     outline: none;
-    border-color: theme("colors.ice");
-    background: theme("colors.slate");
+    border-color: rgba(56, 232, 218, 0.5);
+    background: rgba(22, 32, 47, 0.85);
+    box-shadow: 0 0 0 3px rgba(56, 232, 218, 0.12);
   }
 
-  /* Varredura de sinal nos cards: um traço de gelo desce pelo poster
-     no hover, como o refresh do CRT. Não é zoom genérico — é sinal. */
+  /* Efeito de luz cinematográfica em cards */
   .card-scan {
     position: relative;
     overflow: hidden;
+    border-radius: 12px 12px 0 0;
   }
   .card-scan::after {
     content: "";
@@ -265,32 +281,19 @@
     inset: 0;
     pointer-events: none;
     background: linear-gradient(
-      to bottom,
+      180deg,
       transparent 0%,
-      rgba(69, 240, 224, 0.08) 44%,
-      rgba(69, 240, 224, 0.22) 50%,
-      rgba(69, 240, 224, 0.08) 56%,
-      transparent 100%
+      rgba(0, 0, 0, 0.1) 60%,
+      rgba(8, 12, 18, 0.8) 100%
     );
-    transform: translateY(-105%);
-    transition: transform 0.7s cubic-bezier(0.2, 0.7, 0.2, 1);
-  }
-  .group:hover .card-scan::after {
-    transform: translateY(105%);
   }
 
-  @media (prefers-reduced-motion: reduce) {
-    .card-scan::after {
-      display: none;
-    }
-  }
-
-  /* Subida de página: a grade entra em cascata, como o sinal ligando. */
+  /* Subida de página suave */
   .reveal {
-    animation: rise 0.55s cubic-bezier(0.2, 0.65, 0.25, 1) both;
+    animation: rise 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 
-  /* Esconde a scrollbar mantendo o scroll — para rails e tabs roláveis. */
+  /* Esconde a scrollbar mantendo o scroll */
   .scrollbar-none {
     scrollbar-width: none;
     -ms-overflow-style: none;
@@ -299,28 +302,24 @@
     display: none;
   }
 
-  /* Cover padrão do perfil — derivado da identidade do site, sem imagem:
-     o mesmo brilho frio do body, com uma faixa de sinal de gelo cortando
-     a base. Extensível: um cover personalizado substitui via <img> no
-     ProfileHero quando existir. */
+  /* Cover de perfil cinematográfico */
   .profile-cover {
     position: relative;
     overflow: hidden;
     background:
       radial-gradient(
         1000px 420px at 50% -20%,
-        rgba(69, 240, 224, 0.10),
+        rgba(56, 232, 218, 0.08),
         transparent 65%
       ),
       linear-gradient(
         180deg,
-        rgba(20, 29, 41, 0.9) 0%,
-        rgba(14, 20, 29, 0.85) 42%,
+        rgba(22, 32, 47, 0.9) 0%,
+        rgba(14, 20, 29, 0.95) 50%,
         theme("colors.ink") 100%
       );
   }
 
-  /* Faixa de sinal: uma linha de gelo correndo pela base do cover. */
   .profile-cover::before {
     content: "";
     position: absolute;
@@ -331,31 +330,16 @@
     background: linear-gradient(
       90deg,
       transparent,
-      rgba(69, 240, 224, 0.55) 32%,
-      rgba(69, 240, 224, 0.12) 68%,
+      rgba(56, 232, 218, 0.4) 35%,
+      rgba(56, 232, 218, 0.1) 70%,
       transparent
     );
-  }
-
-  /* Grade tênue de estúdio: hairlines verticais como trilho de prateleira. */
-  .profile-cover::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    background-image: repeating-linear-gradient(
-      90deg,
-      transparent 0,
-      transparent calc(25% - 1px),
-      rgba(28, 37, 52, 0.7) 25%
-    );
-    background-size: 25% 100%;
   }
 
   .btn-ice,
   .btn-ghost,
   .btn-danger {
-    min-height: 2.75rem;
+    min-height: 2.65rem;
   }
 
   /* ===== Admin Panel ===== */
@@ -401,10 +385,10 @@
     transition: border-color 150ms ease, background 150ms ease;
   }
   .admin-card:hover {
-    border-color: rgba(69, 240, 224, 0.35);
+    border-color: rgba(56, 232, 218, 0.35);
   }
   .admin-card-alert {
-    border-color: rgba(255, 120, 71, 0.45);
+    border-color: rgba(255, 107, 74, 0.45);
   }
 
   /* Stat card: card focado em números */
@@ -415,7 +399,7 @@
     transition: border-color 150ms ease, background 150ms ease;
   }
   .admin-stat:hover {
-    border-color: rgba(69, 240, 224, 0.35);
+    border-color: rgba(56, 232, 218, 0.35);
     background: theme("colors.slate");
   }
 
@@ -434,14 +418,14 @@
     border-style: solid;
   }
   .badge-ice {
-    border-color: rgba(69, 240, 224, 0.45);
+    border-color: rgba(56, 232, 218, 0.45);
     color: theme("colors.ice");
-    background: rgba(69, 240, 224, 0.06);
+    background: rgba(56, 232, 218, 0.06);
   }
   .badge-signal {
-    border-color: rgba(255, 120, 71, 0.45);
+    border-color: rgba(255, 107, 74, 0.45);
     color: theme("colors.signal");
-    background: rgba(255, 120, 71, 0.06);
+    background: rgba(255, 107, 74, 0.06);
   }
   .badge-muted {
     border-color: theme("colors.hairline");
@@ -506,12 +490,12 @@
   }
   .admin-tab:hover {
     color: theme("colors.ice");
-    border-color: rgba(69, 240, 224, 0.4);
+    border-color: rgba(56, 232, 218, 0.4);
   }
   .admin-tab-active {
     border-color: theme("colors.ice");
     color: theme("colors.ice");
-    background: rgba(69, 240, 224, 0.06);
+    background: rgba(56, 232, 218, 0.06);
   }
 
   /* Sidebar do admin */
@@ -533,7 +517,7 @@
   .admin-nav-item:hover {
     color: theme("colors.ice");
     background: theme("colors.slate");
-    border-left-color: rgba(69, 240, 224, 0.3);
+    border-left-color: rgba(56, 232, 218, 0.3);
   }
   .admin-nav-item-active {
     color: theme("colors.ice");
@@ -571,11 +555,6 @@
     100% { opacity: 1; transform: translateY(0); }
   }
 
-  @keyframes blink {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.1; }
-  }
-
   .safe-bottom {
     padding-bottom: calc(0.75rem + env(safe-area-inset-bottom));
   }
@@ -590,6 +569,39 @@
   @supports (height: 70dvh) {
     .video-frame {
       height: 70dvh;
+    }
+  }
+
+  /* ===== Modo Cinema =====
+     Tela cheia sem remontar o player (o nó DOM persiste, o iframe/vídeo
+     não reinicia). O wrapper troca para fixed inset-0; o frame cresce
+     para preencher o espaço restante sob a barra de título. */
+
+  /* Neutraliza o transform final do `.reveal` (fill "both") — caso contrário
+     o ancestor vira containing block e o fixed não estoura a viewport. */
+  .cinema-lock {
+    animation: none !important;
+    transform: none !important;
+    opacity: 1 !important;
+  }
+
+  .cinema-mode {
+    animation: cinema-fade-in 200ms ease both;
+  }
+  .cinema-mode .video-frame {
+    min-height: 0;
+    height: 100%;
+    max-height: 100%;
+  }
+
+  @keyframes cinema-fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .cinema-mode {
+      animation: none;
     }
   }
 
@@ -656,11 +668,11 @@
    Não é Canvas/WebGL: não compete com a Aurora na GPU. */
 .hero-dust {
   background-image:
-    radial-gradient(1px 1px at 20% 30%, rgba(69, 240, 224, 0.3), transparent),
+    radial-gradient(1px 1px at 20% 30%, rgba(56, 232, 218, 0.3), transparent),
     radial-gradient(1px 1px at 60% 70%, rgba(233, 239, 245, 0.2), transparent),
-    radial-gradient(2px 2px at 80% 40%, rgba(69, 240, 224, 0.15), transparent),
+    radial-gradient(2px 2px at 80% 40%, rgba(56, 232, 218, 0.15), transparent),
     radial-gradient(1px 1px at 40% 80%, rgba(233, 239, 245, 0.1), transparent),
-    radial-gradient(1px 1px at 90% 20%, rgba(69, 240, 224, 0.2), transparent);
+    radial-gradient(1px 1px at 90% 20%, rgba(56, 232, 218, 0.2), transparent);
   background-size: 800px 600px;
   animation: hero-dust-drift 20s linear infinite;
   opacity: 0.5;
