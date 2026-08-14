@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { blockAds, mockGeneric, loginAs } from "./helpers";
+import { blockAds, mockGeneric, loginAs, clickCentered } from "./helpers";
 
 /** Escopa mocks ao backend mockado (porta 3001), nunca à navegação do Next (3000). */
 const API = (path: string) => new RegExp(`//localhost:3001/(?:api/)?${path}`);
@@ -124,12 +124,12 @@ test.describe("Perfil público / seguidores e seguindo", () => {
     ).toBeVisible();
 
     // Tab Seguidores → GET /social/followers/u1 + lista renderizada.
-    await page.getByRole("button", { name: "Seguidores", exact: true }).click();
+    await clickCentered(page.getByRole("button", { name: "Seguidores", exact: true }));
     await expect(page.getByText("@bruno")).toBeVisible();
     await expect(page.getByText("@zoe")).toBeVisible();
 
     // Tab Seguindo → GET /social/following/u1 (lazy, só quando ativada).
-    await page.getByRole("button", { name: "Seguindo", exact: true }).click();
+    await clickCentered(page.getByRole("button", { name: "Seguindo", exact: true }));
     await expect(page.getByText("@davi")).toBeVisible();
 
     expect(
@@ -181,10 +181,11 @@ test.describe("Perfil público / seguidores e seguindo", () => {
       });
     });
 
-    await page.goto("/users/ana");
+await page.goto("/users/ana");
     await page.getByRole("button", { name: "Seguidores", exact: true }).click();
 
     // Estado inicial: Zoe já aparece como "Seguindo ✓", Bruno como "Seguir".
+    // O mock-backend presta dados corretos; este teste captura o POST.
     const brunoRow = page.locator("li", { hasText: "@bruno" });
     const zoeRow = page.locator("li", { hasText: "@zoe" });
     await expect(
@@ -195,7 +196,7 @@ test.describe("Perfil público / seguidores e seguindo", () => {
     ).toBeVisible();
 
     // Segue Bruno → POST no alvo certo + estado otimista na linha.
-    await brunoRow.getByRole("button", { name: "Seguir", exact: true }).click();
+    await clickCentered(brunoRow.getByRole("button", { name: "Seguir", exact: true }));
     await expect.poll(() => followUrl).not.toBeNull();
     expect(followUrl!.endsWith("/social/follow/u2")).toBe(true);
     await expect(
@@ -255,9 +256,9 @@ test.describe("Perfil público / seguidores e seguindo", () => {
     ).toHaveCount(0);
 
     // Mas nas listas o FollowButton segue outros usuários normalmente.
-    await page
-      .getByRole("button", { name: "Seguidores", exact: true })
-      .click();
+    await clickCentered(
+      page.getByRole("button", { name: "Seguidores", exact: true }),
+    );
     const brunoRow = page.locator("li", { hasText: "@bruno" });
     await expect(brunoRow).toBeVisible();
     await expect(

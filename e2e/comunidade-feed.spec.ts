@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { blockAds, mockGeneric, loginAs, VIEWER } from "./helpers";
+import { blockAds, mockGeneric, loginAs, clickCentered, VIEWER } from "./helpers";
 
 /** Escopa mocks ao backend mockado (porta 3001), nunca à navegação do Next (3000). */
 const API = (path: string) => new RegExp(`//localhost:3001/(?:api/)?${path}`);
@@ -84,7 +84,7 @@ test.describe("Comunidade / feed", () => {
 
     // Tab "Seguindo" sem sessão → CTA de login (escopado ao conteúdo — o
     // Header e o Footer também têm links "Entrar").
-    await page.getByRole("button", { name: "Seguindo" }).click();
+    await clickCentered(page.getByRole("button", { name: "Seguindo" }));
     await expect(
       page.locator("#body-content").getByRole("link", { name: "Entrar" }),
     ).toBeVisible();
@@ -134,7 +134,7 @@ test.describe("Comunidade / feed", () => {
       page.getByRole("button", { name: "Carregar mais" }),
     ).toBeVisible();
 
-    await page.getByRole("button", { name: "Carregar mais" }).click();
+    await clickCentered(page.getByRole("button", { name: "Carregar mais" }));
     await expect(page.getByText("Segunda página")).toBeVisible();
     await expect(
       page.getByRole("button", { name: "Carregar mais" }),
@@ -207,13 +207,13 @@ test.describe("Comunidade / feed", () => {
     const likedClass = async () =>
       ((await likeBtn.getAttribute("class")) ?? "").split(/\s+/).includes("text-signal");
 
-    await likeBtn.click();
+    await clickCentered(likeBtn);
     await expect.poll(() => likeUrl).not.toBeNull();
     expect(likeUrl!.endsWith("/social/posts/new-post/like")).toBe(true);
     await expect.poll(likedClass).toBe(true);
 
     // Descurtir (toggle de volta)
-    await likeBtn.click();
+    await clickCentered(likeBtn);
     await expect.poll(likedClass).toBe(false);
 
     // Comentários: lista vazia + criação com payload
@@ -246,13 +246,13 @@ test.describe("Comunidade / feed", () => {
       }
     });
 
-    await newPost.locator('button:has-text("Comentar")').click();
+    await clickCentered(newPost.locator('button:has-text("Comentar")'));
     await expect(newPost.getByText("Nenhum comentário ainda.")).toBeVisible();
 
     await newPost
       .getByPlaceholder("Escreva um comentário…")
       .fill("Gostei demais!");
-    await newPost.getByRole("button", { name: "Enviar" }).click();
+    await clickCentered(newPost.getByRole("button", { name: "Enviar" }));
 
     await expect.poll(() => commentPosted).toBe(true);
     expect(commentPayload.content).toBe("Gostei demais!");
@@ -268,7 +268,7 @@ test.describe("Comunidade / feed", () => {
         body: JSON.stringify({ shared: true, shareCount: 1 }),
       });
     });
-    await newPost.locator('button:has-text("Compartilhar")').click();
+    await clickCentered(newPost.locator('button:has-text("Compartilhar")'));
     await expect.poll(() => shareUrl).not.toBeNull();
     await expect(newPost.getByText("Copiado!")).toBeVisible();
 
@@ -287,7 +287,7 @@ test.describe("Comunidade / feed", () => {
         await route.continue();
       }
     });
-    await newPost.locator('button:has-text("Excluir")').click();
+    await clickCentered(newPost.locator('button:has-text("Excluir")'));
     await expect.poll(() => deleteUrl).not.toBeNull();
     expect(deleteUrl!.endsWith("/social/posts/new-post")).toBe(true);
     await expect(page.getByText("Meu primeiro post")).toHaveCount(0);

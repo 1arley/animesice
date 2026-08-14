@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { blockAds, clickCentered } from './helpers';
 
 /**
  * Paginação do /lancamentos — verificação de regressão no mesmo padrão do
@@ -12,12 +13,12 @@ import { test, expect } from '@playwright/test';
 test.describe('Lançamentos - paginação', () => {
   test.beforeEach(async ({ page }) => {
     // Desliga animações (BlurText/motion) p/ o elemento de paginação ficar
-    // estável ao clique; mocka a sonda do AdBlockNotice (banner fixo na
-    // base interceptaria o clique).
+    // estável ao clique; redes de anúncio bloqueadas + sonda do AdBlockNotice
+    // respondida com imagem válida (banner fixo na base não intercepta o
+    // clique). Sem o bloqueio, o tag.min.js do Monetag injeta listeners de
+    // clique que "engolem" a navegação do Link (flaky).
     await page.emulateMedia({ reducedMotion: 'reduce' });
-    await page.route('**/pagead2.googlesyndication.com/**', (route) =>
-      route.fulfill({ status: 200, contentType: 'image/gif', body: '' }),
-    );
+    await blockAds(page);
   });
 
   test('avança de página mantendo os resultados', async ({ page }) => {
@@ -28,7 +29,7 @@ test.describe('Lançamentos - paginação', () => {
     await expect(page.getByText('1 / 3').first()).toBeVisible();
 
     // Clica em Próxima → página 2 com os cards da segunda metade
-    await page.click('a:has-text("Próxima")');
+    await clickCentered(page.locator('a:has-text("Próxima")'));
     await page.waitForURL('**/lancamentos?page=2');
 
     await expect(page.locator('a[href="/animes/e2e-anime-25"]').first()).toBeVisible();
@@ -43,7 +44,7 @@ test.describe('Lançamentos - paginação', () => {
     await expect(page.getByText('3 / 3').first()).toBeVisible();
     await expect(page.locator('a[href="/animes/e2e-anime-60"]').first()).toBeVisible();
 
-    await page.click('a:has-text("Anterior")');
+    await clickCentered(page.locator('a:has-text("Anterior")'));
     await page.waitForURL('**/lancamentos?page=2');
     await expect(page.getByText('2 / 3').first()).toBeVisible();
     await expect(page.locator('a[href="/animes/e2e-anime-25"]').first()).toBeVisible();

@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { blockAds, clickCentered } from './helpers';
 
 const userId = 'test-user-1';
 // O mock do perfil tem userName próprio — a página /users deve
@@ -9,21 +10,8 @@ test.describe('Public profile - report & tabs', () => {
   test('loads tabs, paginates activity and submits report from the actions menu', async ({ page }) => {
     // Bloqueia redes de anúncio: iframes de ads podem interceptar cliques
     // ("<div></div> intercepts pointer events") e tornar o teste flaky.
-    const AD_PATTERNS = [
-      '**/pagead2.googlesyndication.com/**',
-      '**/*.doubleclick.net/**',
-      '**/adsbygoogle.js',
-      '**/fundingchoicesmessages.google.com/**',
-      '**/al5sm.com/**',
-      '**/my.rtmark.net/**',
-      '**/255md.com/**',
-      '**/ep1.adtrafficquality.google/**',
-      '**/ep2.adtrafficquality.google/**',
-      '**/static.cloudflareinsights.com/**',
-    ];
-    for (const pattern of AD_PATTERNS) {
-      await page.route(pattern, (route) => route.abort());
-    }
+    // A sonda do AdBlockNotice é respondida com imagem válida (banner some).
+    await blockAds(page);
 
     // Mock other backend calls the app may make server-side. Registrados ANTES
     // dos mocks de /users: o Playwright dá precedência ao último handler que
@@ -211,23 +199,23 @@ test.describe('Public profile - report & tabs', () => {
     await expect(page.locator('text=Episódio 7 de 12')).toBeVisible();
 
     // Atividade tab: comentários com like preservado + load more
-    await page.click('button:has-text("Atividade")');
+    await clickCentered(page.locator('button:has-text("Atividade")'));
     await expect(page.locator('text=hello')).toBeVisible();
-    await page.click('button:has-text("Carregar mais")');
+    await clickCentered(page.locator('button:has-text("Carregar mais")'));
     await expect(page.locator('text=more')).toBeVisible();
 
     // Notas tab (shape: { score, createdAt, anime })
-    await page.click('button:has-text("Notas")');
+    await clickCentered(page.locator('button:has-text("Notas")'));
     await expect(page.locator('text=Anime 1')).toBeVisible();
 
     // Favoritos tab (shape: { createdAt, anime })
-    await page.click('button:has-text("Favoritos")');
+    await clickCentered(page.locator('button:has-text("Favoritos")'));
     await expect(page.locator('text=Fav 1')).toBeVisible();
     await expect(page.locator('a[href="/animes/fav-1"]')).toBeVisible();
 
     // Denúncia agora vive no menu de ações (⋯), não competindo com a identidade.
-    await page.click('button[aria-label="Mais ações"]');
-    await page.click('button:has-text("Denunciar usuário")');
+    await clickCentered(page.locator('button[aria-label="Mais ações"]'));
+    await clickCentered(page.locator('button:has-text("Denunciar usuário")'));
     await expect(
       page.getByRole('heading', { name: 'Denunciar usuário' }),
     ).toBeVisible();

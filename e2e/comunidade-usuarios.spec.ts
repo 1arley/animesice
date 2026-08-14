@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { blockAds, mockGeneric, loginAs } from "./helpers";
+import { blockAds, mockGeneric, loginAs, clickCentered } from "./helpers";
 
 /** Escopa mocks ao backend mockado (porta 3001), nunca à navegação do Next (3000). */
 const API = (path: string) => new RegExp(`//localhost:3001/(?:api/)?${path}`);
@@ -82,7 +82,7 @@ test.describe("Comunidade / usuários", () => {
     expect(requests[0]).toContain("limit=24");
 
     // Carregar mais → página 2 (usuários 25..30), botão some no fim
-    await page.getByRole("button", { name: "Carregar mais" }).click();
+    await clickCentered(page.getByRole("button", { name: "Carregar mais" }));
     await expect(page.getByText("User 25")).toBeVisible();
     await expect(page.getByText("User 30")).toBeVisible();
     await expect(
@@ -105,7 +105,7 @@ test.describe("Comunidade / usuários", () => {
     const sortResponse = page.waitForResponse(
       (r) => r.url().includes("/users?") && r.url().includes("sort=new"),
     );
-    await page.getByRole("button", { name: "Novos" }).click();
+    await clickCentered(page.getByRole("button", { name: "Novos" }));
     await sortResponse;
     await expect(cards).toHaveCount(24);
   });
@@ -159,7 +159,7 @@ test.describe("Comunidade / usuários", () => {
     const followBtn = page.getByRole("button", { name: "Seguir", exact: true });
     await expect(followBtn).toBeVisible();
 
-    await followBtn.click();
+    await clickCentered(followBtn);
     await expect.poll(() => followUrl).not.toBeNull();
     expect(followUrl!.endsWith("/social/follow/u1")).toBe(true);
 

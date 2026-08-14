@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { blockAds, clickCentered } from './helpers';
 
 /**
  * Paginação do /buscar — regressão: clicar em "Próxima" na página 1/3
@@ -10,17 +11,15 @@ import { test, expect } from '@playwright/test';
  */
 test.describe('Buscar - paginação', () => {
   test.beforeEach(async ({ page }) => {
-    // O título da página anima (BlurText/motion) na entrada; em paralelo o
-    // elemento da paginação nunca fica "estável" p/ clique. O tema respeita
-    // prefers-reduced-motion (renderiza estático) — desliga as animações.
+    // Desliga animações (BlurText/motion) p/ o elemento de paginação ficar
+    // estável ao clique.
     await page.emulateMedia({ reducedMotion: 'reduce' });
 
-    // AdBlockNotice (no layout) usa uma sonda de rede p/ detectar adblock;
-    // sem rede a sonda falha e o banner fixo na base intercepta o clique no
-    // "Próxima →". Responder a sonda com 200 = sem bloqueio, banner some.
-    await page.route('**/pagead2.googlesyndication.com/**', (route) =>
-      route.fulfill({ status: 200, contentType: 'image/gif', body: '' }),
-    );
+    // Redes de anúncio bloqueadas + sonda do AdBlockNotice respondida com
+    // imagem válida (banner some). O gate do Monetag está ligado no build de
+    // e2e; sem o bloqueio, o tag.min.js injeta listeners de clique que
+    // "engolem" a navegação do Link da paginação (flaky).
+    await blockAds(page);
   });
 
   test('avança de página mantendo a busca e os resultados', async ({ page }) => {
@@ -31,7 +30,7 @@ test.describe('Buscar - paginação', () => {
     await expect(page.getByText('página 1 de 3')).toBeVisible();
 
     // Clica em Próxima → deve ir para página 2 mantendo q=naruto
-    await page.click('a:has-text("Próxima")');
+    await clickCentered(page.locator('a:has-text("Próxima")'));
     await page.waitForURL('**/buscar?page=2&q=naruto');
 
     // Página 2: mostra os cards da segunda metade e o contador atualizado
@@ -50,7 +49,7 @@ test.describe('Buscar - paginação', () => {
     await expect(page.getByText('página 3 de 3').first()).toBeVisible();
     await expect(page.locator('a[href="/animes/e2e-anime-60"]').first()).toBeVisible();
 
-    await page.click('a:has-text("Anterior")');
+    await clickCentered(page.locator('a:has-text("Anterior")'));
     await page.waitForURL('**/buscar?page=2&q=naruto');
     await expect(page.getByText('página 2 de 3').first()).toBeVisible();
     await expect(page.locator('a[href="/animes/e2e-anime-25"]').first()).toBeVisible();
@@ -82,7 +81,7 @@ test.describe('Buscar - paginação', () => {
     // Próxima → página 2 deve manter TODOS os filtros (q, genres CSV, year, status, sort)
     const next = page.locator('a[href*="/buscar?page=2"]');
     await expect(next).toBeVisible();
-    await next.click();
+    await clickCentered(next);
     await page.waitForURL('**/buscar?page=2&**');
 
     // Confere cada filtro individualmente (a vírgula de genres vem codificada %2C)
