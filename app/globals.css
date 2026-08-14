@@ -352,6 +352,12 @@
     background-size: 25% 100%;
   }
 
+  .btn-ice,
+  .btn-ghost,
+  .btn-danger {
+    min-height: 2.75rem;
+  }
+
   /* ===== Admin Panel ===== */
 
   /* Botão de perigo (signal/coral) */
@@ -568,5 +574,107 @@
   @keyframes blink {
     0%, 100% { opacity: 1; }
     50% { opacity: 0.1; }
+  }
+
+  .safe-bottom {
+    padding-bottom: calc(0.75rem + env(safe-area-inset-bottom));
+  }
+
+  .video-frame {
+    width: 100%;
+    min-height: 360px;
+    height: 70vh;
+    background: #000;
+    max-height: 70vh;
+  }
+  @supports (height: 70dvh) {
+    .video-frame {
+      height: 70dvh;
+    }
+  }
+
+  /* ===== Mobile Nav Sheet ===== */
+
+  .nav-backdrop {
+    animation: nav-fade-in 200ms ease both;
+  }
+  .nav-backdrop.closing {
+    animation: nav-fade-out 150ms ease both;
+  }
+
+  .nav-sheet {
+    animation: nav-slide-up 280ms cubic-bezier(0.2, 0.8, 0.25, 1) both;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .nav-sheet.closing {
+    animation: nav-slide-down 200ms cubic-bezier(0.4, 0, 0.8, 0.4) both;
+  }
+
+  @keyframes nav-fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes nav-fade-out {
+    from { opacity: 1; }
+    to { opacity: 0; }
+  }
+  @keyframes nav-slide-up {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+  }
+  @keyframes nav-slide-down {
+    from { transform: translateY(0); }
+    to { transform: translateY(100%); }
+  }
+
+  /* Tab bar active indicator: small ice bar that slides under the active tab */
+  .tab-active-bar {
+    position: absolute;
+    top: 0;
+    height: 2px;
+    background: theme("colors.ice");
+    transition: left 200ms cubic-bezier(0.2, 0.8, 0.25, 1),
+                width 200ms cubic-bezier(0.2, 0.8, 0.25, 1);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .nav-backdrop,
+    .nav-sheet,
+    .nav-backdrop.closing,
+    .nav-sheet.closing {
+      animation-duration: 0.01ms !important;
+    }
+    .tab-active-bar {
+      transition: none;
+    }
+  }
+}
+
+/* ===== Hero Cinematográfico ===== */
+
+/* z-3: partículas de poeira emCSS — leve (apenas background-position).
+   Não é Canvas/WebGL: não compete com a Aurora na GPU. */
+.hero-dust {
+  background-image:
+    radial-gradient(1px 1px at 20% 30%, rgba(69, 240, 224, 0.3), transparent),
+    radial-gradient(1px 1px at 60% 70%, rgba(233, 239, 245, 0.2), transparent),
+    radial-gradient(2px 2px at 80% 40%, rgba(69, 240, 224, 0.15), transparent),
+    radial-gradient(1px 1px at 40% 80%, rgba(233, 239, 245, 0.1), transparent),
+    radial-gradient(1px 1px at 90% 20%, rgba(69, 240, 224, 0.2), transparent);
+  background-size: 800px 600px;
+  animation: hero-dust-drift 20s linear infinite;
+  opacity: 0.5;
+  z-index: 3;
+}
+
+@keyframes hero-dust-drift {
+  0%   { background-position: 0 0; opacity: 0.4; }
+  50%  { opacity: 0.7; }
+  100% { background-position: -200px -300px; opacity: 0.4; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-dust {
+    display: none;
   }
 }
