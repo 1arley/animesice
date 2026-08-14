@@ -25,8 +25,8 @@ export function HeroEnvironment({
 
   const translateX = envX;
   const translateY = useTransform(
-    [envY, scrollY] as MotionValue<number>[],
-    ([ey, sy]: number[]) => `${ey + (sy * -0.05)}px`,
+    [envY, scrollShift] as MotionValue<number>[],
+    ([ey, sy]: number[]) => `${ey + sy}px`,
   );
 
   if (!src) {
@@ -61,7 +61,7 @@ export function HeroEnvironment({
         quality={60}
         placeholder="blur"
         blurDataURL={blur.landscape}
-        className="object-cover scale-110"
+        className="object-cover scale-[1.2]"
         aria-hidden="true"
       />
     </motion.div>

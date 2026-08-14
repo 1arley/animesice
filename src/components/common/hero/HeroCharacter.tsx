@@ -23,12 +23,12 @@ export function HeroCharacter({
   isMobile,
 }: HeroCharacterProps) {
   const reduceMotion = usePrefersReducedMotion();
-  const scale = isMobile ? "scale(1.05)" : "scale(1.08)";
+  const scale = "scale(1.08)";
   const scrollShift = useTransform(scrollY, [0, 400], [0, -30]);
 
   const translateY = useTransform(
-    [charY, scrollY] as MotionValue<number>[],
-    ([cy, sy]: number[]) => `${cy + (sy * -0.075)}px`,
+    [charY, scrollShift] as MotionValue<number>[],
+    ([cy, sy]: number[]) => `${cy + sy}px`,
   );
 
   return (
@@ -37,7 +37,7 @@ export function HeroCharacter({
       style={{
         x: reduceMotion || isMobile ? undefined : charX,
         y: reduceMotion ? undefined : translateY,
-        scale: reduceMotion ? 1 : 1.08,
+        scale: reduceMotion ? 1 : 1.15,
       }}
     >
       <Image

@@ -38,13 +38,18 @@ export function useHeroParallax(
     target: containerRef,
     offset: ["start start", "end start"],
   });
-  const scrollY = useSpring(rawScrollY, { stiffness: 80, damping: 30 });
+  // Limita a puxada do parallax: scrollY fica em 0..300px, então a imagem
+  // nunca desliza além do over-scan das camadas (sem espaço vazio na borda).
+  const scrollY = useSpring(
+    useTransform(rawScrollY, [0, 300], [0, 300]),
+    { stiffness: 80, damping: 30 },
+  );
 
-  const envX = useTransform(mouseX, [-0.5, 0.5], [8, -8]);
-  const envY = useTransform(mouseY, [-0.5, 0.5], [4, -4]);
-  const charX = useTransform(mouseX, [-0.5, 0.5], [16, -16]);
-  const charY = useTransform(mouseY, [-0.5, 0.5], [8, -8]);
-  const partX = useTransform(mouseX, [-0.5, 0.5], [4, -4]);
+  const envX = useTransform(mouseX, [-0.5, 0.5], [6, -6]);
+  const envY = useTransform(mouseY, [-0.5, 0.5], [3, -3]);
+  const charX = useTransform(mouseX, [-0.5, 0.5], [10, -10]);
+  const charY = useTransform(mouseY, [-0.5, 0.5], [5, -5]);
+  const partX = useTransform(mouseX, [-0.5, 0.5], [2, -2]);
 
   useEffect(() => {
     if (reduceMotion) return;
