@@ -4,9 +4,17 @@ import { useEffect, useState, useRef } from "react";
 import { api, ApiError, isProxyEmbed, type RoomInfo, type RoomMessageItem, type StreamSource } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import type { Episode, Anime } from "@/types";
-import { VideoPlayer } from "@/components/common/VideoPlayer";
+import { SyncedVideoPlayer } from "@/components/common/SyncedVideoPlayer";
 import { EpisodeLoadingState } from "@/components/common/EpisodeLoadingState";
 import { io, Socket } from "socket.io-client";
+
+interface Participant {
+  userId: string;
+  userName: string | null;
+  name: string | null;
+  avatar: string | null;
+  isHost: boolean;
+}
 
 export default function RoomPage({
   params,
@@ -27,6 +35,8 @@ export default function RoomPage({
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [isHost, setIsHost] = useState(false);
+  const [participants, setParticipants] = useState<Participant[]>([]);
   const socketRef = useRef<Socket | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
@@ -73,13 +83,14 @@ export default function RoomPage({
     if (!slug || !user || !room) return;
 
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
-    // socket.io v4: `${origin}/room` → namespace="/room", path="/socket.io/".
     const origin = apiUrl.replace(/\/api\/?$/, "");
     const socket = io(`${origin}/room`, {
       withCredentials: true,
-      transports: ["websocket", "polling"],
+      transports: ["websocket"],
     });
     socketRef.current = socket;
+
+    let historyReceived = false;
 
     socket.on("connect", () => {
       setConnected(true);
@@ -89,22 +100,34 @@ export default function RoomPage({
 
     socket.on("disconnect", () => setConnected(false));
 
+    socket.on("connect_error", () => {
+      setConnected(false);
+    });
+
+    socket.on("joinedRoom", (data: { roomId: string; isHost: boolean }) => {
+      setIsHost(data.isHost);
+    });
+
     socket.on("newMessage", (msg: RoomMessageItem) => {
       setMessages((prev) => [...prev, msg]);
     });
 
     socket.on("messageHistory", (msgs: RoomMessageItem[]) => {
+      historyReceived = true;
       setMessages(msgs.reverse());
     });
 
-    // Fallback: se o socket não entregar histórico em 2s, busca via REST
+    socket.on("participantList", (list: Participant[]) => {
+      setParticipants(list);
+    });
+
     const fallbackTimer = setTimeout(() => {
-      if (messages.length === 0) {
+      if (!historyReceived) {
         api.getRoomMessages(slug)
           .then((msgs) => setMessages(msgs))
           .catch(() => {});
       }
-    }, 2000);
+    }, 3000);
 
     socket.on("roomFull", () => {
       setError("Sala cheia.");
@@ -176,7 +199,7 @@ export default function RoomPage({
           {error ?? "Sala não encontrada."}
         </p>
         <a href="/" className="btn-ghost">
-          Voltar ao início
+          Voltar ao inicio
         </a>
       </div>
     );
@@ -223,28 +246,34 @@ export default function RoomPage({
             {episode ? episode.anime.title : "Carregando..."}
           </h1>
           <p className="mt-1 font-display text-body-sm font-medium text-ice tabular-nums">
-            EP {room.episodeNumber} · Watch Party
+            EP {room.episodeNumber} · Watch Party {isHost && "· Host"}
           </p>
 
           <div className="mt-4">
             {episode && source && isProxyEmbed(source.src) ? (
-              <VideoPlayer
+              <SyncedVideoPlayer
                 src={""}
                 embedUrl={source.src}
                 posterUrl={source.thumbnailUrl ?? episode.thumbnailUrl ?? undefined}
                 animeSlug={room.animeSlug}
                 episodeNumber={room.episodeNumber}
+                socket={socketRef.current}
+                roomSlug={slug}
+                isHost={isHost}
               />
             ) : sourceError ? (
               <p className="text-body-sm text-signal">{sourceError}</p>
             ) : loadingSource ? (
               <EpisodeLoadingState />
             ) : source ? (
-              <VideoPlayer
+              <SyncedVideoPlayer
                 src={source.src}
                 posterUrl={source.thumbnailUrl ?? episode?.thumbnailUrl ?? undefined}
                 animeSlug={room.animeSlug}
                 episodeNumber={room.episodeNumber}
+                socket={socketRef.current}
+                roomSlug={slug}
+                isHost={isHost}
               />
             ) : (
               <p className="text-body-sm text-mist">
@@ -252,9 +281,15 @@ export default function RoomPage({
               </p>
             )}
           </div>
+
+          {!isHost && source && !isProxyEmbed(source.src) && (
+            <p className="mt-2 text-caption text-mist">
+              O host controla a reprodução. Seu player sincroniza automaticamente.
+            </p>
+          )}
         </div>
 
-        <div className="flex h-[480px] flex-col border border-hairline bg-panel">
+        <div className="flex h-[600px] flex-col border border-hairline bg-panel">
           <div className="flex items-center justify-between border-b border-hairline px-3 py-2">
             <span className="font-mono text-body-sm font-medium text-ice">
               Chat da sala
@@ -264,10 +299,34 @@ export default function RoomPage({
                 className={`h-2 w-2 rounded-full ${connected ? "bg-ice" : "bg-signal"}`}
               />
               <span className="text-caption text-mist">
-                {room.maxParticipants} max
+                {participants.length}/{room.maxParticipants} online
               </span>
             </div>
           </div>
+
+          {participants.length > 0 && (
+            <div className="flex flex-wrap gap-1 border-b border-hairline px-3 py-2">
+              {participants.map((p) => (
+                <span
+                  key={p.userId}
+                  className="inline-flex items-center gap-1 rounded bg-hairline/30 px-1.5 py-0.5 text-caption"
+                >
+                  {p.avatar && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={p.avatar}
+                      alt=""
+                      className="h-4 w-4 rounded-full"
+                    />
+                  )}
+                  <span className={p.isHost ? "text-ice font-medium" : "text-mist"}>
+                    {p.userName ?? p.name ?? "Anônimo"}
+                  </span>
+                  {p.isHost && <span className="text-ice">★</span>}
+                </span>
+              ))}
+            </div>
+          )}
 
           <div className="flex-1 overflow-y-auto p-3 space-y-2">
             {messages.length === 0 && (
