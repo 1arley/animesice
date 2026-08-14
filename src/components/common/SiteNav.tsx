@@ -52,7 +52,7 @@ export function SiteNav() {
   const [openGroup, setOpenGroup] = useState<string | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [closing, setClosing] = useState(false);
-  const navRef = useRef<HTMLElement | null>(null);
+  const navRef = useRef<HTMLDivElement | null>(null);
   const pathname = usePathname();
 
   const contaLinks: NavLink[] = user
@@ -142,7 +142,7 @@ export function SiteNav() {
 
   return (
     <nav
-      ref={navRef}
+      ref={navRef as React.Ref<HTMLElement>}
       className="border-b border-hairline bg-ink"
       aria-label="Navegação principal"
     >
