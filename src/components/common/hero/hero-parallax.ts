@@ -9,15 +9,17 @@ import {
 } from "motion/react";
 import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
 
+import type { MotionValue } from "motion/react";
+
 export interface ParallaxValues {
-  mouseX: ReturnType<typeof useSpring>;
-  mouseY: ReturnType<typeof useSpring>;
-  scrollY: ReturnType<typeof useSpring>;
-  envX: ReturnType<typeof useTransform>;
-  envY: ReturnType<typeof useTransform>;
-  charX: ReturnType<typeof useTransform>;
-  charY: ReturnType<typeof useTransform>;
-  partX: ReturnType<typeof useTransform>;
+  mouseX: MotionValue<number>;
+  mouseY: MotionValue<number>;
+  scrollY: MotionValue<number>;
+  envX: MotionValue<number>;
+  envY: MotionValue<number>;
+  charX: MotionValue<number>;
+  charY: MotionValue<number>;
+  partX: MotionValue<number>;
 }
 
 export function useHeroParallax(
