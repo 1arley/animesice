@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { TextLoop } from "@/components/core/TextLoop";
+import { CrystalMotion } from "@/components/animesice/CrystalMotion";
 
 /** Tempo "normal" de espera, em segundos. A partir daqui a mensagem muda
  *  e sugerimos recarregar a página. */
@@ -34,10 +35,9 @@ export function EpisodeLoadingState() {
   const tooSlow = elapsed > LIMIT_SECONDS;
 
   return (
-    <div className="reveal flex min-h-[360px] flex-col items-center justify-center gap-3 border border-hairline bg-panel px-6 py-14 text-center">
-      <span className="text-4xl" aria-hidden="true">
-        🍿
-      </span>
+    <div className="reveal flex min-h-[360px] flex-col items-center justify-center gap-4 border border-hairline bg-panel px-6 py-14 text-center">
+      {/* O cristal respirando: o sinal que o site está sintonizando. */}
+      <CrystalMotion mode="loop" size={88} />
       <p className="text-body font-medium text-snow">
         <span
           className="mr-2 inline-block h-2 w-2 animate-blink bg-ice align-middle"

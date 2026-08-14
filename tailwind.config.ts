@@ -26,6 +26,18 @@ module.exports = {
         mist: "#9FB0C1", // texto secundário
         signal: "#FF7847", // única nota quente (danger / oposto)
         snow: "#E9EFF5", // texto primário (títulos, valores, inputs)
+        // Identidade de motion ("luz que atravessa gelo, não luz que explode
+        // na tela"): paleta mais viva que a de UI, reservada às animações de
+        // marca — splash, loading, transição e o pulso do símbolo. Porta os
+        // tokens do artefato animesice-motion-identity.html.
+        motion: {
+          void: "#050b14", // fundo do motion (fundo do cristal)
+          frost: "#dff7f9", // brilho frio / texto do motion
+          glacier: "#83ffff", // glow principal do cristal
+          cyan: "#00e5ff", // varredura de luz / specular
+          azure: "#0091ea", // glow secundário (luz profunda)
+          teal: "#00828f", // detalhe escuro (princípios/labels)
+        },
       },
       fontFamily: {
         // Display: Chakra Petch — cristal de gelo em forma de tipo: arestas

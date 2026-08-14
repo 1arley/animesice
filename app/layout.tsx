@@ -8,6 +8,7 @@ import { ADSENSE_CLIENT } from "@/lib/adsense";
 import { SITE_URL } from "@/lib/site";
 import { ThirdPartyScripts } from "@/components/common/ThirdPartyScripts";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import { CrystalSplash } from "@/components/animesice/CrystalSplash";
 
 // Tipografia do "sinal da madrugada": um display de cristal (Chakra Petch)
 // para vozes, IBM Plex Sans para o corpo e IBM Plex Mono para os dados de
@@ -84,6 +85,9 @@ export default function RootLayout({
         <AuthProvider>
           <ToastProvider>{children}</ToastProvider>
         </AuthProvider>
+        {/* Abertura da identidade de motion: cristal em foco puxado, uma vez
+            por sessão, dispensável a qualquer toque/tecla. Nunca bloqueia. */}
+        <CrystalSplash />
         {/* Soft wall: avisa sobre adblock sem bloquear o acesso. */}
         <AdBlockNotice />
         <SpeedInsights />
