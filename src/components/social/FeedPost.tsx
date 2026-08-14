@@ -8,6 +8,7 @@ import { useAuth } from "@/lib/auth-context";
 import { Avatar } from "@/components/common/Avatar";
 import { timeAgo } from "@/lib/time";
 import { safeImageSrc } from "@/lib/url";
+import { blur } from "@/lib/blur";
 import type { PostCommentItem, SocialPost } from "@/types";
 
 /**
@@ -184,7 +185,10 @@ export function FeedPost({
                 alt=""
                 fill
                 sizes="40px"
+                placeholder="blur"
+                blurDataURL={blur.portrait}
                 className="object-cover"
+                quality={80}
               />
             </div>
           ) : (

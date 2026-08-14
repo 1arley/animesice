@@ -8,6 +8,7 @@ import { useAuth } from "@/lib/auth-context";
 import { api } from "@/lib/api";
 import type { ContinueWatchingItem } from "@/types";
 import { safeImageSrc } from "@/lib/url";
+import { blur } from "@/lib/blur";
 import { SpotlightCard } from "@/components/core/SpotlightCard";
 
 export function ContinueWatchingRail() {
@@ -71,8 +72,10 @@ export function ContinueWatchingRail() {
                       fill
                       sizes="(max-width: 480px) 50vw, 200px"
                       priority={i < 2}
+                      placeholder="blur"
+                      blurDataURL={blur.landscape}
                       className="object-cover opacity-90 transition-opacity group-hover:opacity-100"
-                      quality={75}
+                      quality={80}
                     />
                   ) : (
                     <div className="absolute inset-0 bg-hairline" />

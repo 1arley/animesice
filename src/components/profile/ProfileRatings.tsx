@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { safeImageSrc } from "@/lib/url";
+import { blur } from "@/lib/blur";
 import { timeAgo } from "@/lib/time";
 import type { UserRating } from "@/types";
 import { SectionLabel } from "@/components/common/SectionLabel";
@@ -52,7 +53,10 @@ export function ProfileRatings({
                     alt={r.anime.title}
                     fill
                     sizes="48px"
+                    placeholder="blur"
+                    blurDataURL={blur.portrait}
                     className="object-cover"
+                    quality={80}
                   />
                 ) : (
                   <span className="absolute inset-0 flex items-center justify-center font-mono text-caption text-mist">

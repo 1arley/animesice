@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import type { Anime, CalendarResponse } from "@/types";
 import { serverFetchJson } from "@/lib/api-server";
 import { safeImageSrc } from "@/lib/url";
+import { blur } from "@/lib/blur";
 import { YearFilter } from "@/components/calendario/YearFilter";
 
 export const revalidate = 300;
@@ -135,7 +136,10 @@ function PosterThumb({ anime }: { anime: Anime }) {
         height={48}
         sizes="32px"
         loading="lazy"
+        placeholder="blur"
+        blurDataURL={blur.portrait}
         className="h-full w-full object-cover"
+        quality={80}
       />
     </div>
   ) : (

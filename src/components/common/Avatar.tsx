@@ -1,16 +1,12 @@
+import Image from "next/image";
+import { blur } from "@/lib/blur";
+
 interface AvatarProps {
   name: string | null;
   src?: string | null;
   size?: number;
   className?: string;
 }
-
-/**
- * Avatar do usuário: imagem (se houver) ou fallback com a inicial do nome.
- * Usa <img> cru de propósito — avatares vêm de hosts arbitrários (Supabase
- * Storage) e previews blob:; o otimizador do next/image não lida bem com ambos.
- */
-import Image from "next/image";
 
 export function Avatar({ name, src, size = 32, className = "" }: AvatarProps) {
   const fallback = (name ?? "?")[0]?.toUpperCase() || "?";
@@ -24,7 +20,16 @@ export function Avatar({ name, src, size = 32, className = "" }: AvatarProps) {
     >
       {src ? (
         canUseNextImage ? (
-          <Image src={src as string} alt="avatar" width={size} height={size} className="h-full w-full object-cover" />
+          <Image
+            src={src as string}
+            alt="avatar"
+            width={size}
+            height={size}
+            placeholder="blur"
+            blurDataURL={blur.square}
+            className="h-full w-full object-cover"
+            quality={80}
+          />
         ) : (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={src} alt="" className="h-full w-full object-cover" />

@@ -4,6 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { safeImageSrc } from "@/lib/url";
+import { blur } from "@/lib/blur";
 import { timeAgo } from "@/lib/time";
 import { useAuth } from "@/lib/auth-context";
 import { api } from "@/lib/api";
@@ -38,7 +39,7 @@ export function FeedActivityItem({
     <div className="flex items-center gap-3 py-3">
       <div className="card-scan relative w-10 shrink-0 overflow-hidden bg-hairline" style={{ aspectRatio: "2 / 3" }}>
         {cover ? (
-          <Image src={cover} alt="" fill sizes="40px" className="object-cover" />
+          <Image src={cover} alt="" fill sizes="40px" placeholder="blur" blurDataURL={blur.portrait} className="object-cover" quality={80} />
         ) : event.type === "comment" ? (
           <span className="absolute inset-0 flex items-center justify-center text-mist">
             <CommentGlyph />

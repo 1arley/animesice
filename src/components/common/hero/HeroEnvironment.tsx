@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { motion, useTransform, type MotionValue } from "motion/react";
+import { blur } from "@/lib/blur";
 
 interface HeroEnvironmentProps {
   src?: string;
@@ -58,6 +59,8 @@ export function HeroEnvironment({
         fill
         sizes="100vw"
         quality={60}
+        placeholder="blur"
+        blurDataURL={blur.landscape}
         className="object-cover scale-110"
         aria-hidden="true"
       />

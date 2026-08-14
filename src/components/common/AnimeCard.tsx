@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import type { Anime } from "@/types";
 import { safeImageSrc } from "@/lib/url";
+import { blur } from "@/lib/blur";
 import { statusLabel, isOnAir } from "@/lib/status";
 import { SpotlightCard } from "@/components/core/SpotlightCard";
 
@@ -44,8 +45,10 @@ export function AnimeCard({ anime, priority = false }: AnimeCardProps) {
             fill
             sizes="(max-width: 480px) 33vw, (max-width: 768px) 25vw, (max-width: 1024px) 20vw, 16vw"
             priority={priority}
+            placeholder="blur"
+            blurDataURL={blur.portrait}
             className="object-cover opacity-90 transition-opacity duration-300 group-hover:opacity-100"
-            quality={75}
+            quality={80}
           />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center bg-hairline">

@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import { cache } from "react";
 import type { Anime } from "@/types";
 import { safeImageSrc, upgradeImageUrl } from "@/lib/url";
+import { blur } from "@/lib/blur";
 import { AdSlot } from "@/components/ads/AdSlot";
 import { serverFetchJson } from "@/lib/api-server";
 import { isOnAir } from "@/lib/status";
@@ -97,8 +98,11 @@ export default async function AnimeDetailPage({
             fill
             sizes="100vw"
             priority
+            placeholder="blur"
+            blurDataURL={blur.landscape}
             aria-hidden="true"
             className="object-cover opacity-30"
+            quality={80}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-ink via-ink/60 to-transparent" />
           <div className="absolute inset-0 bg-gradient-to-r from-ink/80 via-transparent to-transparent" />
@@ -118,7 +122,10 @@ export default async function AnimeDetailPage({
                 fill
                 sizes="(max-width: 768px) 50vw, 256px"
                 priority
+                placeholder="blur"
+                blurDataURL={blur.portrait}
                 className="object-cover"
+                quality={85}
               />
             ) : (
               <div className="flex h-full items-center justify-center bg-hairline">

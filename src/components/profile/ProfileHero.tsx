@@ -8,6 +8,7 @@ import { useAuth } from "@/lib/auth-context";
 import { Avatar } from "@/components/common/Avatar";
 import { Modal } from "@/components/common/Modal";
 import { formatDate } from "@/lib/time";
+import { blur } from "@/lib/blur";
 import type { PublicUserProfile, ReportReason } from "@/types";
 
 const REPORT_REASONS: Array<{ value: ReportReason; label: string }> = [
@@ -161,7 +162,10 @@ export function ProfileHero({
             fill
             priority
             sizes="100vw"
+            placeholder="blur"
+            blurDataURL={blur.landscape}
             className="object-cover"
+            quality={80}
           />
         ) : null}
       </div>

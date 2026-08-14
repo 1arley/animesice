@@ -4,6 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { safeImageSrc } from "@/lib/url";
+import { blur } from "@/lib/blur";
 import { timeAgo } from "@/lib/time";
 import { useAuth } from "@/lib/auth-context";
 import { api } from "@/lib/api";
@@ -103,7 +104,7 @@ function ActivityRow({
         style={{ aspectRatio: "2 / 3" }}
       >
         {cover ? (
-          <Image src={cover} alt="" fill sizes="40px" className="object-cover" />
+          <Image src={cover} alt="" fill sizes="40px" placeholder="blur" blurDataURL={blur.portrait} className="object-cover" quality={80} />
         ) : event.type === "comment" ? (
           <span className="absolute inset-0 flex items-center justify-center text-mist">
             <CommentGlyph />

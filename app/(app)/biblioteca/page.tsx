@@ -6,6 +6,7 @@ import Image from "next/image";
 import { useAuth } from "@/lib/auth-context";
 import { api, ApiError } from "@/lib/api";
 import { safeImageSrc } from "@/lib/url";
+import { blur } from "@/lib/blur";
 import { AnimeCard } from "@/components/common/AnimeCard";
 import type { Anime, WatchHistoryItem, UserAnimeListItem, WatchStatus } from "@/types";
 
@@ -193,7 +194,10 @@ function HistoryRow({ item }: { item: WatchHistoryItem }) {
             width={40}
             height={56}
             sizes="40px"
+            placeholder="blur"
+            blurDataURL={blur.portrait}
             className="h-full w-full object-cover"
+            quality={80}
           />
         )}
       </div>

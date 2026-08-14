@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { motion, useTransform, type MotionValue } from "motion/react";
 import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
+import { blur } from "@/lib/blur";
 
 interface HeroCharacterProps {
   src: string;
@@ -46,6 +47,8 @@ export function HeroCharacter({
         priority={priority}
         sizes="100vw"
         quality={85}
+        placeholder="blur"
+        blurDataURL={blur.landscape}
         className="object-cover"
         style={{ transform: scale }}
       />

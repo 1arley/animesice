@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import type { Episode, Anime } from "@/types";
 import { safeImageSrc } from "@/lib/url";
+import { blur } from "@/lib/blur";
 import { formatDate } from "@/lib/time";
 import { SpotlightCard } from "@/components/core/SpotlightCard";
 
@@ -34,7 +35,10 @@ export function EpisodeCard({ episode, priority = false }: EpisodeCardProps) {
             fill
             sizes="(max-width: 480px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 16vw"
             priority={priority}
+            placeholder="blur"
+            blurDataURL={blur.landscape}
             className="object-cover opacity-90 transition-opacity group-hover:opacity-100"
+            quality={80}
           />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center bg-hairline">
