@@ -68,13 +68,17 @@ module.exports = {
         "glow-ice": "0 0 24px -4px rgba(56, 232, 218, 0.25)",
         "glow-subtle": "0 4px 20px -2px rgba(0, 0, 0, 0.5)",
       },
+      // Raio da identidade: o cristal é angular, não uma pílula. Escala curta
+      // e seca (2–12px) — superfícies quase retas, acentos de gelo cortantes.
+      // Cantos "molengas" (16–20px) foram removidos: a marca é aresta, não
+      // forma orgânica.
       borderRadius: {
-        "xs": "4px",
-        "sm": "6px",
-        "md": "8px",
-        "lg": "12px",
-        "xl": "16px",
-        "2xl": "20px",
+        "xs": "2px",
+        "sm": "4px",
+        "md": "6px",
+        "lg": "8px",
+        "xl": "10px",
+        "2xl": "12px",
       },
       maxWidth: {
         shelf: "1340px",
