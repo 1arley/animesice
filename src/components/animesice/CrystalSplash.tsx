@@ -66,7 +66,7 @@ export function CrystalSplash() {
 
   return (
     <div
-      className={`crystal-splash fixed inset-0 z-[100] flex flex-col items-center justify-center bg-motion-void ${
+      className={`crystal-splash pointer-events-none fixed inset-0 z-[100] flex flex-col items-center justify-center bg-motion-void ${
         phase === "leaving" ? "is-leaving" : ""
       }`}
       aria-hidden="true"
