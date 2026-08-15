@@ -15,8 +15,10 @@ export interface CrystalMotionProps {
 }
 
 /** O logo do motion é o cristal isolado em fundo transparente — a mesma
- *  arte embutida no artefato animesice-motion-identity.html. */
-const LOGO_URL = "/images/logo.png";
+ *  arte embutida no artefato animesice-motion-identity.html.
+ *  WebP (11 KiB vs 92 KiB PNG): o cristal circula em splash/loading/transition
+ *  e como máscara CSS; formato leve evita re-baixar 3x na primeira visita. */
+const LOGO_URL = "/images/logo.webp";
 const MOTE_COUNT = 14;
 
 interface MoteStyle {
