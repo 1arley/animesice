@@ -45,6 +45,7 @@ export function HeroCharacter({
         alt=""
         fill
         priority={priority}
+        fetchPriority={priority ? "high" : undefined}
         sizes="100vw"
         quality={85}
         placeholder="blur"

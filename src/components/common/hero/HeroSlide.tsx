@@ -47,11 +47,16 @@ export function HeroSlide({ anime, label, priority, isMobile }: HeroSlideProps) 
 
   const art = upgradeImageUrl(anime.bannerImage) ?? upgradeImageUrl(anime.coverImage);
 
+  // O slide inicial (priority) é o LCP: pintar imediatamente, sem a animação
+  // de "enter" (opacity 0 + blur) que atrasaria o LCP no mobile lento. Os
+  // demais slides entram com o wipe de foco como de costume.
+  const isFirst = priority;
+
   return (
     <motion.section
       ref={containerRef}
       variants={slideVariants}
-      initial="enter"
+      initial={isFirst ? false : "enter"}
       animate="center"
       exit="exit"
       className="absolute inset-0 overflow-hidden"
@@ -65,9 +70,11 @@ export function HeroSlide({ anime, label, priority, isMobile }: HeroSlideProps) 
         isMobile={isMobile}
       />
 
-      {/* z-1: Environment (blurred midground) */}
+      {/* z-1: Environment (blurred midground). No mobile a camada afiada do
+          HeroCharacter já cobre o box inteiro — a duplicata borrada só somaria
+          um download do mesmo arte e paint caro; usa o degradê estático. */}
       <HeroEnvironment
-        src={art}
+        src={isMobile ? undefined : art}
         scrollY={parallax.scrollY}
         envX={parallax.envX}
         envY={parallax.envY}

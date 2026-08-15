@@ -63,9 +63,9 @@ export default async function HomePage() {
           <Reveal className="mb-8">
             <section aria-labelledby="rail-onair">
               <Rail label="No ar agora" count={onAirList.length} labelId="rail-onair">
-                {onAirList.map((anime, i) => (
+                {onAirList.map((anime) => (
                   <div key={anime.id} className="w-[140px] shrink-0 snap-start">
-                    <AnimeCard anime={anime} priority={i < 3} />
+                    <AnimeCard anime={anime} />
                   </div>
                 ))}
               </Rail>
@@ -85,8 +85,8 @@ export default async function HomePage() {
               </p>
             ) : (
               <RevealStagger className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-                {animes.map((anime, i) => (
-                  <AnimeCard key={anime.id} anime={anime} priority={i < 6} spotlight={false} />
+                {animes.map((anime) => (
+                  <AnimeCard key={anime.id} anime={anime} spotlight={false} />
                 ))}
               </RevealStagger>
             )}
@@ -103,8 +103,8 @@ export default async function HomePage() {
               <p className="text-body-sm text-mist">Sem episódios recentes.</p>
             ) : (
               <RevealStagger className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
-                {latest.map((ep, i) => (
-                  <EpisodeCard key={ep.id} episode={ep} priority={i < 4} />
+                {latest.map((ep) => (
+                  <EpisodeCard key={ep.id} episode={ep} />
                 ))}
               </RevealStagger>
             )}
