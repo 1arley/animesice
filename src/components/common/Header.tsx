@@ -9,8 +9,7 @@ import { KoFiLink } from "@/components/common/KoFiLink";
 
 /**
  * Cabeçalho da prateleira: wordmark à esquerda, busca ao centro,
- * auth à direita. Entre wordmark e busca, o relógio de transmissão —
- * a madrugada do canal contada ao vivo, em mono.
+ * auth à direita.
  */
 export function Header() {
   const router = useRouter();
@@ -37,15 +36,6 @@ export function Header() {
     <header className="border-b border-hairline bg-ink">
       <div className="mx-auto flex max-w-shelf items-center justify-between gap-4 px-4 py-3">
         <Wordmark className="text-xl" />
-
-        {/* Marca estática do canal, sem fingir transmissão ao vivo. */}
-        <div
-          className="hidden items-center gap-2 font-mono text-caption uppercase tracking-wider text-mist md:flex"
-          aria-hidden="true"
-        >
-          <span className="h-1.5 w-1.5 bg-ice" aria-hidden="true" />
-          <span>Sinal da madrugada</span>
-        </div>
 
         {/* Desktop search */}
         <form
