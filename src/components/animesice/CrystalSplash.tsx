@@ -7,7 +7,7 @@ import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
 /** Só roda uma vez por sessão (guardrail da identidade: abertura de
  *  conteúdo nunca repete dentro da mesma sessão). */
 const SESSION_KEY = "animesice:splash-seen";
-const REVEAL_MS = 1100;
+const REVEAL_MS = 2000;
 const LEAVE_MS = 250;
 
 /**
@@ -90,9 +90,6 @@ export function CrystalSplash() {
       aria-hidden="true"
     >
       <CrystalMotion mode="reveal" size={240} />
-      <p className="mt-10 font-mono text-caption uppercase tracking-[0.18em] text-motion-glacier/60">
-        AnimesIce · toque para continuar
-      </p>
     </div>
   );
 }
