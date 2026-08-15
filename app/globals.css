@@ -38,6 +38,38 @@
     min-height: 100vh;
   }
 
+  /* Scroll suave Lenis — classes recomendadas (nativo, sem scroll-jacking) */
+  html.lenis,
+  html.lenis body {
+    height: auto;
+  }
+  .lenis.lenis-smooth {
+    scroll-behavior: auto !important;
+  }
+  .lenis.lenis-smooth [data-lenis-prevent] {
+    overscroll-behavior: contain;
+  }
+  .lenis.lenis-stopped {
+    overflow: hidden;
+  }
+  .lenis.lenis-scrolling iframe {
+    pointer-events: none;
+  }
+
+  /* Campo de fragmentos — pano de fundo animado da home (desktop).
+     O SVG carrega as keyframes de deriva; em reduced-motion troca para a
+     versão estática (mesma paleta, sem animação). */
+  .home-backdrop {
+    background-image: url("/assets/bg-drift-loop.svg");
+    background-size: cover;
+    background-position: center;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .home-backdrop {
+      background-image: url("/assets/background.svg");
+    }
+  }
+
   /* Vinheta atmosférica em desktop para focar a visão na grade.
      z-index baixo: a vinheta escurece o FUNDO, nunca o chrome interativo.
      Com z 59 (acima do dropdown "Animes/Comunidade/Conta" = z-50 e do

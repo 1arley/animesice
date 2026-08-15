@@ -3,12 +3,14 @@ import { SiteNav } from "@/components/common/SiteNav";
 import { Footer } from "@/components/common/Footer";
 import { MobileTabBar } from "@/components/common/MobileTabBar";
 import { CrystalTransition } from "@/components/animesice/CrystalTransition";
+import { SmoothScrollProvider } from "@/lib/smooth-scroll";
 
 /**
  * Chrome da prateleira: Header + SiteNav + skip-link + main + Footer.
  * Decisão única de composição — páginas do grupo ficam só com o conteúdo.
  * MobileTabBar: nav inferior só <sm (o SiteNav cobre desktop/tablet).
  * CrystalTransition: wipe de 0.55s da identidade de motion entre rotas.
+ * SmoothScrollProvider: Lenis (wheel/trackpad) sincronizado com o GSAP.
  */
 export default function AppLayout({
   children,
@@ -16,7 +18,7 @@ export default function AppLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <>
+    <SmoothScrollProvider>
       <CrystalTransition />
       <a
         href="#body-content"
@@ -29,6 +31,6 @@ export default function AppLayout({
       <main id="body-content" className="pb-16 sm:pb-0">{children}</main>
       <Footer />
       <MobileTabBar />
-    </>
+    </SmoothScrollProvider>
   );
 }
