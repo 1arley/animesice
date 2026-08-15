@@ -229,7 +229,10 @@ export function SiteNav() {
           />
 
           {/* Sheet */}
-          <div className={`nav-sheet absolute inset-x-0 bottom-0 max-h-[85vh] overflow-y-auto border-t border-hairline bg-ink ${closing ? "closing" : ""}`}>
+          <div
+            className={`nav-sheet absolute inset-x-0 bottom-0 max-h-[85vh] overflow-y-auto border-t border-hairline bg-ink ${closing ? "closing" : ""}`}
+            onClick={e => e.stopPropagation()}
+          >
             {/* Handle */}
             <div className="flex justify-center pt-3 pb-1">
               <div className="h-1 w-10 rounded-full bg-hairline" />
