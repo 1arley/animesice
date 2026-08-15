@@ -13,6 +13,12 @@ export interface AnimeCardProps {
    * para acelerar o LCP; o resto usa lazy nativo.
    */
   priority?: boolean;
+  /**
+   * Spotlight (brilho que segue o cursor). Por padrão ligado nos rails;
+   * as grades densas da home desligam para não empilhar efeitos no mesmo
+   * frame — aí o hover é só o lift + card-scan.
+   */
+  spotlight?: boolean;
 }
 
 /**
@@ -24,14 +30,13 @@ export interface AnimeCardProps {
  * Performance: usa next/image → AVIF/WebP automático. `sizes` correto garante
  * que o browser baixe o asset certo para a viewport, sem pedir 1 MB em mobile.
  */
-export function AnimeCard({ anime, priority = false }: AnimeCardProps) {
+export function AnimeCard({ anime, priority = false, spotlight = true }: AnimeCardProps) {
   const age = anime.ageRating;
   const dub = anime.audio === "DUBLADO";
   const onAir = isOnAir(anime.status);
   const cover = safeImageSrc(anime.coverImage);
 
-  return (
-    <SpotlightCard className="h-full">
+  const card = (
     <Link
       href={`/animes/${anime.slug}`}
       title={anime.title}
@@ -88,7 +93,9 @@ export function AnimeCard({ anime, priority = false }: AnimeCardProps) {
       <span className="line-clamp-2 block px-2 py-2 font-sans text-body-sm font-medium text-snow transition-colors group-hover:text-ice">
         {anime.title}
       </span>
-    </Link>
-    </SpotlightCard>
+      </Link>
   );
+
+  if (!spotlight) return card;
+  return <SpotlightCard className="h-full">{card}</SpotlightCard>;
 }

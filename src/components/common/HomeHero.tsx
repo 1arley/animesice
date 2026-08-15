@@ -56,7 +56,7 @@ export function HomeHero({ animes }: { animes: Anime[] }) {
 
   return (
     <section
-      className="reveal -mx-4 mb-6 sm:mx-0 sm:mb-8"
+      className="-mx-4 mb-6 sm:mx-0 sm:mb-8"
       aria-labelledby="hero-title"
       aria-roledescription="carrossel"
       onMouseEnter={() => setPaused(true)}
@@ -86,7 +86,7 @@ export function HomeHero({ animes }: { animes: Anime[] }) {
                 onClick={() => setIndex(i)}
                 aria-label={`Destaque ${i + 1}: ${a.title}`}
                 aria-current={i === index}
-                className="flex h-8 w-8 items-center justify-center sm:h-6 sm:w-6"
+                className="flex h-8 w-8 items-center justify-center transition-transform active:scale-90 sm:h-6 sm:w-6"
               >
                 <span
                   aria-hidden="true"

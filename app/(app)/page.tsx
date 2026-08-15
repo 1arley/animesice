@@ -7,6 +7,10 @@ import { ContinueWatchingRail } from "@/components/common/ContinueWatchingRail";
 import { RecommendationsRail } from "@/components/common/RecommendationsRail";
 import { SectionLabel } from "@/components/common/SectionLabel";
 import { HomeHero } from "@/components/common/HomeHero";
+import { HomeBackdrop } from "@/components/common/crystal/HomeBackdrop";
+import { IceBeamDivider } from "@/components/common/crystal/IceBeamDivider";
+import { CrystalReveal } from "@/components/common/crystal/CrystalReveal";
+import { Reveal, RevealStagger } from "@/components/core/Reveal";
 import type { Anime, Episode, Paginated } from "@/types";
 
 export const revalidate = 60;
@@ -32,7 +36,8 @@ export default async function HomePage() {
   const onAirList = [...onAir.values()];
 
   return (
-    <div className="mx-auto max-w-shelf px-4 py-6">
+    <>
+      <HomeBackdrop />
       {/*
         Hierarquia semântica da página:
           h1 = "Prateleira" (título da página, único; sr-only na UI principal,
@@ -42,111 +47,136 @@ export default async function HomePage() {
       */}
       <h1 className="sr-only">Prateleira — Animes no ar, lançamentos e destaques</h1>
 
-      {/* Âncora da primeira dobra: os destaques se revezam em carrossel. */}
-      {trending.length > 0 && <HomeHero animes={trending.slice(0, 6)} />}
+      {/* 1 · Destaques em carrossel (primeira dobra, rápido de alcançar). */}
+      <div className="mx-auto max-w-shelf px-4 pb-4 pt-6">
+        {trending.length > 0 && <HomeHero animes={trending.slice(0, 6)} />}
+      </div>
 
-      <ContinueWatchingRail />
-      <RecommendationsRail />
+      {/* 2 · Momento assinatura da identidade (desktop): o cristal puxa
+          foco ao rolar. Falls to vazio no mobile/reduced-motion — a home
+          segue catálogo imediato. */}
+      <CrystalReveal />
 
-      {onAirList.length > 0 && (
-        <section className="reveal mb-8" aria-labelledby="rail-onair">
-          <Rail label="No ar agora" count={onAirList.length} labelId="rail-onair">
-            {onAirList.map((anime, i) => (
-              <div key={anime.id} className="w-[140px] shrink-0 snap-start">
-                <AnimeCard anime={anime} priority={i < 3} />
-              </div>
-            ))}
-          </Rail>
-        </section>
-      )}
+      {/* 3 · Feixe de sinal: liga a transição visual para a prateleira. */}
+      <IceBeamDivider />
 
-      <section className="reveal mb-8" style={{ animationDelay: "60ms" }} aria-labelledby="shelf-lancamentos">
-        <SectionLabel id="shelf-lancamentos">
-          Melhores avaliados{" "}
-          <span className="shelf-label-data">{animes.length} títulos</span>
-        </SectionLabel>
-        {animes.length === 0 ? (
-          <p className="text-body-sm text-mist">
-            Nenhum anime no catálogo ainda. Rode o seed do backend.
-          </p>
-        ) : (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-            {animes.map((anime, i) => (
-              <AnimeCard key={anime.id} anime={anime} priority={i < 6} />
-            ))}
-          </div>
+      {/* 4 · Catálogo rápido: rails e grades com reveal em onda no scroll. */}
+      <div className="mx-auto max-w-shelf px-4 py-4">
+        <ContinueWatchingRail />
+        <RecommendationsRail />
+
+        {onAirList.length > 0 && (
+          <Reveal className="mb-8">
+            <section aria-labelledby="rail-onair">
+              <Rail label="No ar agora" count={onAirList.length} labelId="rail-onair">
+                {onAirList.map((anime, i) => (
+                  <div key={anime.id} className="w-[140px] shrink-0 snap-start">
+                    <AnimeCard anime={anime} priority={i < 3} />
+                  </div>
+                ))}
+              </Rail>
+            </section>
+          </Reveal>
         )}
-      </section>
 
-      <section className="reveal mb-8" style={{ animationDelay: "120ms" }} aria-labelledby="shelf-latest">
-        <SectionLabel id="shelf-latest">
-          Últimos episódios{" "}
-          <span className="shelf-label-data">{latest.length} novos</span>
-        </SectionLabel>
-        {latest.length === 0 ? (
-          <p className="text-body-sm text-mist">Sem episódios recentes.</p>
-        ) : (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
-            {latest.map((ep, i) => (
-              <EpisodeCard key={ep.id} episode={ep} priority={i < 4} />
-            ))}
-          </div>
+        <Reveal className="mb-8">
+          <section aria-labelledby="shelf-lancamentos">
+            <SectionLabel id="shelf-lancamentos">
+              Melhores avaliados{" "}
+              <span className="shelf-label-data">{animes.length} títulos</span>
+            </SectionLabel>
+            {animes.length === 0 ? (
+              <p className="text-body-sm text-mist">
+                Nenhum anime no catálogo ainda. Rode o seed do backend.
+              </p>
+            ) : (
+              <RevealStagger className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+                {animes.map((anime, i) => (
+                  <AnimeCard key={anime.id} anime={anime} priority={i < 6} spotlight={false} />
+                ))}
+              </RevealStagger>
+            )}
+          </section>
+        </Reveal>
+
+        <Reveal className="mb-8">
+          <section aria-labelledby="shelf-latest">
+            <SectionLabel id="shelf-latest">
+              Últimos episódios{" "}
+              <span className="shelf-label-data">{latest.length} novos</span>
+            </SectionLabel>
+            {latest.length === 0 ? (
+              <p className="text-body-sm text-mist">Sem episódios recentes.</p>
+            ) : (
+              <RevealStagger className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
+                {latest.map((ep, i) => (
+                  <EpisodeCard key={ep.id} episode={ep} priority={i < 4} />
+                ))}
+              </RevealStagger>
+            )}
+          </section>
+        </Reveal>
+
+        {trending.length > 0 && (
+          <Reveal className="mb-8">
+            <section aria-labelledby="shelf-trending">
+              <SectionLabel id="shelf-trending">
+                Em alta{" "}
+                <span className="shelf-label-data">{trending.length} títulos</span>
+              </SectionLabel>
+              <RevealStagger className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+                {trending.map((anime) => (
+                  <AnimeCard key={`trend-${anime.id}`} anime={anime} spotlight={false} />
+                ))}
+              </RevealStagger>
+            </section>
+          </Reveal>
         )}
-      </section>
 
-      {trending.length > 0 && (
-        <section className="reveal mb-8" style={{ animationDelay: "180ms" }} aria-labelledby="shelf-trending">
-          <SectionLabel id="shelf-trending">
-            Em alta{" "}
-            <span className="shelf-label-data">{trending.length} títulos</span>
-          </SectionLabel>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-            {trending.map((anime) => (
-              <AnimeCard key={`trend-${anime.id}`} anime={anime} />
-            ))}
-          </div>
-        </section>
-      )}
+        {recent.length > 0 && (
+          <Reveal className="mb-8">
+            <section aria-labelledby="shelf-recent">
+              <SectionLabel id="shelf-recent">
+                Recentemente adicionados{" "}
+                <span className="shelf-label-data">{recent.length} títulos</span>
+              </SectionLabel>
+              <RevealStagger className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+                {recent.map((anime) => (
+                  <AnimeCard key={`recent-${anime.id}`} anime={anime} spotlight={false} />
+                ))}
+              </RevealStagger>
+            </section>
+          </Reveal>
+        )}
 
-      {recent.length > 0 && (
-        <section className="reveal mb-8" style={{ animationDelay: "240ms" }} aria-labelledby="shelf-recent">
-          <SectionLabel id="shelf-recent">
-            Recentemente adicionados{" "}
-            <span className="shelf-label-data">{recent.length} títulos</span>
-          </SectionLabel>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-            {recent.map((anime) => (
-              <AnimeCard key={`recent-${anime.id}`} anime={anime} />
-            ))}
-          </div>
-        </section>
-      )}
+        <AdSlot
+          slot="0000000001"
+          format="horizontal"
+          className="mb-8 min-h-[90px]"
+          label="Publicidade"
+        />
 
-      <AdSlot
-        slot="0000000001"
-        format="horizontal"
-        className="reveal mb-8 min-h-[90px]"
-        label="Publicidade"
-      />
+        {animes.length > 0 && (
+          <Reveal className="mb-8">
+            <section aria-labelledby="shelf-highlights">
+              <SectionLabel id="shelf-highlights">Destaques da semana</SectionLabel>
+              <RevealStagger className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+                {animes.slice(0, 6).map((anime) => (
+                  <AnimeCard key={`week-${anime.id}`} anime={anime} spotlight={false} />
+                ))}
+              </RevealStagger>
+            </section>
+          </Reveal>
+        )}
 
-      {animes.length > 0 && (
-        <section className="reveal" style={{ animationDelay: "300ms" }} aria-labelledby="shelf-highlights">
-          <SectionLabel id="shelf-highlights">Destaques da semana</SectionLabel>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-            {animes.slice(0, 6).map((anime) => (
-              <AnimeCard key={`week-${anime.id}`} anime={anime} />
-            ))}
-          </div>
-        </section>
-      )}
-
-      <AdSlot
-        slot="0000000002"
-        format="horizontal"
-        className="reveal mt-8 min-h-[90px] hidden sm:block"
-        label="Publicidade"
-      />
-    </div>
+        <AdSlot
+          slot="0000000002"
+          format="horizontal"
+          className="mt-8 min-h-[90px] hidden sm:block"
+          label="Publicidade"
+        />
+      </div>
+    </>
   );
 }
 

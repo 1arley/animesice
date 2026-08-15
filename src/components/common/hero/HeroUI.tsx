@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ShinyText } from "@/components/core/ShinyText";
+import { motion } from "motion/react";
 import { isOnAir } from "@/lib/status";
 import type { Anime } from "@/types";
 
@@ -9,6 +9,42 @@ interface HeroUIProps {
   anime: Anime;
   label: string;
   isMobile: boolean;
+}
+
+/**
+ * RevealLabel — o rótulo mono do hero com entrada letra-a-letra (stagger
+ * curto, "sintonia de canal"). Substitui o ShinyText de brilho periódico:
+ * o label faz parte da marca (ident EPG), não do kit de efeitos.
+ */
+function RevealLabel({ text }: { text: string }) {
+  return (
+    <motion.span
+      initial="hidden"
+      animate="visible"
+      variants={{ visible: { transition: { staggerChildren: 0.045, delayChildren: 0.2 } } }}
+      aria-label={text}
+      className="inline-block"
+    >
+      {text.split("").map((ch, i) => (
+        <motion.span
+          key={i}
+          aria-hidden="true"
+          variants={{
+            hidden: { opacity: 0, y: 8, filter: "blur(4px)" },
+            visible: {
+              opacity: 1,
+              y: 0,
+              filter: "blur(0px)",
+              transition: { ease: [0.16, 1, 0.3, 1], duration: 0.45 },
+            },
+          }}
+          className="inline-block whitespace-pre"
+        >
+          {ch}
+        </motion.span>
+      ))}
+    </motion.span>
+  );
 }
 
 export function HeroUI({ anime, label, isMobile }: HeroUIProps) {
@@ -40,13 +76,7 @@ export function HeroUI({ anime, label, isMobile }: HeroUIProps) {
         {/* Label */}
         <span className="mb-2 inline-flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-caption font-medium uppercase tracking-wider text-ice sm:mb-3">
           <span className="h-1 w-1 bg-ice" aria-hidden="true" />
-          <ShinyText
-            text={label}
-            color="#45F0E0"
-            shineColor="#E9EFF5"
-            speed={5}
-            spread={100}
-          />
+          <RevealLabel text={label} />
           {onAir && (
             <span className="inline-flex items-center gap-1.5 text-signal">
               <span className="h-1 w-1 animate-blink bg-signal" aria-hidden="true" />
