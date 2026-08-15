@@ -2,8 +2,9 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useReducedMotion } from "motion/react";
+import type gsap from "gsap";
 import { CrystalSvg } from "@/components/common/crystal/CrystalSvg";
-import { gsap, useGSAP } from "@/lib/gsap";
+import { useFinePointer } from "@/lib/use-fine-pointer";
 
 const FLOAT_IDS = Array.from({ length: 10 }, (_, i) => `float-${String(i + 1).padStart(2, "0")}`);
 
@@ -26,6 +27,7 @@ export function CrystalReveal() {
   const stageRef = useRef<HTMLDivElement>(null);
   const captionRef = useRef<HTMLDivElement>(null);
   const reduce = useReducedMotion();
+  const fine = useFinePointer();
   const [isDesktop, setIsDesktop] = useState(false);
 
   useEffect(() => {
@@ -36,58 +38,68 @@ export function CrystalReveal() {
     return () => mq.removeEventListener("change", sync);
   }, []);
 
-  useGSAP(
-    () => {
-      if (reduce || !isDesktop) return;
-      const stage = stageRef.current;
-      if (!stage) return;
+  useEffect(() => {
+    if (reduce || !isDesktop || !fine || !stageRef.current) return;
+
+    let killed = false;
+    let ctx: gsap.Context | null = null;
+    const stage = stageRef.current;
+
+    import("@/lib/gsap").then(({ gsap }) => {
+      if (killed || !stageRef.current) return;
 
       const floats = FLOAT_IDS.map((id) => stage.querySelector(`[id="${id}"]`)).filter(
         (el): el is Element => el !== null,
       );
 
-      // Estado inicial: fragmentos dispersos num anel, apagados.
-      floats.forEach((el, i) => {
-        const angle = (i / floats.length) * Math.PI * 2;
-        const dist = 120 + (i % 5) * 30;
-        gsap.set(el, {
-          x: Math.cos(angle) * dist,
-          y: Math.sin(angle) * dist * 0.5,
-          autoAlpha: 0,
+      ctx = gsap.context(() => {
+        // Estado inicial: fragmentos dispersos num anel, apagados.
+        floats.forEach((el, i) => {
+          const angle = (i / floats.length) * Math.PI * 2;
+          const dist = 120 + (i % 5) * 30;
+          gsap.set(el, {
+            x: Math.cos(angle) * dist,
+            y: Math.sin(angle) * dist * 0.5,
+            autoAlpha: 0,
+          });
         });
-      });
 
-      const tl = gsap.timeline({
-        scrollTrigger: {
-          trigger: sectionRef.current,
-          start: "top top",
-          end: "bottom bottom",
-          scrub: 1,
-        },
-        defaults: { ease: "none" },
-      });
+        const tl = gsap.timeline({
+          scrollTrigger: {
+            trigger: sectionRef.current,
+            start: "top top",
+            end: "bottom bottom",
+            scrub: 1,
+          },
+          defaults: { ease: "none" },
+        });
 
-      tl.fromTo(
-        stage,
-        { filter: "blur(12px) brightness(0.7)", scale: 0.92 },
-        { filter: "blur(0px) brightness(1)", scale: 1.06 },
-        0,
-      );
+        tl.fromTo(
+          stage,
+          { filter: "blur(12px) brightness(0.7)", scale: 0.92 },
+          { filter: "blur(0px) brightness(1)", scale: 1.06 },
+          0,
+        );
 
-      tl.fromTo(
-        captionRef.current,
-        { autoAlpha: 0, y: 16 },
-        { autoAlpha: 1, y: 0 },
-        0.06,
-      );
+        tl.fromTo(
+          captionRef.current,
+          { autoAlpha: 0, y: 16 },
+          { autoAlpha: 1, y: 0 },
+          0.06,
+        );
 
-      // Convergência dos fragmentos (todos correm em paralelo desde o início).
-      floats.forEach((el) => {
-        tl.to(el, { x: 0, y: 0, autoAlpha: 1, duration: 0.7 }, 0);
-      });
-    },
-    { scope: sectionRef, dependencies: [reduce, isDesktop] },
-  );
+        // Convergência dos fragmentos (todos correm em paralelo desde o início).
+        floats.forEach((el) => {
+          tl.to(el, { x: 0, y: 0, autoAlpha: 1, duration: 0.7 }, 0);
+        });
+      }, stage);
+    });
+
+    return () => {
+      killed = true;
+      ctx?.revert();
+    };
+  }, [reduce, isDesktop, fine]);
 
   // Mobile e reduced-motion não recebem o "muro" de scroll —
   // a home continua um catálogo rápido, sem takeover de tela.

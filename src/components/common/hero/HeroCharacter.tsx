@@ -50,7 +50,7 @@ export function HeroCharacter({
         priority={priority}
         fetchPriority={priority ? "high" : undefined}
         sizes="100vw"
-        quality={85}
+        quality={80}
         placeholder="blur"
         blurDataURL={blur.landscape}
         className="object-cover"

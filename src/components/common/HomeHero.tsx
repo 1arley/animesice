@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { AnimatePresence } from "motion/react";
 import Link from "next/link";
 import type { Anime } from "@/types";
+import { useIsMobile } from "@/lib/use-is-mobile";
 import { HeroSlide } from "./hero/HeroSlide";
 
 const ROTATE_MS = 7000;
@@ -22,7 +23,7 @@ export function HomeHero({ animes }: { animes: Anime[] }) {
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
   const [reduceMotion, setReduceMotion] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
+  const isMobile = useIsMobile();
   const [label, setLabel] = useState("Destaque da madrugada");
 
   useEffect(() => {
@@ -33,14 +34,6 @@ export function HomeHero({ animes }: { animes: Anime[] }) {
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
     setReduceMotion(mq.matches);
     const onChange = (e: MediaQueryListEvent) => setReduceMotion(e.matches);
-    mq.addEventListener("change", onChange);
-    return () => mq.removeEventListener("change", onChange);
-  }, []);
-
-  useEffect(() => {
-    const mq = window.matchMedia("(max-width: 639px)");
-    setIsMobile(mq.matches);
-    const onChange = (e: MediaQueryListEvent) => setIsMobile(e.matches);
     mq.addEventListener("change", onChange);
     return () => mq.removeEventListener("change", onChange);
   }, []);

@@ -4,7 +4,6 @@ import { useEffect, useRef } from "react";
 import type Lenis from "lenis";
 import { usePathname } from "next/navigation";
 import { useReducedMotion } from "motion/react";
-import { gsap, ScrollTrigger } from "@/lib/gsap";
 
 /**
  * SmoothScrollProvider — scroll suave (Lenis) sincronizado com o GSAP.
@@ -17,6 +16,8 @@ import { gsap, ScrollTrigger } from "@/lib/gsap";
  *    o Lenis só suaviza wheel/trackpad.
  *  - `allowNestedScroll: true` → rails horizontais (overflow-x) rolam nativos.
  *  - reduced-motion → desmonta o Lenis (scroll 1:1), respeitando o usuário.
+ *  - Tanto Lenis quanto gsap/ScrollTrigger entram via `import()` dinâmico e
+ *    só rodam em `pointer: fine` (desktop) — no celular nem são baixados.
  *  - A cada rota (pathname) reseta scroll + ScrollTrigger.refresh() para
  *    recalcular as posições dos triggers depois do hydrate das imagens.
  */
@@ -37,12 +38,12 @@ export function SmoothScrollProvider({
     let cancelled = false;
     let tickerRaf: ((time: number) => void) | null = null;
 
-    // import() dinâmico: o Lenis (~20 KiB) fica no próprio chunk e só é
-    // baixado quando há wheel/trackpad — celular (pointer coarse) nunca o
-    // recebe no bundle inicial.
-    import("lenis").then(({ default: LenisImpl }) => {
+    // gsap + ScrollTrigger (e Lenis) só para desktop: import() dinâmico tira
+    // os ~112 KiB do gsap do bundle inicial e o celular nunca os executa.
+    Promise.all([import("lenis"), import("@/lib/gsap")]).then(([lenisMod, gsapMod]) => {
       if (cancelled) return;
-      lenis = new LenisImpl({
+      const { gsap, ScrollTrigger } = gsapMod;
+      lenis = new lenisMod.default({
         duration: 1.15,
         easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
         smoothWheel: true,
@@ -62,7 +63,11 @@ export function SmoothScrollProvider({
 
     return () => {
       cancelled = true;
-      if (tickerRaf) gsap.ticker.remove(tickerRaf);
+      const raf = tickerRaf;
+      tickerRaf = null;
+      if (raf) {
+        import("@/lib/gsap").then(({ gsap }) => gsap.ticker.remove(raf));
+      }
       if (lenis) {
         lenis.destroy();
         lenisRef.current = null;

@@ -93,8 +93,9 @@ export function HeroUI({ anime, label, isMobile }: HeroUIProps) {
           {anime.title}
         </h2>
 
-        {/* Synopsis */}
-        {anime.synopsis && !isMobile && (
+        {/* Synopsis — sempre no SSR (SEO/desktop); o CSS `hidden sm:block`
+            cuida da visibilidade no mobile, sem depender do estado cliente. */}
+        {anime.synopsis && (
           <p className="mt-2 hidden max-w-xl text-body-sm text-mist sm:line-clamp-2 sm:block lg:line-clamp-3">
             {anime.synopsis}
           </p>
@@ -112,7 +113,7 @@ export function HeroUI({ anime, label, isMobile }: HeroUIProps) {
               {anime.year}
             </span>
           )}
-          {anime.format && !isMobile && (
+          {anime.format && (
             <span className="hidden font-mono text-caption uppercase tracking-wider text-mist sm:inline">
               {anime.format}
             </span>

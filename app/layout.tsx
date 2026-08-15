@@ -16,22 +16,22 @@ import { CrystalSplash } from "@/components/animesice/CrystalSplash";
 const fontChakra = Chakra_Petch({
   variable: "--font-chakra",
   subsets: ["latin"],
-  weight: ["500", "600", "700"],
+  weight: ["600", "700"],
   display: "swap",
 });
 
 const fontPlexSans = IBM_Plex_Sans({
   variable: "--font-plex-sans",
   subsets: ["latin"],
-  weight: ["400", "500", "600"],
+  weight: ["400", "500"],
   display: "swap",
 });
 
 const fontPlexMono = IBM_Plex_Mono({
   variable: "--font-plex-mono",
   subsets: ["latin"],
-  weight: ["400", "500"],
-  display: "swap",
+  weight: ["400"],
+  display: "optional",
 });
 
 export const metadata: Metadata = {

@@ -42,8 +42,8 @@ export default async function LancamentosPage({
       ) : (
         <>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-            {animes.map((anime) => (
-              <AnimeCard key={anime.id} anime={anime} />
+            {animes.map((anime, i) => (
+              <AnimeCard key={anime.id} anime={anime} priority={i < 6} />
             ))}
           </div>
           <Pagination

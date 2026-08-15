@@ -26,20 +26,33 @@ export function ThirdPartyScripts() {
                   s.src = 'https://al5sm.com/tag.min.js';
                   (document.body || document.documentElement).appendChild(s);
                 }
+                // CLS: monetag nunca roda no meio do paint — dispara só
+                // depois do load e da primeira interação (scroll/toque/tecla),
+                // o que for primeiro. Evita o layout shift pós-carregamento.
+                var gate = function() {
+                  window.removeEventListener('scroll', gate);
+                  window.removeEventListener('pointerdown', gate);
+                  window.removeEventListener('keydown', gate);
+                  if (document.readyState === 'complete') {
+                    setTimeout(inject, 250);
+                  } else {
+                    window.addEventListener('load', inject, { once: true });
+                  }
+                };
+                window.addEventListener('scroll', gate, { passive: true });
+                window.addEventListener('pointerdown', gate, { passive: true });
+                window.addEventListener('keydown', gate, { passive: true });
                 var anchor = document.querySelector('footer') || document.body;
                 if ('IntersectionObserver' in window) {
                   var io = new IntersectionObserver(function(entries) {
                     if (entries.some(function(e) { return e.isIntersecting; })) {
-                      inject();
+                      gate();
                       io.disconnect();
                     }
                   }, { rootMargin: '200px' });
                   io.observe(anchor);
-                }
-                if ('requestIdleCallback' in window) {
-                  requestIdleCallback(function() { setTimeout(inject, 6000); }, { timeout: 7000 });
                 } else {
-                  setTimeout(inject, 6000);
+                  window.addEventListener('load', gate, { once: true });
                 }
               })();
             `,

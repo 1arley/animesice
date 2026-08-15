@@ -1,8 +1,17 @@
 "use client";
 
 import { motion, useTransform, type MotionValue } from "motion/react";
-import { Aurora } from "@/components/core/Aurora";
+import dynamic from "next/dynamic";
 import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
+
+// Aurora (WebGL via ogl) é ornamentação — carrega só no cliente e só quando
+// o hero realmente aparece em desktop (pointer fino e largura >= sm). Com
+// ssr:false + gate isMobile, o chunk do ogl (~58 KiB) sai do bundle inicial:
+// no mobile nada de WebGL ou download de ambiente duplicado.
+const Aurora = dynamic(() =>
+  import("@/components/core/Aurora").then((m) => m.Aurora),
+  { ssr: false },
+);
 
 interface HeroAtmosphereProps {
   ambientColor?: string;
@@ -43,7 +52,7 @@ export function HeroAtmosphere({
         }}
       />
 
-      {/* Aurora WebGL: ice-cyan atmospheric layer */}
+      {/* Aurora WebGL: ice-cyan atmospheric layer (dinâmico, só desktop) */}
       {!reduceMotion && !isMobile && (
         <Aurora
           className="absolute inset-0 opacity-25"
