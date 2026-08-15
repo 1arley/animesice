@@ -25,6 +25,9 @@ const cspHeader = `
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   images: {
+    // Vercel cortou a otimizacao (HTTP 402, cota Hobby de Image Optimization
+    // esgotada); imagens vao direto dos CDNs (meusanimes.blog / AniList).
+    unoptimized: true,
     remotePatterns: [
       { protocol: "https", hostname: "cdn.myanimelist.net" },
       { protocol: "https", hostname: "**.myanimelist.net" },
