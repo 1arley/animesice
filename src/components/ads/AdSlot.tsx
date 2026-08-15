@@ -1,7 +1,7 @@
 "use client";
 
 import { memo, useEffect, useRef } from "react";
-import { ADSENSE_CLIENT } from "@/lib/adsense";
+import { ADSENSE_CLIENT, ensureAdSenseScript } from "@/lib/adsense";
 
 declare global {
   interface Window {
@@ -26,8 +26,9 @@ interface AdSlotProps {
  * hidrata o <ins>: o script é dono exclusivo do nó.
  *
  * Performance:
- *   1. O script do AdSense é carregado via `next/script` com strategy
- *      "lazyOnload" (ver ThirdPartyScripts) — fora do caminho crítico.
+ *   1. O script do AdSense é carregado sob demanda (ensureAdSenseScript) —
+ *      só quando este slot se aproxima da viewport. Página sem scroll de anúncio
+ *      nunca roda o ~1s de main-thread do AdSense/consent.
  *   2. O push para `adsbygoogle` é agendado via `requestIdleCallback`,
  *      não `useEffect` síncrono. Evita forced reflow durante o paint.
  *   3. `rootMargin: '300px'` no IntersectionObserver garante que o slot
@@ -51,7 +52,8 @@ const AdSlot = memo(function AdSlot({
         for (const entry of entries) {
           if (!entry.isIntersecting) continue;
           io.disconnect();
-          // Adia para idle: impede forced reflow durante o scroll/paint.
+          // Carrega o script do AdSense agora — até aqui ele nem existia na
+          // página. Adia para idle: impede forced reflow durante o paint.
           const fire = () => {
             if (pushed.current) return;
             pushed.current = true;
@@ -61,12 +63,14 @@ const AdSlot = memo(function AdSlot({
               /* AdSense bloqueado (adblock) ou script ainda não carregou. */
             }
           };
-          if ("requestIdleCallback" in window) {
-            (window as Window & { requestIdleCallback?: (cb: () => void) => void })
-              .requestIdleCallback?.(fire);
-          } else {
-            setTimeout(fire, 0);
-          }
+          ensureAdSenseScript().then(() => {
+            if ("requestIdleCallback" in window) {
+              (window as Window & { requestIdleCallback?: (cb: () => void) => void })
+                .requestIdleCallback?.(fire);
+            } else {
+              setTimeout(fire, 0);
+            }
+          });
           break;
         }
       },

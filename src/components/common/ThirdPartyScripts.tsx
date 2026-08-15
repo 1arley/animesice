@@ -1,20 +1,15 @@
 "use client";
 
 import Script from "next/script";
-import { ADSENSE_CLIENT } from "@/lib/adsense";
 
 const MONETAG_ENABLED = process.env.NEXT_PUBLIC_ENABLE_MONETAG === "1";
 
 export function ThirdPartyScripts() {
   return (
     <>
-      <Script
-        id="adsense-loader"
-        src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_CLIENT}`}
-        strategy="lazyOnload"
-        crossOrigin="anonymous"
-      />
-
+      {/* AdSense NÃO carrega aqui: o adsbygoogle.js é injetado sob demanda
+          pelo AdSlot quando um slot se aproxima da viewport (evita ~1s de
+          execução do show_ads_impl/consent no carregamento de toda página). */}
       {MONETAG_ENABLED && (
         <Script
           id="monetag-loader"
