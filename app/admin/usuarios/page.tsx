@@ -74,7 +74,7 @@ export default function AdminUsersPage() {
   useEffect(() => {
     if (!isPrivileged(user)) return;
     loadUsers(page, search);
-  }, [user, page]);
+  }, [user, page, loadUsers, search]);
 
   function handleSearchChange(value: string) {
     setSearch(value);

@@ -138,7 +138,7 @@ export function SiteNav() {
   // Close drawer on route change
   useEffect(() => {
     if (mobileOpen) closeMobile();
-  }, [pathname, closeMobile]);
+  }, [pathname, closeMobile, mobileOpen]);
 
   return (
     <nav
