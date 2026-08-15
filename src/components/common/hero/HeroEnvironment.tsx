@@ -47,8 +47,8 @@ export function HeroEnvironment({
     <motion.div
       className="absolute inset-0 overflow-hidden"
       style={{
-        x: translateX,
-        y: translateY,
+        x: isMobile ? undefined : translateX,
+        y: isMobile ? undefined : translateY,
         filter: blurAmount,
         opacity,
       }}

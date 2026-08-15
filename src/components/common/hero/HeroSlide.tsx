@@ -41,6 +41,29 @@ export const slideVariants = {
   },
 };
 
+/**
+ * Variantes do celular: crossfade só de opacity.
+ * Blur(12px) num <img> full-screen em cada troca de slide (7s) obriga o
+ * compositor a re-blurrizar a tela inteira — frames perdidos no Android
+ * médio. No toque o filtro vira um fade limpo, muito mais barato.
+ */
+export const slideVariantsMobile = {
+  exit: {
+    opacity: 0,
+    transition: { duration: 0.3, ease: [0.4, 0, 0.6, 1] as const },
+  },
+  enter: {
+    opacity: 0,
+  },
+  center: {
+    opacity: 1,
+    transition: {
+      duration: 0.5,
+      ease: [0.2, 0.65, 0.25, 1] as const,
+    },
+  },
+};
+
 export function HeroSlide({ anime, label, priority, isMobile }: HeroSlideProps) {
   const containerRef = useRef<HTMLElement>(null);
   const parallax = useHeroParallax(containerRef);
@@ -55,7 +78,7 @@ export function HeroSlide({ anime, label, priority, isMobile }: HeroSlideProps) 
   return (
     <motion.section
       ref={containerRef}
-      variants={slideVariants}
+      variants={isMobile ? slideVariantsMobile : slideVariants}
       initial={isFirst ? false : "enter"}
       animate="center"
       exit="exit"

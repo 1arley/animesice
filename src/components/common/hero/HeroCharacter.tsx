@@ -36,7 +36,10 @@ export function HeroCharacter({
       className="absolute inset-0 overflow-hidden"
       style={{
         x: reduceMotion || isMobile ? undefined : charX,
-        y: reduceMotion ? undefined : translateY,
+        // Parallax de scroll desligado no toque: no scroll nativo do mobile
+        // o spring descreveria y a cada frame do gesture (custoso em Android
+        // médio) para um efeito de poucos px. Desktop mantém.
+        y: reduceMotion || isMobile ? undefined : translateY,
         scale: reduceMotion ? 1 : 1.15,
       }}
     >

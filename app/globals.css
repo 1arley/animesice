@@ -589,21 +589,48 @@
     font-size: theme("fontSize.body-sm");
   }
 
-  /* Skeleton loading placeholder */
+  /* Skeleton loading placeholder.
+     O brilho varre via transform (::after composto na GPU), não por
+     background-position — animar background repinta o bloco a cada frame e
+     custa caro no celular durante o streaming das páginas. */
   .skeleton {
+    position: relative;
+    overflow: hidden;
+    background: theme("colors.panel");
+  }
+  .skeleton::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
     background: linear-gradient(
       90deg,
-      theme("colors.panel") 0%,
+      transparent 0%,
       theme("colors.slate") 50%,
-      theme("colors.panel") 100%
+      transparent 100%
     );
-    background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
+    animation: skeleton-sweep 1.5s ease-in-out infinite;
   }
 
-  @keyframes shimmer {
-    0% { background-position: 200% 0; }
-    100% { background-position: -200% 0; }
+  @keyframes skeleton-sweep {
+    0%   { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+  }
+
+  /* Sweep do GradientText (wordmark "Ice") — animação CSS pura, sem rAF do JS.
+     Celular (pointer coarse) e reduced-motion recebem o gradiente estático
+     (a classe live só é aplicada quando há animação de verdade). */
+  .gradient-text-live {
+    animation: gradient-sweep var(--gradient-speed, 14s) ease-in-out infinite;
+  }
+  @keyframes gradient-sweep {
+    0%, 100% { background-position: 0% 50%; }
+    50%      { background-position: 100% 50%; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .gradient-text-live {
+      animation: none;
+    }
   }
 
   @keyframes rise {

@@ -77,7 +77,7 @@ export function MobileTabBar() {
   return (
     <nav
       aria-label="Navegação inferior"
-      className="fixed inset-x-0 bottom-0 z-30 border-t border-hairline bg-ink/95 backdrop-blur-sm sm:hidden"
+      className="fixed inset-x-0 bottom-0 z-30 border-t border-hairline bg-ink sm:hidden"
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
       <div className="relative grid grid-cols-5">

@@ -1,21 +1,20 @@
 "use client";
 
-import { motion, useAnimationFrame, useMotionValue, useTransform } from "motion/react";
-import { useRef, useState, type ReactNode } from "react";
-import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
+import { useEffect, useState, type ReactNode } from "react";
 
 /**
- * GradientText — texto com gradiente animado, adaptado de
- * React Bits (github.com/DavidHDev/react-bits, MIT + Commons Clause).
+ * GradientText — texto com gradiente animado por CSS (keyframes).
  *
- * Re-tematizado para o AnimesIce:
- *  - sem o container pesado do original (mx-auto, borda, cursor, blur) —
- *    aqui é um <span> inline-block que herda a tipografia do chamador;
- *  - cores padrão da marca: gelo → neve → névoa (o "sinal" no branco frio);
- *  - prefers-reduced-motion: o gradiente fica parado na posição inicial
- *    (mantém a cor, elimina o movimento).
+ * O sweep roda 100% em CSS (transform/paint leve e interrompível pelo
+ * browser); a versão antiga usava `useAnimationFrame` — um rAF contínuo
+ * por página que repintava o `background-position` a cada frame mesmo sem
+ * ninguém ver (o header está em toda página do grupo).
+ *
+ * Fluidez:
+ *  - `pointer: coarse` (celular) → gradiente estático (zero custo de
+ *    animação; mantém a cor de marca).
+ *  - `prefers-reduced-motion` → estático (respeita o usuário).
  */
-
 interface GradientTextProps {
   children: ReactNode;
   className?: string;
@@ -33,45 +32,23 @@ export function GradientText({
   colors = ["#45F0E0", "#E9EFF5", "#9FB0C1", "#45F0E0"],
   animationSpeed = 7,
   direction = "horizontal",
-  pauseOnHover = false,
 }: GradientTextProps) {
-  const reduceMotion = usePrefersReducedMotion();
-  const [paused, setPaused] = useState(false);
-  const progress = useMotionValue(0);
-  const elapsedRef = useRef(0);
-  const lastTimeRef = useRef<number | null>(null);
+  const [live, setLive] = useState(false);
 
-  const animationDuration = animationSpeed * 1000;
-
-  useAnimationFrame((time) => {
-    // Reduced motion: congelado no início (gradiente visível, sem mover).
-    if (reduceMotion || paused) {
-      lastTimeRef.current = null;
-      return;
-    }
-    if (lastTimeRef.current === null) {
-      lastTimeRef.current = time;
-      return;
-    }
-    const delta = time - lastTimeRef.current;
-    lastTimeRef.current = time;
-    elapsedRef.current += delta;
-
-    // Ciclo ida e volta (0 → 100 → 0): o brilho varre os dois sentidos.
-    const fullCycle = animationDuration * 2;
-    const cycleTime = elapsedRef.current % fullCycle;
-    if (cycleTime < animationDuration) {
-      progress.set((cycleTime / animationDuration) * 100);
-    } else {
-      progress.set(
-        100 - ((cycleTime - animationDuration) / animationDuration) * 100,
-      );
-    }
-  });
-
-  const backgroundPosition = useTransform(progress, (p) =>
-    direction === "vertical" ? `50% ${p}%` : `${p}% 50%`,
-  );
+  useEffect(() => {
+    const mqReduce = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const mqCoarse = window.matchMedia("(pointer: coarse)");
+    const evaluate = () =>
+      !mqReduce.matches && !mqCoarse.matches && direction === "horizontal";
+    setLive(evaluate());
+    const onChange = () => setLive(evaluate());
+    mqReduce.addEventListener("change", onChange);
+    mqCoarse.addEventListener("change", onChange);
+    return () => {
+      mqReduce.removeEventListener("change", onChange);
+      mqCoarse.removeEventListener("change", onChange);
+    };
+  }, [direction]);
 
   const angle =
     direction === "horizontal"
@@ -81,6 +58,7 @@ export function GradientText({
         : "to bottom right";
 
   const gradientStyle = {
+    "--gradient-speed": `${animationSpeed * 2}s`,
     backgroundImage: `linear-gradient(${angle}, ${colors.join(", ")})`,
     backgroundSize:
       direction === "horizontal"
@@ -89,20 +67,14 @@ export function GradientText({
           ? "100% 300%"
           : "300% 300%",
     backgroundRepeat: "repeat",
-  };
+  } as React.CSSProperties;
 
   return (
-    <motion.span
-      className={`inline-block bg-clip-text text-transparent ${className}`}
-      style={{
-        ...gradientStyle,
-        backgroundPosition,
-        WebkitBackgroundClip: "text",
-      }}
-      onMouseEnter={() => pauseOnHover && setPaused(true)}
-      onMouseLeave={() => pauseOnHover && setPaused(false)}
+    <span
+      className={`bg-clip-text text-transparent ${live ? "gradient-text-live" : ""} ${className}`}
+      style={gradientStyle}
     >
       {children}
-    </motion.span>
+    </span>
   );
 }
