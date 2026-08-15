@@ -135,10 +135,17 @@ export function SiteNav() {
     };
   }, [mobileOpen, closeMobile]);
 
-  // Close drawer on route change
+  // Close drawer on route change — só quando o pathname muda de verdade.
+  // Se `mobileOpen` entrasse nas deps, o efeito dispararia no próprio
+  // momento de abrir o drawer (setMobileOpen(true)), fechando-o em seguida
+  // e "piscando" o menu no mobile.
+  const prevPathname = useRef(pathname);
   useEffect(() => {
-    if (mobileOpen) closeMobile();
-  }, [pathname, closeMobile, mobileOpen]);
+    if (prevPathname.current !== pathname) {
+      prevPathname.current = pathname;
+      if (mobileOpen) closeMobile();
+    }
+  }, [pathname, mobileOpen, closeMobile]);
 
   return (
     <nav
