@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>SVG Divider Preview</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #080C12;
+      min-height: 100vh;
+    }
+
+    .section {
+      width: 100%;
+      min-height: 30vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #38E8DA;
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      opacity: 0.25;
+    }
+
+    .divider {
+      width: 100%;
+      max-height: 120px;
+      display: block;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="section">— section above —</div>
+  <img class="divider" src="divider-ice-beam.svg" alt="Ice Beam Divider">
+  <div class="section">— section below —</div>
+</body>
+
+</html>

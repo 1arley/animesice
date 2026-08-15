@@ -1,0 +1,121 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2560 120" width="2560" height="120" fill="none">
+  <defs>
+    <!-- Beam core gradient: transparent → #38E8DA → #00E5FF → #38E8DA → transparent -->
+    <linearGradient id="beam-core" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%"   stop-color="#38E8DA" stop-opacity="0"/>
+      <stop offset="10%"  stop-color="#38E8DA" stop-opacity="0.5"/>
+      <stop offset="35%"  stop-color="#38E8DA" stop-opacity="0.9"/>
+      <stop offset="50%"  stop-color="#00E5FF" stop-opacity="1"/>
+      <stop offset="65%"  stop-color="#38E8DA" stop-opacity="0.9"/>
+      <stop offset="90%"  stop-color="#38E8DA" stop-opacity="0.5"/>
+      <stop offset="100%" stop-color="#38E8DA" stop-opacity="0"/>
+    </linearGradient>
+
+    <!-- Wider bloom gradient for the glow envelope -->
+    <linearGradient id="beam-bloom" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%"   stop-color="#38E8DA" stop-opacity="0"/>
+      <stop offset="18%"  stop-color="#38E8DA" stop-opacity="0.08"/>
+      <stop offset="50%"  stop-color="#00E5FF" stop-opacity="0.22"/>
+      <stop offset="82%"  stop-color="#38E8DA" stop-opacity="0.08"/>
+      <stop offset="100%" stop-color="#38E8DA" stop-opacity="0"/>
+    </linearGradient>
+
+    <!-- Shard fill: very faint interior -->
+    <linearGradient id="shard-fill" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%"   stop-color="#00E5FF" stop-opacity="0.06"/>
+      <stop offset="100%" stop-color="#38E8DA" stop-opacity="0.02"/>
+    </linearGradient>
+
+    <!-- Beam glow filter -->
+    <filter id="glow" x="-2%" y="-100%" width="104%" height="300%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="2.5" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <!-- Shard glow filter -->
+    <filter id="shard-glow" x="-80%" y="-80%" width="260%" height="260%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="1.2" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!--
+    Beam: diagonal sliver from (0, 76) → (2560, 44)
+    Drop = 32px over 2560px ≈ 0.72° angle
+  -->
+  <g id="beam">
+    <!-- Outer bloom envelope -->
+    <polygon
+      points="0,68 2560,36 2560,54 0,86"
+      fill="url(#beam-bloom)"/>
+
+    <!-- Mid-layer diffuse glow -->
+    <polygon
+      points="0,73 2560,41 2560,49 0,81"
+      fill="url(#beam-core)"
+      opacity="0.35"
+      filter="url(#glow)"/>
+
+    <!-- Core beam: 2px-thick razor sliver -->
+    <polygon
+      points="0,76 2560,44 2560,46 0,78"
+      fill="url(#beam-core)"
+      filter="url(#glow)"/>
+
+    <!-- Hot-white highlight at the very center -->
+    <polygon
+      points="0,76.6 2560,44.6 2560,45.4 0,77.4"
+      fill="url(#beam-core)"
+      opacity="0.6"/>
+  </g>
+
+  <!--
+    Shard Left: irregular pentagon near x≈1160, beam-y≈66
+    Positioned slightly below beam as if fragmenting off
+  -->
+  <g id="shard-left" filter="url(#shard-glow)">
+    <!-- Crystal body -->
+    <polygon
+      points="1148,68 1164,59 1178,62 1174,72 1156,74"
+      fill="url(#shard-fill)"
+      stroke="#60F6E9"
+      stroke-width="0.8"
+      stroke-linejoin="miter"
+      opacity="0.8"/>
+    <!-- Inner facet line -->
+    <polyline
+      points="1156,73 1166,63 1174,66"
+      fill="none"
+      stroke="#60F6E9"
+      stroke-width="0.4"
+      opacity="0.35"/>
+  </g>
+
+  <!--
+    Shard Right: irregular quadrilateral near x≈1400, beam-y≈59
+    Positioned slightly above beam as a counterbalance
+  -->
+  <g id="shard-right" filter="url(#shard-glow)">
+    <!-- Crystal body -->
+    <polygon
+      points="1388,56 1406,49 1418,54 1404,63"
+      fill="url(#shard-fill)"
+      stroke="#60F6E9"
+      stroke-width="0.8"
+      stroke-linejoin="miter"
+      opacity="0.8"/>
+    <!-- Inner facet line -->
+    <polyline
+      points="1394,58 1406,52 1414,56"
+      fill="none"
+      stroke="#60F6E9"
+      stroke-width="0.4"
+      opacity="0.35"/>
+  </g>
+</svg>

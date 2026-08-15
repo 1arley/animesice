@@ -1,0 +1,86 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" width="1920" height="1080">
+<rect width="1920" height="1080" fill="#080C12"/>
+<defs>
+<filter id="b1"><feGaussianBlur stdDeviation="1.5"/></filter>
+<filter id="b2"><feGaussianBlur stdDeviation="3.5"/></filter>
+</defs>
+
+<!-- FAR DEPTH SHARDS (Blur b2, low opacity 0.02-0.03, smaller) -->
+<g id="shard-01" filter="url(#b2)">
+<polygon points="140,90 175,70 190,105 160,120 135,110" fill="#1C2534" fill-opacity="0.03" stroke="#38E8DA" stroke-opacity="0.4" stroke-width="1"/>
+</g>
+<g id="shard-02" filter="url(#b2)">
+<polygon points="460,170 495,150 515,180 485,205" fill="#007A87" fill-opacity="0.02" stroke="#38E8DA" stroke-opacity="0.4" stroke-width="1"/>
+</g>
+<g id="shard-03" filter="url(#b2)">
+<polygon points="1620,110 1665,85 1685,120 1655,140 1630,130" fill="#008CDA" fill-opacity="0.03" stroke="#38E8DA" stroke-opacity="0.4" stroke-width="1"/>
+</g>
+<g id="shard-04" filter="url(#b2)">
+<polygon points="1180,830 1215,810 1235,845 1200,865" fill="#1C2534" fill-opacity="0.02" stroke="#38E8DA" stroke-opacity="0.4" stroke-width="1"/>
+</g>
+<g id="shard-05" filter="url(#b2)">
+<polygon points="280,910 320,885 338,920 305,940" fill="#007A87" fill-opacity="0.03" stroke="#38E8DA" stroke-opacity="0.4" stroke-width="1"/>
+</g>
+<g id="shard-06" filter="url(#b2)">
+<polygon points="880,70 925,45 948,80 910,100" fill="#38E8DA" fill-opacity="0.02" stroke="#38E8DA" stroke-opacity="0.4" stroke-width="1"/>
+</g>
+<g id="shard-07" filter="url(#b2)">
+<polygon points="1790,520 1825,495 1845,530 1815,550" fill="#1C2534" fill-opacity="0.03" stroke="#38E8DA" stroke-opacity="0.4" stroke-width="1"/>
+</g>
+
+<!-- MID DEPTH SHARDS (Blur b1, opacity 0.04-0.06, medium size) -->
+<g id="shard-08" filter="url(#b1)">
+<polygon points="90,570 155,545 172,580 140,605 105,590" fill="#008CDA" fill-opacity="0.04" stroke="#38E8DA" stroke-opacity="0.4" stroke-width="1"/>
+</g>
+<g id="shard-09" filter="url(#b1)">
+<polygon points="230,310 295,275 330,330 280,365 245,340" fill="#38E8DA" fill-opacity="0.04" stroke="#38E8DA" stroke-opacity="0.4" stroke-width="1"/>
+</g>
+<g id="shard-10" filter="url(#b1)">
+<polygon points="1480,410 1545,375 1580,430 1530,460 1490,440" fill="#00E5FF" fill-opacity="0.04" stroke="#38E8DA" stroke-opacity="0.4" stroke-width="1"/>
+</g>
+<g id="shard-11" filter="url(#b1)">
+<polygon points="680,220 745,190 775,245 725,275 690,250" fill="#008CDA" fill-opacity="0.05" stroke="#38E8DA" stroke-opacity="0.4" stroke-width="1"/>
+</g>
+<g id="shard-12" filter="url(#b1)">
+<polygon points="1080,660 1140,630 1170,680 1125,710 1090,690" fill="#1C2534" fill-opacity="0.04" stroke="#38E8DA" stroke-opacity="0.4" stroke-width="1"/>
+</g>
+<g id="shard-13" filter="url(#b1)">
+<polygon points="380,720 440,690 470,740 425,770 390,745" fill="#60F6E9" fill-opacity="0.04" stroke="#38E8DA" stroke-opacity="0.4" stroke-width="1"/>
+</g>
+<g id="shard-14" filter="url(#b1)">
+<polygon points="1720,260 1785,230 1815,285 1765,310" fill="#007A87" fill-opacity="0.05" stroke="#38E8DA" stroke-opacity="0.4" stroke-width="1"/>
+</g>
+<g id="shard-15" filter="url(#b1)">
+<polygon points="930,470 995,435 1030,490 985,520 945,498" fill="#38E8DA" fill-opacity="0.05" stroke="#38E8DA" stroke-opacity="0.4" stroke-width="1"/>
+</g>
+
+<!-- NEAR DEPTH SHARDS (No blur, opacity 0.07-0.10, larger, crisp) -->
+<g id="shard-16">
+<polygon points="320,440 425,385 470,470 415,525 345,490" fill="#38E8DA" fill-opacity="0.07" stroke="#38E8DA" stroke-opacity="0.4" stroke-width="1"/>
+</g>
+<g id="shard-17">
+<polygon points="1220,320 1330,275 1375,360 1310,415 1245,375" fill="#00E5FF" fill-opacity="0.08" stroke="#38E8DA" stroke-opacity="0.4" stroke-width="1"/>
+</g>
+<g id="shard-18">
+<polygon points="780,670 870,625 915,700 855,755 795,720" fill="#008CDA" fill-opacity="0.07" stroke="#38E8DA" stroke-opacity="0.4" stroke-width="1"/>
+</g>
+<g id="shard-19">
+<polygon points="135,500 225,460 265,530 215,580 150,545" fill="#60F6E9" fill-opacity="0.06" stroke="#38E8DA" stroke-opacity="0.4" stroke-width="1"/>
+</g>
+<g id="shard-20">
+<polygon points="1650,570 1745,530 1785,605 1725,650 1670,615" fill="#1C2534" fill-opacity="0.08" stroke="#38E8DA" stroke-opacity="0.4" stroke-width="1"/>
+</g>
+<g id="shard-21">
+<polygon points="570,120 660,80 705,160 645,205 590,170" fill="#007A87" fill-opacity="0.09" stroke="#38E8DA" stroke-opacity="0.4" stroke-width="1"/>
+</g>
+<g id="shard-22">
+<polygon points="1020,870 1115,830 1155,910 1095,955 1040,915" fill="#38E8DA" fill-opacity="0.07" stroke="#38E8DA" stroke-opacity="0.4" stroke-width="1"/>
+</g>
+
+<!-- SIGNAL SCAN LINES (Faint horizontal broadcast lines) -->
+<line id="signal-01" x1="0" y1="260" x2="1920" y2="260" stroke="#60F6E9" stroke-opacity="0.15" stroke-width="1"/>
+<line id="signal-02" x1="0" y1="510" x2="1920" y2="510" stroke="#60F6E9" stroke-opacity="0.15" stroke-width="1"/>
+<line id="signal-03" x1="0" y1="740" x2="1920" y2="740" stroke="#60F6E9" stroke-opacity="0.15" stroke-width="1"/>
+<line id="signal-04" x1="0" y1="920" x2="1920" y2="920" stroke="#60F6E9" stroke-opacity="0.15" stroke-width="1"/>
+
+</svg>

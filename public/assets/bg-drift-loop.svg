@@ -1,0 +1,305 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" width="1920" height="1080">
+<rect width="1920" height="1080" fill="#080C12"/>
+
+<defs>
+  <filter id="bf1"><feGaussianBlur stdDeviation="1"/></filter>
+  <filter id="bf2"><feGaussianBlur stdDeviation="2.5"/></filter>
+  <filter id="bf3"><feGaussianBlur stdDeviation="4.5"/></filter>
+  <filter id="bf4"><feGaussianBlur stdDeviation="6"/></filter>
+
+  <!-- Faint cyan glow for near shards -->
+  <filter id="glow">
+    <feGaussianBlur stdDeviation="3" result="blur"/>
+    <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+  </filter>
+
+  <style>
+    /* ===== DRIFT KEYFRAMES =====
+       Each shard drifts on a unique elliptical path.
+       The path always returns to (0,0) at 100% → seamless loop.
+       Rotation is subtle (±3°) to simulate tumble. */
+
+    /* --- FAR DEPTH (slow, long travel, dim) --- */
+    @keyframes df01 { 0%,100%{ transform:translate(0,0) rotate(0deg) } 25%{ transform:translate(18px,-6px) rotate(1deg) } 50%{ transform:translate(35px,-2px) rotate(0deg) } 75%{ transform:translate(20px,5px) rotate(-1deg) } }
+    @keyframes df02 { 0%,100%{ transform:translate(0,0) rotate(0deg) } 25%{ transform:translate(-12px,8px) rotate(-0.8deg) } 50%{ transform:translate(-25px,4px) rotate(0deg) } 75%{ transform:translate(-14px,-5px) rotate(0.8deg) } }
+    @keyframes df03 { 0%,100%{ transform:translate(0,0) rotate(0deg) } 25%{ transform:translate(10px,10px) rotate(1.2deg) } 50%{ transform:translate(22px,5px) rotate(0deg) } 75%{ transform:translate(12px,-4px) rotate(-1deg) } }
+    @keyframes df04 { 0%,100%{ transform:translate(0,0) rotate(0deg) } 25%{ transform:translate(-15px,-7px) rotate(-1deg) } 50%{ transform:translate(-30px,0px) rotate(0deg) } 75%{ transform:translate(-16px,6px) rotate(0.8deg) } }
+    @keyframes df05 { 0%,100%{ transform:translate(0,0) rotate(0deg) } 25%{ transform:translate(8px,-12px) rotate(0.6deg) } 50%{ transform:translate(18px,-6px) rotate(0deg) } 75%{ transform:translate(10px,3px) rotate(-0.5deg) } }
+    @keyframes df06 { 0%,100%{ transform:translate(0,0) rotate(0deg) } 25%{ transform:translate(-10px,5px) rotate(-0.7deg) } 50%{ transform:translate(-20px,10px) rotate(0deg) } 75%{ transform:translate(-11px,3px) rotate(0.6deg) } }
+    @keyframes df07 { 0%,100%{ transform:translate(0,0) rotate(0deg) } 25%{ transform:translate(14px,8px) rotate(1deg) } 50%{ transform:translate(28px,3px) rotate(0deg) } 75%{ transform:translate(15px,-4px) rotate(-0.9deg) } }
+    @keyframes df08 { 0%,100%{ transform:translate(0,0) rotate(0deg) } 25%{ transform:translate(-8px,-10px) rotate(-0.5deg) } 50%{ transform:translate(-16px,-5px) rotate(0deg) } 75%{ transform:translate(-9px,4px) rotate(0.5deg) } }
+    @keyframes df09 { 0%,100%{ transform:translate(0,0) rotate(0deg) } 25%{ transform:translate(12px,-4px) rotate(0.8deg) } 50%{ transform:translate(24px,2px) rotate(0deg) } 75%{ transform:translate(13px,6px) rotate(-0.7deg) } }
+    @keyframes df10 { 0%,100%{ transform:translate(0,0) rotate(0deg) } 25%{ transform:translate(-14px,6px) rotate(-1deg) } 50%{ transform:translate(-28px,0px) rotate(0deg) } 75%{ transform:translate(-15px,-5px) rotate(0.9deg) } }
+
+    /* --- MID DEPTH (moderate speed, moderate travel) --- */
+    @keyframes dm01 { 0%,100%{ transform:translate(0,0) rotate(0deg) } 25%{ transform:translate(25px,-10px) rotate(1.5deg) } 50%{ transform:translate(50px,-4px) rotate(0deg) } 75%{ transform:translate(28px,8px) rotate(-1.5deg) } }
+    @keyframes dm02 { 0%,100%{ transform:translate(0,0) rotate(0deg) } 25%{ transform:translate(-20px,14px) rotate(-1.2deg) } 50%{ transform:translate(-40px,6px) rotate(0deg) } 75%{ transform:translate(-22px,-6px) rotate(1.2deg) } }
+    @keyframes dm03 { 0%,100%{ transform:translate(0,0) rotate(0deg) } 25%{ transform:translate(16px,16px) rotate(2deg) } 50%{ transform:translate(35px,8px) rotate(0deg) } 75%{ transform:translate(18px,-6px) rotate(-1.8deg) } }
+    @keyframes dm04 { 0%,100%{ transform:translate(0,0) rotate(0deg) } 25%{ transform:translate(-22px,-12px) rotate(-1.5deg) } 50%{ transform:translate(-45px,-4px) rotate(0deg) } 75%{ transform:translate(-24px,10px) rotate(1.3deg) } }
+    @keyframes dm05 { 0%,100%{ transform:translate(0,0) rotate(0deg) } 25%{ transform:translate(14px,-18px) rotate(1deg) } 50%{ transform:translate(30px,-8px) rotate(0deg) } 75%{ transform:translate(16px,6px) rotate(-1deg) } }
+    @keyframes dm06 { 0%,100%{ transform:translate(0,0) rotate(0deg) } 25%{ transform:translate(-18px,10px) rotate(-1.8deg) } 50%{ transform:translate(-36px,18px) rotate(0deg) } 75%{ transform:translate(-20px,5px) rotate(1.5deg) } }
+    @keyframes dm07 { 0%,100%{ transform:translate(0,0) rotate(0deg) } 25%{ transform:translate(20px,12px) rotate(1.5deg) } 50%{ transform:translate(42px,5px) rotate(0deg) } 75%{ transform:translate(22px,-8px) rotate(-1.4deg) } }
+    @keyframes dm08 { 0%,100%{ transform:translate(0,0) rotate(0deg) } 25%{ transform:translate(-10px,-15px) rotate(-1deg) } 50%{ transform:translate(-22px,-7px) rotate(0deg) } 75%{ transform:translate(-12px,6px) rotate(1deg) } }
+    @keyframes dm09 { 0%,100%{ transform:translate(0,0) rotate(0deg) } 25%{ transform:translate(18px,-8px) rotate(1.2deg) } 50%{ transform:translate(38px,0px) rotate(0deg) } 75%{ transform:translate(20px,10px) rotate(-1.1deg) } }
+    @keyframes dm10 { 0%,100%{ transform:translate(0,0) rotate(0deg) } 25%{ transform:translate(-16px,12px) rotate(-1.5deg) } 50%{ transform:translate(-32px,4px) rotate(0deg) } 75%{ transform:translate(-18px,-7px) rotate(1.3deg) } }
+    @keyframes dm11 { 0%,100%{ transform:translate(0,0) rotate(0deg) } 25%{ transform:translate(22px,6px) rotate(1.8deg) } 50%{ transform:translate(44px,0px) rotate(0deg) } 75%{ transform:translate(24px,-8px) rotate(-1.6deg) } }
+    @keyframes dm12 { 0%,100%{ transform:translate(0,0) rotate(0deg) } 25%{ transform:translate(-14px,-10px) rotate(-1deg) } 50%{ transform:translate(-28px,-3px) rotate(0deg) } 75%{ transform:translate(-15px,8px) rotate(1deg) } }
+
+    /* --- NEAR DEPTH (faster perceived, wider orbit) --- */
+    @keyframes dn01 { 0%,100%{ transform:translate(0,0) rotate(0deg) } 25%{ transform:translate(40px,-16px) rotate(2.5deg) } 50%{ transform:translate(80px,-6px) rotate(0deg) } 75%{ transform:translate(44px,12px) rotate(-2.5deg) } }
+    @keyframes dn02 { 0%,100%{ transform:translate(0,0) rotate(0deg) } 25%{ transform:translate(-35px,20px) rotate(-2deg) } 50%{ transform:translate(-70px,8px) rotate(0deg) } 75%{ transform:translate(-38px,-10px) rotate(2deg) } }
+    @keyframes dn03 { 0%,100%{ transform:translate(0,0) rotate(0deg) } 25%{ transform:translate(30px,22px) rotate(3deg) } 50%{ transform:translate(60px,10px) rotate(0deg) } 75%{ transform:translate(32px,-8px) rotate(-2.8deg) } }
+    @keyframes dn04 { 0%,100%{ transform:translate(0,0) rotate(0deg) } 25%{ transform:translate(-40px,-14px) rotate(-2.5deg) } 50%{ transform:translate(-80px,-4px) rotate(0deg) } 75%{ transform:translate(-42px,12px) rotate(2.2deg) } }
+    @keyframes dn05 { 0%,100%{ transform:translate(0,0) rotate(0deg) } 25%{ transform:translate(25px,-22px) rotate(1.8deg) } 50%{ transform:translate(50px,-10px) rotate(0deg) } 75%{ transform:translate(28px,8px) rotate(-1.6deg) } }
+
+    /* --- ACCENT FOREGROUND (largest, most visible) --- */
+    @keyframes da01 { 0%,100%{ transform:translate(0,0) rotate(0deg) } 25%{ transform:translate(55px,-20px) rotate(3deg) } 50%{ transform:translate(110px,-8px) rotate(0deg) } 75%{ transform:translate(58px,16px) rotate(-3deg) } }
+    @keyframes da02 { 0%,100%{ transform:translate(0,0) rotate(0deg) } 25%{ transform:translate(-50px,25px) rotate(-2.5deg) } 50%{ transform:translate(-100px,10px) rotate(0deg) } 75%{ transform:translate(-52px,-12px) rotate(2.5deg) } }
+    @keyframes da03 { 0%,100%{ transform:translate(0,0) rotate(0deg) } 25%{ transform:translate(45px,18px) rotate(2.8deg) } 50%{ transform:translate(90px,6px) rotate(0deg) } 75%{ transform:translate(48px,-14px) rotate(-2.6deg) } }
+
+    /* --- SIGNAL LINE PULSE --- */
+    @keyframes pulse { 0%,100%{ opacity:1 } 50%{ opacity:0.4 } }
+
+    /* ===== ANIMATION ASSIGNMENTS ===== */
+
+    /* Far depth — 8s period (slow perceived drift) */
+    #sd-01 { animation: df01 8s ease-in-out infinite }
+    #sd-02 { animation: df02 8.5s ease-in-out infinite }
+    #sd-03 { animation: df03 9s ease-in-out infinite }
+    #sd-04 { animation: df04 8.2s ease-in-out infinite }
+    #sd-05 { animation: df05 9.5s ease-in-out infinite }
+    #sd-06 { animation: df06 8.8s ease-in-out infinite }
+    #sd-07 { animation: df07 9.2s ease-in-out infinite }
+    #sd-08 { animation: df08 8.6s ease-in-out infinite }
+    #sd-09 { animation: df09 7.8s ease-in-out infinite }
+    #sd-10 { animation: df10 8.4s ease-in-out infinite }
+
+    /* Mid depth — 6s period */
+    #sd-11 { animation: dm01 6s ease-in-out infinite }
+    #sd-12 { animation: dm02 6.5s ease-in-out infinite }
+    #sd-13 { animation: dm03 7s ease-in-out infinite }
+    #sd-14 { animation: dm04 6.2s ease-in-out infinite }
+    #sd-15 { animation: dm05 7.2s ease-in-out infinite }
+    #sd-16 { animation: dm06 6.8s ease-in-out infinite }
+    #sd-17 { animation: dm07 5.8s ease-in-out infinite }
+    #sd-18 { animation: dm08 6.4s ease-in-out infinite }
+    #sd-19 { animation: dm09 5.5s ease-in-out infinite }
+    #sd-20 { animation: dm10 6.6s ease-in-out infinite }
+    #sd-21 { animation: dm11 5.6s ease-in-out infinite }
+    #sd-22 { animation: dm12 7.4s ease-in-out infinite }
+
+    /* Near depth — 5s period */
+    #sd-23 { animation: dn01 5s ease-in-out infinite }
+    #sd-24 { animation: dn02 5.5s ease-in-out infinite }
+    #sd-25 { animation: dn03 5.2s ease-in-out infinite }
+    #sd-26 { animation: dn04 4.8s ease-in-out infinite }
+    #sd-27 { animation: dn05 5.8s ease-in-out infinite }
+
+    /* Accent foreground — 5s period */
+    #sd-28 { animation: da01 5s ease-in-out infinite }
+    #sd-29 { animation: da02 5.5s ease-in-out infinite }
+    #sd-30 { animation: da03 5.2s ease-in-out infinite }
+
+    /* Signal lines pulse */
+    #sig-01 { animation: pulse 5s ease-in-out infinite }
+    #sig-02 { animation: pulse 5s ease-in-out 1s infinite }
+    #sig-03 { animation: pulse 5s ease-in-out 2s infinite }
+    #sig-04 { animation: pulse 5s ease-in-out 3s infinite }
+    #sig-05 { animation: pulse 5s ease-in-out 0.5s infinite }
+  </style>
+</defs>
+
+<!-- ============================================================
+     FAR DEPTH — small, blurred, dim, slow drift
+     (safe zone: scattered across full canvas, very subtle)
+     ============================================================ -->
+
+<g id="sd-01" filter="url(#bf4)">
+  <polygon points="120,80 155,62 168,95 140,110"
+    fill="#1C2534" fill-opacity="0.03" stroke="#38E8DA" stroke-opacity="0.35" stroke-width="0.8"/>
+</g>
+
+<g id="sd-02" filter="url(#bf4)">
+  <polygon points="480,160 510,140 530,170 505,190"
+    fill="#007A87" fill-opacity="0.02" stroke="#38E8DA" stroke-opacity="0.30" stroke-width="0.8"/>
+</g>
+
+<g id="sd-03" filter="url(#bf3)">
+  <polygon points="1650,90 1690,70 1710,100 1685,120 1660,108"
+    fill="#008CDA" fill-opacity="0.03" stroke="#38E8DA" stroke-opacity="0.35" stroke-width="0.8"/>
+</g>
+
+<g id="sd-04" filter="url(#bf4)">
+  <polygon points="1200,920 1230,900 1255,930 1225,950"
+    fill="#1C2534" fill-opacity="0.02" stroke="#38E8DA" stroke-opacity="0.25" stroke-width="0.8"/>
+</g>
+
+<g id="sd-05" filter="url(#bf3)">
+  <polygon points="300,960 335,940 350,970 320,985"
+    fill="#007A87" fill-opacity="0.03" stroke="#38E8DA" stroke-opacity="0.30" stroke-width="0.8"/>
+</g>
+
+<g id="sd-06" filter="url(#bf4)">
+  <polygon points="900,50 940,30 960,65 930,80"
+    fill="#38E8DA" fill-opacity="0.02" stroke="#38E8DA" stroke-opacity="0.25" stroke-width="0.8"/>
+</g>
+
+<g id="sd-07" filter="url(#bf3)">
+  <polygon points="1820,500 1850,480 1870,510 1845,530 1825,515"
+    fill="#1C2534" fill-opacity="0.03" stroke="#38E8DA" stroke-opacity="0.35" stroke-width="0.8"/>
+</g>
+
+<g id="sd-08" filter="url(#bf4)">
+  <polygon points="60,550 90,530 108,560 80,575"
+    fill="#008CDA" fill-opacity="0.02" stroke="#38E8DA" stroke-opacity="0.25" stroke-width="0.8"/>
+</g>
+
+<g id="sd-09" filter="url(#bf3)">
+  <polygon points="1400,200 1435,185 1448,215 1420,228"
+    fill="#007A87" fill-opacity="0.02" stroke="#38E8DA" stroke-opacity="0.30" stroke-width="0.8"/>
+</g>
+
+<g id="sd-10" filter="url(#bf4)">
+  <polygon points="750,1000 780,985 800,1010 770,1025"
+    fill="#1C2534" fill-opacity="0.02" stroke="#38E8DA" stroke-opacity="0.20" stroke-width="0.8"/>
+</g>
+
+<!-- ============================================================
+     MID DEPTH — moderate size/blur, central bias
+     ============================================================ -->
+
+<g id="sd-11" filter="url(#bf2)">
+  <polygon points="250,340 310,310 340,360 295,390 260,370"
+    fill="#38E8DA" fill-opacity="0.04" stroke="#38E8DA" stroke-opacity="0.40" stroke-width="1"/>
+</g>
+
+<g id="sd-12" filter="url(#bf2)">
+  <polygon points="1500,420 1560,390 1590,440 1545,465"
+    fill="#00E5FF" fill-opacity="0.04" stroke="#38E8DA" stroke-opacity="0.40" stroke-width="1"/>
+</g>
+
+<g id="sd-13" filter="url(#bf2)">
+  <polygon points="700,280 760,255 785,305 740,330 710,310"
+    fill="#008CDA" fill-opacity="0.05" stroke="#38E8DA" stroke-opacity="0.40" stroke-width="1"/>
+</g>
+
+<g id="sd-14" filter="url(#bf2)">
+  <polygon points="1100,620 1155,595 1180,640 1140,670"
+    fill="#1C2534" fill-opacity="0.04" stroke="#38E8DA" stroke-opacity="0.35" stroke-width="1"/>
+</g>
+
+<g id="sd-15" filter="url(#bf2)">
+  <polygon points="400,680 455,655 480,700 440,728 410,705"
+    fill="#60F6E9" fill-opacity="0.04" stroke="#38E8DA" stroke-opacity="0.40" stroke-width="1"/>
+</g>
+
+<g id="sd-16" filter="url(#bf2)">
+  <polygon points="1750,380 1810,355 1835,405 1790,425"
+    fill="#007A87" fill-opacity="0.05" stroke="#38E8DA" stroke-opacity="0.40" stroke-width="1"/>
+</g>
+
+<g id="sd-17" filter="url(#bf1)">
+  <polygon points="950,480 1010,450 1040,500 1000,530 960,510"
+    fill="#38E8DA" fill-opacity="0.05" stroke="#38E8DA" stroke-opacity="0.45" stroke-width="1"/>
+</g>
+
+<g id="sd-18" filter="url(#bf1)">
+  <polygon points="180,420 235,395 260,445 215,470 190,448"
+    fill="#00E5FF" fill-opacity="0.05" stroke="#38E8DA" stroke-opacity="0.40" stroke-width="1"/>
+</g>
+
+<g id="sd-19" filter="url(#bf2)">
+  <polygon points="1300,750 1350,725 1378,770 1335,795"
+    fill="#008CDA" fill-opacity="0.04" stroke="#38E8DA" stroke-opacity="0.35" stroke-width="1"/>
+</g>
+
+<g id="sd-20" filter="url(#bf1)">
+  <polygon points="550,520 605,495 635,545 590,570 560,548"
+    fill="#1C2534" fill-opacity="0.06" stroke="#38E8DA" stroke-opacity="0.45" stroke-width="1"/>
+</g>
+
+<g id="sd-21" filter="url(#bf2)">
+  <polygon points="1600,560 1650,540 1675,580 1635,605"
+    fill="#60F6E9" fill-opacity="0.04" stroke="#38E8DA" stroke-opacity="0.40" stroke-width="1"/>
+</g>
+
+<g id="sd-22" filter="url(#bf1)">
+  <polygon points="80,620 130,598 155,640 110,665"
+    fill="#007A87" fill-opacity="0.05" stroke="#38E8DA" stroke-opacity="0.40" stroke-width="1"/>
+</g>
+
+<!-- ============================================================
+     NEAR DEPTH — larger, sharp/light blur, brighter
+     (concentrated in central band y:300-780)
+     ============================================================ -->
+
+<g id="sd-23" filter="url(#bf1)">
+  <polygon points="350,420 440,375 480,450 430,500 370,470"
+    fill="#38E8DA" fill-opacity="0.07" stroke="#38E8DA" stroke-opacity="0.50" stroke-width="1"/>
+</g>
+
+<g id="sd-24">
+  <polygon points="1250,380 1350,340 1390,420 1330,470 1270,435"
+    fill="#00E5FF" fill-opacity="0.08" stroke="#38E8DA" stroke-opacity="0.50" stroke-width="1"/>
+</g>
+
+<g id="sd-25">
+  <polygon points="800,540 880,500 920,570 870,620 815,590"
+    fill="#008CDA" fill-opacity="0.07" stroke="#38E8DA" stroke-opacity="0.50" stroke-width="1"/>
+</g>
+
+<g id="sd-26">
+  <polygon points="150,460 230,425 265,490 220,535 165,505"
+    fill="#60F6E9" fill-opacity="0.06" stroke="#38E8DA" stroke-opacity="0.45" stroke-width="1"/>
+</g>
+
+<g id="sd-27" filter="url(#bf1)">
+  <polygon points="1680,440 1760,405 1795,475 1740,515 1695,485"
+    fill="#1C2534" fill-opacity="0.08" stroke="#38E8DA" stroke-opacity="0.50" stroke-width="1"/>
+</g>
+
+<!-- ============================================================
+     ACCENT FOREGROUND — largest, sharpest, brightest
+     (mid-canvas only, y:360-720)
+     ============================================================ -->
+
+<g id="sd-28" filter="url(#glow)">
+  <polygon points="280,440 370,395 410,470 360,520 300,490"
+    fill="#38E8DA" fill-opacity="0.10" stroke="#38E8DA" stroke-opacity="0.55" stroke-width="1"/>
+</g>
+
+<g id="sd-29" filter="url(#glow)">
+  <polygon points="1480,500 1570,460 1610,540 1555,585 1500,555"
+    fill="#00E5FF" fill-opacity="0.09" stroke="#38E8DA" stroke-opacity="0.50" stroke-width="1"/>
+</g>
+
+<g id="sd-30" filter="url(#glow)">
+  <polygon points="850,400 940,360 980,440 925,490 870,455"
+    fill="#008CDA" fill-opacity="0.08" stroke="#38E8DA" stroke-opacity="0.50" stroke-width="1"/>
+</g>
+
+<!-- ============================================================
+     SIGNAL SCAN LINES — subtle horizontal pulses
+     ============================================================ -->
+
+<g id="sig-01">
+  <line x1="0" y1="360" x2="1920" y2="360" stroke="#60F6E9" stroke-opacity="0.12" stroke-width="1"/>
+</g>
+
+<g id="sig-02">
+  <line x1="0" y1="510" x2="1920" y2="510" stroke="#60F6E9" stroke-opacity="0.08" stroke-width="1"/>
+</g>
+
+<g id="sig-03">
+  <line x1="0" y1="640" x2="1920" y2="640" stroke="#60F6E9" stroke-opacity="0.10" stroke-width="1"/>
+</g>
+
+<g id="sig-04">
+  <line x1="0" y1="780" x2="1920" y2="780" stroke="#60F6E9" stroke-opacity="0.06" stroke-width="1"/>
+</g>
+
+<g id="sig-05">
+  <line x1="0" y1="430" x2="1920" y2="430" stroke="#60F6E9" stroke-opacity="0.05" stroke-width="1"/>
+</g>
+
+</svg>

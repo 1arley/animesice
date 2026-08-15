@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Focus Pull Crystal Scroll Reveal</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #05070B;
+            color: #E9EFF5;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            min-height: 300vh;
+            overflow-x: hidden;
+        }
+
+        .sticky-container {
+            position: sticky;
+            top: 0;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .crystal-svg {
+            width: 100%;
+            height: 100%;
+            max-width: 1920px;
+            max-height: 1080px;
+            transition: transform 0.1s linear, filter 0.1s linear;
+            will-change: transform, filter;
+        }
+
+        .scroll-indicator {
+            position: fixed;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 12px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: #60F6E9;
+            opacity: 0.7;
+            pointer-events: none;
+            background: rgba(14, 20, 29, 0.6);
+            padding: 8px 16px;
+            border: 1px solid #1C2534;
+            backdrop-filter: blur(8px);
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="sticky-container">
+        <object id="crystal-obj" class="crystal-svg" data="scroll-reveal-crystal.svg" type="image/svg+xml"></object>
+    </div>
+
+    <div class="scroll-indicator">Scroll to pull focus</div>
+
+    <script>
+        window.addEventListener('scroll', () => {
+            const scrollY = window.scrollY;
+            const maxScroll = document.body.scrollHeight - window.innerHeight;
+            const progress = Math.min(Math.max(scrollY / maxScroll, 0), 1);
+
+            const obj = document.getElementById('crystal-obj');
+            if (!obj || !obj.contentDocument) return;
+
+            const svg = obj.contentDocument.querySelector('svg');
+            if (!svg) return;
+
+            // Focus pull effect: blur transitions to sharp, floating shards converge into center
+            const blurAmount = (1 - progress) * 15;
+            const scaleAmount = 0.85 + progress * 0.25;
+            svg.style.filter = `blur(${blurAmount}px)`;
+            svg.style.transform = `scale(${scaleAmount})`;
+
+            // Animate individual floating shards converging
+            const floatIds = ['float-01', 'float-02', 'float-03', 'float-04', 'float-05', 'float-06', 'float-07', 'float-08', 'float-09', 'float-10'];
+            floatIds.forEach((id, index) => {
+                const g = svg.getElementById(id);
+                if (g) {
+                    const offset = (1 - progress) * (40 + index * 12);
+                    const angle = (index / floatIds.length) * Math.PI * 2;
+                    const tx = Math.cos(angle) * offset;
+                    const ty = Math.sin(angle) * offset;
+                    g.style.transform = `translate(${tx}px, ${ty}px)`;
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,121 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" width="1920" height="1080" fill="none">
+  <defs>
+    <filter id="core-glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="22"/>
+    </filter>
+  </defs>
+
+  <!-- =============================================
+       MAIN CRYSTAL BODY — 10 flat angular facets
+       Broadcast-signal crystallising from center
+       Central axis ≈ x960, apex y120, base y940
+       ============================================= -->
+
+  <!-- Glow layer rendered first (behind everything) -->
+  <g id="facet-01">
+    <!-- Core shard — brightest vertical blade -->
+    <polygon points="960,120 982,540 960,940 938,540" fill="#60F6E9" opacity="0.30" filter="url(#core-glow)"/>
+    <polygon points="960,120 982,540 960,940 938,540" fill="#E9EFF5" opacity="0.96"/>
+  </g>
+
+  <!-- facet-02: Inner upper-left — bright cyan adjacent to core -->
+  <g id="facet-02">
+    <polygon points="960,120 952,310 935,540 878,325" fill="#60F6E9" opacity="0.88"/>
+  </g>
+
+  <!-- facet-03: Inner upper-right — teal adjacent to core -->
+  <g id="facet-03">
+    <polygon points="960,120 1048,318 985,540 968,310" fill="#38E8DA" opacity="0.84"/>
+  </g>
+
+  <!-- facet-04: Mid-left — electric cyan panel -->
+  <g id="facet-04">
+    <polygon points="878,325 935,540 852,718 798,525" fill="#00E5FF" opacity="0.76"/>
+  </g>
+
+  <!-- facet-05: Mid-right — deep signal blue panel -->
+  <g id="facet-05">
+    <polygon points="1048,318 1122,512 1072,710 985,540" fill="#008CDA" opacity="0.78"/>
+  </g>
+
+  <!-- facet-06: Lower-left — deep blue ice -->
+  <g id="facet-06">
+    <polygon points="935,540 852,718 912,868 955,760" fill="#008CDA" opacity="0.68"/>
+  </g>
+
+  <!-- facet-07: Lower-right — cyan ice -->
+  <g id="facet-07">
+    <polygon points="985,540 965,760 1008,858 1072,710" fill="#00E5FF" opacity="0.65"/>
+  </g>
+
+  <!-- facet-08: Bottom wedge — dark base -->
+  <g id="facet-08">
+    <polygon points="955,760 912,868 960,940 1008,858" fill="#1C2534" opacity="0.90"/>
+  </g>
+
+  <!-- facet-09: Outer upper-left — dark ice slab -->
+  <g id="facet-09">
+    <polygon points="960,120 878,325 798,525" fill="#1C2534" opacity="0.80"/>
+  </g>
+
+  <!-- facet-10: Outer upper-right — darkest ice slab -->
+  <g id="facet-10">
+    <polygon points="960,120 1122,512 1048,318" fill="#0E141D" opacity="0.85"/>
+  </g>
+
+  <!-- Inner edge highlights — thin bright lines on facet boundaries -->
+  <line x1="960" y1="120" x2="935" y2="540" stroke="#38E8DA" stroke-width="0.8" opacity="0.35"/>
+  <line x1="960" y1="120" x2="985" y2="540" stroke="#00E5FF" stroke-width="0.8" opacity="0.30"/>
+  <line x1="935" y1="540" x2="955" y2="760" stroke="#008CDA" stroke-width="0.6" opacity="0.25"/>
+  <line x1="985" y1="540" x2="965" y2="760" stroke="#00E5FF" stroke-width="0.6" opacity="0.25"/>
+  <line x1="878" y1="325" x2="935" y2="540" stroke="#1C2534" stroke-width="0.5" opacity="0.30"/>
+  <line x1="1048" y1="318" x2="985" y2="540" stroke="#1C2534" stroke-width="0.5" opacity="0.30"/>
+  <line x1="798" y1="525" x2="852" y2="718" stroke="#0E141D" stroke-width="0.5" opacity="0.22"/>
+  <line x1="1122" y1="512" x2="1072" y2="710" stroke="#0E141D" stroke-width="0.5" opacity="0.22"/>
+
+  <!-- =============================================
+       FLOATING SHARDS — 8 detached angular splinters
+       converging toward center from all directions.
+       Varied sizes, elongated angular forms.
+       ============================================= -->
+
+  <!-- float-01: Upper-left — elongated splinter pointing toward center -->
+  <g id="float-01">
+    <polygon points="595,192 645,168 662,178 618,225 600,218" fill="#1C2534" opacity="0.78"/>
+  </g>
+
+  <!-- float-02: Upper-right — angular chip tilted inward -->
+  <g id="float-02">
+    <polygon points="1298,158 1358,142 1370,175 1325,212 1305,198" fill="#0E141D" opacity="0.82"/>
+  </g>
+
+  <!-- float-03: Left — long narrow blade -->
+  <g id="float-03">
+    <polygon points="465,488 530,458 542,475 498,548 472,535" fill="#008CDA" opacity="0.55"/>
+  </g>
+
+  <!-- float-04: Right — angular shard angled toward center -->
+  <g id="float-04">
+    <polygon points="1395,482 1458,462 1462,498 1418,558 1388,530" fill="#38E8DA" opacity="0.50"/>
+  </g>
+
+  <!-- float-05: Lower-left — bright splinter -->
+  <g id="float-05">
+    <polygon points="608,768 668,735 678,758 648,825 618,808" fill="#00E5FF" opacity="0.48"/>
+  </g>
+
+  <!-- float-06: Lower-right — dark ice fragment -->
+  <g id="float-06">
+    <polygon points="1272,775 1338,748 1348,778 1312,842 1278,822" fill="#1C2534" opacity="0.62"/>
+  </g>
+
+  <!-- float-07: Top-center-left — small bright chip -->
+  <g id="float-07">
+    <polygon points="748,82 798,62 810,78 785,128 755,115" fill="#60F6E9" opacity="0.55"/>
+  </g>
+
+  <!-- float-08: Bottom-center-right — dark fragment -->
+  <g id="float-08">
+    <polygon points="1108,918 1162,895 1172,920 1142,972 1115,958" fill="#0E141D" opacity="0.70"/>
+  </g>
+</svg>
