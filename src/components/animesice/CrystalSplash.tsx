@@ -32,6 +32,18 @@ export function CrystalSplash() {
   const dismissed = useRef(false);
 
   useEffect(() => {
+    // Toque/navegação por dedo: pulamos a abertura — no mobile o LCP/perceived
+    // load custa caro (o splash cobriria a tela por 2s em cada sessão nova) e o
+    // cristal já respira no loading e no wordmark. Desktop mantém o gesto.
+    if (window.matchMedia("(pointer: coarse)").matches) {
+      try {
+        sessionStorage.setItem(SESSION_KEY, "1");
+      } catch {
+        /* sem storage */
+      }
+      return;
+    }
+
     let seen = false;
     try {
       seen = sessionStorage.getItem(SESSION_KEY) === "1";

@@ -72,12 +72,13 @@ export default function RootLayout({
     <html lang="pt-BR">
       <head>
         {/* Preconnect hints no <head>: abre handshake TCP+TLS cedo sem
-            baixar nada. Economiza ~150-300 ms no primeiro request. */}
+            baixar nada. Só origens efetivamente requisitadas no load
+            (Lighthouse pede <= 4 e penaliza preconnect não usado):
+            fonts são self-hosted via next/font e o beacon do Cloudflare
+            carrega lazyOnload. */}
         <link rel="preconnect" href="https://pagead2.googlesyndication.com" crossOrigin="anonymous" />
         <link rel="preconnect" href="https://fundingchoicesmessages.google.com" crossOrigin="anonymous" />
         <link rel="preconnect" href="https://al5sm.com" crossOrigin="anonymous" />
-        <link rel="preconnect" href="https://static.cloudflareinsights.com" crossOrigin="anonymous" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
       </head>
       <body
         className={`${fontChakra.variable} ${fontPlexSans.variable} ${fontPlexMono.variable} antialiased`}

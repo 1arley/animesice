@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import Lenis from "lenis";
+import type Lenis from "lenis";
 import { usePathname } from "next/navigation";
 import { useReducedMotion } from "motion/react";
 import { gsap, ScrollTrigger } from "@/lib/gsap";
@@ -33,27 +33,40 @@ export function SmoothScrollProvider({
     if (reduceMotion) return;
     if (window.matchMedia("(pointer: coarse)").matches) return;
 
-    const lenis = new Lenis({
-      duration: 1.15,
-      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
-      smoothWheel: true,
-      wheelMultiplier: 0.95,
-      syncTouch: false,
-      allowNestedScroll: true,
-    });
-    lenisRef.current = lenis;
+    let lenis: Lenis | null = null;
+    let cancelled = false;
+    let tickerRaf: ((time: number) => void) | null = null;
 
-    lenis.on("scroll", ScrollTrigger.update);
-    const raf = (time: number) => {
-      lenis.raf(time * 1000);
-    };
-    gsap.ticker.add(raf);
-    gsap.ticker.lagSmoothing(0);
+    // import() dinâmico: o Lenis (~20 KiB) fica no próprio chunk e só é
+    // baixado quando há wheel/trackpad — celular (pointer coarse) nunca o
+    // recebe no bundle inicial.
+    import("lenis").then(({ default: LenisImpl }) => {
+      if (cancelled) return;
+      lenis = new LenisImpl({
+        duration: 1.15,
+        easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+        smoothWheel: true,
+        wheelMultiplier: 0.95,
+        syncTouch: false,
+        allowNestedScroll: true,
+      });
+      lenisRef.current = lenis;
+
+      lenis.on("scroll", ScrollTrigger.update);
+      tickerRaf = (time: number) => {
+        lenis?.raf(time * 1000);
+      };
+      gsap.ticker.add(tickerRaf);
+      gsap.ticker.lagSmoothing(0);
+    });
 
     return () => {
-      gsap.ticker.remove(raf);
-      lenis.destroy();
-      lenisRef.current = null;
+      cancelled = true;
+      if (tickerRaf) gsap.ticker.remove(tickerRaf);
+      if (lenis) {
+        lenis.destroy();
+        lenisRef.current = null;
+      }
     };
   }, [reduceMotion]);
 

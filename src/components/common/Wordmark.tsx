@@ -11,16 +11,37 @@ import { GradientText } from "@/components/core/GradientText";
  * que desaparecia.
  * Microinteração da identidade de motion: no toque/hover, o cristal pulsa a
  * 1.035x e a varredura de luz cruza (0.32s) — o mesmo gesto do resto da marca.
+ * A pulso usa a Web Animations API (WAAPI), que não força reflow síncrono
+ * (o antigo `void el.offsetWidth` era lido em todo toque no wordmark).
  */
 export function Wordmark({ className = "" }: { className?: string }) {
   const microRef = useRef<HTMLSpanElement>(null);
 
   function firePulse() {
-    const el = microRef.current;
-    if (!el) return;
-    el.classList.remove("crystal-micro-fired");
-    void el.offsetWidth;
-    el.classList.add("crystal-micro-fired");
+    const micro = microRef.current;
+    if (!micro) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    micro.animate(
+      [
+        { transform: "scale(1)" },
+        { transform: "scale(1.035)", offset: 0.45 },
+        { transform: "scale(1)" },
+      ],
+      { duration: 320, easing: "ease-out" },
+    );
+
+    const sweep = micro.querySelector<HTMLElement>(".crystal-micro-sweep");
+    if (sweep) {
+      sweep.animate(
+        [
+          { opacity: 0, transform: "translateX(-150%) rotate(-6deg)" },
+          { opacity: 0.75, offset: 0.55, transform: "translateX(150%) rotate(-6deg)" },
+          { opacity: 0, transform: "translateX(150%) rotate(-6deg)" },
+        ],
+        { duration: 320, easing: "linear" },
+      );
+    }
   }
 
   return (
