@@ -72,7 +72,7 @@ export function MobileTabBar() {
     pathname.startsWith("/me");
 
   const allItems = [...tabs, { href: profileHref, label: user ? "Perfil" : "Entrar", match: () => profileActive, icon: null }];
-  const activeIndex = allItems.findIndex((t) => t.match(pathname));
+  const activeIndex = allItems.findIndex((t) => t.match(pathname)) ?? 0;
 
   return (
     <nav
@@ -82,15 +82,15 @@ export function MobileTabBar() {
     >
       <div className="relative grid grid-cols-5">
         {/* Active indicator bar */}
-        {activeIndex >= 0 && (
-          <div
-            className="tab-active-bar"
-            style={{
-              left: `${(activeIndex / 5) * 100 + 3}%`,
-              width: `${100 / 5 - 6}%`,
-            }}
-          />
-        )}
+{activeIndex >= 0 && (
+            <div
+              className="tab-active-bar"
+              style={{
+                left: `${(activeIndex / 5) * 100 + 3}%`,
+                width: `${100 / 5 - 6}%`,
+              }}
+            />
+          )}
 
         {tabs.map((tab) => {
           const active = tab.match(pathname);
@@ -99,7 +99,6 @@ export function MobileTabBar() {
               key={tab.href}
               href={tab.href}
               aria-current={active ? "page" : undefined}
-              onClick={haptic}
               className={`flex min-h-14 flex-col items-center justify-center gap-0.5 py-1.5 font-mono text-[0.6rem] uppercase tracking-wider transition-colors active:scale-95 ${
                 active ? "text-ice" : "text-mist"
               }`}
@@ -113,7 +112,6 @@ export function MobileTabBar() {
         <Link
           href={profileHref}
           aria-current={profileActive ? "page" : undefined}
-          onClick={haptic}
           className={`flex min-h-14 flex-col items-center justify-center gap-0.5 py-1.5 font-mono text-[0.6rem] uppercase tracking-wider transition-colors active:scale-95 ${
             profileActive ? "text-ice" : "text-mist"
           }`}
