@@ -9,7 +9,6 @@ import { SectionLabel } from "@/components/common/SectionLabel";
 import { HomeHero } from "@/components/common/HomeHero";
 import { HomeBackdrop } from "@/components/common/crystal/HomeBackdrop";
 import { IceBeamDivider } from "@/components/common/crystal/IceBeamDivider";
-import { CrystalReveal } from "@/components/common/crystal/CrystalReveal";
 import { Reveal, RevealStagger } from "@/components/core/Reveal";
 import type { Anime, Episode, Paginated } from "@/types";
 
@@ -52,15 +51,10 @@ export default async function HomePage() {
         {trending.length > 0 && <HomeHero animes={trending.slice(0, 6)} />}
       </div>
 
-      {/* 2 · Momento assinatura da identidade (desktop): o cristal puxa
-          foco ao rolar. Falls to vazio no mobile/reduced-motion — a home
-          segue catálogo imediato. */}
-      <CrystalReveal />
-
-      {/* 3 · Feixe de sinal: liga a transição visual para a prateleira. */}
+      {/* 2 · Feixe de sinal: liga a transição visual para a prateleira. */}
       <IceBeamDivider />
 
-      {/* 4 · Catálogo rápido: rails e grades com reveal em onda no scroll. */}
+      {/* 3 · Catálogo rápido: rails e grades com reveal em onda no scroll. */}
       <div className="mx-auto max-w-shelf px-4 py-4">
         <ContinueWatchingRail />
         <RecommendationsRail />
