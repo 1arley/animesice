@@ -30,6 +30,12 @@ export function SmoothScrollProvider({
   const lenisRef = useRef<Lenis | null>(null);
   const reduceMotion = useReducedMotion();
 
+  // O ScrollTrigger só existe depois do import() dinâmico do desktop. O efeito
+  // de refresh por rota (abaixo) precisa saber se ele já está disponível — sem
+  // isso o `ScrollTrigger.refresh()` explodiria com "ScrollTrigger is not
+  // defined" quando o efeito rodasse antes do módulo carregar.
+  const scrollTriggerRef = useRef<{ refresh: () => void } | null>(null);
+
   useEffect(() => {
     if (reduceMotion) return;
     if (window.matchMedia("(pointer: coarse)").matches) return;
@@ -43,6 +49,7 @@ export function SmoothScrollProvider({
     Promise.all([import("lenis"), import("@/lib/gsap")]).then(([lenisMod, gsapMod]) => {
       if (cancelled) return;
       const { gsap, ScrollTrigger } = gsapMod;
+      scrollTriggerRef.current = { refresh: () => ScrollTrigger.refresh() };
       lenis = new lenisMod.default({
         duration: 1.15,
         easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
@@ -63,6 +70,7 @@ export function SmoothScrollProvider({
 
     return () => {
       cancelled = true;
+      scrollTriggerRef.current = null;
       const raf = tickerRaf;
       tickerRaf = null;
       if (raf) {
@@ -82,8 +90,11 @@ export function SmoothScrollProvider({
     } else {
       window.scrollTo(0, 0);
     }
-    // Depois do wipe da CrystalTransition (~550ms) o layout estabiliza.
-    const t = setTimeout(() => ScrollTrigger.refresh(), 600);
+    // Depois do wipe da CrystalTransition (~550ms) o layout estabiliza e o
+    // ScrollTrigger recalcula as posições — apenas se o gsap já carregou.
+    const t = setTimeout(() => {
+      scrollTriggerRef.current?.refresh();
+    }, 600);
     return () => clearTimeout(t);
   }, [pathname]);
 
