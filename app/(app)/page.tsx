@@ -1,6 +1,5 @@
 import { AnimeCard } from "@/components/common/AnimeCard";
 import { EpisodeCard } from "@/components/common/EpisodeCard";
-import { AdSlot } from "@/components/ads/AdSlot";
 import { serverFetchJson } from "@/lib/api-server";
 import { isOnAir } from "@/lib/status";
 import { ContinueWatchingRail } from "@/components/common/ContinueWatchingRail";
@@ -143,13 +142,6 @@ export default async function HomePage() {
           </Reveal>
         )}
 
-        <AdSlot
-          slot="0000000001"
-          format="horizontal"
-          className="mb-8 min-h-[90px]"
-          label="Publicidade"
-        />
-
         {animes.length > 0 && (
           <Reveal className="mb-8">
             <section aria-labelledby="shelf-highlights">
@@ -162,13 +154,6 @@ export default async function HomePage() {
             </section>
           </Reveal>
         )}
-
-        <AdSlot
-          slot="0000000002"
-          format="horizontal"
-          className="mt-8 min-h-[90px] hidden sm:block"
-          label="Publicidade"
-        />
       </div>
     </>
   );

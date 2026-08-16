@@ -3,8 +3,6 @@ import { Chakra_Petch, IBM_Plex_Mono, IBM_Plex_Sans } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/lib/auth-context";
 import { ToastProvider } from "@/components/common/ToastProvider";
-import { AdBlockNotice } from "@/components/ads/AdBlockNotice";
-import { ADSENSE_CLIENT } from "@/lib/adsense";
 import { SITE_URL } from "@/lib/site";
 import { ThirdPartyScripts } from "@/components/common/ThirdPartyScripts";
 import { SpeedInsights } from "@vercel/speed-insights/next";
@@ -53,7 +51,6 @@ export const metadata: Metadata = {
   },
   manifest: "/icons/site.webmanifest",
   other: {
-    "google-adsense-account": ADSENSE_CLIENT,
     monetag: "5b3cadc15f39db60af150e8c05e089d0",
   },
 };
@@ -76,8 +73,6 @@ export default function RootLayout({
             (Lighthouse pede <= 4 e penaliza preconnect não usado):
             fonts são self-hosted via next/font e o beacon do Cloudflare
             carrega lazyOnload. */}
-        <link rel="preconnect" href="https://pagead2.googlesyndication.com" crossOrigin="anonymous" />
-        <link rel="preconnect" href="https://fundingchoicesmessages.google.com" crossOrigin="anonymous" />
         <link rel="preconnect" href="https://al5sm.com" crossOrigin="anonymous" />
       </head>
       <body
@@ -89,8 +84,6 @@ export default function RootLayout({
         {/* Abertura da identidade de motion: cristal em foco puxado, uma vez
             por sessão, dispensável a qualquer toque/tecla. Nunca bloqueia. */}
         <CrystalSplash />
-        {/* Soft wall: avisa sobre adblock sem bloquear o acesso. */}
-        <AdBlockNotice />
         <SpeedInsights />
         {/* Scripts de terceiros: lazyOnload + IntersectionObserver para Monetag.
             Não bloqueiam o paint inicial nem competem com o LCP. */}

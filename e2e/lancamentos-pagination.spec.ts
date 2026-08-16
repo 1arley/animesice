@@ -13,10 +13,9 @@ import { blockAds, clickCentered } from './helpers';
 test.describe('Lançamentos - paginação', () => {
   test.beforeEach(async ({ page }) => {
     // Desliga animações (BlurText/motion) p/ o elemento de paginação ficar
-    // estável ao clique; redes de anúncio bloqueadas + sonda do AdBlockNotice
-    // respondida com imagem válida (banner fixo na base não intercepta o
-    // clique). Sem o bloqueio, o tag.min.js do Monetag injeta listeners de
-    // clique que "engolem" a navegação do Link (flaky).
+    // estável ao clique; redes de anúncio bloqueadas (sem banner fixo na
+    // base p/ interceptar o clique). Sem o bloqueio, o tag.min.js do Monetag
+    // injeta listeners de clique que "engolem" a navegação do Link (flaky).
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await blockAds(page);
   });

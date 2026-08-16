@@ -5,7 +5,6 @@ import { cache } from "react";
 import type { Anime } from "@/types";
 import { safeImageSrc, upgradeImageUrl } from "@/lib/url";
 import { blur } from "@/lib/blur";
-import { AdSlot } from "@/components/ads/AdSlot";
 import { serverFetchJson } from "@/lib/api-server";
 import { isOnAir } from "@/lib/status";
 import { CommentSection } from "@/components/common/CommentSection";
@@ -293,12 +292,6 @@ export default async function AnimeDetailPage({
           </section>
         </div>
       </div>
-
-      <AdSlot
-        slot="0000000003"
-        format="horizontal"
-        className="mt-10 min-h-[90px]"
-      />
 
       {/* Avaliação */}
       <section className="mt-10 border-y border-hairline py-6">

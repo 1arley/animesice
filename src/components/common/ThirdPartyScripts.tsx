@@ -12,9 +12,6 @@ const MONETAG_DISABLED = process.env.NEXT_PUBLIC_DISABLE_MONETAG === "1";
 export function ThirdPartyScripts() {
   return (
     <>
-      {/* AdSense NÃO carrega aqui: o adsbygoogle.js é injetado sob demanda
-          pelo AdSlot quando um slot se aproxima da viewport (evita ~1s de
-          execução do show_ads_impl/consent no carregamento de toda página). */}
       {!MONETAG_DISABLED && (
         <Script
           id="monetag-loader"

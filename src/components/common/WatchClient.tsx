@@ -4,7 +4,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { EpisodeLoadingState } from "@/components/common/EpisodeLoadingState";
-import { AdSlot } from "@/components/ads/AdSlot";
 import { api, ApiError, isProxyEmbed, type StreamSource } from "@/lib/api";
 import type { Episode, Anime } from "@/types";
 import { CommentSection } from "@/components/common/CommentSection";
@@ -131,12 +130,6 @@ export function WatchClient({ slug, number, initialEpisode }: WatchClientProps) 
           </p>
         )}
       </div>
-
-      <AdSlot
-        slot="0000000004"
-        format="horizontal"
-        className="mt-4 min-h-[90px]"
-      />
 
       <CreateRoomButton animeSlug={slug} episodeNumber={episode.number} />
 

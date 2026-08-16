@@ -10,7 +10,6 @@ test.describe('Public profile - report & tabs', () => {
   test('loads tabs, paginates activity and submits report from the actions menu', async ({ page }) => {
     // Bloqueia redes de anúncio: iframes de ads podem interceptar cliques
     // ("<div></div> intercepts pointer events") e tornar o teste flaky.
-    // A sonda do AdBlockNotice é respondida com imagem válida (banner some).
     await blockAds(page);
 
     // Mock other backend calls the app may make server-side. Registrados ANTES

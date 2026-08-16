@@ -15,10 +15,10 @@ test.describe('Buscar - paginação', () => {
     // estável ao clique.
     await page.emulateMedia({ reducedMotion: 'reduce' });
 
-    // Redes de anúncio bloqueadas + sonda do AdBlockNotice respondida com
-    // imagem válida (banner some). O gate do Monetag está ligado no build de
-    // e2e; sem o bloqueio, o tag.min.js injeta listeners de clique que
-    // "engolem" a navegação do Link da paginação (flaky).
+    // Redes de anúncio bloqueadas (sem banner fixo p/ interceptar o clique).
+    // O gate do Monetag está ligado no build de e2e; sem o bloqueio, o
+    // tag.min.js injeta listeners de clique que "engolem" a navegação do
+    // Link da paginação (flaky).
     await blockAds(page);
   });
 
