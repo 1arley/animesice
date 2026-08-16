@@ -35,11 +35,15 @@ export function FeedView({ initialItems, initialTotalPages }: FeedViewProps) {
   const [error, setError] = useState(false);
 
   const load = useCallback(
-    async (targetPage: number, reset: boolean) => {
+    async (targetPage: number, reset: boolean, targetScope?: Scope) => {
+      // O scope alvo é validado/passado explícito: trocar de aba pode chamar
+      // load antes do setScope re-renderizar, e aí o closure ainda seguraria
+      // o escopo antigo (o fetch sairia com scope=global — mesmo feed).
+      const effectiveScope = targetScope ?? scope;
       setLoading(true);
       setError(false);
       try {
-        const res = await api.getFeed(targetPage, LIMIT, scope);
+        const res = await api.getFeed(targetPage, LIMIT, effectiveScope);
         setItems((prev) => (reset ? res.data ?? [] : [...prev, ...(res.data ?? [])]));
         setPage(targetPage);
         setTotalPages(res.meta?.totalPages ?? 1);
@@ -62,7 +66,7 @@ export function FeedView({ initialItems, initialTotalPages }: FeedViewProps) {
       setError(false);
       return;
     }
-    load(1, true);
+    load(1, true, "following");
   }
 
   function handlePosted(post: SocialPost) {
