@@ -20,6 +20,8 @@ export interface NavItem {
   links: NavLink[];
 }
 
+const GHOST_WINDOW_MS = 350;
+
 function NavIcon({ d, size = 18 }: { d: string; size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -53,6 +55,7 @@ export function SiteNav() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [closing, setClosing] = useState(false);
   const navRef = useRef<HTMLDivElement | null>(null);
+  const openingAt = useRef(0);
   const pathname = usePathname();
 
   const contaLinks: NavLink[] = user
@@ -97,13 +100,30 @@ export function SiteNav() {
     },
   ];
 
-  const closeMobile = useCallback(() => {
+  // Janela pós-abertura em que o iOS ainda pode entregar um clique sintético
+  // (ghost click) do tap que abriu o drawer sobre o backdrop, fechando o menu
+  // imediatamente. Ignora qualquer fechamento dentro desta janela.
+  const closeMobile = useCallback((opts?: { force?: boolean }) => {
+    // Ghost click do iOS: um tap que abre o drawer pode ainda sintetizar um
+    // clique sobre o backdrop dentro de ~350ms, fechando o menu que acabou de
+    // abrir. Ignora fechamento dentro da janela — exceto `force` (Escape e
+    // troca de rota nunca são ghost clicks).
+    if (!opts?.force && Date.now() - openingAt.current < GHOST_WINDOW_MS) return;
     setClosing(true);
     setTimeout(() => {
       setMobileOpen(false);
       setClosing(false);
     }, 200);
   }, []);
+
+  function openMobile() {
+    openingAt.current = Date.now();
+    setMobileOpen(true);
+  }
+
+  // Wrapper para onClick (backdrop/links): closeMobile é chamado sem o evento
+  // (o primeiro arg de closeMobile é o `opts`, não o MouseEvent do React).
+  const handleClose = () => closeMobile();
 
   // Lock body scroll when sheet open
   useEffect(() => {
@@ -124,7 +144,7 @@ export function SiteNav() {
     function onKey(e: KeyboardEvent) {
       if (e.key === "Escape") {
         setOpenGroup(null);
-        if (mobileOpen) closeMobile();
+        if (mobileOpen) closeMobile({ force: true });
       }
     }
     document.addEventListener("mousedown", onClick);
@@ -143,7 +163,7 @@ export function SiteNav() {
   useEffect(() => {
     if (prevPathname.current !== pathname) {
       prevPathname.current = pathname;
-      if (mobileOpen) closeMobile();
+      if (mobileOpen) closeMobile({ force: true });
     }
   }, [pathname, mobileOpen, closeMobile]);
 
@@ -215,8 +235,8 @@ export function SiteNav() {
       <div className="mx-auto flex max-w-shelf items-center justify-end px-4 sm:hidden">
         <button
           type="button"
-          onClick={() => setMobileOpen(true)}
-          className="flex items-center gap-1.5 py-2 font-mono text-caption uppercase tracking-wider text-mist transition-colors hover:text-ice"
+          onClick={openMobile}
+          className="flex items-center gap-1.5 py-2 font-mono text-caption uppercase tracking-wider text-mist transition-colors hover:text-ice [touch-action:manipulation]"
           aria-label="Abrir menu"
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" className="text-mist">
@@ -228,17 +248,16 @@ export function SiteNav() {
 
       {/* ===== Mobile: Bottom sheet drawer ===== */}
       {mobileOpen && (
-        <div className="fixed inset-0 z-[90] sm:hidden" ref={navRef}>
+        <div className="fixed inset-0 z-[90] sm:hidden">
           {/* Backdrop */}
           <div
-            className={`nav-backdrop absolute inset-0 bg-black/60 backdrop-blur-sm ${closing ? "closing" : ""}`}
-            onClick={closeMobile}
+            className={`nav-backdrop absolute inset-0 bg-black/60 backdrop-blur-sm [touch-action:manipulation] ${closing ? "closing" : ""}`}
+            onClick={handleClose}
           />
-
           {/* Sheet */}
           <div
-            className={`nav-sheet absolute inset-x-0 bottom-0 max-h-[85vh] overflow-y-auto border-t border-hairline bg-ink ${closing ? "closing" : ""}`}
-            onClick={e => e.stopPropagation()}
+            className={`nav-sheet absolute inset-x-0 bottom-0 max-h-[85vh] overflow-y-auto border-t border-hairline bg-ink [touch-action:pan-y] ${closing ? "closing" : ""}`}
+            onClick={(e) => e.stopPropagation()}
           >
             {/* Handle */}
             <div className="flex justify-center pt-3 pb-1">
@@ -249,7 +268,7 @@ export function SiteNav() {
             {user ? (
               <Link
                 href="/settings"
-                onClick={closeMobile}
+                onClick={handleClose}
                 className="mx-4 mb-4 flex items-center gap-3 border-b border-hairline pb-4"
               >
                 <Avatar name={displayName(user)} src={user.avatar} size={40} />
@@ -262,10 +281,10 @@ export function SiteNav() {
               </Link>
             ) : (
               <div className="mx-4 mb-4 flex gap-2 border-b border-hairline pb-4">
-                <Link href="/login" onClick={closeMobile} className="btn-ghost flex-1">
+                <Link href="/login" onClick={handleClose} className="btn-ghost flex-1">
                   Entrar
                 </Link>
-                <Link href="/register" onClick={closeMobile} className="btn-ice flex-1">
+                <Link href="/register" onClick={handleClose} className="btn-ice flex-1">
                   Cadastrar
                 </Link>
               </div>
@@ -285,7 +304,7 @@ export function SiteNav() {
                         <Link
                           key={link.href + link.title}
                           href={link.href}
-                          onClick={closeMobile}
+                          onClick={handleClose}
                           className={`flex flex-col items-center gap-1.5 rounded-md border p-3 transition-colors ${
                             isActive
                               ? "border-ice/40 bg-ice/5 text-ice"
