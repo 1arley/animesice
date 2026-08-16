@@ -1,10 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { api, ApiError } from "@/lib/api";
 import { isPrivileged } from "@/lib/role";
 import type { WatchtowerStatus } from "@/lib/api";
+
+const LOAD_TIMEOUT_MS = 15000;
 
 export default function AdminWatchtowerPage() {
   const { user } = useAuth();
@@ -15,17 +17,33 @@ export default function AdminWatchtowerPage() {
   const [actionMsg, setActionMsg] = useState<string | null>(null);
   const [checkSlug, setCheckSlug] = useState("");
   const [scanForce, setScanForce] = useState(false);
+  const abortRef = useRef<AbortController | null>(null);
 
   const loadStatus = useCallback(async () => {
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+    const timer = setTimeout(() => controller.abort(), LOAD_TIMEOUT_MS);
     setLoading(true);
     setError(null);
     try {
-      const data = await api.watchtowerStatus();
+      const data = await api.watchtowerStatus(controller.signal);
       setStatus(data);
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : "Erro ao carregar status.");
+      // Request substituído por um novo load ou abortado no unmount — o estado
+      // já é/reunido pelo dono atual; não sobrescreve nada.
+      if (abortRef.current !== controller) return;
+      if (controller.signal.aborted) {
+        setError("Tempo esgotado ao carregar status.");
+      } else {
+        setError(e instanceof ApiError ? e.message : "Erro ao carregar status.");
+      }
     } finally {
-      setLoading(false);
+      clearTimeout(timer);
+      if (abortRef.current === controller) {
+        abortRef.current = null;
+        setLoading(false);
+      }
     }
   }, []);
 
@@ -33,6 +51,15 @@ export default function AdminWatchtowerPage() {
     if (!isPrivileged(user)) return;
     loadStatus();
   }, [user, loadStatus]);
+
+  // Aborta request pendente ao desmontar — evita setState após unmount.
+  useEffect(
+    () => () => {
+      abortRef.current?.abort();
+      abortRef.current = null;
+    },
+    [],
+  );
 
   async function runAction(
     label: string,
@@ -122,11 +149,11 @@ export default function AdminWatchtowerPage() {
   const jobStats = status?.jobs;
   const jobCards = jobStats
     ? [
-        { label: "Pendentes", value: jobStats.pending, color: "text-snow" },
-        { label: "Rodando", value: jobStats.running, color: "text-ice" },
-        { label: "Concluídos", value: jobStats.completed, color: "text-ice/60" },
-        { label: "Falhados", value: jobStats.failed, color: "text-signal" },
-        { label: "Mortos", value: jobStats.dead, color: "text-signal" },
+        { label: "Pendentes", value: jobStats.pending ?? 0, color: "text-snow" },
+        { label: "Rodando", value: jobStats.running ?? 0, color: "text-ice" },
+        { label: "Concluídos", value: jobStats.completed ?? 0, color: "text-ice/60" },
+        { label: "Falhados", value: jobStats.failed ?? 0, color: "text-signal" },
+        { label: "Mortos", value: jobStats.dead ?? 0, color: "text-signal" },
       ]
     : [];
 
@@ -169,7 +196,7 @@ export default function AdminWatchtowerPage() {
                     {c.label}
                   </p>
                   <p className={`mt-1.5 font-display text-display-lg tabular-nums ${c.color}`}>
-                    {c.value.toLocaleString("pt-BR")}
+                    {(c.value ?? 0).toLocaleString("pt-BR")}
                   </p>
                 </div>
               ))}
@@ -213,8 +240,8 @@ export default function AdminWatchtowerPage() {
                             </span>
                           )}
                         </td>
-                        <td className={`tabular-nums ${s.consecutiveFailures > 0 ? "text-signal" : "text-mist"}`}>
-                          {s.consecutiveFailures}
+                        <td className={`tabular-nums ${(s.consecutiveFailures ?? 0) > 0 ? "text-signal" : "text-mist"}`}>
+                          {s.consecutiveFailures ?? 0}
                         </td>
                         <td className="text-caption text-mist">
                           {s.lastCheckedAt
@@ -223,10 +250,10 @@ export default function AdminWatchtowerPage() {
                         </td>
                         <td className="max-w-xs">
                           {s.lastError ? (
-                            <span className="text-caption text-signal" title={s.lastError}>
-                              {s.lastError.length > 60
-                                ? s.lastError.slice(0, 60) + "..."
-                                : s.lastError}
+                            <span className="text-caption text-signal" title={String(s.lastError)}>
+                              {String(s.lastError).length > 60
+                                ? String(s.lastError).slice(0, 60) + "..."
+                                : String(s.lastError)}
                             </span>
                           ) : (
                             <span className="text-mist">—</span>
