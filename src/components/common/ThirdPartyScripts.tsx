@@ -2,7 +2,12 @@
 
 import Script from "next/script";
 
-const MONETAG_ENABLED = process.env.NEXT_PUBLIC_ENABLE_MONETAG === "1";
+// Monetag ativo por padrão; desliga explicitamente com
+// NEXT_PUBLIC_DISABLE_MONETAG=1. Antes a ativação dependia de
+// NEXT_PUBLIC_ENABLE_MONETAG=1 (opt-in), mas em produção a env não foi
+// configurada — o loader nunca entrava no bundle e os anúncios não rodavam
+// nem no mobile nem no desktop.
+const MONETAG_DISABLED = process.env.NEXT_PUBLIC_DISABLE_MONETAG === "1";
 
 export function ThirdPartyScripts() {
   return (
@@ -10,7 +15,7 @@ export function ThirdPartyScripts() {
       {/* AdSense NÃO carrega aqui: o adsbygoogle.js é injetado sob demanda
           pelo AdSlot quando um slot se aproxima da viewport (evita ~1s de
           execução do show_ads_impl/consent no carregamento de toda página). */}
-      {MONETAG_ENABLED && (
+      {!MONETAG_DISABLED && (
         <Script
           id="monetag-loader"
           strategy="lazyOnload"
