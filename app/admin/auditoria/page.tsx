@@ -1,12 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { api, ApiError } from "@/lib/api";
 import { isPrivileged } from "@/lib/role";
 import type { AuditLogItem } from "@/lib/api";
 
 const RESOURCE_TYPES = ["User", "AdminAuditLog", "Report", "ModerationAction"];
+
+const LOAD_TIMEOUT_MS = 15000;
 
 export default function AdminAuditPage() {
   const { user } = useAuth();
@@ -15,17 +17,37 @@ export default function AdminAuditPage() {
   const [error, setError] = useState<string | null>(null);
   const [resourceType, setResourceType] = useState("User");
   const [days, setDays] = useState(7);
+  const abortRef = useRef<AbortController | null>(null);
 
   const loadLogs = useCallback(async () => {
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+    const timer = setTimeout(() => controller.abort(), LOAD_TIMEOUT_MS);
     setLoading(true);
     setError(null);
     try {
-      const data = await api.adminGetSensitiveAccess(resourceType, days);
+      const data = await api.adminGetSensitiveAccess(
+        resourceType,
+        days,
+        controller.signal,
+      );
       setLogs(data);
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : "Erro ao carregar logs.");
+      // Request substituído por um novo load ou abortado no unmount — o estado
+      // já é/reunido pelo dono atual; não sobrescreve nada.
+      if (abortRef.current !== controller) return;
+      if (controller.signal.aborted) {
+        setError("Tempo esgotado ao carregar logs.");
+      } else {
+        setError(e instanceof ApiError ? e.message : "Erro ao carregar logs.");
+      }
     } finally {
-      setLoading(false);
+      clearTimeout(timer);
+      if (abortRef.current === controller) {
+        abortRef.current = null;
+        setLoading(false);
+      }
     }
   }, [resourceType, days]);
 
@@ -33,6 +55,15 @@ export default function AdminAuditPage() {
     if (!isPrivileged(user)) return;
     loadLogs();
   }, [user, loadLogs]);
+
+  // Aborta request pendente ao desmontar — evita setState após unmount.
+  useEffect(
+    () => () => {
+      abortRef.current?.abort();
+      abortRef.current = null;
+    },
+    [],
+  );
 
   const isSuperadmin = user?.role === "SUPERADMIN";
 
@@ -120,15 +151,17 @@ export default function AdminAuditPage() {
                 <tr key={log.id}>
                   <td className="text-ice">{log.action}</td>
                   <td className="text-mist">{log.resourceType}</td>
-                  <td className="text-snow">{log.admin.email}</td>
+                  <td className="text-snow">{log.admin?.email ?? "—"}</td>
                   <td>
-                    <span className="badge badge-muted">{log.admin.role}</span>
+                    <span className="badge badge-muted">{log.admin?.role ?? "—"}</span>
                   </td>
                   <td>
-                    <code className="text-mist">{log.ipAddress}</code>
+                    <code className="text-mist">{log.ipAddress ?? "—"}</code>
                   </td>
                   <td className="text-caption text-mist">
-                    {new Date(log.createdAt).toLocaleString("pt-BR")}
+                    {log.createdAt
+                      ? new Date(log.createdAt).toLocaleString("pt-BR")
+                      : "—"}
                   </td>
                 </tr>
               ))}

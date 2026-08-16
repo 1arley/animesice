@@ -834,14 +834,18 @@ export const api = {
     request<{ message: string }>(`/room/${slug}`, { method: "DELETE" }),
 
   // --- Admin: audit (SUPERADMIN) ---
-  adminGetSensitiveAccess: (resourceType = "User", days = 7) =>
+  adminGetSensitiveAccess: (resourceType = "User", days = 7, signal?: AbortSignal) =>
     request<AuditLogItem[]>(
       `/admin/audit/sensitive-access?resourceType=${encodeURIComponent(resourceType)}&days=${days}`,
+      signal ? { signal } : undefined,
     ),
 
   // --- Admin: watchtower (SUPERADMIN) ---
-  watchtowerStatus: () =>
-    request<WatchtowerStatus>(`/admin/watchtower/status`),
+  watchtowerStatus: (signal?: AbortSignal) =>
+    request<WatchtowerStatus>(
+      `/admin/watchtower/status`,
+      signal ? { signal } : undefined,
+    ),
 
   watchtowerCheck: (slug: string) =>
     request<{ anime: string; enqueued: boolean }>(
