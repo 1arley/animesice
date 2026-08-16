@@ -44,7 +44,7 @@ export function Header() {
   }
 
   return (
-    <header className="border-b border-hairline bg-ink">
+    <header className="relative z-50 border-b border-hairline bg-ink">
       <div className="mx-auto flex max-w-shelf items-center justify-between gap-4 px-4 py-3">
         <Wordmark className="text-xl" />
 

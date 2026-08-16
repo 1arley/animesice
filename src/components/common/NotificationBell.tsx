@@ -89,7 +89,7 @@ export function NotificationBell() {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full mt-2 w-80 border border-hairline bg-ink shadow-lg">
+        <div className="absolute right-0 top-full mt-2 z-50 w-80 border border-hairline bg-ink shadow-lg">
           <div className="flex items-center justify-between border-b border-hairline px-3 py-2">
             <span className="font-display text-body-sm font-semibold text-ice">
               Notificações
