@@ -31,17 +31,17 @@ test.describe('Buscar - paginação', () => {
 
     // Clica em Próxima → deve ir para página 2 mantendo q=naruto
     await clickCentered(page.locator('a:has-text("Próxima")'));
-    await page.waitForURL('**/buscar?page=2&q=naruto');
+    await page.waitForURL('**/buscar?page=2&q=naruto', { waitUntil: 'commit' });
 
     // Página 2: primeiro aguarda a árvore anterior sair por completo; depois
     // valida conteúdo e contador no DOM já estabilizado.
     await expect(page.locator('a[href^="/animes/e2e-anime-"]')).toHaveCount(24);
     await expect(page.locator('a[href="/animes/e2e-anime-25"]').first()).toBeVisible();
     await expect(page.locator('a[href="/animes/e2e-anime-1"]')).toHaveCount(0);
-    await expect(page.getByText('página 2 de 3')).toBeVisible();
+    await expect(page.getByText('página 2 de 3').first()).toBeVisible();
 
     // O input de busca preserva o termo
-    await expect(page.locator('input[name="q"]')).toHaveValue('naruto');
+    await expect(page.locator('input[name="q"]').first()).toHaveValue('naruto');
   });
 
   test('navega de volta com Anterior sem perder a busca', async ({ page }) => {
@@ -51,7 +51,7 @@ test.describe('Buscar - paginação', () => {
     await expect(page.locator('a[href="/animes/e2e-anime-60"]').first()).toBeVisible();
 
     await clickCentered(page.locator('a:has-text("Anterior")'));
-    await page.waitForURL('**/buscar?page=2&q=naruto');
+    await page.waitForURL('**/buscar?page=2&q=naruto', { waitUntil: 'commit' });
     await expect(page.getByText('página 2 de 3').first()).toBeVisible();
     await expect(page.locator('a[href="/animes/e2e-anime-25"]').first()).toBeVisible();
   });
@@ -83,7 +83,7 @@ test.describe('Buscar - paginação', () => {
     const next = page.locator('a[href*="/buscar?page=2"]');
     await expect(next).toBeVisible();
     await clickCentered(next);
-    await page.waitForURL('**/buscar?page=2&**');
+    await page.waitForURL('**/buscar?page=2&**', { waitUntil: 'commit' });
 
     // Confere cada filtro individualmente (a vírgula de genres vem codificada %2C)
     const url = new URL(page.url());
@@ -109,6 +109,6 @@ test.describe('Buscar - paginação', () => {
     await expect(page.locator('select[name="year"]')).toHaveValue('2024');
     await expect(page.locator('select[name="status"]')).toHaveValue('LANCAMENTO');
     await expect(page.locator('select[name="sort"]')).toHaveValue('rating');
-    await expect(page.locator('input[name="q"]')).toHaveValue('naruto');
+    await expect(page.locator('input[name="q"]').first()).toHaveValue('naruto');
   });
 });

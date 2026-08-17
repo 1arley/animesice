@@ -29,7 +29,7 @@ test.describe('Lançamentos - paginação', () => {
 
     // Clica em Próxima → página 2 com os cards da segunda metade
     await clickCentered(page.locator('a:has-text("Próxima")'));
-    await page.waitForURL('**/lancamentos?page=2');
+    await page.waitForURL('**/lancamentos?page=2', { waitUntil: 'commit' });
 
     await expect(page.locator('a[href="/animes/e2e-anime-25"]').first()).toBeVisible();
     await expect(page.locator('a[href="/animes/e2e-anime-1"]')).toHaveCount(0);
@@ -44,7 +44,7 @@ test.describe('Lançamentos - paginação', () => {
     await expect(page.locator('a[href="/animes/e2e-anime-60"]').first()).toBeVisible();
 
     await clickCentered(page.locator('a:has-text("Anterior")'));
-    await page.waitForURL('**/lancamentos?page=2');
+    await page.waitForURL('**/lancamentos?page=2', { waitUntil: 'commit' });
     await expect(page.getByText('2 / 3').first()).toBeVisible();
     await expect(page.locator('a[href="/animes/e2e-anime-25"]').first()).toBeVisible();
   });
