@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useRef, type ReactNode } from "react";
-import { useReducedMotion } from "motion/react";
 import type gsap from "gsap";
 import { useFinePointer } from "@/lib/use-fine-pointer";
+import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
 
 /**
  * Guard: ignora a "escondida inicial" se o elemento já cruzou o trigger —
@@ -39,7 +39,7 @@ export function Reveal({
   start?: string;
 }) {
   const ref = useRef<HTMLDivElement>(null);
-  const reduce = useReducedMotion();
+  const reduce = usePrefersReducedMotion();
   const fine = useFinePointer();
 
   useEffect(() => {
@@ -102,7 +102,7 @@ export function RevealStagger({
   start?: string;
 }) {
   const ref = useRef<HTMLDivElement>(null);
-  const reduce = useReducedMotion();
+  const reduce = usePrefersReducedMotion();
   const fine = useFinePointer();
 
   useEffect(() => {

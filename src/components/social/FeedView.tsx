@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
@@ -33,6 +33,7 @@ export function FeedView({ initialItems, initialTotalPages }: FeedViewProps) {
   const [totalPages, setTotalPages] = useState(initialTotalPages);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
+  const refreshedInitialPage = useRef(false);
 
   const load = useCallback(
     async (targetPage: number, reset: boolean, targetScope?: Scope) => {
@@ -55,6 +56,15 @@ export function FeedView({ initialItems, initialTotalPages }: FeedViewProps) {
     },
     [scope],
   );
+
+  // O HTML conserva a primeira página SSR para o paint. Após hidratar,
+  // revalida uma vez no cliente para não servir um snapshot ISR antigo e
+  // permitir que proxies/service workers interceptem a fonte de dados.
+  useEffect(() => {
+    if (refreshedInitialPage.current) return;
+    refreshedInitialPage.current = true;
+    void load(1, true, "global");
+  }, [load]);
 
   function handleScope(next: Scope) {
     setScope(next);

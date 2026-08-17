@@ -3,8 +3,9 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
-import { api } from "@/lib/api";
 import type { NotificationItem } from "@/types";
+
+const loadApi = () => import("@/lib/api").then((module) => module.api);
 
 const POLL_INTERVAL = 30000;
 
@@ -16,7 +17,7 @@ export function NotificationBell() {
   const dropdownRef = useRef<HTMLDivElement | null>(null);
 
   const fetchNotifications = useCallback((signal?: AbortSignal) => {
-    api.listNotifications(1, 5, false, signal)
+    loadApi().then((api) => api.listNotifications(1, 5, false, signal))
       .then((data) => {
         setNotifications(data.data ?? []);
         setUnreadCount(data.unreadCount ?? 0);
@@ -55,6 +56,7 @@ export function NotificationBell() {
 
   async function markAllRead() {
     try {
+      const api = await loadApi();
       await api.markAllNotificationsRead();
       setUnreadCount(0);
       setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));

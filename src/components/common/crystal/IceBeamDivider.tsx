@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { useReducedMotion } from "motion/react";
 import type gsap from "gsap";
 import { DividerSvg } from "@/components/common/crystal/DividerSvg";
 import { useFinePointer } from "@/lib/use-fine-pointer";
+import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
 
 /**
  * IceBeamDivider — "feixe de sinal" que separa o hero do momento de cristal.
@@ -18,7 +18,7 @@ import { useFinePointer } from "@/lib/use-fine-pointer";
  */
 export function IceBeamDivider() {
   const ref = useRef<HTMLDivElement>(null);
-  const reduce = useReducedMotion();
+  const reduce = usePrefersReducedMotion();
   const fine = useFinePointer();
 
   useEffect(() => {
