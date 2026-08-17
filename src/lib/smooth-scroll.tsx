@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 import type Lenis from "lenis";
 import { usePathname } from "next/navigation";
-import { useReducedMotion } from "motion/react";
+import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
 
 /**
  * SmoothScrollProvider — scroll suave (Lenis) sincronizado com o GSAP.
@@ -28,7 +28,7 @@ export function SmoothScrollProvider({
 }) {
   const pathname = usePathname();
   const lenisRef = useRef<Lenis | null>(null);
-  const reduceMotion = useReducedMotion();
+  const reduceMotion = usePrefersReducedMotion();
 
   // O ScrollTrigger só existe depois do import() dinâmico do desktop. O efeito
   // de refresh por rota (abaixo) precisa saber se ele já está disponível — sem

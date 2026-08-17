@@ -8,7 +8,9 @@ import {
   useCallback,
   type ReactNode,
 } from "react";
-import { api, type User, type RegisterResponse } from "@/lib/api";
+import type { User, RegisterResponse } from "@/lib/api";
+
+const loadApi = () => import("@/lib/api").then((module) => module.api);
 
 interface AuthContextValue {
   user: User | null;
@@ -37,17 +39,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    api
-      .me()
+    const start = () => loadApi().then((api) => api.me())
       .then(setUser)
       .catch(() => {
         setUser(null);
       })
       .finally(() => setLoading(false));
+    const idleWindow = window as Window & {
+      requestIdleCallback?: (callback: () => void, options?: { timeout: number }) => number;
+      cancelIdleCallback?: (id: number) => void;
+    };
+    const idleId: number = idleWindow.requestIdleCallback
+      ? idleWindow.requestIdleCallback(start, { timeout: 1500 })
+      : Number(globalThis.setTimeout(start, 1));
+    return () => {
+      if (idleWindow.cancelIdleCallback) idleWindow.cancelIdleCallback(idleId);
+      else globalThis.clearTimeout(idleId);
+    };
   }, []);
 
   const login = useCallback(
     async (email: string, password: string, turnstileToken?: string) => {
+      const api = await loadApi();
       const res = await api.login({ email, password, turnstileToken });
       setUser(res.user);
     },
@@ -56,6 +69,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const register = useCallback(
     async (name: string, email: string, password: string, turnstileToken?: string, userName?: string) => {
+      const api = await loadApi();
       return await api.register({ name, email, password, turnstileToken, ...(userName ? { userName } : {}) });
     },
     [],
@@ -64,6 +78,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = useCallback(async () => {
     setLogoutError(null);
     try {
+      const api = await loadApi();
       await api.logout();
     } catch {
       setLogoutError("Não foi possível encerrar a sessão no servidor.");
@@ -72,6 +87,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const refreshUser = useCallback(async () => {
+    const api = await loadApi();
     const u = await api.me();
     setUser(u);
   }, []);
