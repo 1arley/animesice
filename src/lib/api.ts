@@ -503,6 +503,9 @@ export const api = {
   getWatchHistory: (page = 1, limit = 24) =>
     request<Paginated<WatchHistoryItem>>(`/watch-history?page=${page}&limit=${limit}`),
 
+  deleteWatchHistory: (slug: string, episodeNumber: number) =>
+    request<{ message: string }>(`/watch-history/${slug}/${episodeNumber}`, { method: "DELETE" }),
+
   incrementViews: (slug: string, episodeNumber: number) =>
     request<{ message: string }>(`/episode/${slug}/${episodeNumber}/views`, { method: "POST" }),
 
