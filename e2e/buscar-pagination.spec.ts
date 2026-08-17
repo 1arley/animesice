@@ -33,11 +33,12 @@ test.describe('Buscar - paginação', () => {
     await clickCentered(page.locator('a:has-text("Próxima")'));
     await page.waitForURL('**/buscar?page=2&q=naruto');
 
-    // Página 2: mostra os cards da segunda metade e o contador atualizado
-    await expect(page.locator('a[href="/animes/e2e-anime-25"]')).toBeVisible();
+    // Página 2: primeiro aguarda a árvore anterior sair por completo; depois
+    // valida conteúdo e contador no DOM já estabilizado.
+    await expect(page.locator('a[href^="/animes/e2e-anime-"]')).toHaveCount(24);
+    await expect(page.locator('a[href="/animes/e2e-anime-25"]').first()).toBeVisible();
     await expect(page.locator('a[href="/animes/e2e-anime-1"]')).toHaveCount(0);
     await expect(page.getByText('página 2 de 3')).toBeVisible();
-    await expect(page.locator('a[href^="/animes/e2e-anime-"]')).toHaveCount(24);
 
     // O input de busca preserva o termo
     await expect(page.locator('input[name="q"]')).toHaveValue('naruto');

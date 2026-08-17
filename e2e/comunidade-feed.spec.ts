@@ -70,7 +70,7 @@ test.describe("Comunidade / feed", () => {
 
     // Post do feed
     await expect(
-      page.getByText("Terminando Frieren e não esperava gostar tanto."),
+      page.getByText("Terminando Frieren e não esperava gostar tanto.").first(),
     ).toBeVisible();
 
     // Evento de atividade mesclado (rating → "avaliou" + título do anime)
