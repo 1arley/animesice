@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { AnimeCard } from "@/components/common/AnimeCard";
 import { EpisodeCard } from "@/components/common/EpisodeCard";
 import { serverFetchJson } from "@/lib/api-server";
@@ -83,11 +84,22 @@ export default async function HomePage() {
                 Nenhum anime no catálogo ainda. Rode o seed do backend.
               </p>
             ) : (
-              <RevealStagger className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-                {animes.map((anime) => (
-                  <AnimeCard key={anime.id} anime={anime} spotlight={false} />
-                ))}
-              </RevealStagger>
+              <>
+                <RevealStagger className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+                  {animes.map((anime) => (
+                    <AnimeCard key={anime.id} anime={anime} spotlight={false} />
+                  ))}
+                </RevealStagger>
+                <div className="mt-6 flex justify-end">
+                  <Link
+                    href="/top"
+                    className="text-ice underline hover:text-snow font-sans text-caption"
+                    aria-label="Ver mais animes melhores avaliados"
+                  >
+                    Ver mais →
+                  </Link>
+                </div>
+              </>
             )}
           </section>
         </Reveal>
@@ -138,6 +150,15 @@ export default async function HomePage() {
                   <AnimeCard key={`recent-${anime.id}`} anime={anime} spotlight={false} />
                 ))}
               </RevealStagger>
+              <div className="mt-6 flex justify-end">
+                <Link
+                  href="/buscar?sort=recentlyAdded"
+                  className="text-ice underline hover:text-snow font-sans text-caption"
+                  aria-label="Ver mais animes recentemente adicionados"
+                >
+                  Ver mais →
+                </Link>
+              </div>
             </section>
           </Reveal>
         )}
