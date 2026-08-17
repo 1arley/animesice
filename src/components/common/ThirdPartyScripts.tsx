@@ -15,7 +15,9 @@ export function ThirdPartyScripts() {
       {!MONETAG_DISABLED && (
         <Script
           id="monetag-loader"
-          strategy="lazyOnload"
+          // O loader precisa existir deterministicamente no DOM; o código
+          // interno ainda posterga a rede até load + interação/visibilidade.
+          strategy="afterInteractive"
           dangerouslySetInnerHTML={{
             __html: `
               (function() {
