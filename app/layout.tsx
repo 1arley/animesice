@@ -6,7 +6,7 @@ import { ToastProvider } from "@/components/common/ToastProvider";
 import { SITE_URL } from "@/lib/site";
 import { ThirdPartyScripts } from "@/components/common/ThirdPartyScripts";
 import { SpeedInsights } from "@vercel/speed-insights/next";
-import { CrystalSplash } from "@/components/animesice/CrystalSplash";
+import { DeferredCrystalSplash } from "@/components/animesice/DeferredCrystalSplash";
 
 // Tipografia do "sinal da madrugada": um display de cristal (Chakra Petch)
 // para vozes, IBM Plex Sans para o corpo e IBM Plex Mono para os dados de
@@ -83,7 +83,7 @@ export default function RootLayout({
         </AuthProvider>
         {/* Abertura da identidade de motion: cristal em foco puxado, uma vez
             por sessão, dispensável a qualquer toque/tecla. Nunca bloqueia. */}
-        <CrystalSplash />
+        <DeferredCrystalSplash />
         <SpeedInsights />
         {/* Scripts de terceiros: lazyOnload + IntersectionObserver para Monetag.
             Não bloqueiam o paint inicial nem competem com o LCP. */}
