@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 
-export function Modal({ open, onClose, title, children }: { open: boolean; onClose: () => void; title?: string; children: React.ReactNode }) {
+export function Modal({ open, onClose, title, children, footer }: { open: boolean; onClose: () => void; title?: string; children: React.ReactNode; footer?: React.ReactNode }) {
   const [mounted, setMounted] = useState(false);
   const dialogRef = useRef<HTMLDivElement | null>(null);
 
@@ -38,8 +38,12 @@ export function Modal({ open, onClose, title, children }: { open: boolean; onClo
       >
         {title && <h3 className="font-display text-lg text-ice mb-3">{title}</h3>}
         <div>{children}</div>
-        <div className="mt-4 flex justify-end">
-          <button onClick={onClose} className="btn-ghost">Fechar</button>
+        <div className="mt-4 flex justify-end gap-2">
+          {footer ?? (
+            <button onClick={onClose} className="btn-ghost">
+              Fechar
+            </button>
+          )}
         </div>
       </div>
       <style>{`@keyframes fadeIn { from { opacity: 0; transform: translateY(-6px) } to { opacity: 1; transform: translateY(0) } } @keyframes fadeOut { from { opacity: 1; transform: translateY(0) } to { opacity: 0; transform: translateY(-6px) } }`}</style>

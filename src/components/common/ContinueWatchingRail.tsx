@@ -5,13 +5,14 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
-import { api } from "@/lib/api";
+import { api, ApiError } from "@/lib/api";
 import type { ContinueWatchingItem } from "@/types";
 import { safeImageSrc } from "@/lib/url";
 import { blur } from "@/lib/blur";
 import { SpotlightCard } from "@/components/core/SpotlightCard";
 import { useToast } from "@/components/common/ToastProvider";
 import { ClickSpark } from "@/components/core/ClickSpark";
+import { Modal } from "@/components/common/Modal";
 
 export function ContinueWatchingRail() {
   const { user } = useAuth();
@@ -19,7 +20,7 @@ export function ContinueWatchingRail() {
   const pathname = usePathname();
   const [items, setItems] = useState<ContinueWatchingItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<ContinueWatchingItem | null>(null);
 
   const fetchContinue = useCallback((signal?: AbortSignal) => {
     return api.getContinueWatching(12, signal)
@@ -33,24 +34,24 @@ export function ContinueWatchingRail() {
       .finally(() => setLoading(false));
   }, []);
 
-  const handleDelete = async (slug: string, episodeNumber: number, episodeId: string) => {
-    if (confirmDeleteId === episodeId) {
-      // Second click - confirm deletion
-      setConfirmDeleteId(null);
-      try {
-        await api.deleteWatchHistory(slug, episodeNumber);
-        toast("Removido do histórico", "success");
-        setItems((prev) => prev.filter((item) => item.episodeId !== episodeId));
-      } catch {
-        toast("Erro ao remover do histórico", "error");
-      }
-    } else {
-      // First click - show confirmation
-      setConfirmDeleteId(episodeId);
-      // Auto-cancel confirmation after 3 seconds
-      setTimeout(() => {
-        setConfirmDeleteId((id) => (id === episodeId ? null : id));
-      }, 3000);
+  const handleConfirmDelete = async () => {
+    if (!pendingDelete) return;
+    const {
+      anime: { slug },
+      episode: { number },
+      episodeId,
+    } = pendingDelete;
+    try {
+      await api.deleteWatchHistory(slug, number);
+      toast("Removido do histórico", "success");
+      setItems((prev) => prev.filter((item) => item.episodeId !== episodeId));
+    } catch (e) {
+      toast(
+        e instanceof ApiError ? e.message : "Erro ao remover do histórico",
+        "error",
+      );
+    } finally {
+      setPendingDelete(null);
     }
   };
 
@@ -111,25 +112,37 @@ export function ContinueWatchingRail() {
                       style={{ width: `${progressPercent}%` }}
                     />
                   </div>
-                  <ClickSpark sparkSize={6} sparkRadius={12} sparkCount={6} duration={250} className="absolute top-1 right-1 z-10">
+                  <ClickSpark
+                    sparkSize={6}
+                    sparkRadius={12}
+                    sparkCount={6}
+                    duration={250}
+                    className="absolute top-1 right-1 z-10"
+                  >
                     <button
                       type="button"
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        handleDelete(item.anime.slug, item.episode.number, item.episodeId);
+                        setPendingDelete(item);
                       }}
-                      className="p-1 rounded-full bg-signal/90 text-snow opacity-0 group-hover:opacity-100 transition-opacity hover:bg-signal hover:scale-110 focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-ice"
-                      aria-label={confirmDeleteId === item.episodeId ? "Confirmar remoção" : "Remover do histórico"}
+                      className="flex h-7 w-7 items-center justify-center rounded-sm border border-hairline bg-ink/70 text-mist opacity-0 backdrop-blur-sm transition-colors duration-200 group-hover:opacity-100 hover:border-ice/60 hover:bg-ink hover:text-ice focus:opacity-100"
+                      aria-label="Remover do histórico"
                     >
-                      {confirmDeleteId === item.episodeId ? (
-                        <span className="text-xs font-medium whitespace-nowrap px-1">Confirmar?</span>
-                      ) : (
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5">
-                          <line x1="18" y1="6" x2="6" y2="18" />
-                          <line x1="6" y1="6" x2="18" y2="18" />
-                        </svg>
-                      )}
+                      <svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="w-3.5 h-3.5"
+                      >
+                        <line x1="18" y1="6" x2="6" y2="18" />
+                        <line x1="6" y1="6" x2="18" y2="18" />
+                      </svg>
                     </button>
                   </ClickSpark>
                 </div>
@@ -145,6 +158,36 @@ export function ContinueWatchingRail() {
           })}
         </div>
       </div>
+
+      <Modal
+        open={!!pendingDelete}
+        onClose={() => setPendingDelete(null)}
+        title="Remover do histórico?"
+        footer={
+          <>
+            <button
+              type="button"
+              onClick={() => setPendingDelete(null)}
+              className="btn-ghost"
+            >
+              Cancelar
+            </button>
+            <button type="button" onClick={handleConfirmDelete} className="btn-danger">
+              Remover
+            </button>
+          </>
+        }
+      >
+        {pendingDelete ? (
+          <p className="text-body-sm text-mist">
+            Tem certeza de que deseja remover{" "}
+            <span className="text-ice">
+              “{pendingDelete.anime.title}” (EP {pendingDelete.episode.number})
+            </span>{" "}
+            do seu histórico?
+          </p>
+        ) : null}
+      </Modal>
     </section>
   );
 }
