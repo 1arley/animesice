@@ -128,8 +128,13 @@ test.describe("Comunidade / feed", () => {
       });
     });
 
+    const refreshedFeed = page.waitForResponse((response) => {
+      const url = new URL(response.url());
+      return url.pathname.endsWith("/social/feed") && url.searchParams.get("page") === "1";
+    });
     await page.goto("/comunidade/feed");
-    await expect(page.getByText("Primeira página")).toBeVisible();
+    await refreshedFeed;
+    await expect(page.getByText("Primeira página")).toBeVisible({ timeout: 10_000 });
     await expect(
       page.getByRole("button", { name: "Carregar mais" }),
     ).toBeVisible();
