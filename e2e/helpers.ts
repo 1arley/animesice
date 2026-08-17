@@ -56,18 +56,16 @@ export async function mockGeneric(page: Page) {
  * O MobileTabBar (fixo na base, só <sm) cobre a borda inferior da tela no
  * mobile. Rolar até o centro mantém o alvo longe da barra fixa.
  *
- * O clique usa `element.click()` em vez do clique por coordenadas: o Link do
- * Next navega via router SPA (mesmo comportamento) ou cai no default nativo
- * do <a> — sem corrida com scroll/prefetch/hidratação que fazia o clique de
- * coordenadas ser "engolido" (o evento disparava mas a URL não mudava).
+ * Usa o clique real do Playwright depois do scroll. Isso preserva as checagens
+ * de actionability e espera o elemento ficar estável, evitando disparar um
+ * `element.click()` durante a hidratação do Next.
  */
 export async function clickCentered(locator: Locator) {
   // `.first()` reproduz a semântica não-estrita do `page.click(selector)` —
   // os specs legados contam com "primeiro match" para seletores CSS.
-  await locator.first().evaluate((el) => {
-    el.scrollIntoView({ block: "center", inline: "nearest" });
-    (el as HTMLElement).click();
-  });
+  const target = locator.first();
+  await target.scrollIntoViewIfNeeded();
+  await target.click();
 }
 
 /**
