@@ -1,12 +1,24 @@
 import type { Metadata } from "next";
 import { notFound, permanentRedirect } from "next/navigation";
+import { cache } from "react";
 import { serverFetchJson } from "@/lib/api-server";
 import type { Episode, Anime } from "@/types";
 import { isHentaiAnime, hentaisPath } from "@/lib/hentai";
 import { WatchClient } from "@/components/common/WatchClient";
-import { SITE_URL } from "@/lib/site";
 
 export const revalidate = 60;
+
+// Getter compartilhado (generateMetadata + page) com cache ISR. Antes cada
+// render de página de episódio batia 2x na API sem cache — com o backend atrás
+// do Cloudflare, isso estourava o throttle (429) e transformava a página num
+// not-found 200 + noindex para o Google. force-cache + revalidate 60 reduz
+// drasticamente os hits de origem.
+const getEpisode = cache((slug: string, number: string) =>
+  serverFetchJson<Episode & { anime: Anime }>(`/episode/${slug}/${number}`, {
+    cache: "force-cache",
+    next: { revalidate: 60, tags: [`episode:${slug}:${number}`] },
+  }),
+);
 
 export async function generateMetadata({
   params,
@@ -14,7 +26,7 @@ export async function generateMetadata({
   params: Promise<{ slug: string; number: string }>;
 }): Promise<Metadata> {
   const { slug, number } = await params;
-  const ep = await serverFetchJson<Episode & { anime: Anime }>(`/episode/${slug}/${number}`);
+  const ep = await getEpisode(slug, number);
   if (!ep) return {};
 
   const title = `${ep.anime.title} — Episódio ${ep.number}`;
@@ -48,7 +60,7 @@ export default async function WatchPage({
   const number = Number(numberParam);
   if (Number.isNaN(number)) notFound();
 
-  const episode = await serverFetchJson<Episode & { anime: Anime }>(`/episode/${slug}/${number}`);
+  const episode = await getEpisode(slug, numberParam);
   if (!episode) notFound();
 
   if (isHentaiAnime(episode.anime)) permanentRedirect(hentaisPath(slug, number));

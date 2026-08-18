@@ -34,6 +34,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   while (hasMore && page <= 50) {
     const res = await serverFetchJson<Paginated<Pick<Anime, "slug" | "updatedAt" | "genres">>>(
       `/anime?page=${page}&limit=${limit}`,
+      { cache: "force-cache", next: { revalidate: 3600, tags: ["sitemap"] } },
     );
     const items = res?.data ?? [];
     if (items.length === 0) {

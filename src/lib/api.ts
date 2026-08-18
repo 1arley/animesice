@@ -155,6 +155,12 @@ async function request<T>(
     ...((options.headers as Record<string, string>) || {}),
   };
 
+  // Só métodos idempotentes entram no retry de 429 (rate-limit no Cloudflare/
+  // backend compartilha IP — um pico no SSR pode estourar o throttler).
+  const method = (options.method ?? "GET").toUpperCase();
+  const retryable = method === "GET" || method === "HEAD" || method === "OPTIONS";
+  const maxAttempts = retryable ? 3 : 1;
+
   const exec = () =>
     fetch(`${API_URL}${path}`, {
       ...options,
@@ -163,6 +169,10 @@ async function request<T>(
     });
 
   let res = await exec();
+  for (let attempt = 1; res.status === 429 && attempt < maxAttempts; attempt++) {
+    await new Promise((r) => setTimeout(r, 400 * attempt));
+    res = await exec();
+  }
 
   if (res.status === 401 && !path.startsWith("/auth/")) {
     const hasSession =

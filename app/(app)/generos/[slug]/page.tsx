@@ -1,3 +1,4 @@
+import { notFound } from "next/navigation";
 import { AnimeCard } from "@/components/common/AnimeCard";
 import type { GenreAnimesResponse } from "@/types";
 import { serverFetchJson } from "@/lib/api-server";
@@ -20,14 +21,10 @@ export default async function GenrePage({
     `/genre/${slug}/animes?page=${page}&limit=${limit}`,
   );
 
-  if (!data) {
-    return (
-      <div className="mx-auto max-w-shelf px-4 py-6">
-        <h1 className="shelf-label">Gênero não encontrado</h1>
-        <p className="text-body-sm text-mist">O gênero solicitado não existe.</p>
-      </div>
-    );
-  }
+  // Gênero inexistente: gera 404 real. Um 200 com texto "não encontrado"
+  // vira soft-404 no Google (e, com streaming, noindex) — exatamente o que
+  // as páginas não indexadas do Search Console mostravam.
+  if (!data || !data.genre) notFound();
 
   const { genre, data: animes, meta } = data;
 
@@ -39,6 +36,9 @@ export default async function GenrePage({
       </h1>
 
       {animes.length === 0 ? (
+        // Gênero sem nenhum anime publicado ainda é uma página válida
+        // (alguns gêneros reais têm 0 títulos publicados em prod). 404 aqui
+        // quebraria links legítimos do índice /generos.
         <p className="text-body-sm text-mist">Nenhum anime neste gênero.</p>
       ) : (
         <>

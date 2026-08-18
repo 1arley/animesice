@@ -24,7 +24,6 @@ export function Footer() {
       ];
   const referencia: FooterLink[] = [
     { href: "https://myanimelist.net", title: "MyAnimeList", external: true },
-    { href: "https://jikan.moe", title: "Jikan API", external: true },
   ];
 
   return (
