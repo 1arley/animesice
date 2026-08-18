@@ -30,6 +30,13 @@ interface MoteStyle {
   "--dur": string;
 }
 
+/** Pseudoaleatorio deterministico: SSR e primeiro render do cliente precisam
+ * produzir exatamente os mesmos estilos para a hidratacao do React. */
+function moteValue(index: number, salt: number): number {
+  const value = Math.sin((index + 1) * 12.9898 + salt * 78.233) * 43758.5453;
+  return value - Math.floor(value);
+}
+
 /**
  * O cristal AnimesIce em 4 modos da identidade de motion:
  * reveal (abertura), loop (loading), transition (wipe) e micro (tap/hover).
@@ -48,13 +55,13 @@ export function CrystalMotion({
 
   const motes = useMemo<MoteStyle[]>(
     () =>
-      Array.from({ length: MOTE_COUNT }, () => ({
-        "--x": `${10 + Math.random() * 80}%`,
-        "--y": `${10 + Math.random() * 80}%`,
-        "--s": `${(1.5 + Math.random() * 2.5).toFixed(1)}px`,
-        "--o": (0.35 + Math.random() * 0.45).toFixed(2),
-        "--d": `${(Math.random() * 1.0).toFixed(2)}s`,
-        "--dur": `${(2.8 + Math.random() * 2.2).toFixed(2)}s`,
+      Array.from({ length: MOTE_COUNT }, (_, index) => ({
+        "--x": `${10 + moteValue(index, 1) * 80}%`,
+        "--y": `${10 + moteValue(index, 2) * 80}%`,
+        "--s": `${(1.5 + moteValue(index, 3) * 2.5).toFixed(1)}px`,
+        "--o": (0.35 + moteValue(index, 4) * 0.45).toFixed(2),
+        "--d": `${moteValue(index, 5).toFixed(2)}s`,
+        "--dur": `${(2.8 + moteValue(index, 6) * 2.2).toFixed(2)}s`,
       })),
     [],
   );
