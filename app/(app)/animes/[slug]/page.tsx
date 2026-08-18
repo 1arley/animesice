@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { cache } from "react";
@@ -6,6 +6,7 @@ import type { Anime } from "@/types";
 import { safeImageSrc, upgradeImageUrl } from "@/lib/url";
 import { blur } from "@/lib/blur";
 import { serverFetchJson } from "@/lib/api-server";
+import { isHentaiAnime, hentaisPath } from "@/lib/hentai";
 import { isOnAir } from "@/lib/status";
 import { CommentSection } from "@/components/common/CommentSection";
 import { FavoriteButton } from "@/components/common/FavoriteButton";
@@ -62,6 +63,8 @@ export default async function AnimeDetailPage({
   const { slug } = await params;
   const anime = await getAnime(slug);
   if (!anime) notFound();
+
+  if (isHentaiAnime(anime)) permanentRedirect(hentaisPath(slug));
 
   const episodes = (anime.episodes ?? []).slice().sort((a, b) => a.number - b.number);
   const [related, similar] = await Promise.all([

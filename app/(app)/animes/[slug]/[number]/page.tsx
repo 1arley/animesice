@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import { serverFetchJson } from "@/lib/api-server";
 import type { Episode, Anime } from "@/types";
+import { isHentaiAnime, hentaisPath } from "@/lib/hentai";
 import { WatchClient } from "@/components/common/WatchClient";
 import { SITE_URL } from "@/lib/site";
 
@@ -49,6 +50,8 @@ export default async function WatchPage({
 
   const episode = await serverFetchJson<Episode & { anime: Anime }>(`/episode/${slug}/${number}`);
   if (!episode) notFound();
+
+  if (isHentaiAnime(episode.anime)) permanentRedirect(hentaisPath(slug, number));
 
   const jsonLd = {
     "@context": "https://schema.org",

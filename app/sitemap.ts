@@ -2,6 +2,7 @@ import type { MetadataRoute } from "next";
 import { SITE_URL } from "@/lib/site";
 import { serverFetchJson } from "@/lib/api-server";
 import type { Anime, Paginated } from "@/types";
+import { isHentaiAnime } from "@/lib/hentai";
 
 const STATIC_ROUTES: { path: string; priority: number }[] = [
   { path: "", priority: 1.0 },
@@ -31,7 +32,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const limit = 200;
 
   while (hasMore && page <= 50) {
-    const res = await serverFetchJson<Paginated<Pick<Anime, "slug" | "updatedAt">>>(
+    const res = await serverFetchJson<Paginated<Pick<Anime, "slug" | "updatedAt" | "genres">>>(
       `/anime?page=${page}&limit=${limit}`,
     );
     const items = res?.data ?? [];
@@ -41,6 +42,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }
 
     for (const anime of items) {
+      // Conteúdo +18 foi movido para hentais.animesice.app — não pode mais
+      // aparecer no sitemap do animesice.
+      if (isHentaiAnime(anime)) continue;
       animeEntries.push({
         url: `${SITE_URL}/animes/${anime.slug}`,
         lastModified: new Date(anime.updatedAt ?? new Date()),
