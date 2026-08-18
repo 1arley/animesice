@@ -10,15 +10,15 @@ import { useEffect, useState } from "react";
  * desse guard — os componentes de efeito devem consultar este hook.
  */
 export function usePrefersReducedMotion(): boolean {
-  const [reduce, setReduce] = useState(
-    () =>
-      typeof window !== "undefined" &&
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches,
-  );
+  // O primeiro render precisa ser idêntico no servidor e no navegador. Ler
+  // matchMedia no inicializador fazia clientes com movimento reduzido gerar
+  // uma árvore diferente do HTML SSR e disparava o erro de hidratação #418.
+  const [reduce, setReduce] = useState(false);
 
   useEffect(() => {
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
     const onChange = (e: MediaQueryListEvent) => setReduce(e.matches);
+    setReduce(mq.matches);
     mq.addEventListener("change", onChange);
     return () => mq.removeEventListener("change", onChange);
   }, []);
