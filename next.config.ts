@@ -30,6 +30,11 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   outputFileTracingRoot: process.cwd(),
   images: {
+    // Servir as imagens remotas diretamente evita que todas as capas passem
+    // por /_next/image. Em provedores que cobram/limitam transformacoes esse
+    // endpoint responde 402 quando a cota acaba, deixando o catalogo sem arte.
+    // Os componentes continuam fornecendo `sizes`, lazy loading e dimensoes.
+    unoptimized: true,
     remotePatterns: [
       { protocol: "https", hostname: "cdn.myanimelist.net" },
       { protocol: "https", hostname: "**.myanimelist.net" },
