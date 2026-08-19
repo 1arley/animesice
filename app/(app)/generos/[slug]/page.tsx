@@ -1,9 +1,28 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { AnimeCard } from "@/components/common/AnimeCard";
 import type { GenreAnimesResponse } from "@/types";
 import { serverFetchJson } from "@/lib/api-server";
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ slug: string }>;
+  searchParams: Promise<{ page?: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const sp = await searchParams;
+  const page = Math.max(1, Number(sp.page ?? "1") || 1);
+
+  return {
+    alternates: {
+      canonical: page > 1 ? `/generos/${slug}?page=${page}` : `/generos/${slug}`,
+    },
+  };
+}
 
 export default async function GenrePage({
   params,
