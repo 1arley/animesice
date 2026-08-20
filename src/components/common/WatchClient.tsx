@@ -20,13 +20,21 @@ interface WatchClientProps {
   initialEpisode: Episode & { anime: Anime };
 }
 
-export function WatchClient({ slug, number, initialEpisode }: WatchClientProps) {
-  const [episode, setEpisode] = useState<(Episode & { anime: Anime }) | null>(initialEpisode);
+export function WatchClient({
+  slug,
+  number,
+  initialEpisode,
+}: WatchClientProps) {
+  const [episode, setEpisode] = useState<(Episode & { anime: Anime }) | null>(
+    initialEpisode,
+  );
   const [error, setError] = useState<string | null>(null);
   const [source, setSource] = useState<StreamSource | null>(null);
   const [sourceError, setSourceError] = useState<string | null>(null);
   const [loadingSource, setLoadingSource] = useState(false);
   const loadSourceId = useRef(0);
+  const recoveryAttempts = useRef(0);
+  const resumeAt = useRef(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -37,36 +45,54 @@ export function WatchClient({ slug, number, initialEpisode }: WatchClientProps) 
         if (!cancelled) setEpisode(ep);
       })
       .catch((e) => {
-        if (!cancelled) setError(e instanceof ApiError ? e.message : "Erro ao carregar episódio.");
+        if (!cancelled)
+          setError(
+            e instanceof ApiError ? e.message : "Erro ao carregar episódio.",
+          );
       });
     return () => {
       cancelled = true;
     };
   }, [slug, number]);
 
-  const loadSource = useCallback(async () => {
-    const id = ++loadSourceId.current;
-    setLoadingSource(true);
-    setSourceError(null);
-    setSource(null);
-    try {
-      const res = await api.streamSource(slug, number);
-      if (id === loadSourceId.current) setSource(res);
-    } catch (e) {
-      if (id === loadSourceId.current) {
-        setSourceError(
-          e instanceof ApiError
-            ? e.message
-            : "Não foi possível obter o vídeo deste episódio.",
-        );
+  const loadSource = useCallback(
+    async (refresh = false) => {
+      const id = ++loadSourceId.current;
+      setLoadingSource(true);
+      setSourceError(null);
+      setSource(null);
+      try {
+        const res = await api.streamSource(slug, number, refresh);
+        if (id === loadSourceId.current) setSource(res);
+      } catch (e) {
+        if (id === loadSourceId.current) {
+          setSourceError(
+            e instanceof ApiError
+              ? e.message
+              : "Não foi possível obter o vídeo deste episódio.",
+          );
+        }
+      } finally {
+        if (id === loadSourceId.current) setLoadingSource(false);
       }
-    } finally {
-      if (id === loadSourceId.current) setLoadingSource(false);
-    }
-  }, [slug, number]);
+    },
+    [slug, number],
+  );
+
+  const recoverPlayback = useCallback(
+    (currentTime: number) => {
+      if (recoveryAttempts.current >= 1 || loadingSource) return;
+      recoveryAttempts.current += 1;
+      resumeAt.current = currentTime;
+      void loadSource(true);
+    },
+    [loadSource, loadingSource],
+  );
 
   useEffect(() => {
-    loadSource();
+    recoveryAttempts.current = 0;
+    resumeAt.current = 0;
+    void loadSource();
   }, [loadSource]);
 
   if (error) {
@@ -123,6 +149,8 @@ export function WatchClient({ slug, number, initialEpisode }: WatchClientProps) 
             animeSlug={slug}
             episodeNumber={episode.number}
             animeTitle={episode.anime.title}
+            startAt={resumeAt.current}
+            onPlaybackError={recoverPlayback}
           />
         ) : (
           <p className="text-body-sm text-mist">
@@ -133,7 +161,11 @@ export function WatchClient({ slug, number, initialEpisode }: WatchClientProps) 
 
       <CreateRoomButton animeSlug={slug} episodeNumber={episode.number} />
 
-      <NextEpisode slug={slug} number={number} episodeCount={episode.anime.episodeCount} />
+      <NextEpisode
+        slug={slug}
+        number={number}
+        episodeCount={episode.anime.episodeCount}
+      />
 
       <CommentSection episodeId={episode.id} title="Discussão do episódio" />
     </>

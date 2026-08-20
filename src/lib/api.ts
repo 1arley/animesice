@@ -330,8 +330,10 @@ export const api = {
     ),
 
   // --- Streaming ---
-  streamSource: (animeSlug: string, episodeNumber: number) =>
-    request<StreamSource>(`/stream/source?anime=${encodeURIComponent(animeSlug)}&episode=${episodeNumber}`),
+  streamSource: (animeSlug: string, episodeNumber: number, refresh = false) =>
+    request<StreamSource>(
+      `/stream/source?anime=${encodeURIComponent(animeSlug)}&episode=${episodeNumber}${refresh ? "&refresh=1" : ""}`,
+    ),
 
   // --- Embed / Scrape (animefire proxy backend) ---
   embedProxyUrl: (targetUrl: string): string =>
@@ -360,6 +362,7 @@ export const api = {
     bannerImage?: string;
     rating?: number;
     status?: string;
+    /** @deprecated O backend detecta o áudio pelo título. */
     audio?: "LEGENDADO" | "DUBLADO";
     ageRating?: string;
     genreSlugs?: string[];
@@ -419,6 +422,7 @@ export const api = {
   adminImportAnime: (body: {
     anilistId?: number;
     search?: string;
+    /** @deprecated O backend detecta o áudio pelo título. */
     audio?: "LEGENDADO" | "DUBLADO";
   }) =>
     request<Anime>("/admin/anime/import", {
