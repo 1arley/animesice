@@ -38,7 +38,13 @@ export default function NotFound() {
       </div>
       <footer className="absolute w-full bottom-4 flex flex-col space-y-2 items-center">
         <hr className="w-64 border-hairline" />
-        <p className="text-sm text-mist">© 2026 <Link className="underline text-ice hover:opacity-70" href="/">AnimesIce</Link>. All rights reserved.</p>
+        <p className="text-sm text-mist" suppressHydrationWarning>
+          © {new Date().getFullYear()}{" "}
+          <Link className="underline text-ice hover:opacity-70" href="/">
+            AnimesIce
+          </Link>
+          . Todos os direitos reservados.
+        </p>
       </footer>
     </div>
   );
