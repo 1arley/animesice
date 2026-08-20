@@ -48,7 +48,11 @@ export default function AdminEditAnimePage({
         setCoverImage(a.coverImage ?? "");
         setBannerImage(a.bannerImage ?? "");
         setRating(a.rating != null ? String(a.rating) : "");
-        setStatus(a.status ?? "LANCAMENTO");
+        setStatus(
+          ["COMPLETO", "CONCLUIDO"].includes(a.status ?? "")
+            ? "FINALIZADO"
+            : (a.status ?? "LANCAMENTO"),
+        );
         setAgeRating(a.ageRating ?? "A14");
       })
       .catch((e) =>
@@ -179,7 +183,8 @@ export default function AdminEditAnimePage({
                   onChange={(e) => setStatus(e.target.value)}
                 >
                   <option value="LANCAMENTO">Lançamento</option>
-                  <option value="CONCLUIDO">Concluído</option>
+                  <option value="FINALIZADO">Finalizado</option>
+                  <option value="EM_BREVE">Em breve</option>
                   <option value="PAUSADO">Pausado</option>
                 </select>
               </label>

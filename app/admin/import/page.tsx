@@ -8,7 +8,6 @@ import type { Anime } from "@/types";
 export default function AdminImportPage() {
   const [anilistId, setAnilistId] = useState("");
   const [search, setSearch] = useState("");
-  const [audio, setAudio] = useState<"LEGENDADO" | "DUBLADO">("LEGENDADO");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<Anime | null>(null);
@@ -30,7 +29,6 @@ export default function AdminImportPage() {
       const anime = await api.adminImportAnime({
         anilistId: id ? Number(id) : undefined,
         search: term || undefined,
-        audio,
       });
       setResult(anime);
     } catch (err) {
@@ -84,19 +82,10 @@ export default function AdminImportPage() {
             </span>
           </label>
 
-          <label className="block">
-            <span className="mb-1.5 block font-sans text-caption uppercase tracking-wider text-mist">
-              Áudio padrão
-            </span>
-            <select
-              className="field"
-              value={audio}
-              onChange={(e) => setAudio(e.target.value as "LEGENDADO" | "DUBLADO")}
-            >
-              <option value="LEGENDADO">Legendado</option>
-              <option value="DUBLADO">Dublado</option>
-            </select>
-          </label>
+          <p className="border border-hairline bg-panel p-3 text-body-sm text-mist">
+            O áudio será detectado pelo título importado. Para uma versão
+            dublada, edite o título depois da importação e inclua “Dublado”.
+          </p>
 
           {error && (
             <p role="alert" className="border border-signal/40 bg-signal/10 p-3 text-body-sm text-signal">

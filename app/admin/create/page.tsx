@@ -19,7 +19,6 @@ export default function AdminCreateAnimePage() {
   const [bannerImage, setBannerImage] = useState("");
   const [rating, setRating] = useState("");
   const [status, setStatus] = useState("LANCAMENTO");
-  const [audio, setAudio] = useState<"LEGENDADO" | "DUBLADO">("LEGENDADO");
   const [ageRating, setAgeRating] = useState("A14");
   const [genreSlugs, setGenreSlugs] = useState<string[]>([]);
   const [genres, setGenres] = useState<Genre[]>([]);
@@ -62,7 +61,6 @@ export default function AdminCreateAnimePage() {
         bannerImage: bannerImage || undefined,
         rating: rating ? Number(rating) : undefined,
         status,
-        audio,
         ageRating,
         genreSlugs: genreSlugs.length ? genreSlugs : undefined,
       });
@@ -158,7 +156,7 @@ export default function AdminCreateAnimePage() {
             />
           </label>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <label className="block">
               <span className="mb-1.5 block font-sans text-caption uppercase tracking-wider text-mist">
                 Status
@@ -169,24 +167,25 @@ export default function AdminCreateAnimePage() {
                 onChange={(e) => setStatus(e.target.value)}
               >
                 <option value="LANCAMENTO">Lançamento</option>
-                <option value="CONCLUIDO">Concluído</option>
+                <option value="FINALIZADO">Finalizado</option>
+                <option value="EM_BREVE">Em breve</option>
                 <option value="PAUSADO">Pausado</option>
               </select>
             </label>
 
-            <label className="block">
-              <span className="mb-1.5 block font-sans text-caption uppercase tracking-wider text-mist">
-                Áudio
+            <div className="border border-hairline bg-panel p-3">
+              <span className="block font-sans text-caption uppercase tracking-wider text-mist">
+                Áudio detectado
               </span>
-              <select
-                className="field"
-                value={audio}
-                onChange={(e) => setAudio(e.target.value as "LEGENDADO" | "DUBLADO")}
-              >
-                <option value="LEGENDADO">Legendado</option>
-                <option value="DUBLADO">Dublado</option>
-              </select>
-            </label>
+              <strong className="mt-1 block text-body-sm text-snow">
+                {/(^|[^\p{L}\p{N}])dublado([^\p{L}\p{N}]|$)/iu.test(title)
+                  ? "Dublado"
+                  : "Legendado"}
+              </strong>
+              <span className="mt-1 block text-caption text-mist">
+                Inclua “Dublado” no título para cadastrar essa versão.
+              </span>
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">

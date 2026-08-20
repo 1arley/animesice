@@ -3,7 +3,7 @@
  * Convenção: substring-match em maiúsculas — "LANC" cobre LANCAMENTO etc.
  */
 
-const CONCLUDED = /FINALIZ|CONCLU|CANCELAD|HIATUS/i;
+const CONCLUDED = /FINALIZ|CONCLU|COMPLET|CANCELAD/i;
 
 export function isOnAir(status?: string | null): boolean {
   return !!status && status.toUpperCase().includes("LANC");
