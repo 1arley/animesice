@@ -152,18 +152,19 @@
 }
 
 @layer components {
-  /* Prateleira / Section Label: tipografia editorial com traço luminoso */
+  /* Cabeçalho de programação: voz editorial primeiro, telemetria depois. */
   .shelf-label {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: 0.6rem;
     font-family: theme("fontFamily.display");
-    font-size: 1.125rem;
+    font-size: 1.65rem;
+    line-height: 1;
     font-weight: 700;
-    letter-spacing: 0.02em;
+    letter-spacing: -0.015em;
     color: theme("colors.snow");
-    padding-bottom: 0.75rem;
-    margin-bottom: 1.25rem;
+    padding-bottom: 0.65rem;
+    margin-bottom: 1rem;
     border-bottom: 1px solid rgba(255, 255, 255, 0.06);
     position: relative;
   }
@@ -171,25 +172,30 @@
   .shelf-label::before {
     content: "";
     flex: none;
-    width: 0.25rem;
-    height: 1rem;
-    border-radius: 2px;
-    background: theme("colors.ice");
-    box-shadow: 0 0 10px rgba(56, 232, 218, 0.5);
+    width: 1.5rem;
+    height: 1px;
+    background: rgba(56, 232, 218, 0.72);
   }
 
   .shelf-label-data {
     font-family: theme("fontFamily.mono");
     font-size: 0.75rem;
-    font-weight: 600;
-    letter-spacing: 0.04em;
-    color: theme("colors.ice");
-    background: rgba(56, 232, 218, 0.1);
-    box-shadow: inset 0 0 0 1px rgba(56, 232, 218, 0.28);
-    padding: 0.15rem 0.55rem 0.15rem 0.35rem;
+    font-weight: 400;
+    letter-spacing: 0.06em;
+    color: theme("colors.mist");
+    background: transparent;
+    padding: 0.15rem 0;
     margin-left: auto;
-    /* Faceta de cristal: canto cortado em diagonal, não pílula. */
-    clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 0 100%);
+  }
+
+  .shelf-label-note {
+    margin-left: auto;
+    font-family: theme("fontFamily.sans");
+    font-size: 0.72rem;
+    line-height: 1.2;
+    font-weight: 400;
+    letter-spacing: 0;
+    color: theme("colors.mist");
   }
 
   /* Badge de status / metadados do card */
@@ -323,13 +329,7 @@
     right: 0;
     height: 1px;
     z-index: 1;
-    background: linear-gradient(
-      90deg,
-      transparent 5%,
-      rgba(223, 247, 249, 0.55) 45%,
-      rgba(56, 232, 218, 0.25) 60%,
-      transparent 95%
-    );
+    background: rgba(255, 255, 255, 0.12);
   }
   .card-scan::after {
     content: "";

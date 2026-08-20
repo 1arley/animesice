@@ -50,7 +50,7 @@ module.exports = {
         },
       },
       fontFamily: {
-        display: ["var(--font-chakra)", "system-ui", "sans-serif"],
+        display: ["var(--font-display)", "Arial Narrow", "system-ui", "sans-serif"],
         sans: ["var(--font-plex-sans)", "system-ui", "sans-serif"],
         mono: ["var(--font-plex-mono)", "ui-monospace", "monospace"],
       },

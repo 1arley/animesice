@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Chakra_Petch, IBM_Plex_Mono, IBM_Plex_Sans } from "next/font/google";
+import { Barlow_Condensed, IBM_Plex_Mono, IBM_Plex_Sans } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/lib/auth-context";
 import { ToastProvider } from "@/components/common/ToastProvider";
@@ -8,11 +8,11 @@ import { ThirdPartyScripts } from "@/components/common/ThirdPartyScripts";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { DeferredCrystalSplash } from "@/components/animesice/DeferredCrystalSplash";
 
-// Tipografia do "sinal da madrugada": um display de cristal (Chakra Petch)
-// para vozes, IBM Plex Sans para o corpo e IBM Plex Mono para os dados de
-// transmissão (EPG, timecodes, nº de episódio). Nada de grotescas de plantão.
-const fontChakra = Chakra_Petch({
-  variable: "--font-chakra",
+// Tipografia do "sinal da madrugada": Barlow Condensed traz a linguagem de
+// cartaz e grade de programação sem transformar toda a interface em terminal.
+// Plex Sans sustenta a leitura; Plex Mono aparece apenas em dados de emissão.
+const fontDisplay = Barlow_Condensed({
+  variable: "--font-display",
   subsets: ["latin"],
   weight: ["600", "700"],
   display: "swap",
@@ -76,7 +76,7 @@ export default function RootLayout({
         <link rel="preconnect" href="https://al5sm.com" crossOrigin="anonymous" />
       </head>
       <body
-        className={`${fontChakra.variable} ${fontPlexSans.variable} ${fontPlexMono.variable} antialiased`}
+        className={`${fontDisplay.variable} ${fontPlexSans.variable} ${fontPlexMono.variable} antialiased`}
       >
         <AuthProvider>
           <ToastProvider>{children}</ToastProvider>

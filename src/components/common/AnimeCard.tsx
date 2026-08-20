@@ -19,6 +19,10 @@ export interface AnimeCardProps {
    * frame — aí o hover é só o lift + card-scan.
    */
   spotlight?: boolean;
+  /** Versão silenciosa para prateleiras editoriais: arte e título primeiro. */
+  variant?: "standard" | "poster";
+  /** Posição real em listas ordenadas, como avaliação e tendência. */
+  rank?: number;
 }
 
 /**
@@ -30,7 +34,7 @@ export interface AnimeCardProps {
  * Performance: usa next/image → AVIF/WebP automático. `sizes` correto garante
  * que o browser baixe o asset certo para a viewport, sem pedir 1 MB em mobile.
  */
-export function AnimeCard({ anime, priority = false, spotlight = true }: AnimeCardProps) {
+export function AnimeCard({ anime, priority = false, spotlight = true, variant = "standard", rank }: AnimeCardProps) {
   const age = anime.ageRating;
   const dub = anime.audio === "DUBLADO";
   const onAir = isOnAir(anime.status);
@@ -40,8 +44,13 @@ export function AnimeCard({ anime, priority = false, spotlight = true }: AnimeCa
     <Link
       href={`/animes/${anime.slug}`}
       title={anime.title}
-      className="group block overflow-hidden bg-panel transition-[transform,box-shadow] duration-200 ease-out hover:-translate-y-0.5 hover:shadow-[0_12px_28px_-14px_rgba(2,4,8,0.85)] hover:ring-1 hover:ring-ice/50 active:translate-y-0 active:scale-[0.98]"
+      className="group relative block overflow-hidden bg-panel transition-[transform,box-shadow] duration-200 ease-out hover:-translate-y-0.5 hover:shadow-[0_12px_28px_-14px_rgba(2,4,8,0.85)] focus-visible:outline-offset-4 active:translate-y-0 active:scale-[0.98]"
     >
+      {rank !== undefined && (
+        <span className="absolute left-0 top-0 z-10 min-w-9 bg-snow px-2 py-1 font-display text-xl font-bold leading-none text-ink" aria-label={`Posição ${rank}`}>
+          {String(rank).padStart(2, "0")}
+        </span>
+      )}
       <div className="card-scan relative" style={{ aspectRatio: "2 / 3" }}>
         {cover ? (
           <Image
@@ -71,27 +80,33 @@ export function AnimeCard({ anime, priority = false, spotlight = true }: AnimeCa
         )}
 
         {/* Age rating: nota quente só quando há classificação restrita. */}
-        {age && (age.includes("A16") || age.includes("A18")) && (
+        {rank === undefined && age && (age.includes("A16") || age.includes("A18")) && (
           <span className="absolute left-1.5 top-1.5 bg-signal px-1.5 py-0.5 font-mono text-caption font-medium text-ink">
             {age}
           </span>
         )}
       </div>
 
-      {/* Signature: ident de transmissão — status + áudio. */}
-      <div className="edge-tag">
-        <span>
-          {onAir && <span className="edge-tag-live" aria-hidden="true" />}
-          {statusLabel(anime.status)}
-        </span>
-        <span aria-label={dub ? "Dublado" : "Legendado"}>
-          {dub ? "Dub" : "Leg"}
-        </span>
-      </div>
+      {variant === "standard" && (
+        <div className="edge-tag">
+          <span>
+            {onAir && <span className="edge-tag-live" aria-hidden="true" />}
+            {statusLabel(anime.status)}
+          </span>
+          <span aria-label={dub ? "Dublado" : "Legendado"}>{dub ? "Dub" : "Leg"}</span>
+        </div>
+      )}
 
       {/* Título abaixo da edge-tag, fora da arte. */}
-      <span className="line-clamp-2 block px-2 py-2 font-sans text-body-sm font-medium text-snow transition-colors group-hover:text-ice">
-        {anime.title}
+      <span className="block px-2.5 pb-2.5 pt-2">
+        <span className="line-clamp-2 block font-sans text-body-sm font-medium text-snow transition-colors group-hover:text-ice">{anime.title}</span>
+        {variant === "poster" && (
+          <span className="mt-1 flex items-center gap-2 font-sans text-[0.68rem] text-mist">
+            <span className={onAir ? "text-signal" : undefined}>{onAir ? "No ar" : statusLabel(anime.status)}</span>
+            <span aria-hidden="true" className="text-hairline">/</span>
+            <span>{dub ? "Dublado" : "Legendado"}</span>
+          </span>
+        )}
       </span>
       </Link>
   );
