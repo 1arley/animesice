@@ -819,28 +819,10 @@
   will-change: filter, transform, opacity;
 }
 
-.crystal-motion .crystal-sweep {
-  position: absolute;
-  inset: 0;
-  -webkit-mask-image: var(--crystal-mask);
-  mask-image: var(--crystal-mask);
-  -webkit-mask-size: contain;
-  mask-size: contain;
-  -webkit-mask-repeat: no-repeat;
-  mask-repeat: no-repeat;
-  -webkit-mask-position: center;
-  mask-position: center;
-  background: linear-gradient(
-    112deg,
-    transparent 34%,
-    rgba(255, 255, 255, 0.95) 49%,
-    rgba(223, 247, 249, 0.9) 53%,
-    transparent 66%
-  );
+/* A animação vem em vídeo sobre fundo preto: o screen blend faz o preto sumir
+   sobre os fundos escuros da identidade (splash, transition, loaders). */
+.crystal-motion .crystal-video {
   mix-blend-mode: screen;
-  opacity: 0;
-  transform: translateX(-150%) rotate(-6deg);
-  pointer-events: none;
 }
 
 .crystal-motion .crystal-motes {
@@ -868,9 +850,6 @@
 .crystal-motion[data-mode="reveal"] .crystal-glow {
   animation: revealGlow 1100ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
-.crystal-motion[data-mode="reveal"] .crystal-sweep {
-  animation: revealSweep 1100ms linear both;
-}
 .crystal-motion[data-mode="reveal"] .crystal-mote {
   animation: revealMote 1100ms cubic-bezier(0.16, 1, 0.3, 1) both;
   animation-delay: var(--d, 0s);
@@ -885,9 +864,6 @@
   opacity: 1;
   filter: blur(0) brightness(1);
 }
-.crystal-motion[data-mode="loop"] .crystal-sweep {
-  animation: loopSweep 2600ms ease-in-out infinite;
-}
 .crystal-motion[data-mode="loop"] .crystal-mote {
   opacity: var(--o, 0.5);
   animation: loopMote var(--dur, 3600ms) ease-in-out infinite;
@@ -901,9 +877,6 @@
 .crystal-motion[data-mode="transition"] .crystal-glow {
   animation: transGlow 550ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
-.crystal-motion[data-mode="transition"] .crystal-sweep {
-  animation: transSweep 550ms linear both;
-}
 
 /* --- Microinteração (0.32s no tap/hover) --- */
 .crystal-motion[data-mode="micro"] .crystal-logo {
@@ -914,9 +887,6 @@
 }
 .crystal-motion[data-mode="micro"].crystal-pulsing .crystal-logo {
   animation: microLogo 320ms ease-out;
-}
-.crystal-motion[data-mode="micro"].crystal-pulsing .crystal-sweep {
-  animation: microSweep 320ms linear;
 }
 .crystal-motion[data-mode="micro"].crystal-pulsing .crystal-glow {
   animation: microGlow 320ms ease-out;
@@ -935,13 +905,6 @@
   65% { opacity: 0.32; }
   100% { opacity: 0.24; transform: scale(1); }
 }
-@keyframes revealSweep {
-  0% { opacity: 0; transform: translateX(-150%) rotate(-6deg); }
-  38% { opacity: 0; }
-  50% { opacity: 0.85; }
-  64% { opacity: 0; transform: translateX(150%) rotate(-6deg); }
-  100% { opacity: 0; transform: translateX(150%) rotate(-6deg); }
-}
 @keyframes revealMote {
   0% { opacity: 0; transform: translateY(6px) scale(0.3); }
   55% { opacity: 0; }
@@ -951,12 +914,6 @@
 @keyframes loopGlow {
   0%, 100% { opacity: 0.2; transform: scale(1); }
   50% { opacity: 0.4; transform: scale(1.045); }
-}
-@keyframes loopSweep {
-  0% { opacity: 0; transform: translateX(-150%) rotate(-6deg); }
-  10% { opacity: 0.6; }
-  24% { opacity: 0; transform: translateX(150%) rotate(-6deg); }
-  100% { opacity: 0; transform: translateX(150%) rotate(-6deg); }
 }
 @keyframes loopMote {
   0%, 100% { transform: translateY(0) scale(0.85); opacity: calc(var(--o, 0.5) * 0.5); }
@@ -972,20 +929,10 @@
   50% { opacity: 0.45; }
   100% { opacity: 0.22; transform: scale(1); }
 }
-@keyframes transSweep {
-  0% { opacity: 0; transform: translateX(-150%) rotate(-6deg); }
-  45% { opacity: 0.8; }
-  100% { opacity: 0; transform: translateX(150%) rotate(-6deg); }
-}
 @keyframes microLogo {
   0% { transform: scale(1); }
   45% { transform: scale(1.035); }
   100% { transform: scale(1); }
-}
-@keyframes microSweep {
-  0% { opacity: 0; transform: translateX(-150%) rotate(-6deg); }
-  55% { opacity: 0.75; }
-  100% { opacity: 0; transform: translateX(150%) rotate(-6deg); }
 }
 @keyframes microGlow {
   0% { opacity: 0.15; }
@@ -996,7 +943,6 @@
 @media (prefers-reduced-motion: reduce) {
   .crystal-motion .crystal-logo,
   .crystal-motion .crystal-glow,
-  .crystal-motion .crystal-sweep,
   .crystal-motion .crystal-mote {
     animation: none !important;
     opacity: 1 !important;
@@ -1034,43 +980,8 @@
 }
 
 /* --- Microinteração do wordmark: o cristal do header pulsa no mesmo gesto,
-   mantendo a arte atual (badge com anel) — só a luz varre por cima. --- */
+   mantendo a arte atual (badge com anel). O pulso vem da WAAPI no Wordmark. --- */
 .crystal-micro {
   position: relative;
   display: inline-block;
-}
-.crystal-micro .crystal-micro-sweep {
-  position: absolute;
-  inset: 0;
-  -webkit-mask-image: url("/images/logo.webp");
-  mask-image: url("/images/logo.webp");
-  -webkit-mask-size: contain;
-  mask-size: contain;
-  -webkit-mask-repeat: no-repeat;
-  mask-repeat: no-repeat;
-  -webkit-mask-position: center;
-  mask-position: center;
-  background: linear-gradient(
-    112deg,
-    transparent 34%,
-    rgba(255, 255, 255, 0.95) 49%,
-    rgba(223, 247, 249, 0.9) 53%,
-    transparent 66%
-  );
-  mix-blend-mode: screen;
-  opacity: 0;
-  transform: translateX(-150%) rotate(-6deg);
-  pointer-events: none;
-}
-.crystal-micro.crystal-micro-fired .crystal-micro-sweep {
-  animation: microSweep 320ms linear;
-}
-.crystal-micro.crystal-micro-fired img {
-  animation: microLogo 320ms ease-out;
-}
-@media (prefers-reduced-motion: reduce) {
-  .crystal-micro .crystal-micro-sweep,
-  .crystal-micro.crystal-micro-fired img {
-    animation: none !important;
-  }
 }

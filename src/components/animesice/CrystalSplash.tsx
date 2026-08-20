@@ -7,12 +7,15 @@ import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
 /** Só roda uma vez por sessão (guardrail da identidade: abertura de
  *  conteúdo nunca repete dentro da mesma sessão). */
 const SESSION_KEY = "animesice:splash-seen";
-const REVEAL_MS = 2000;
+/** Duração do ciclo do vídeo do cristal (crystal_animation_clean.webm = 3.6s).
+ *  O splash só sai quando a animação completa um ciclo — qualquer toque/tecla
+ *  antes disso pula direto (ver dismiss abaixo). */
+const REVEAL_MS = 3600;
 const LEAVE_MS = 250;
 
 /**
  * Abertura da marca no primeiro acesso da sessão: o cristal nasce fora de
- * foco, o glow acende e a varredura de luz cruza — o gesto assinatura.
+ * foco, o glow acende — o gesto assinatura.
  * Guardrails do artefato: dispensável a qualquer toque/tecla (nunca
  * bloqueia navegação), e não roda de novo na mesma sessão.
  *

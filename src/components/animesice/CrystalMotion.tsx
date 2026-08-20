@@ -14,11 +14,11 @@ export interface CrystalMotionProps {
   style?: CSSProperties;
 }
 
-/** O logo do motion é o cristal isolado em fundo transparente — a mesma
- *  arte embutida no artefato animesice-motion-identity.html.
- *  WebP (11 KiB vs 92 KiB PNG): o cristal circula em splash/loading/transition
- *  e como máscara CSS; formato leve evita re-baixar 3x na primeira visita. */
+/** O logo do motion é o cristal animado (sem fundo, sobre fundo preto que some
+ *  via screen blend). O WebP estático fica como poster/fallback e no modo
+ *  prefers-reduced-motion. O vídeo circula em splash/loading/transition. */
 const LOGO_URL = "/images/logo.webp";
+const VIDEO_URL = "/icons/crystal_animation_clean.webm";
 const MOTE_COUNT = 14;
 
 interface MoteStyle {
@@ -40,9 +40,9 @@ function moteValue(index: number, salt: number): number {
 /**
  * O cristal AnimesIce em 4 modos da identidade de motion:
  * reveal (abertura), loop (loading), transition (wipe) e micro (tap/hover).
- * A varredura de luz é mascarada pela alpha do próprio logo; os motes de
- * gelo são gerados em JS com custom props. Com `prefers-reduced-motion`,
- * renderiza o cristal estático, sem animação.
+ * A animação roda num <video> sem fundo (screen blend); os motes de gelo são
+ * gerados em JS com custom props. Com `prefers-reduced-motion`, renderiza o
+ * cristal estático, sem animação.
  */
 export function CrystalMotion({
   mode,
@@ -68,7 +68,6 @@ export function CrystalMotion({
 
   const rootStyle = {
     "--crystal-size": typeof size === "number" ? `${size}px` : size,
-    "--crystal-mask": `url(${LOGO_URL})`,
     ...style,
   } as CSSProperties;
 
@@ -119,9 +118,18 @@ export function CrystalMotion({
             <span key={i} className="crystal-mote" style={m as CSSProperties} />
           ))}
         </div>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img className="crystal-logo" src={LOGO_URL} alt="" />
-        <div className="crystal-sweep" />
+        {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+        <video
+          className="crystal-logo crystal-video"
+          src={VIDEO_URL}
+          poster={LOGO_URL}
+          autoPlay
+          muted
+          loop
+          playsInline
+          preload="auto"
+          aria-hidden="true"
+        />
       </div>
     </div>
   );

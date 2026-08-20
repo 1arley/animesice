@@ -10,7 +10,7 @@ interface CrystalLoaderProps {
 
 /**
  * Estado de loading com a identidade de motion: o cristal já nítido,
- * respirando — glow pulsando e varredura de luz cruzando a cada ~2,6s.
+ * respirando — glow pulsando a cada ~2,6s.
  * Baixo contraste para não cansar em esperas longas.
  */
 export function CrystalLoader({

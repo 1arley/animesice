@@ -10,7 +10,7 @@ import { GradientText } from "@/components/core/GradientText";
  * "Animes" em snow (branco frio) para não sumir no fundo — antes usava ink,
  * que desaparecia.
  * Microinteração da identidade de motion: no toque/hover, o cristal pulsa a
- * 1.035x e a varredura de luz cruza (0.32s) — o mesmo gesto do resto da marca.
+ * 1.035x — o mesmo gesto do resto da marca.
  * A pulso usa a Web Animations API (WAAPI), que não força reflow síncrono
  * (o antigo `void el.offsetWidth` era lido em todo toque no wordmark).
  */
@@ -30,18 +30,6 @@ export function Wordmark({ className = "" }: { className?: string }) {
       ],
       { duration: 320, easing: "ease-out" },
     );
-
-    const sweep = micro.querySelector<HTMLElement>(".crystal-micro-sweep");
-    if (sweep) {
-      sweep.animate(
-        [
-          { opacity: 0, transform: "translateX(-150%) rotate(-6deg)" },
-          { opacity: 0.75, offset: 0.55, transform: "translateX(150%) rotate(-6deg)" },
-          { opacity: 0, transform: "translateX(150%) rotate(-6deg)" },
-        ],
-        { duration: 320, easing: "linear" },
-      );
-    }
   }
 
   return (
@@ -63,7 +51,6 @@ export function Wordmark({ className = "" }: { className?: string }) {
           aria-hidden="true"
           className="h-full w-full rounded-[4px] ring-1 ring-ice/25 transition-[box-shadow,filter] duration-300 group-hover:ring-ice/70 group-hover:shadow-[0_0_14px_-2px_rgba(69,240,224,0.55)]"
         />
-        <span className="crystal-micro-sweep" aria-hidden="true" />
       </span>
       <span>Animes</span>
       <span className="text-ice" aria-hidden="true">
