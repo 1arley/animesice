@@ -43,7 +43,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }
 
     for (const anime of items) {
-      // Conteúdo +18 foi movido para hentais.animesice.app — não pode mais
+      // Conteúdo +18 foi movido para hentaisice.com — não pode mais
       // aparecer no sitemap do animesice.
       if (isHentaiAnime(anime)) continue;
       animeEntries.push({

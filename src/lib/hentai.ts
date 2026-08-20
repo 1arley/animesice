@@ -4,7 +4,7 @@
  */
 import type { Anime, Genre } from "@/types";
 
-export const HENTAIS_SITE_URL = "https://hentais.animesice.app";
+export const HENTAIS_SITE_URL = "https://hentaisice.com";
 
 const HENTAI_GENRE_SLUG = "hentai";
 
