@@ -1,5 +1,10 @@
 import { AnimeCard } from "@/components/common/AnimeCard";
 import { Pagination } from "@/components/ui/Pagination";
+import {
+  animeFormatLabel,
+  animeSeasonLabel,
+  animeStatusLabel,
+} from "@/lib/anime-labels";
 import { PageTitle } from "@/components/ui/PageTitle";
 import Link from "next/link";
 import type { Metadata } from "next";
@@ -106,10 +111,10 @@ export default async function SearchPage({
   const activeFilters: string[] = [];
   if (q) activeFilters.push(`"${q}"`);
   if (audio) activeFilters.push(audio === "DUBLADO" ? "Dublado" : "Legendado");
-  if (format) activeFilters.push(format);
-  if (status) activeFilters.push(status === "LANCAMENTO" ? "Em lançamento" : "Finalizado");
+  if (format) activeFilters.push(animeFormatLabel(format));
+  if (status) activeFilters.push(animeStatusLabel(status));
   if (year) activeFilters.push(year);
-  if (season) activeFilters.push(season);
+  if (season) activeFilters.push(animeSeasonLabel(season));
 
   return (
     <div className="mx-auto max-w-shelf px-4 py-6">
@@ -208,6 +213,7 @@ export default async function SearchPage({
                 <option value="OVA">OVA</option>
                 <option value="ONA">ONA</option>
                 <option value="SPECIAL">Especial</option>
+                <option value="MUSIC">Música</option>
               </select>
             </fieldset>
 
@@ -219,6 +225,8 @@ export default async function SearchPage({
                 <option value="">Todos</option>
                 <option value="LANCAMENTO">Em lançamento</option>
                 <option value="FINALIZADO">Finalizado</option>
+                <option value="EM_BREVE">Em breve</option>
+                <option value="PAUSADO">Pausado</option>
               </select>
             </fieldset>
 
