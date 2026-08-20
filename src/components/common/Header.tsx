@@ -115,7 +115,10 @@ export function Header() {
             className="fixed inset-0 z-[89] bg-black/40 opacity-50 transition-opacity duration-200"
             onClick={() => setMobileSearchOpen(false)}
           />
-          <form onSubmit={onMobileSubmit} className="border-t border-hairline px-4 py-3 sm:hidden">
+          <form
+            onSubmit={onMobileSubmit}
+            className="relative z-[90] border-t border-hairline bg-ink px-4 py-3 sm:hidden"
+          >
             <label htmlFor="header-search-mobile" className="sr-only">
               Buscar animes
             </label>
