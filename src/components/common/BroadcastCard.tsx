@@ -1,13 +1,17 @@
-import Image from "next/image";
 import Link from "next/link";
 import type { Anime } from "@/types";
 import { blur } from "@/lib/blur";
-import { safeImageSrc } from "@/lib/url";
+import { safeImageSrc, upgradeImageUrl } from "@/lib/url";
+import { AdaptiveImage } from "@/components/common/AdaptiveImage";
 
 /** Card largo para escolhas editoriais. É um recorte de programação, não
  * outro poster na mesma grade. */
 export function BroadcastCard({ anime, priority = false }: { anime: Anime; priority?: boolean }) {
-  const art = safeImageSrc(anime.bannerImage) ?? safeImageSrc(anime.coverImage);
+  const safeBanner = safeImageSrc(anime.bannerImage);
+  const art = safeBanner ?? safeImageSrc(anime.coverImage);
+  const desktopArt = safeBanner
+    ? upgradeImageUrl(safeBanner)
+    : upgradeImageUrl(anime.coverImage);
 
   return (
     <Link
@@ -15,8 +19,9 @@ export function BroadcastCard({ anime, priority = false }: { anime: Anime; prior
       className="group relative block min-h-[180px] overflow-hidden bg-panel focus-visible:outline-offset-4 sm:min-h-[220px]"
     >
       {art ? (
-        <Image
+        <AdaptiveImage
           src={art}
+          desktopSrc={desktopArt}
           alt=""
           fill
           sizes="(max-width: 768px) 86vw, 33vw"

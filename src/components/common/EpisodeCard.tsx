@@ -1,10 +1,10 @@
-import Image from "next/image";
 import Link from "next/link";
 import type { Episode, Anime } from "@/types";
-import { safeImageSrc } from "@/lib/url";
+import { safeImageSrc, upgradeImageUrl } from "@/lib/url";
 import { blur } from "@/lib/blur";
 import { formatDate } from "@/lib/time";
 import { SpotlightCard } from "@/components/core/SpotlightCard";
+import { AdaptiveImage } from "@/components/common/AdaptiveImage";
 
 type LatestEpisode = Pick<Episode, "number" | "title" | "thumbnailUrl" | "dateModified"> & {
   anime: Pick<Anime, "slug" | "title">;
@@ -19,6 +19,7 @@ export function EpisodeCard({ episode, priority = false }: EpisodeCardProps) {
   const { anime } = episode;
   const href = `/animes/${anime.slug}/${episode.number}`;
   const thumb = safeImageSrc(episode.thumbnailUrl);
+  const desktopThumb = upgradeImageUrl(episode.thumbnailUrl);
 
   return (
     <SpotlightCard className="h-full">
@@ -29,8 +30,9 @@ export function EpisodeCard({ episode, priority = false }: EpisodeCardProps) {
     >
       <div className="card-scan relative" style={{ aspectRatio: "16 / 9" }}>
         {thumb ? (
-          <Image
+          <AdaptiveImage
             src={thumb}
+            desktopSrc={desktopThumb}
             alt={`${anime.title} — Episódio ${episode.number}`}
             fill
             sizes="(max-width: 480px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 16vw"

@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import { cache } from "react";
 import type { Anime } from "@/types";
 import { safeImageSrc, upgradeImageUrl } from "@/lib/url";
+import { AdaptiveImage } from "@/components/common/AdaptiveImage";
 import { blur } from "@/lib/blur";
 import { serverFetchJson } from "@/lib/api-server";
 import { isHentaiAnime, hentaisPath } from "@/lib/hentai";
@@ -82,6 +83,7 @@ export default async function AnimeDetailPage({
   const banner =
     upgradeImageUrl(anime.bannerImage) ?? upgradeImageUrl(anime.coverImage);
   const cover = safeImageSrc(anime.coverImage);
+  const desktopCover = upgradeImageUrl(anime.coverImage);
 
   return (
     <article className="mx-auto max-w-shelf px-4 py-6">
@@ -118,8 +120,9 @@ export default async function AnimeDetailPage({
         <div className="w-36 shrink-0 sm:w-40 md:w-48 lg:w-56">
           <div className="relative overflow-hidden bg-panel shadow-lg shadow-black/40" style={{ aspectRatio: "2 / 3" }}>
             {cover ? (
-              <Image
+              <AdaptiveImage
                 src={cover}
+                desktopSrc={desktopCover}
                 alt={anime.title}
                 fill
                 sizes="(max-width: 768px) 50vw, 256px"

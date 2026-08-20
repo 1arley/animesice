@@ -44,8 +44,9 @@ export function upgradeImageUrl(
     /\/anilistcdn\/media\/anime\/cover\/(medium|large)\//i,
   );
   if (anilist) {
-    const target = anilist[1]?.toLowerCase() === 'medium' ? 'large' : 'extraLarge';
-    return url.replace(anilist[0], `/anilistcdn/media/anime/cover/${target}/`);
+    // O candidato só é usado em desktop e tem fallback. Pedir extraLarge
+    // diretamente evita ampliar a variante `large` em telas de alta densidade.
+    return url.replace(anilist[0], "/anilistcdn/media/anime/cover/extraLarge/");
   }
 
   // --- MyAnimeList ---

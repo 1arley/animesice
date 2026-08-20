@@ -44,6 +44,10 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "svuaszdqsgztnetefcex.supabase.co" },
     ],
     formats: ["image/avif", "image/webp"],
+    // Mantém explícitos os níveis já usados pelos componentes. É inerte com
+    // `unoptimized`, mas evita incompatibilidade ao migrar para Next 16 ou
+    // reativar um otimizador/CDN no futuro.
+    qualities: [60, 80, 85, 100],
     minimumCacheTTL: 60 * 60 * 24 * 60, // 60 dias
     // Breakpoints alinhados ao layout: cards ~16vw mobile, ~200px desktop;
     // hero 100vw; thumbnails ~25vw. Reduz downloads oversized.

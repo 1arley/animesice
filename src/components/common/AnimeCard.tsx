@@ -1,10 +1,10 @@
-import Image from "next/image";
 import Link from "next/link";
 import type { Anime } from "@/types";
-import { safeImageSrc } from "@/lib/url";
+import { safeImageSrc, upgradeImageUrl } from "@/lib/url";
 import { blur } from "@/lib/blur";
 import { statusLabel, isOnAir } from "@/lib/status";
 import { SpotlightCard } from "@/components/core/SpotlightCard";
+import { AdaptiveImage } from "@/components/common/AdaptiveImage";
 
 export interface AnimeCardProps {
   anime: Pick<Anime, "slug" | "title" | "coverImage" | "rating" | "ageRating" | "status" | "audio">;
@@ -39,6 +39,7 @@ export function AnimeCard({ anime, priority = false, spotlight = true, variant =
   const dub = anime.audio === "DUBLADO";
   const onAir = isOnAir(anime.status);
   const cover = safeImageSrc(anime.coverImage);
+  const desktopCover = upgradeImageUrl(anime.coverImage);
 
   const card = (
     <Link
@@ -53,8 +54,9 @@ export function AnimeCard({ anime, priority = false, spotlight = true, variant =
       )}
       <div className="card-scan relative" style={{ aspectRatio: "2 / 3" }}>
         {cover ? (
-          <Image
+          <AdaptiveImage
             src={cover}
+            desktopSrc={desktopCover}
             alt={anime.title}
             fill
             sizes="(max-width: 480px) 33vw, (max-width: 768px) 25vw, (max-width: 1024px) 20vw, 16vw"
