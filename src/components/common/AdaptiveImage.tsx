@@ -6,16 +6,18 @@ import { useState } from "react";
 type AdaptiveImageProps = Omit<ImageProps, "src" | "onError"> & {
   /** URL pequena e já conhecida; também é o fallback em caso de erro. */
   src: string;
-  /** Original de maior resolução, servido apenas em telas maiores. */
+  /** Original de maior resolução, usado como <source> (todas as telas por padrão). */
   desktopSrc?: string;
+  /** A partir de qual largura o <source> de alta resolução vale (0 = sempre). */
   desktopMinWidth?: number;
   onError?: ImageProps["onError"];
 };
 
 /**
- * Mantém a imagem atual no HTML e no mobile. Em desktop, <picture> seleciona
- * a arte maior. Se a origem não possuir esse arquivo, remove o <source> e
- * remonta o <img> com a URL pequena, evitando capas quebradas em produção.
+ * Mantém a imagem pequena no HTML (LCP/fallback) e troca para a arte maior em
+ * TODAS as telas — celular incluído, onde a qualidade também é exigida. Se a
+ * origem não possuir esse arquivo, remove o <source> e remonta o <img> com a
+ * URL pequena, evitando capas quebradas em produção.
  *
  * O projeto usa `images.unoptimized`, então <picture> não duplica o trabalho
  * de um otimizador do Next e permite escolher a origem sem JS de viewport.
@@ -23,7 +25,7 @@ type AdaptiveImageProps = Omit<ImageProps, "src" | "onError"> & {
 export function AdaptiveImage({
   src,
   desktopSrc,
-  desktopMinWidth = 768,
+  desktopMinWidth = 0,
   onError,
   alt,
   ...imageProps

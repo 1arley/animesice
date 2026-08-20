@@ -89,12 +89,18 @@ export function CrystalMotion({
         aria-hidden="true"
       >
         <div className="crystal-wrap">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
+          {/* Mesmo elemento do SSR (<video>) para não quebrar a hidratação;
+              sem autoplay/loop e preload="none": mostra só o poster estático. */}
+          {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+          <video
             className="crystal-logo"
-            src={LOGO_URL}
-            alt=""
+            src={VIDEO_URL}
+            poster={LOGO_URL}
+            muted
+            playsInline
+            preload="none"
             style={{ animation: "none", opacity: 1, filter: "none" }}
+            aria-hidden="true"
           />
         </div>
       </div>
