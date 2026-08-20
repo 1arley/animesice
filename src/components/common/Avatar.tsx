@@ -22,7 +22,7 @@ export function Avatar({ name, src, size = 32, className = "" }: AvatarProps) {
         canUseNextImage ? (
           <Image
             src={src as string}
-            alt="avatar"
+            alt=""
             width={size}
             height={size}
             placeholder="blur"
