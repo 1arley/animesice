@@ -6,6 +6,7 @@ import { useAuth } from "@/lib/auth-context";
 import { api, ApiError } from "@/lib/api";
 import { isPrivileged } from "@/lib/role";
 import { slugify } from "@/lib/slug";
+import { animeAudioLabelFromTitle } from "@/lib/anime-audio";
 import type { Anime, Genre } from "@/types";
 
 export default function AdminCreateAnimePage() {
@@ -178,9 +179,7 @@ export default function AdminCreateAnimePage() {
                 Áudio detectado
               </span>
               <strong className="mt-1 block text-body-sm text-snow">
-                {/(^|[^\p{L}\p{N}])dublado([^\p{L}\p{N}]|$)/iu.test(title)
-                  ? "Dublado"
-                  : "Legendado"}
+                {animeAudioLabelFromTitle(title)}
               </strong>
               <span className="mt-1 block text-caption text-mist">
                 Inclua “Dublado” no título para cadastrar essa versão.
