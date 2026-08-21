@@ -123,8 +123,9 @@ export function HeroUI({ anime, label, isMobile }: HeroUIProps) {
           </span>
         </div>
 
-        {/* CTAs alinhados à esquerda, sob o conteúdo — longe dos pontinhos
-            do carrossel (que ficam na margem direita). */}
+        {/* A listagem do hero não carrega histórico nem episódios. Mantemos
+            uma única ação honesta para não prometer reprodução imediata sem
+            saber qual episódio é o correto para a pessoa. */}
         <div className="mt-5 flex flex-wrap items-center gap-3">
           <Link
             href={`/animes/${anime.slug}`}
@@ -133,13 +134,7 @@ export function HeroUI({ anime, label, isMobile }: HeroUIProps) {
             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
               <path d="M8 5v14l11-7z" />
             </svg>
-            Assistir agora
-          </Link>
-          <Link
-            href={`/animes/${anime.slug}`}
-            className="btn-ghost hidden sm:inline-flex"
-          >
-            Ver detalhes
+            Ver anime
           </Link>
         </div>
       </div>

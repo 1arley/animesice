@@ -84,7 +84,7 @@ export function ContinueWatchingRail() {
             return (
               <SpotlightCard
                 key={item.episodeId}
-                className="h-full min-w-[200px] shrink-0 snap-start"
+                className="group/card h-full min-w-[200px] shrink-0 snap-start"
               >
               <Link
                 href={`/animes/${item.anime.slug}/${item.episode.number}`}
@@ -110,49 +110,53 @@ export function ContinueWatchingRail() {
                     <div
                       className="h-full bg-ice"
                       style={{ width: `${progressPercent}%` }}
+                      role={progressPercent > 0 ? "progressbar" : undefined}
+                      aria-label={progressPercent > 0 ? `Progresso do episódio ${item.episode.number}` : undefined}
+                      aria-valuemin={progressPercent > 0 ? 0 : undefined}
+                      aria-valuemax={progressPercent > 0 ? 100 : undefined}
+                      aria-valuenow={progressPercent > 0 ? Math.round(progressPercent) : undefined}
                     />
                   </div>
-                  <ClickSpark
-                    sparkSize={6}
-                    sparkRadius={12}
-                    sparkCount={6}
-                    duration={250}
-                    className="absolute top-1 right-1 z-10"
-                  >
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        setPendingDelete(item);
-                      }}
-                      className="flex h-7 w-7 items-center justify-center rounded-sm border border-hairline bg-ink/70 text-mist opacity-0 backdrop-blur-sm transition-colors duration-200 group-hover:opacity-100 hover:border-ice/60 hover:bg-ink hover:text-ice focus:opacity-100"
-                      aria-label="Remover do histórico"
-                    >
-                      <svg
-                        width="14"
-                        height="14"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        className="w-3.5 h-3.5"
-                      >
-                        <line x1="18" y1="6" x2="6" y2="18" />
-                        <line x1="6" y1="6" x2="18" y2="18" />
-                      </svg>
-                    </button>
-                  </ClickSpark>
                 </div>
                 <span className="mt-1.5 line-clamp-1 block font-sans text-body-sm font-medium text-snow transition-colors group-hover:text-ice">
                   {item.anime.title}
                 </span>
                 <p className="font-mono text-caption text-mist">
                   EP {item.episode.number}
+                  {progressPercent > 0 && (
+                    <span> · {Math.round(progressPercent)}% assistido</span>
+                  )}
                 </p>
               </Link>
+              <ClickSpark
+                sparkSize={6}
+                sparkRadius={12}
+                sparkCount={6}
+                duration={250}
+                className="absolute right-1 top-1 z-10"
+              >
+                <button
+                  type="button"
+                  onClick={() => setPendingDelete(item)}
+                  className="flex h-11 w-11 items-center justify-center rounded-sm border border-hairline bg-ink/80 text-mist backdrop-blur-sm transition-colors duration-200 hover:border-ice/60 hover:bg-ink hover:text-ice sm:h-9 sm:w-9 sm:opacity-0 sm:group-hover/card:opacity-100 sm:focus:opacity-100"
+                  aria-label={`Remover “${item.anime.title}”`}
+                >
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="h-3.5 w-3.5"
+                  >
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </svg>
+                </button>
+              </ClickSpark>
               </SpotlightCard>
             );
           })}

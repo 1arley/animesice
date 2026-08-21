@@ -79,7 +79,7 @@ export function HomeHero({ animes }: { animes: Anime[] }) {
                 onClick={() => setIndex(i)}
                 aria-label={`Destaque ${i + 1}: ${a.title}`}
                 aria-current={i === index}
-                className="flex h-8 w-8 items-center justify-center transition-transform active:scale-90 sm:h-6 sm:w-6"
+                className="flex h-11 w-11 items-center justify-center transition-transform active:scale-90 sm:h-8 sm:w-8"
               >
                 <span
                   aria-hidden="true"

@@ -234,7 +234,7 @@ export function SiteNav() {
         <button
           type="button"
           onClick={openMobile}
-          className="flex items-center gap-1.5 py-2 font-mono text-caption uppercase tracking-wider text-mist transition-colors hover:text-ice [touch-action:manipulation]"
+          className="flex min-h-11 items-center gap-1.5 px-1 font-mono text-caption uppercase tracking-wider text-mist transition-colors hover:text-ice [touch-action:manipulation]"
           aria-label="Abrir menu"
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" className="text-mist">
