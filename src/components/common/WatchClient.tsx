@@ -161,18 +161,24 @@ export function WatchClient({
 
       <CreateRoomButton animeSlug={slug} episodeNumber={episode.number} />
 
-      <NextEpisode
+      <CommentSection episodeId={episode.id} title="Discussão do episódio" />
+
+      {/* Navegação de episódios — Peak-End Rule: melhor experiência no fim */}
+      <EpisodeNavigation
         slug={slug}
         number={number}
         episodeCount={episode.anime.episodeCount}
       />
-
-      <CommentSection episodeId={episode.id} title="Discussão do episódio" />
     </>
   );
 }
 
-function NextEpisode({
+/**
+ * EpisodeNavigation — navegação entre episódios com visual atraente.
+ * Peak-End Rule: usuários lembram do fim da experiência.
+ * Lei de Proximidade: botões agrupados por função (anterior/próximo).
+ */
+function EpisodeNavigation({
   slug,
   number,
   episodeCount,
@@ -182,6 +188,8 @@ function NextEpisode({
   episodeCount?: number | null;
 }) {
   const [hasNext, setHasNext] = useState<boolean | null>(null);
+  const hasPrevious = number > 1;
+
   useEffect(() => {
     if (episodeCount != null && number >= episodeCount) {
       setHasNext(false);
@@ -192,12 +200,82 @@ function NextEpisode({
       .then(() => setHasNext(true))
       .catch(() => setHasNext(false));
   }, [slug, number, episodeCount]);
-  if (hasNext === null || !hasNext) return null;
+
+  if (!hasPrevious && (hasNext === null || !hasNext)) return null;
+
   return (
-    <p className="mt-3">
-      <Link href={`/animes/${slug}/${number + 1}`} className="btn-ghost">
-        Próximo episódio →
-      </Link>
-    </p>
+    <div className="reveal mt-6 border-t border-hairline pt-6">
+      <h3 className="mb-4 font-mono text-caption uppercase tracking-wider text-mist">
+        Navegar entre episódios
+      </h3>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        {/* Episódio anterior */}
+        {hasPrevious ? (
+          <Link
+            href={`/animes/${slug}/${number - 1}`}
+            className="group flex items-center gap-3 rounded-md border border-hairline bg-panel p-3 transition-all duration-200 hover:border-ice/40 hover:bg-ice/5"
+          >
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="shrink-0 text-mist transition-colors group-hover:text-ice"
+            >
+              <path d="M15 18l-6-6 6-6" />
+            </svg>
+            <div className="min-w-0">
+              <p className="font-mono text-caption text-mist">Episódio anterior</p>
+              <p className="truncate font-sans text-body-sm font-medium text-snow transition-colors group-hover:text-ice">
+                EP {number - 1}
+              </p>
+            </div>
+          </Link>
+        ) : (
+          <div />
+        )}
+
+        {/* Próximo episódio */}
+        {hasNext === null ? (
+          <div className="flex items-center justify-center rounded-md border border-hairline bg-panel p-3">
+            <div className="h-4 w-4 animate-spin rounded-full border-2 border-ice border-t-transparent" />
+            <span className="ml-2 font-mono text-caption text-mist">Verificando...</span>
+          </div>
+        ) : hasNext ? (
+          <Link
+            href={`/animes/${slug}/${number + 1}`}
+            className="group flex items-center justify-end gap-3 rounded-md border border-hairline bg-panel p-3 transition-all duration-200 hover:border-ice/40 hover:bg-ice/5"
+          >
+            <div className="min-w-0 text-right">
+              <p className="font-mono text-caption text-mist">Próximo episódio</p>
+              <p className="truncate font-sans text-body-sm font-medium text-snow transition-colors group-hover:text-ice">
+                EP {number + 1}
+              </p>
+            </div>
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="shrink-0 text-mist transition-colors group-hover:text-ice"
+            >
+              <path d="M9 18l6-6-6-6" />
+            </svg>
+          </Link>
+        ) : (
+          <div className="flex items-center justify-center rounded-md border border-hairline bg-panel p-3">
+            <span className="font-mono text-caption text-mist">Último episódio</span>
+          </div>
+        )}
+      </div>
+    </div>
   );
 }

@@ -74,13 +74,12 @@ export function SiteNav() {
       title: "Animes",
       links: [
         { href: "/", title: "Início", icon: "home" },
-        { href: "/top", title: "Top Animes", icon: "top" },
-        { href: "/lancamentos", title: "Em lançamento", icon: "lancamentos" },
-        { href: "/calendario", title: "Calendário", icon: "calendario" },
+        { href: "/top", title: "Top", icon: "top" },
+        { href: "/lancamentos", title: "Lançamentos", icon: "lancamentos" },
+        { href: "/calendario", title: "Agenda", icon: "calendario" },
         { href: "/aleatorio", title: "Aleatório", icon: "aleatorio" },
-        { href: "/buscar?format=MOVIE", title: "Filmes", icon: "filmes" },
         ...(isPrivileged(user)
-          ? [{ href: "/admin", title: "Painel admin", icon: "admin" }]
+          ? [{ href: "/admin", title: "Admin", icon: "admin" }]
           : []),
       ],
     },
@@ -88,11 +87,9 @@ export function SiteNav() {
       title: "Comunidade",
       links: [
         { href: "/comunidade/feed", title: "Feed", icon: "feed" },
-        { href: "/comunidade/usuarios", title: "Usuários", icon: "usuarios" },
         { href: "/blog", title: "Blog", icon: "feed" },
-        { href: "/comunidade/pedidos", title: "Pedidos de anime", icon: "pedidos" },
-        { href: "/comunidade/sugestoes", title: "Sugestões e bugs", icon: "sugestoes" },
-        { href: "/comunidade/regras", title: "Regras", icon: "regras" },
+        { href: "/comunidade/usuarios", title: "Usuários", icon: "usuarios" },
+        { href: "/comunidade/pedidos", title: "Pedidos", icon: "pedidos" },
       ],
     },
     {
@@ -209,7 +206,7 @@ export function SiteNav() {
                       target={link.target || "_self"}
                       rel={link.target === "_blank" ? "noopener noreferrer" : undefined}
                       role="menuitem"
-                      className="block border-l-2 border-transparent px-4 py-2 font-mono text-body-sm text-mist transition-colors hover:border-ice hover:bg-slate hover:text-ice"
+                      className="block border-l-2 border-transparent px-4 py-2 font-mono text-body-sm text-mist transition-all duration-200 hover:border-ice hover:bg-slate hover:text-ice hover:translate-x-1"
                     >
                       {link.title}
                     </a>
@@ -298,7 +295,7 @@ export function SiteNav() {
                   <h2 className="mb-2 font-mono text-caption uppercase tracking-wider text-mist">
                     {group.title}
                   </h2>
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid grid-cols-2 gap-2">
                     {group.links.map((link) => {
                       const isActive = link.href === "/" ? pathname === "/" : pathname.startsWith(link.href.split("?")[0]);
                       return (
@@ -306,10 +303,10 @@ export function SiteNav() {
                           key={link.href + link.title}
                           href={link.href}
                           onClick={handleClose}
-                          className={`flex flex-col items-center gap-1.5 rounded-md border p-3 transition-colors ${
+                          className={`flex flex-col items-center gap-1.5 rounded-md border p-3 transition-all duration-200 ${
                             isActive
                               ? "border-ice/40 bg-ice/5 text-ice"
-                              : "border-hairline text-mist hover:border-ice/30 hover:text-ice"
+                              : "border-hairline text-mist hover:border-ice/30 hover:text-ice hover:bg-ice/5 hover:scale-105"
                           }`}
                         >
                           <NavIcon d={ICONS[link.icon] || ""} />

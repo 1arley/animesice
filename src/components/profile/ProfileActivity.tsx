@@ -10,6 +10,7 @@ import { useAuth } from "@/lib/auth-context";
 import { api } from "@/lib/api";
 import type { PublicActivityEvent } from "@/types";
 import { SectionLabel } from "@/components/common/SectionLabel";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { Stars } from "./Stars";
 
 interface ProfileActivityProps {
@@ -55,9 +56,10 @@ export function ProfileActivity({
     return (
       <section>
         <SectionLabel level={2}>{title}</SectionLabel>
-        <p className="text-body-sm text-mist/70">
-          Nenhuma atividade recente ainda.
-        </p>
+        <EmptyState
+          text="Nenhuma atividade recente ainda."
+          variant="compact"
+        />
       </section>
     );
   }

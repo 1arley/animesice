@@ -1,5 +1,6 @@
 import { AnimeCard } from "@/components/common/AnimeCard";
 import { Pagination } from "@/components/ui/Pagination";
+import { EmptyState } from "@/components/ui/EmptyState";
 import {
   animeFormatLabel,
   animeSeasonLabel,
@@ -278,22 +279,24 @@ export default async function SearchPage({
         {/* Resultados */}
         <div className="flex-1">
           {!hasQuery ? (
-            <div className="flex flex-col items-center justify-center py-20 text-center">
-              <svg width="48" height="48" viewBox="0 0 48 48" fill="none" className="mb-4 text-mist/40">
-                <circle cx="20" cy="20" r="14" stroke="currentColor" strokeWidth="2" />
-                <path d="M32 32l8 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-              </svg>
-              <p className="text-body text-mist">
-                Use os filtros ao lado ou a barra de busca para encontrar títulos.
-              </p>
-            </div>
+            <EmptyState
+              text="Use os filtros ao lado ou a barra de busca para encontrar títulos."
+              icon={
+                <svg width="48" height="48" viewBox="0 0 48 48" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="20" cy="20" r="14" />
+                  <path d="M32 32l8 8" strokeLinecap="round" />
+                </svg>
+              }
+            />
           ) : results.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 text-center">
-              <p className="text-body text-mist">Nenhum resultado encontrado.</p>
-              <Link href="/buscar" className="mt-3 text-body-sm text-ice hover:opacity-70">
-                Limpar filtros →
-              </Link>
-            </div>
+            <EmptyState
+              text="Nenhum resultado encontrado."
+              action={
+                <Link href="/buscar" className="text-body-sm text-ice hover:opacity-70">
+                  Limpar filtros →
+                </Link>
+              }
+            />
           ) : (
             <>
               <p className="mb-4 font-sans text-body-sm text-mist">

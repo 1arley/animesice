@@ -5,6 +5,7 @@ import { Avatar } from "@/components/common/Avatar";
 import { FollowButton } from "@/components/social/FollowButton";
 import { formatDate } from "@/lib/time";
 import { SectionLabel } from "@/components/common/SectionLabel";
+import { EmptyState } from "@/components/ui/EmptyState";
 import type { UserSearchResult } from "@/types";
 
 /**
@@ -48,9 +49,10 @@ export function ProfileFollowList({
     return (
       <section>
         <SectionLabel level={2}>{title}</SectionLabel>
-        <p className="text-body-sm text-mist/70">
-          {emptyText ?? "Nada por aqui ainda."}
-        </p>
+        <EmptyState
+          text={emptyText ?? "Nada por aqui ainda."}
+          variant="compact"
+        />
       </section>
     );
   }

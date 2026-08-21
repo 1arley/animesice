@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
 import { api, ApiError } from "@/lib/api";
 import { HeartIcon } from "@/components/ui/icons";
+import { EmptyState } from "@/components/ui/EmptyState";
 import type { CommentItem } from "@/types";
 import { Avatar } from "@/components/common/Avatar";
 
@@ -162,9 +163,15 @@ export function CommentSection({ animeId, episodeId, title = "Comentários" }: C
       )}
 
       {loading ? (
-        <p className="text-body-sm text-mist">Carregando...</p>
+        <div className="flex items-center justify-center py-8" aria-busy="true">
+          <div className="h-4 w-4 animate-spin rounded-full border-2 border-ice border-t-transparent" />
+          <span className="ml-2 text-body-sm text-mist">Carregando...</span>
+        </div>
       ) : comments.length === 0 ? (
-        <p className="text-body-sm text-mist">Nenhum comentário ainda. Seja o primeiro!</p>
+        <EmptyState
+          text="Nenhum comentário ainda. Seja o primeiro!"
+          variant="compact"
+        />
       ) : (
         <div className="space-y-4">
           {comments.map((comment) => (

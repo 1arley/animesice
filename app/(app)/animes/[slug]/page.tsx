@@ -285,11 +285,11 @@ export default async function AnimeDetailPage({
             </ul>
           )}
 
-          <div className="mt-5 flex flex-wrap items-center gap-4">
+          <div className="mt-5 grid grid-cols-2 gap-3 sm:flex sm:flex-wrap sm:items-center sm:gap-4">
             {episodes.length > 0 && (
               <Link
                 href={`/animes/${slug}/${episodes[0].number}`}
-                className="btn-ice"
+                className="btn-primary col-span-2 justify-center sm:col-span-1 sm:justify-start"
               >
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true">
                   <path d="M3 2l9 5-9 5z" />
@@ -299,7 +299,9 @@ export default async function AnimeDetailPage({
             )}
             <FavoriteButton slug={slug} />
             <AnimeListButton slug={slug} />
-            <AnimeStatsDisplay slug={slug} />
+            <div className="col-span-2 sm:col-span-1">
+              <AnimeStatsDisplay slug={slug} />
+            </div>
           </div>
 
           <div className="mt-4">

@@ -1,6 +1,7 @@
 import type { PublicAnimeListItem, WatchStatus } from "@/types";
 import { SectionLabel } from "@/components/common/SectionLabel";
 import { PosterTile } from "./PosterTile";
+import { EmptyState } from "@/components/ui/EmptyState";
 
 export const STATUS_LABELS: Record<WatchStatus, string> = {
   WATCHING: "Assistindo",
@@ -41,9 +42,10 @@ export function ProfileCollection({
     return (
       <section>
         <SectionLabel level={2}>Coleção</SectionLabel>
-        <p className="text-body-sm text-mist/70">
-          Nenhum anime na coleção ainda.
-        </p>
+        <EmptyState
+          text="Nenhum anime na coleção ainda."
+          variant="compact"
+        />
       </section>
     );
   }
@@ -76,9 +78,15 @@ export function ProfileCollection({
       </div>
 
       {loading ? (
-        <p className="text-body-sm text-mist">Carregando...</p>
+        <div className="flex items-center justify-center py-10" aria-busy="true">
+          <div className="h-4 w-4 animate-spin rounded-full border-2 border-ice border-t-transparent" />
+          <span className="ml-2 text-body-sm text-mist">Carregando...</span>
+        </div>
       ) : items.length === 0 ? (
-        <p className="text-body-sm text-mist/70">Nada aqui com esse estado.</p>
+        <EmptyState
+          text="Nada aqui com esse estado."
+          variant="compact"
+        />
       ) : (
         <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7">
           {items.map((item) => {

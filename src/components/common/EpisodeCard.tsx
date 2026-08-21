@@ -26,7 +26,7 @@ export function EpisodeCard({ episode, priority = false }: EpisodeCardProps) {
     <Link
       href={href}
       title={`${anime.title} — Episódio ${episode.number}`}
-      className="group block overflow-hidden bg-panel transition-colors hover:bg-hairline"
+      className="group block overflow-hidden bg-panel transition-all duration-300 hover:bg-hairline hover:shadow-lg hover:shadow-black/20"
     >
       <div className="card-scan relative" style={{ aspectRatio: "16 / 9" }}>
         {thumb ? (
@@ -39,7 +39,7 @@ export function EpisodeCard({ episode, priority = false }: EpisodeCardProps) {
             priority={priority}
             placeholder="blur"
             blurDataURL={blur.landscape}
-            className="object-cover opacity-90 transition-opacity group-hover:opacity-100"
+            className="object-cover opacity-90 transition-all duration-500 ease-out group-hover:opacity-100 group-hover:scale-105"
             quality={80}
           />
         ) : (

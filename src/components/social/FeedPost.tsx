@@ -6,6 +6,7 @@ import Image from "next/image";
 import { api, ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { Avatar } from "@/components/common/Avatar";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { timeAgo } from "@/lib/time";
 import { safeImageSrc } from "@/lib/url";
 import { blur } from "@/lib/blur";
@@ -246,11 +247,15 @@ export function FeedPost({
       {commentsOpen && (
         <div className="mt-3 space-y-2 border-t border-hairline pt-3">
           {commentsLoading ? (
-            <p className="font-mono text-caption text-mist/60">Carregando…</p>
+            <div className="flex items-center justify-center py-4" aria-busy="true">
+              <div className="h-3 w-3 animate-spin rounded-full border-2 border-ice border-t-transparent" />
+              <span className="ml-2 font-mono text-caption text-mist/60">Carregando...</span>
+            </div>
           ) : comments.length === 0 ? (
-            <p className="font-mono text-caption text-mist/60">
-              Nenhum comentário ainda.
-            </p>
+            <EmptyState
+              text="Nenhum comentário ainda."
+              variant="compact"
+            />
           ) : (
             comments.map((c) => (
               <div key={c.id} className="flex items-start gap-2.5">
