@@ -16,6 +16,7 @@ import { RatingStars, AnimeStatsDisplay } from "@/components/common/RatingStars"
 import { AnimeCard } from "@/components/common/AnimeCard";
 import { SpotlightCard } from "@/components/core/SpotlightCard";
 import { PageTitle } from "@/components/ui/PageTitle";
+import { ShareButtons } from "@/components/common/ShareButtons";
 import Image from "next/image";
 import { SITE_URL } from "@/lib/site";
 
@@ -299,6 +300,14 @@ export default async function AnimeDetailPage({
             <FavoriteButton slug={slug} />
             <AnimeListButton slug={slug} />
             <AnimeStatsDisplay slug={slug} />
+          </div>
+
+          <div className="mt-4">
+            <ShareButtons
+              title={anime.title}
+              url={`/animes/${slug}`}
+              description={anime.synopsis?.slice(0, 100)}
+            />
           </div>
 
           <section className="mt-5">

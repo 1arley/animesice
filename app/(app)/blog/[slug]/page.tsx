@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { SITE_URL } from "@/lib/site";
+import { ShareButtons } from "@/components/common/ShareButtons";
 
 export const revalidate = 3600;
 
@@ -79,6 +80,87 @@ const POSTS: Record<string, BlogPost> = {
       
       <h2>Como encontrar animes dublados</h2>
       <p>Use nossa <a href="/buscar?audio=DUBLADO">busca filtrada por dublado</a> para encontrar todos os animes disponíveis com dublagem em português.</p>
+    `,
+  },
+  "onde-assistir-animes-2026": {
+    slug: "onde-assistir-animes-2026",
+    title: "Onde assistir animes em 2026 — Comparativo completo",
+    description: "Comparativo das melhores plataformas para assistir animes no Brasil com preços e catálogo.",
+    date: "2026-07-28",
+    category: "Guias",
+    content: `
+      <p>Escolher a melhor plataforma para assistir animes pode ser complicado. Cada uma tem seus pontos fortes e fracos. Fizemos um comparativo completo para te ajudar.</p>
+      
+      <h2>Principais plataformas</h2>
+      <ul>
+        <li><strong>Crunchyroll</strong> — O maior catálogo de animes, com legendas e dublagem em português. Preço a partir de R$ 24,90/mês.</li>
+        <li><strong>Netflix</strong> — Catálogo seleto com títulos populares e produções originais. Disponível no plano padrão.</li>
+        <li><strong>Amazon Prime Video</strong> — Crescendo no catálogo de animes com títulos exclusivos.</li>
+        <li><strong>AnimesIce</strong> — Gratuito, com catálogo completo e comunidade ativa.</li>
+      </ul>
+      
+      <h2>O que considerar</h2>
+      <p>Ao escolher uma plataforma, considere: preço, catálogo disponível, qualidade de dublagem, legendas e disponibilidade offline.</p>
+      
+      <h2>Nossa recomendação</h2>
+      <p>Para quem quer começar, o <a href="/buscar">AnimesIce</a> é uma ótima opção gratuita. Para quem quer o catálogo mais completo, o Crunchyroll é imbatível.</p>
+    `,
+  },
+  "animes-isekai-melhores": {
+    slug: "animes-isekai-melhores",
+    title: "Melhores animes isekai — Os 20 mais votados",
+    description: "Os 20 melhores animes do gênero isekai votados pela comunidade do AnimesIce.",
+    date: "2026-07-20",
+    category: "Listas",
+    content: `
+      <p>O gênero isekai continua sendo um dos mais populares do mundo dos animes. Separ os 20 mais votados pela nossa comunidade.</p>
+      
+      <h2>Top 20 isekais</h2>
+      <ol>
+        <li><strong>Re:Zero</strong> — O clássico que definiu o gênero</li>
+        <li><strong>Mushoku Tensei</strong> — Rpg vivido como uma vida real</li>
+        <li><strong>KonoSuba</strong> — A paródia perfeita do isekai</li>
+        <li><strong>Overlord</strong> — O vilão mais poderoso do outro mundo</li>
+        <li><strong>No Game No Life</strong> — Dois gênios em um mundo de jogos</li>
+      </ol>
+      
+      <h2>Como descobrir mais</h2>
+      <p>Filtre por gênero na nossa <a href="/buscar?genres=isekai">página de busca</a> para descobrir mais animes isekai.</p>
+    `,
+  },
+  "glossario-anime-termos": {
+    slug: "glossario-anime-termos",
+    title: "Glossário de termos de anime — O que significa cada coisa",
+    description: "Guia completo com todos os termos usados no mundo dos animes: OP, ED, otaku, tsundere e mais.",
+    date: "2026-07-15",
+    category: "Guias",
+    content: `
+      <p>Se você é novo no mundo dos animes, deve ter se deparado com muitos termos estranhos. Preparamos um glossário completo para te ajudar.</p>
+      
+      <h2>Termos comuns</h2>
+      <ul>
+        <li><strong>OP</strong> — Opening, a abertura do anime com a música tema</li>
+        <li><strong>ED</strong> — Ending, o encerramento do anime</li>
+        <li><strong>OVA</strong> — Original Video Animation, lançado direto em vídeo</li>
+        <li><strong>ONA</strong> — Original Net Animation, lançado na internet</li>
+        <li><strong>Manga</strong> — Quadrinhos japoneses</li>
+        <li><strong>Light Novel</strong> — Romances japoneses ilustrados</li>
+      </ul>
+      
+      <h2>Termos de personalidade</h2>
+      <ul>
+        <li><strong>Tsundere</strong> — Finge frieza mas é apaixonada por baixo</li>
+        <li><strong>Yandere</strong> — Apaixonada a ponto de ser perigosa</li>
+        <li><strong>Kuudere</strong> — Fria e calculista, mas com sentimentos</li>
+        <li><strong>Dandere</strong> — Tímida e calada</li>
+      </ul>
+      
+      <h2>Termos da comunidade</h2>
+      <ul>
+        <li><strong>Otaku</strong> — Pessoa obcecada por animes/mangás</li>
+        <li><strong>Weeb</strong> — Estrangeiro fã de cultura japonesa</li>
+        <li><strong>Simp</strong> — Pessoa que faz de tudo por um personagem</li>
+      </ul>
     `,
   },
 };
@@ -181,6 +263,14 @@ export default async function BlogPostPage({
       />
 
       <div className="mt-8 border-t border-hairline pt-6">
+        <ShareButtons
+          title={post.title}
+          url={`/blog/${post.slug}`}
+          description={post.description}
+        />
+      </div>
+
+      <div className="mt-6">
         <Link href="/blog" className="text-body-sm text-ice hover:underline">
           ← Voltar ao blog
         </Link>

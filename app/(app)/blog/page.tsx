@@ -43,6 +43,27 @@ const POSTS: BlogPost[] = [
     date: "2026-08-05",
     category: "Listas",
   },
+  {
+    slug: "onde-assistir-animes-2026",
+    title: "Onde assistir animes em 2026 — Comparativo completo",
+    description: "Comparativo das melhores plataformas para assistir animes no Brasil com preços e catálogo.",
+    date: "2026-07-28",
+    category: "Guias",
+  },
+  {
+    slug: "animes-isekai-melhores",
+    title: "Melhores animes isekai — Os 20 mais votados",
+    description: "Os 20 melhores animes do gênero isekai votados pela comunidade do AnimesIce.",
+    date: "2026-07-20",
+    category: "Listas",
+  },
+  {
+    slug: "glossario-anime-termos",
+    title: "Glossário de termos de anime — O que significa cada coisa",
+    description: "Guia completo com todos os termos usados no mundo dos animes: OP, ED, otaku, tsundere e mais.",
+    date: "2026-07-15",
+    category: "Guias",
+  },
 ];
 
 export default function BlogPage() {
