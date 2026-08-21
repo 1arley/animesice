@@ -5,6 +5,7 @@ import {
   CHUNK_ERROR_EVENT,
   CHUNK_RECOVERY_EXHAUSTED_EVENT,
   isChunkLoadError,
+  isChunkRecoveryExhausted,
   retryChunkLoad,
 } from "@/lib/chunk-recovery";
 
@@ -20,6 +21,7 @@ export default function GlobalError({
 
   useEffect(() => {
     if (!isChunk) return;
+    if (isChunkRecoveryExhausted()) setRecoveryExhausted(true);
     const handleExhausted = () => setRecoveryExhausted(true);
     window.addEventListener(CHUNK_RECOVERY_EXHAUSTED_EVENT, handleExhausted);
     return () =>

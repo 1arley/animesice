@@ -2,6 +2,19 @@ export const CHUNK_ERROR_EVENT = "animesice:chunk-error";
 export const CHUNK_RECOVERY_EXHAUSTED_EVENT =
   "animesice:chunk-recovery-exhausted";
 
+declare global {
+  interface Window {
+    __ANIMESICE_CHUNK_RECOVERY_EXHAUSTED__?: boolean;
+  }
+}
+
+export function isChunkRecoveryExhausted(): boolean {
+  return (
+    typeof window !== "undefined" &&
+    window.__ANIMESICE_CHUNK_RECOVERY_EXHAUSTED__ === true
+  );
+}
+
 export function isChunkLoadError(error: unknown): boolean {
   if (!(error instanceof Error)) return false;
 

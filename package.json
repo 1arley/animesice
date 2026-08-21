@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "check:chunk-recovery": "node scripts/check-chunk-recovery-build.mjs",
     "start": "next start",
     "test:e2e": "playwright test",
     "lint": "next lint",

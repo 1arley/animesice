@@ -31,6 +31,7 @@ jobs:
         env:
           NEXT_PUBLIC_API_URL: https://api.animesice.app/api
           INCLUDE_LOCAL_API: "0"
+      - run: npm run check:chunk-recovery
 
   e2e:
     name: Playwright e2e (chromium + mobile)

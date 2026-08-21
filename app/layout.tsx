@@ -7,6 +7,7 @@ import { SITE_URL } from "@/lib/site";
 import { ThirdPartyScripts } from "@/components/common/ThirdPartyScripts";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { DeferredCrystalSplash } from "@/components/animesice/DeferredCrystalSplash";
+import { chunkRecoveryScript } from "@/lib/chunk-recovery-script";
 
 // Tipografia do "sinal da madrugada": Barlow Condensed traz a linguagem de
 // cartaz e grade de programação sem transformar toda a interface em terminal.
@@ -98,7 +99,7 @@ export default function RootLayout({
         <link rel="preconnect" href="https://al5sm.com" crossOrigin="anonymous" />
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){var busy=false,key='animesice:chunk-recovery',max=2,windowMs=30000,pattern=/loading chunk|loading css chunk|failed to fetch dynamically imported module|importing a module script failed|chunkloaderror|loadingchunkerror/i;function exhausted(){window.dispatchEvent(new Event('animesice:chunk-recovery-exhausted'))}function recover(value,asset){var text=((value&&value.message)||'')+' '+((value&&value.name)||'');if(!asset&&!pattern.test(text))return;if(busy)return;busy=true;try{var now=Date.now(),state=JSON.parse(sessionStorage.getItem(key)||'null');if(!state||now-state.startedAt>windowMs)state={startedAt:now,attempts:0};if(state.attempts>=max){exhausted();return}state.attempts+=1;sessionStorage.setItem(key,JSON.stringify(state));var url=state.attempts===max&&location.pathname!=='/'?new URL('/',location.origin):new URL(location.href);url.searchParams.set('__chunk_retry',String(now));location.replace(url.href)}catch(e){exhausted()}}window.addEventListener('error',function(e){var target=e.target,asset=target&&(target.tagName==='SCRIPT'||(target.tagName==='LINK'&&target.rel==='stylesheet'))&&/\/_next\/static\//.test(target.src||target.href||'');recover(e.error||e,asset)},true);window.addEventListener('unhandledrejection',function(e){recover(e.reason,false)});window.addEventListener('animesice:chunk-error',function(){recover({name:'ChunkLoadError'},false)});try{var clean=new URL(location.href);if(clean.searchParams.has('__chunk_retry')){clean.searchParams.delete('__chunk_retry');history.replaceState(history.state,'',clean.href)}}catch(e){}})();`,
+            __html: chunkRecoveryScript,
           }}
         />
       </head>
