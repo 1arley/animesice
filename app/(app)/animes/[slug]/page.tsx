@@ -96,11 +96,15 @@ export default async function AnimeDetailPage({
 
   return (
     <article className="mx-auto max-w-shelf px-4 py-6">
-      <p className="mb-4">
-        <Link href="/" className="text-body-sm text-mist transition-colors hover:text-ice">
-          ← Voltar à prateleira
-        </Link>
-      </p>
+      <nav className="mb-4 text-caption text-mist" aria-label="Breadcrumb">
+        <ol className="flex items-center gap-1">
+          <li><a href="/" className="hover:text-ice">Início</a></li>
+          <li aria-hidden="true">/</li>
+          <li><a href="/animes" className="hover:text-ice">Animes</a></li>
+          <li aria-hidden="true">/</li>
+          <li aria-current="page" className="text-ice">{anime.title}</li>
+        </ol>
+      </nav>
 
       {/* Banner hero — backdrop with gradient overlay */}
       {banner && (

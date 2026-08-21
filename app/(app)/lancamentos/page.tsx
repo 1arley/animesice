@@ -7,15 +7,26 @@ import type { AnimeFilters } from "@/types";
 
 export const revalidate = 300;
 
-export const metadata: Metadata = {
-  title: "Animes em lançamento — Novos episódios toda semana",
-  description: "Animes em lançamento com novos episódios toda semana. Acompanhe seus animes favoritos no AnimesIce.",
-  alternates: { canonical: "/lancamentos" },
-  openGraph: {
-    title: "Animes em lançamento | AnimesIce",
-    description: "Animes em lançamento com novos episódios toda semana.",
-  },
-};
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}): Promise<Metadata> {
+  const sp = await searchParams;
+  const page = Math.max(1, Number(sp.page ?? "1") || 1);
+
+  return {
+    title: page > 1 ? `Animes em lançamento - Página ${page}` : "Animes em lançamento — Novos episódios toda semana",
+    description: "Animes em lançamento com novos episódios toda semana. Acompanhe seus animes favoritos no AnimesIce.",
+    alternates: {
+      canonical: page > 1 ? `/lancamentos?page=${page}` : "/lancamentos",
+    },
+    openGraph: {
+      title: "Animes em lançamento | AnimesIce",
+      description: "Animes em lançamento com novos episódios toda semana.",
+    },
+  };
+}
 
 export default async function LancamentosPage({
   searchParams,
@@ -37,6 +48,14 @@ export default async function LancamentosPage({
 
   return (
     <div className="mx-auto max-w-shelf px-4 py-6">
+      <nav className="mb-4 text-caption text-mist" aria-label="Breadcrumb">
+        <ol className="flex items-center gap-1">
+          <li><a href="/" className="hover:text-ice">Início</a></li>
+          <li aria-hidden="true">/</li>
+          <li aria-current="page" className="text-ice">Lançamentos</li>
+        </ol>
+      </nav>
+
       <h1 className="shelf-label">
         Em lançamento{" "}
         <span className="shelf-label-data">{total} títulos</span>

@@ -33,6 +33,14 @@ export default async function TopPage({
 
   return (
     <div className="mx-auto max-w-shelf px-4 py-6">
+      <nav className="mb-4 text-caption text-mist" aria-label="Breadcrumb">
+        <ol className="flex items-center gap-1">
+          <li><a href="/" className="hover:text-ice">Início</a></li>
+          <li aria-hidden="true">/</li>
+          <li aria-current="page" className="text-ice">Top Animes</li>
+        </ol>
+      </nav>
+
       <h1 className="shelf-label">
         Top Animes{" "}
         <span className="shelf-label-data">{animes.length} títulos</span>

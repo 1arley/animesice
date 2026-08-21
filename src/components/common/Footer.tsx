@@ -19,6 +19,7 @@ export function Footer() {
     { href: "/calendario", title: "Calendário" },
     { href: "/generos", title: "Gêneros" },
     { href: "/buscar", title: "Buscar" },
+    { href: "/blog", title: "Blog" },
     ...(isAdmin ? [{ href: "/admin", title: "Painel admin" }] : []),
   ];
   const conta: FooterLink[] = user

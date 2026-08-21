@@ -11,8 +11,15 @@ const STATIC_ROUTES: { path: string; priority: number }[] = [
   { path: "/lancamentos", priority: 0.8 },
   { path: "/top", priority: 0.7 },
   { path: "/generos", priority: 0.7 },
+  { path: "/blog", priority: 0.6 },
   { path: "/comunidade/sugestoes", priority: 0.6 },
   { path: "/aleatorio", priority: 0.6 },
+];
+
+const BLOG_POSTS = [
+  "melhores-animes-2026",
+  "guia-temporada-outono-2026",
+  "melhores-animes-dublados",
 ];
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
@@ -24,6 +31,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority,
     }),
   );
+
+  // Blog posts
+  const blogEntries: MetadataRoute.Sitemap = BLOG_POSTS.map((slug) => ({
+    url: `${SITE_URL}/blog/${slug}`,
+    lastModified: new Date(),
+    changeFrequency: "monthly" as const,
+    priority: 0.5,
+  }));
 
   // Dynamic animes: paginated fetch, stop when page is empty or meta says done.
   const animeEntries: MetadataRoute.Sitemap = [];
@@ -59,5 +74,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     page++;
   }
 
-  return [...staticEntries, ...animeEntries];
+  return [...staticEntries, ...blogEntries, ...animeEntries];
 }

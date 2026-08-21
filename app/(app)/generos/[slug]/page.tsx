@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { AnimeCard } from "@/components/common/AnimeCard";
 import type { GenreAnimesResponse } from "@/types";
 import { serverFetchJson } from "@/lib/api-server";
+import { SITE_URL } from "@/lib/site";
 
 export const dynamic = "force-dynamic";
 
@@ -18,15 +19,23 @@ export async function generateMetadata({
   const page = Math.max(1, Number(sp.page ?? "1") || 1);
   const genreName = slug.replace(/-/g, " ").replace(/\b\w/g, (l) => l.toUpperCase());
 
+  const description = `Assistir animes do gênero ${genreName} online em HD. Catálogo completo com ${genreName} legendados e dublados no AnimesIce.`;
+
   return {
     title: page > 1 ? `${genreName} - Página ${page}` : genreName,
-    description: `Assistir animes do gênero ${genreName} online em HD. Catálogo completo com ${genreName} legendados e dublados no AnimesIce.`,
+    description,
     alternates: {
       canonical: page > 1 ? `/generos/${slug}?page=${page}` : `/generos/${slug}`,
+      types: {
+        "application/rss+xml": [
+          { title: `${genreName} RSS`, url: `/generos/${slug}/rss` },
+        ],
+      },
     },
     openGraph: {
       title: `${genreName} | AnimesIce`,
-      description: `Assistir animes do gênero ${genreName} online em HD. Catálogo completo no AnimesIce.`,
+      description,
+      type: "website",
     },
   };
 }
@@ -53,11 +62,54 @@ export default async function GenrePage({
   if (!data || !data.genre) notFound();
 
   const { genre, data: animes, meta } = data;
+  const genreName = genre.name;
+
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    name: `${genreName} - Animes`,
+    description: `Catálogo de animes do gênero ${genreName} no AnimesIce.`,
+    url: `${SITE_URL}/generos/${slug}`,
+    isPartOf: {
+      "@type": "WebSite",
+      name: "AnimesIce",
+      url: SITE_URL,
+    },
+    mainEntity: {
+      "@type": "ItemList",
+      numberOfItems: meta.total,
+      itemListElement: animes.slice(0, 10).map((anime, i) => ({
+        "@type": "ListItem",
+        position: i + 1,
+        item: {
+          "@type": "TVSeries",
+          name: anime.title,
+          url: `${SITE_URL}/animes/${anime.slug}`,
+          ...(anime.coverImage ? { image: anime.coverImage } : {}),
+        },
+      })),
+    },
+  };
 
   return (
     <div className="mx-auto max-w-shelf px-4 py-6">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+
+      <nav className="mb-4 text-caption text-mist" aria-label="Breadcrumb">
+        <ol className="flex items-center gap-1">
+          <li><a href="/" className="hover:text-ice">Início</a></li>
+          <li aria-hidden="true">/</li>
+          <li><a href="/generos" className="hover:text-ice">Gêneros</a></li>
+          <li aria-hidden="true">/</li>
+          <li aria-current="page" className="text-ice">{genreName}</li>
+        </ol>
+      </nav>
+
       <h1 className="shelf-label">
-        {genre.name}{" "}
+        {genreName}{" "}
         <span className="shelf-label-data">{meta.total} títulos</span>
       </h1>
 
