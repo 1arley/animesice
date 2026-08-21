@@ -10,6 +10,16 @@ import type { NextConfig } from "next";
  */
 const localConnect = process.env.INCLUDE_LOCAL_API === '1' ? ' http://localhost:3001' : '';
 
+// The custom domain is proxied by Cloudflare with a zone-wide minimum Browser
+// Cache TTL. That policy also rewrites temporary 404 responses for Next chunks,
+// which can leave a browser unable to hydrate after a deployment. Serve hashed
+// framework assets from Vercel's stable project domain so Vercel's status-aware
+// cache policy reaches the browser unchanged. Preview/local builds stay local.
+const assetPrefix =
+  process.env.VERCEL_ENV === "production"
+    ? "https://animesice.vercel.app"
+    : undefined;
+
 const cspHeader = `
   default-src 'self';
   script-src 'self' 'unsafe-inline' 'unsafe-eval' https: https://al5sm.com https://static.cloudflareinsights.com https://challenges.cloudflare.com;
@@ -28,6 +38,7 @@ const cspHeader = `
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  assetPrefix,
   outputFileTracingRoot: process.cwd(),
   images: {
     // Servir as imagens remotas diretamente evita que todas as capas passem
