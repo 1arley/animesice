@@ -89,6 +89,7 @@ export function SiteNav() {
       links: [
         { href: "/comunidade/feed", title: "Feed", icon: "feed" },
         { href: "/comunidade/usuarios", title: "Usuários", icon: "usuarios" },
+        { href: "/blog", title: "Blog", icon: "feed" },
         { href: "/comunidade/pedidos", title: "Pedidos de anime", icon: "pedidos" },
         { href: "/comunidade/sugestoes", title: "Sugestões e bugs", icon: "sugestoes" },
         { href: "/comunidade/regras", title: "Regras", icon: "regras" },
