@@ -5,6 +5,7 @@ import { serverFetchJson } from "@/lib/api-server";
 import type { Episode, Anime } from "@/types";
 import { isHentaiAnime, hentaisPath } from "@/lib/hentai";
 import { WatchClient } from "@/components/common/WatchClient";
+import { SITE_URL } from "@/lib/site";
 
 export const revalidate = 60;
 
@@ -30,22 +31,23 @@ export async function generateMetadata({
   if (!ep) return {};
 
   const title = `${ep.anime.title} — Episódio ${ep.number}`;
-  const description = `Assistir ${ep.anime.title} episódio ${ep.number} online em HD.`;
+  const audioText = ep.anime.audio === "DUBLADO" ? "dublado" : "legendado";
+  const description = `Assistir ${ep.anime.title} episódio ${ep.number} ${audioText} online em HD no AnimesIce. ${ep.anime.synopsis?.slice(0, 80) ?? ""}`;
 
   return {
     title,
-    description,
+    description: description.slice(0, 160),
     alternates: { canonical: `/animes/${slug}/${number}` },
     openGraph: {
       title,
-      description,
+      description: description.slice(0, 160),
       type: "video.episode",
       ...(ep.thumbnailUrl ? { images: [{ url: ep.thumbnailUrl }] } : {}),
     },
     twitter: {
       card: "summary_large_image",
       title,
-      description,
+      description: description.slice(0, 160),
       ...(ep.thumbnailUrl ? { images: [ep.thumbnailUrl] } : {}),
     },
   };
@@ -70,8 +72,17 @@ export default async function WatchPage({
     "@type": "TVEpisode",
     name: `${episode.anime.title} — Episódio ${episode.number}`,
     episodeNumber: episode.number,
-    partOfSeason: { "@type": "TVSeason", partOfSeries: { "@type": "TVSeries", name: episode.anime.title } },
+    url: `${SITE_URL}/animes/${slug}/${number}`,
+    partOfSeries: {
+      "@type": "TVSeries",
+      name: episode.anime.title,
+      url: `${SITE_URL}/animes/${slug}`,
+      ...(episode.anime.coverImage ? { image: episode.anime.coverImage } : {}),
+      ...(episode.anime.genres?.length ? { genre: episode.anime.genres.map((g) => g.name) } : {}),
+      ...(episode.anime.studios?.length ? { productionCompany: episode.anime.studios.map((s) => ({ "@type": "Organization", name: s })) } : {}),
+    },
     ...(episode.thumbnailUrl ? { thumbnailUrl: episode.thumbnailUrl } : {}),
+    ...(episode.anime.synopsis ? { description: episode.anime.synopsis.slice(0, 200) } : {}),
   };
 
   return (

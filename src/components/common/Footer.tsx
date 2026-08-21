@@ -14,6 +14,11 @@ export function Footer() {
 
   const navigate: FooterLink[] = [
     { href: "/", title: "Início" },
+    { href: "/top", title: "Top Animes" },
+    { href: "/lancamentos", title: "Lançamentos" },
+    { href: "/calendario", title: "Calendário" },
+    { href: "/generos", title: "Gêneros" },
+    { href: "/buscar", title: "Buscar" },
     ...(isAdmin ? [{ href: "/admin", title: "Painel admin" }] : []),
   ];
   const conta: FooterLink[] = user

@@ -8,9 +8,13 @@ import type { AnimeFilters } from "@/types";
 export const revalidate = 300;
 
 export const metadata: Metadata = {
-  title: "Em lançamento",
-  description: "Animes em lançamento — novos episódios a cada semana.",
+  title: "Animes em lançamento — Novos episódios toda semana",
+  description: "Animes em lançamento com novos episódios toda semana. Acompanhe seus animes favoritos no AnimesIce.",
   alternates: { canonical: "/lancamentos" },
+  openGraph: {
+    title: "Animes em lançamento | AnimesIce",
+    description: "Animes em lançamento com novos episódios toda semana.",
+  },
 };
 
 export default async function LancamentosPage({

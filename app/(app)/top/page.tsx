@@ -9,9 +9,13 @@ import { serverFetchJson } from "@/lib/api-server";
 export const revalidate = 300;
 
 export const metadata: Metadata = {
-  title: "Top Animes",
-  description: "Os animes mais bem avaliados da plataforma, ranqueados por nota.",
+  title: "Top Animes — Melhores avaliados pela comunidade",
+  description: "Os animes mais bem avaliados da plataforma, ranqueados por nota da comunidade. Descubra os melhores animes para assistir.",
   alternates: { canonical: "/top" },
+  openGraph: {
+    title: "Top Animes — Melhores avaliados | AnimesIce",
+    description: "Os animes mais bem avaliados da plataforma, ranqueados por nota da comunidade.",
+  },
 };
 
 export default async function TopPage({

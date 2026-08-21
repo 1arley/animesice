@@ -16,10 +16,17 @@ export async function generateMetadata({
   const { slug } = await params;
   const sp = await searchParams;
   const page = Math.max(1, Number(sp.page ?? "1") || 1);
+  const genreName = slug.replace(/-/g, " ").replace(/\b\w/g, (l) => l.toUpperCase());
 
   return {
+    title: page > 1 ? `${genreName} - Página ${page}` : genreName,
+    description: `Assistir animes do gênero ${genreName} online em HD. Catálogo completo com ${genreName} legendados e dublados no AnimesIce.`,
     alternates: {
       canonical: page > 1 ? `/generos/${slug}?page=${page}` : `/generos/${slug}`,
+    },
+    openGraph: {
+      title: `${genreName} | AnimesIce`,
+      description: `Assistir animes do gênero ${genreName} online em HD. Catálogo completo no AnimesIce.`,
     },
   };
 }

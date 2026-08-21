@@ -35,10 +35,32 @@ const fontPlexMono = IBM_Plex_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "AnimesIce — Assistir animes online",
+    default: "AnimesIce — Assistir animes online em HD, legendados e dublados",
     template: "%s | AnimesIce",
   },
-  description: "Assistir animes online em HD, legendados e dublados",
+  description: "Assistir animes online em HD, legendados e dublados. Catálogo completo com milhares de títulos, sinopses, avaliação da comunidade e episódios atualizados.",
+  keywords: ["assistir animes", "animes online", "animes legendados", "animes dublados", "anime HD", "catálogo de animes"],
+  authors: [{ name: "AnimesIce" }],
+  creator: "AnimesIce",
+  publisher: "AnimesIce",
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
+  openGraph: {
+    type: "website",
+    locale: "pt_BR",
+    url: SITE_URL,
+    siteName: "AnimesIce",
+    title: "AnimesIce — Assistir animes online em HD, legendados e dublados",
+    description: "Assistir animes online em HD, legendados e dublados. Catálogo completo com milhares de títulos.",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "AnimesIce — Assistir animes online em HD",
+    description: "Assistir animes online em HD, legendados e dublados. Catálogo completo.",
+  },
   icons: {
     icon: [
       { url: "/icons/favicon.ico", sizes: "any" },

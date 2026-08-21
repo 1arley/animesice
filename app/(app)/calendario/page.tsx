@@ -10,9 +10,13 @@ import { YearFilter } from "@/components/calendario/YearFilter";
 export const revalidate = 300;
 
 export const metadata: Metadata = {
-  title: "Calendário",
-  description: "Calendário semanal de animes — saiba quando cada episódio sai.",
+  title: "Calendário de animes — Programação semanal de episódios",
+  description: "Calendário semanal de animes — saiba quando cada episódio sai. Acompanhe a programação completa no AnimesIce.",
   alternates: { canonical: "/calendario" },
+  openGraph: {
+    title: "Calendário de animes | AnimesIce",
+    description: "Calendário semanal de animes — saiba quando cada episódio sai.",
+  },
 };
 
 export default async function CalendarioPage({

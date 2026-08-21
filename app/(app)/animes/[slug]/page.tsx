@@ -32,9 +32,18 @@ export async function generateMetadata({
   const anime = await getAnime(slug);
   if (!anime) return {};
 
-  const description = anime.synopsis
-    ? anime.synopsis.slice(0, 160)
-    : `Assistir ${anime.title} online em HD, legendado${anime.audio === "DUBLADO" ? " e dublado" : ""}.`;
+  const statusText = isOnAir(anime.status) ? "no ar" : "finalizado";
+  const audioText = anime.audio === "DUBLADO" ? "dublado em português" : "legendado";
+  const genresText = anime.genres?.length ? anime.genres.slice(0, 3).map((g) => g.name).join(", ") : "";
+  const episodesText = anime.episodes?.length ? `${anime.episodes.length} episódios` : "";
+  const metaParts = [
+    `Assistir ${anime.title} ${audioText} em HD`,
+    genresText && `Gêneros: ${genresText}`,
+    episodesText,
+    anime.year && `Ano: ${anime.year}`,
+    statusText,
+  ].filter(Boolean);
+  const description = metaParts.join(" · ").slice(0, 160);
   const ogImage = upgradeImageUrl(anime.bannerImage) ?? upgradeImageUrl(anime.coverImage);
 
   return {
@@ -296,6 +305,50 @@ export default async function AnimeDetailPage({
               {anime.synopsis || "Sem sinopse disponível."}
             </p>
           </section>
+
+          {episodes.length > 0 && (
+            <section className="mt-6 border border-hairline bg-panel/50 p-4">
+              <h2 className="mb-3 font-sans text-caption font-semibold uppercase tracking-wider text-mist">
+                Informações rápidas
+              </h2>
+              <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div>
+                  <dt className="font-mono text-caption text-mist">Total de episódios</dt>
+                  <dd className="font-mono text-body-sm font-medium text-snow">{episodes.length} episódios</dd>
+                </div>
+                {anime.year && (
+                  <div>
+                    <dt className="font-mono text-caption text-mist">Ano de lançamento</dt>
+                    <dd className="font-mono text-body-sm font-medium text-snow">{anime.year}</dd>
+                  </div>
+                )}
+                {anime.audio && (
+                  <div>
+                    <dt className="font-mono text-caption text-mist">Áudio</dt>
+                    <dd className="font-mono text-body-sm font-medium text-snow">{dub ? "Dublado em português" : "Legendado"}</dd>
+                  </div>
+                )}
+                {anime.status && (
+                  <div>
+                    <dt className="font-mono text-caption text-mist">Status</dt>
+                    <dd className="font-mono text-body-sm font-medium text-snow">{ongoing ? "No ar (em lançamento)" : "Finalizado"}</dd>
+                  </div>
+                )}
+                {anime.studios && anime.studios.length > 0 && (
+                  <div>
+                    <dt className="font-mono text-caption text-mist">Estúdio</dt>
+                    <dd className="font-mono text-body-sm font-medium text-snow">{anime.studios.join(", ")}</dd>
+                  </div>
+                )}
+                {anime.ageRating && (
+                  <div>
+                    <dt className="font-mono text-caption text-mist">Classificação indicativa</dt>
+                    <dd className="font-mono text-body-sm font-medium text-snow">{anime.ageRating}</dd>
+                  </div>
+                )}
+              </dl>
+            </section>
+          )}
         </div>
       </div>
 
@@ -307,12 +360,22 @@ export default async function AnimeDetailPage({
 
       {/* Episódios */}
       <section className="mt-10">
-        <h2 className="shelf-label">
-          Episódios{" "}
-          {episodes.length > 0 && (
-            <span className="shelf-label-data">{episodes.length}</span>
+        <div className="flex items-center justify-between">
+          <h2 className="shelf-label">
+            Episódios{" "}
+            {episodes.length > 0 && (
+              <span className="shelf-label-data">{episodes.length}</span>
+            )}
+          </h2>
+          {episodes.length > 12 && (
+            <Link
+              href={`/animes/${slug}/${episodes[0].number}`}
+              className="font-mono text-caption text-ice transition-colors hover:text-snow"
+            >
+              Ver todos →
+            </Link>
           )}
-        </h2>
+        </div>
         {episodes.length === 0 ? (
           <p className="text-body-sm text-mist">Sem episódios cadastrados.</p>
         ) : (
@@ -381,12 +444,97 @@ export default async function AnimeDetailPage({
             "@context": "https://schema.org",
             "@type": "TVSeries",
             name: anime.title,
-            ...(anime.synopsis ? { description: anime.synopsis.slice(0, 300) } : {}),
+            ...(anime.japaneseTitle ? { alternateName: anime.japaneseTitle } : {}),
+            url: `${SITE_URL}/animes/${slug}`,
+            ...(anime.synopsis ? { description: anime.synopsis.slice(0, 500) } : {}),
             ...(anime.year ? { startDate: String(anime.year) } : {}),
             ...(cover ? { image: cover } : {}),
-            ...(anime.genres?.length ? { genre: anime.genres.map((g) => g.name).join(", ") } : {}),
-            ...(anime.studios?.length ? { productionCompany: { "@type": "Organization", name: anime.studios.join(", ") } } : {}),
-            ...(anime.rating ? { aggregateRating: { "@type": "AggregateRating", ratingValue: anime.rating, bestRating: 10, ratingCount: 1 } } : {}),
+            ...(anime.bannerImage ? { thumbnailUrl: upgradeImageUrl(anime.bannerImage) } : {}),
+            ...(anime.genres?.length ? { genre: anime.genres.map((g) => g.name) } : {}),
+            ...(anime.studios?.length ? { productionCompany: anime.studios.map((s) => ({ "@type": "Organization", name: s })) } : {}),
+            ...(anime.rating ? { aggregateRating: { "@type": "AggregateRating", ratingValue: anime.rating, bestRating: 10, ratingCount: 1, reviewCount: 1 } } : {}),
+            ...(anime.format ? { televisionFormat: anime.format } : {}),
+            ...(anime.ageRating ? { contentRating: anime.ageRating } : {}),
+            ...(episodes.length > 0 ? { numberOfEpisodes: episodes.length } : {}),
+            ...(episodes.length > 0 ? { episode: episodes.slice(0, 10).map((ep) => ({ "@type": "TVEpisode", episodeNumber: ep.number, name: `Episódio ${ep.number}`, url: `${SITE_URL}/animes/${slug}/${ep.number}` })) } : {}),
+            ...(ongoing ? { productionStatus: "https://schema.org/InPostProduction" } : { productionStatus: "https://schema.org/Completed" }),
+            ...(anime.genres?.length ? { about: anime.genres.map((g) => ({ "@type": "Thing", name: g.name })) } : {}),
+            potentialAction: { "@type": "WatchAction", target: { "@type": "EntryPoint", urlTemplate: `${SITE_URL}/animes/${slug}/${episodes[0]?.number ?? 1}` } },
+          }),
+        }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            itemListElement: [
+              { "@type": "ListItem", position: 1, name: "Início", item: SITE_URL },
+              { "@type": "ListItem", position: 2, name: "Animes", item: `${SITE_URL}/animes` },
+              { "@type": "ListItem", position: 3, name: anime.title },
+            ],
+          }),
+        }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "FAQPage",
+            mainEntity: [
+              {
+                "@type": "Question",
+                name: `Quantos episódios tem ${anime.title}?`,
+                acceptedAnswer: {
+                  "@type": "Answer",
+                  text: `${anime.title} possui ${episodes.length} episódios.`,
+                },
+              },
+              {
+                "@type": "Question",
+                name: `${anime.title} é dublado ou legendado?`,
+                acceptedAnswer: {
+                  "@type": "Answer",
+                  text: `${anime.title} está disponível ${dub ? "dublado em português" : "legendado"} no AnimesIce.`,
+                },
+              },
+              {
+                "@type": "Question",
+                name: `${anime.title} está finalizado?`,
+                acceptedAnswer: {
+                  "@type": "Answer",
+                  text: ongoing
+                    ? `${anime.title} está no ar e ainda está sendo exibido.`
+                    : `${anime.title} já está finalizado.`,
+                },
+              },
+              ...(anime.genres?.length
+                ? [
+                    {
+                      "@type": "Question",
+                      name: `Quais são os gêneros de ${anime.title}?`,
+                      acceptedAnswer: {
+                        "@type": "Answer",
+                        text: `Os gêneros de ${anime.title} são: ${anime.genres.map((g) => g.name).join(", ")}.`,
+                      },
+                    },
+                  ]
+                : []),
+              ...(anime.studios?.length
+                ? [
+                    {
+                      "@type": "Question",
+                      name: `Qual estúdio produziu ${anime.title}?`,
+                      acceptedAnswer: {
+                        "@type": "Answer",
+                        text: `${anime.title} foi produzido pelo estúdio ${anime.studios.join(" e ")}.`,
+                      },
+                    },
+                  ]
+                : []),
+            ],
           }),
         }}
       />
