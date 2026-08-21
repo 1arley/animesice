@@ -89,7 +89,7 @@ export function SiteNav() {
         { href: "/comunidade/feed", title: "Feed", icon: "feed" },
         { href: "/blog", title: "Blog", icon: "feed" },
         { href: "/comunidade/usuarios", title: "Usuários", icon: "usuarios" },
-        { href: "/comunidade/pedidos", title: "Pedidos", icon: "pedidos" },
+        { href: "/comunidade/sugestoes", title: "Sugestões", icon: "sugestoes" },
       ],
     },
     {
