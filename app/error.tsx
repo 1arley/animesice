@@ -5,7 +5,7 @@ import { useCallback } from "react";
 
 function isChunkLoadError(error: unknown): boolean {
   if (!(error instanceof Error)) return false;
-  const msg = error.message.toLowerCase();
+  const msg = (error as Error).message.toLowerCase();
   return (
     msg.includes("loading chunk") ||
     msg.includes("loading css chunk") ||
