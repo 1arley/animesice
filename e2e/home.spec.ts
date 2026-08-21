@@ -7,7 +7,7 @@ test.describe("Homepage & Shelf Navigation", () => {
     // Verify accessible h1 tag exists
     const h1 = page.locator("h1");
     await expect(h1).toHaveCount(1);
-    await expect(h1).toContainText("Prateleira");
+    await expect(h1).toContainText("AnimesIce");
 
     // Check main content presence
     await expect(page.locator("body")).toBeVisible();

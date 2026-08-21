@@ -169,7 +169,7 @@ export function SiteNav() {
     <nav
       ref={navRef as React.Ref<HTMLElement>}
       className="border-b border-hairline bg-ink"
-      aria-label="Navegação principal"
+      aria-label="Navegação principal do AnimesIce"
     >
       {/* ===== Desktop ===== */}
       <div className="mx-auto hidden max-w-shelf items-stretch gap-1 px-4 sm:flex">

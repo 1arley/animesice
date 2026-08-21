@@ -79,12 +79,9 @@ const nextConfig: NextConfig = {
           { key: "Cross-Origin-Opener-Policy", value: "same-origin-allow-popups" },
         ],
       },
-      {
-        source: "/_next/static/:path*",
-        headers: [
-          { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
-        ],
-      },
+      // Vercel already marks existing Next assets as immutable. A route-wide
+      // override would also mark a temporary 404 immutable and poison caches
+      // when a deployment changes.
       {
         source: "/icons/:path*",
         headers: [

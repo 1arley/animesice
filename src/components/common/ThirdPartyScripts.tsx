@@ -64,12 +64,6 @@ export function ThirdPartyScripts() {
         />
       )}
 
-      <Script
-        id="cloudflare-beacon"
-        src="https://static.cloudflareinsights.com/beacon.min.js"
-        strategy="lazyOnload"
-        defer
-      />
     </>
   );
 }
