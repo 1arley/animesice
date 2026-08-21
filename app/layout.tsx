@@ -8,6 +8,7 @@ import { ThirdPartyScripts } from "@/components/common/ThirdPartyScripts";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { DeferredCrystalSplash } from "@/components/animesice/DeferredCrystalSplash";
 import { chunkRecoveryScript } from "@/lib/chunk-recovery-script";
+import { ServiceNotice } from "@/components/common/ServiceNotice";
 
 // Tipografia do "sinal da madrugada": Barlow Condensed traz a linguagem de
 // cartaz e grade de programação sem transformar toda a interface em terminal.
@@ -106,6 +107,7 @@ export default function RootLayout({
       <body
         className={`${fontDisplay.variable} ${fontPlexSans.variable} ${fontPlexMono.variable} antialiased`}
       >
+        <ServiceNotice />
         <AuthProvider>
           <ToastProvider>{children}</ToastProvider>
         </AuthProvider>
