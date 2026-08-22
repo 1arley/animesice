@@ -56,6 +56,10 @@ export interface Anime {
   episodeCount?: number | null;
   anilistId?: number | null;
   published?: boolean;
+  editorialSynopsis?: string | null;
+  editorialWhereToWatch?: string | null;
+  editorialDubbingInfo?: string | null;
+  editorialSeasonsInfo?: string | null;
   genres?: Genre[];
   episodes?: Episode[];
   animeSchedules?: AnimeSchedule[];

@@ -427,7 +427,7 @@ export const api = {
 
   adminUpdateAnime: (
     slug: string,
-    dto: Partial<Pick<Anime, "title" | "synopsis" | "coverImage" | "bannerImage" | "rating" | "status" | "ageRating">>,
+    dto: Partial<Pick<Anime, "title" | "synopsis" | "coverImage" | "bannerImage" | "rating" | "status" | "ageRating" | "editorialSynopsis" | "editorialWhereToWatch" | "editorialDubbingInfo" | "editorialSeasonsInfo">>,
   ) =>
     request<Anime>(`/admin/anime/${slug}`, {
       method: "PATCH",

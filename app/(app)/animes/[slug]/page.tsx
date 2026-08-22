@@ -317,9 +317,56 @@ export default async function AnimeDetailPage({
               Sinopse
             </h2>
             <p className="whitespace-pre-line max-w-2xl text-body text-mist">
-              {anime.synopsis || "Sem sinopse disponível."}
+              {anime.editorialSynopsis || anime.synopsis || "Sem sinopse disponível."}
             </p>
           </section>
+
+          <section className="mt-5 border border-hairline bg-panel/50 p-4">
+            <h2 className="mb-2 font-sans text-caption font-semibold uppercase tracking-wider text-mist">
+              Onde assistir
+            </h2>
+            <p className="text-body-sm text-snow">
+              {anime.editorialWhereToWatch || "Assista no AnimesIce"}
+            </p>
+            {episodes.length > 0 && (
+              <Link
+                href={`/animes/${slug}/${episodes[0].number}`}
+                className="btn-primary mt-3 inline-flex"
+              >
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true">
+                  <path d="M3 2l9 5-9 5z" />
+                </svg>
+                Assistir agora
+              </Link>
+            )}
+          </section>
+
+          {(anime.editorialSeasonsInfo || anime.year || anime.season || anime.format) && (
+            <section className="mt-5 border border-hairline bg-panel/50 p-4">
+              <h2 className="mb-2 font-sans text-caption font-semibold uppercase tracking-wider text-mist">
+                Temporadas
+              </h2>
+              <p className="text-body-sm text-snow">
+                {anime.editorialSeasonsInfo ||
+                  [anime.year, anime.season && (anime.season === "WINTER" ? "Inverno" : anime.season === "SPRING" ? "Primavera" : anime.season === "SUMMER" ? "Verão" : "Outono"), anime.format]
+                    .filter(Boolean)
+                    .join(" · ") ||
+                  "Informação não disponível."}
+              </p>
+            </section>
+          )}
+
+          {(anime.editorialDubbingInfo || anime.audio) && (
+            <section className="mt-5 border border-hairline bg-panel/50 p-4">
+              <h2 className="mb-2 font-sans text-caption font-semibold uppercase tracking-wider text-mist">
+                Dublagem
+              </h2>
+              <p className="text-body-sm text-snow">
+                {anime.editorialDubbingInfo ||
+                  (dub ? "Disponível dublado em português" : "Disponível legendado")}
+              </p>
+            </section>
+          )}
 
           {episodes.length > 0 && (
             <section className="mt-6 border border-hairline bg-panel/50 p-4">
@@ -461,7 +508,7 @@ export default async function AnimeDetailPage({
             name: anime.title,
             ...(anime.japaneseTitle ? { alternateName: anime.japaneseTitle } : {}),
             url: `${SITE_URL}/animes/${slug}`,
-            ...(anime.synopsis ? { description: anime.synopsis.slice(0, 500) } : {}),
+            ...(anime.editorialSynopsis || anime.synopsis ? { description: (anime.editorialSynopsis || anime.synopsis)!.slice(0, 500) } : {}),
             ...(anime.year ? { startDate: String(anime.year) } : {}),
             ...(cover ? { image: cover } : {}),
             ...(anime.bannerImage ? { thumbnailUrl: upgradeImageUrl(anime.bannerImage) } : {}),

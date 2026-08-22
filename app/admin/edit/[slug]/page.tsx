@@ -27,6 +27,10 @@ export default function AdminEditAnimePage({
   const [rating, setRating] = useState("");
   const [status, setStatus] = useState("LANCAMENTO");
   const [ageRating, setAgeRating] = useState("A14");
+  const [editorialSynopsis, setEditorialSynopsis] = useState("");
+  const [editorialWhereToWatch, setEditorialWhereToWatch] = useState("");
+  const [editorialDubbingInfo, setEditorialDubbingInfo] = useState("");
+  const [editorialSeasonsInfo, setEditorialSeasonsInfo] = useState("");
 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -54,6 +58,10 @@ export default function AdminEditAnimePage({
             : (a.status ?? "LANCAMENTO"),
         );
         setAgeRating(a.ageRating ?? "A14");
+        setEditorialSynopsis(a.editorialSynopsis ?? "");
+        setEditorialWhereToWatch(a.editorialWhereToWatch ?? "");
+        setEditorialDubbingInfo(a.editorialDubbingInfo ?? "");
+        setEditorialSeasonsInfo(a.editorialSeasonsInfo ?? "");
       })
       .catch((e) =>
         setLoadErr(e instanceof ApiError ? e.message : "Erro ao carregar anime."),
@@ -77,6 +85,10 @@ export default function AdminEditAnimePage({
         rating: rating ? Number(rating) : undefined,
         status,
         ageRating,
+        editorialSynopsis: editorialSynopsis || undefined,
+        editorialWhereToWatch: editorialWhereToWatch || undefined,
+        editorialDubbingInfo: editorialDubbingInfo || undefined,
+        editorialSeasonsInfo: editorialSeasonsInfo || undefined,
       });
       setSaved(true);
     } catch (err) {
@@ -218,6 +230,60 @@ export default function AdminEditAnimePage({
                 inputMode="decimal"
               />
             </label>
+
+            <fieldset className="space-y-4 border border-hairline bg-panel/30 p-4">
+              <legend className="px-2 font-sans text-caption uppercase tracking-wider text-ice">
+                Campos editoriais (CMS)
+              </legend>
+
+              <label className="block">
+                <span className="mb-1.5 block font-sans text-caption uppercase tracking-wider text-mist">
+                  Sinopse editorial
+                </span>
+                <textarea
+                  className="field min-h-[80px]"
+                  value={editorialSynopsis}
+                  onChange={(e) => setEditorialSynopsis(e.target.value)}
+                  placeholder="Sobrescreve a sinopse automática quando preenchido"
+                />
+              </label>
+
+              <label className="block">
+                <span className="mb-1.5 block font-sans text-caption uppercase tracking-wider text-mist">
+                  Onde assistir (custom)
+                </span>
+                <input
+                  className="field"
+                  value={editorialWhereToWatch}
+                  onChange={(e) => setEditorialWhereToWatch(e.target.value)}
+                  placeholder="Default: Assista no AnimesIce"
+                />
+              </label>
+
+              <label className="block">
+                <span className="mb-1.5 block font-sans text-caption uppercase tracking-wider text-mist">
+                  Info de dublagem (custom)
+                </span>
+                <input
+                  className="field"
+                  value={editorialDubbingInfo}
+                  onChange={(e) => setEditorialDubbingInfo(e.target.value)}
+                  placeholder="Ex: Dublagem brasileira pelo estúdio X"
+                />
+              </label>
+
+              <label className="block">
+                <span className="mb-1.5 block font-sans text-caption uppercase tracking-wider text-mist">
+                  Info de temporadas (custom)
+                </span>
+                <input
+                  className="field"
+                  value={editorialSeasonsInfo}
+                  onChange={(e) => setEditorialSeasonsInfo(e.target.value)}
+                  placeholder="Ex: 2 temporadas, 24 episódios no total"
+                />
+              </label>
+            </fieldset>
 
             {error && (
               <p role="alert" className="border border-signal/40 bg-signal/10 p-3 text-body-sm text-signal">

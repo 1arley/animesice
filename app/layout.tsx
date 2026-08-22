@@ -36,6 +36,12 @@ const fontPlexMono = IBM_Plex_Mono({
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
+  alternates: {
+    canonical: SITE_URL,
+    languages: {
+      "pt-BR": SITE_URL,
+    },
+  },
   title: {
     default: "AnimesIce — Assistir animes online em HD, legendados e dublados",
     template: "%s | AnimesIce",
