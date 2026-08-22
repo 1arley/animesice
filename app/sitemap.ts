@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 import { SITE_URL } from "@/lib/site";
 import { serverFetchJson, serverListBlogPosts } from "@/lib/api-server";
-import type { Anime, Paginated } from "@/types";
+import type { Anime, Genre, Paginated } from "@/types";
 import { isHentaiAnime } from "@/lib/hentai";
 import { blogPostDate, normalizeBlogList, withLegacyFallback } from "@/lib/blog";
 
@@ -34,6 +34,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     lastModified: new Date(post.updatedAt || blogPostDate(post)),
     changeFrequency: "monthly" as const,
     priority: 0.5,
+  }));
+
+  // Genre pages: índice /generos/{slug} — uma chamada traz todos, sem paginação.
+  const genres = (await serverFetchJson<Genre[]>("/genre", {
+    cache: "force-cache",
+    next: { revalidate: 3600, tags: ["sitemap"] },
+  })) ?? [];
+  const genreEntries: MetadataRoute.Sitemap = genres.map((genre) => ({
+    url: `${SITE_URL}/generos/${genre.slug}`,
+    lastModified: new Date(),
+    changeFrequency: "weekly" as const,
+    priority: 0.6,
   }));
 
   // Dynamic animes: paginated fetch, stop when page is empty or meta says done.
@@ -70,5 +82,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     page++;
   }
 
-  return [...staticEntries, ...blogEntries, ...animeEntries];
+  return [...staticEntries, ...blogEntries, ...genreEntries, ...animeEntries];
 }
