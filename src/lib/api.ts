@@ -38,6 +38,8 @@ import type {
   FeedItem,
   UserSearchResult,
   FeedbackStatus,
+  BlogPost,
+  BlogPostInput,
 } from "@/types";
 
 // Re-export da sanção de URL — módulo puro em url.ts; aqui por compat.
@@ -199,6 +201,14 @@ async function request<T>(
   return data as T;
 }
 
+async function revalidateBlogCache(): Promise<void> {
+  if (typeof window === "undefined") return;
+  await fetch("/api/blog/revalidate", {
+    method: "POST",
+    credentials: "include",
+  }).catch(() => undefined);
+}
+
 export const api = {
   register: (body: {
     name: string;
@@ -315,6 +325,15 @@ export const api = {
       `/anime/calendar${season ? `?season=${season}` : ""}${year ? `${season ? "&" : "?"}year=${year}` : ""}`,
     ),
 
+  // --- Blog (leitura pública) ---
+  listBlogPosts: (page = 1, limit = 24) =>
+    request<Paginated<BlogPost>>(
+      `/blog-posts?published=true&page=${page}&limit=${limit}`,
+    ),
+
+  getBlogPost: (slug: string) =>
+    request<BlogPost>(`/blog-posts/slug/${encodeURIComponent(slug)}`),
+
   getGenreAnimes: (slug: string, page = 1, limit = 24) =>
     request<GenreAnimesResponse>(`/genre/${slug}/animes?page=${page}&limit=${limit}`),
 
@@ -349,6 +368,40 @@ export const api = {
     ),
 
   // --- Admin (protegido ROLE=ADMIN) ---
+  adminListBlogPosts: (page = 1, limit = 50, published?: boolean) =>
+    request<Paginated<BlogPost>>(
+      `/blog-posts?page=${page}&limit=${limit}${published == null ? "" : `&published=${published}`}`,
+    ),
+
+  adminGetBlogPost: (id: string) =>
+    request<BlogPost>(`/blog-posts/${encodeURIComponent(id)}`),
+
+  adminCreateBlogPost: async (dto: BlogPostInput) => {
+    const post = await request<BlogPost>("/blog-posts", {
+      method: "POST",
+      body: JSON.stringify(dto),
+    });
+    await revalidateBlogCache();
+    return post;
+  },
+
+  adminUpdateBlogPost: async (id: string, dto: Partial<BlogPostInput>) => {
+    const post = await request<BlogPost>(`/blog-posts/${encodeURIComponent(id)}`, {
+      method: "PATCH",
+      body: JSON.stringify(dto),
+    });
+    await revalidateBlogCache();
+    return post;
+  },
+
+  adminDeleteBlogPost: async (id: string) => {
+    const result = await request<{ message: string }>(`/blog-posts/${encodeURIComponent(id)}`, {
+      method: "DELETE",
+    });
+    await revalidateBlogCache();
+    return result;
+  },
+
   adminListAnimes: (page = 1, limit = 50, search?: string) =>
     request<Paginated<Anime & { _count: { episodes: number } }>>(
       `/admin/animes?page=${page}&limit=${limit}${search ? `&search=${encodeURIComponent(search)}` : ""}`,

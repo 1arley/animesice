@@ -24,6 +24,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/admin/usuarios", label: "Usuários", icon: "M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-1.13a4 4 0 10-4-4 4 4 0 004 4zm6 0a3 3 0 10-3-3 3 3 0 003 3z" },
   { href: "/admin/moderacao", label: "Moderação", icon: "M9 12l2 2 4-4m5.618 4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.016L2 12l1.382 6.04A11.955 11.955 0 0012 21.056a11.955 11.955 0 008.618-3.016L22 12l-1.382-5.984z" },
   { href: "/admin/posts", label: "Posts", icon: "M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" },
+  { href: "/admin/blog", label: "Blog", icon: "M4 5.5A2.5 2.5 0 016.5 3H12v16H6.5A2.5 2.5 0 004 21.5v-16zM20 5.5A2.5 2.5 0 0017.5 3H12v16h5.5a2.5 2.5 0 012.5 2.5v-16z" },
   { href: "/admin/pedidos", label: "Pedidos", icon: "M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M7 16h.01" },
   { href: "/admin/feedbacks", label: "Feedbacks", icon: "M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" },
   { href: "/admin/watchtower", label: "Watchtower", icon: "M9 12l2 2 4-4m5.618 4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.016L2 12l1.382 6.04A11.955 11.955 0 0012 21.056a11.955 11.955 0 008.618-3.016L22 12l-1.382-5.984z", superadminOnly: true },

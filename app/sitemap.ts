@@ -1,8 +1,9 @@
 import type { MetadataRoute } from "next";
 import { SITE_URL } from "@/lib/site";
-import { serverFetchJson } from "@/lib/api-server";
+import { serverFetchJson, serverListBlogPosts } from "@/lib/api-server";
 import type { Anime, Paginated } from "@/types";
 import { isHentaiAnime } from "@/lib/hentai";
+import { blogPostDate, normalizeBlogList, withLegacyFallback } from "@/lib/blog";
 
 const STATIC_ROUTES: { path: string; priority: number }[] = [
   { path: "", priority: 1.0 },
@@ -16,12 +17,6 @@ const STATIC_ROUTES: { path: string; priority: number }[] = [
   { path: "/aleatorio", priority: 0.6 },
 ];
 
-const BLOG_POSTS = [
-  "melhores-animes-2026",
-  "guia-temporada-outono-2026",
-  "melhores-animes-dublados",
-];
-
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticEntries: MetadataRoute.Sitemap = STATIC_ROUTES.map(
     ({ path, priority }) => ({
@@ -33,9 +28,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   );
 
   // Blog posts
-  const blogEntries: MetadataRoute.Sitemap = BLOG_POSTS.map((slug) => ({
-    url: `${SITE_URL}/blog/${slug}`,
-    lastModified: new Date(),
+  const blogPosts = withLegacyFallback(normalizeBlogList(await serverListBlogPosts()));
+  const blogEntries: MetadataRoute.Sitemap = blogPosts.map((post) => ({
+    url: `${SITE_URL}/blog/${post.slug}`,
+    lastModified: new Date(post.updatedAt || blogPostDate(post)),
     changeFrequency: "monthly" as const,
     priority: 0.5,
   }));
