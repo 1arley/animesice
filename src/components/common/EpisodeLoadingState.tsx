@@ -6,7 +6,7 @@ import { CrystalMotion } from "@/components/animesice/CrystalMotion";
 
 /** Tempo "normal" de espera, em segundos. A partir daqui a mensagem muda
  *  e sugerimos recarregar a página. */
-const LIMIT_SECONDS = 15;
+const LIMIT_SECONDS = 8;
 
 /** Mensagens que se revezam enquanto o sinal chega — voz do canal. */
 const LOADING_PHRASES = [
@@ -46,7 +46,7 @@ export function EpisodeLoadingState() {
         <TextLoop texts={LOADING_PHRASES} interval={2600} fixedHeight />
       </p>
       <p className="max-w-md text-body-sm text-mist">
-        Às vezes demora de 5 a 15 segundos — vai pegando uma pipoca que o
+        Às vezes demora de 3 a 8 segundos — vai pegando uma pipoca que o
         sinal já tá chegando!
       </p>
 
