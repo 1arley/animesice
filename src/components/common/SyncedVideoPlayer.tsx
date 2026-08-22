@@ -21,13 +21,13 @@ interface SyncedVideoPlayerProps {
 interface PlayerSyncPayload {
   currentTime: number;
   isPlaying: boolean;
-  updatedAt: number;
   origin: string;
 }
 
-const SYNC_TOLERANCE_SEC = 2;
+const SYNC_TOLERANCE_SEC = 0.75;
 const SYNC_DEBOUNCE_MS = 500;
 const TIME_SYNC_INTERVAL_MS = 5000;
+const APPLYING_SYNC_GUARD_MS = 800;
 
 export function SyncedVideoPlayer({
   src,
@@ -84,6 +84,11 @@ function EmbedPlayer({
   roomSlug: string;
   isHost: boolean;
 }) {
+  const iframeRef = useRef<HTMLIFrameElement | null>(null);
+  const lastSyncSentRef = useRef(0);
+  const [bridgeStatus, setBridgeStatus] = useState<
+    "connecting" | "ready" | "unavailable"
+  >("connecting");
   const title =
     animeTitle && episodeNumber != null
       ? `${animeTitle} — Episodio ${episodeNumber}`
@@ -97,17 +102,102 @@ function EmbedPlayer({
     }).catch(() => {});
   }, [animeSlug, episodeNumber]);
 
+  const postToBridge = useCallback((message: Record<string, unknown>) => {
+    iframeRef.current?.contentWindow?.postMessage(
+      { type: "animesice:watch-party", ...message },
+      "*",
+    );
+  }, []);
+
+  useEffect(() => {
+    const onMessage = (event: MessageEvent) => {
+      if (
+        event.source !== iframeRef.current?.contentWindow ||
+        event.data?.type !== "animesice:watch-party"
+      ) return;
+
+      const eventName = event.data.event as string;
+      if (eventName === "bridge-ready" || eventName === "ready") {
+        setBridgeStatus("ready");
+        postToBridge({ command: "setRole", role: isHost ? "host" : "viewer" });
+        postToBridge({ command: "getState" });
+        return;
+      }
+      if (eventName === "unavailable") {
+        setBridgeStatus("unavailable");
+        return;
+      }
+      if (eventName === "autoplay-blocked") {
+        setBridgeStatus("ready");
+        return;
+      }
+      if (eventName !== "state" || !socket?.connected) return;
+
+      if (!isHost) {
+        socket.emit("requestSync", { slug: roomSlug });
+        return;
+      }
+      if (!Number.isFinite(event.data.currentTime)) return;
+      const now = Date.now();
+      if (now - lastSyncSentRef.current < SYNC_DEBOUNCE_MS) return;
+      lastSyncSentRef.current = now;
+      socket.emit("playerSync", {
+        slug: roomSlug,
+        currentTime: event.data.currentTime,
+        isPlaying: Boolean(event.data.isPlaying),
+      });
+    };
+
+    window.addEventListener("message", onMessage);
+    const unavailableTimer = window.setTimeout(() => {
+      setBridgeStatus((status) => status === "connecting" ? "unavailable" : status);
+    }, 8000);
+    return () => {
+      window.removeEventListener("message", onMessage);
+      window.clearTimeout(unavailableTimer);
+    };
+  }, [isHost, postToBridge, roomSlug, socket]);
+
+  useEffect(() => {
+    if (!socket) return;
+    const onPlayerSync = (data: PlayerSyncPayload) => {
+      if (!isHost) postToBridge({ command: "apply", ...data });
+    };
+    const requestSync = () => {
+      postToBridge({ command: "setRole", role: isHost ? "host" : "viewer" });
+      if (!isHost) socket.emit("requestSync", { slug: roomSlug });
+    };
+    socket.on("playerSync", onPlayerSync);
+    socket.on("connect", requestSync);
+    requestSync();
+    return () => {
+      socket.off("playerSync", onPlayerSync);
+      socket.off("connect", requestSync);
+    };
+  }, [isHost, postToBridge, roomSlug, socket]);
+
   return (
     <div className="relative">
       <iframe
+        ref={iframeRef}
         src={embedUrl}
         title={title}
         allowFullScreen
+        allow="autoplay; fullscreen"
+        onLoad={() => {
+          setBridgeStatus("connecting");
+          postToBridge({ command: "setRole", role: isHost ? "host" : "viewer" });
+          postToBridge({ command: "getState" });
+        }}
         className="video-frame"
         style={{ border: 0 }}
       />
       <div className="absolute bottom-2 right-2 rounded bg-black/70 px-2 py-1 text-caption text-mist">
-        {isHost ? "Host (embed sem sync)" : "Espectador (embed sem sync)"}
+        {bridgeStatus === "ready"
+          ? isHost ? "Host · embed sincronizado" : "Embed sincronizado"
+          : bridgeStatus === "unavailable"
+            ? "Este player não oferece sincronização"
+            : "Conectando ao player..."}
       </div>
     </div>
   );
@@ -134,9 +224,12 @@ function NativeSyncedPlayer({
 }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const lastSyncSentRef = useRef<number>(0);
+  const lastSyncPlayingRef = useRef<boolean | null>(null);
   const isApplyingSyncRef = useRef(false);
   const syncTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [synced, setSynced] = useState(true);
+  const pendingSyncRef = useRef<PlayerSyncPayload | null>(null);
+  const [synced, setSynced] = useState(isHost);
+  const [playbackBlocked, setPlaybackBlocked] = useState(false);
 
   const safeSrc = safeImageSrc(src) ?? src;
   const safePoster = safeImageSrc(posterUrl);
@@ -146,8 +239,12 @@ function NativeSyncedPlayer({
     (currentTime: number, isPlaying: boolean) => {
       if (!socket?.connected || !isHost) return;
       const now = Date.now();
-      if (now - lastSyncSentRef.current < SYNC_DEBOUNCE_MS) return;
+      if (
+        isPlaying === lastSyncPlayingRef.current &&
+        now - lastSyncSentRef.current < SYNC_DEBOUNCE_MS
+      ) return;
       lastSyncSentRef.current = now;
+      lastSyncPlayingRef.current = isPlaying;
       socket.emit("playerSync", {
         slug: roomSlug,
         currentTime,
@@ -160,29 +257,51 @@ function NativeSyncedPlayer({
   const applySync = useCallback((data: PlayerSyncPayload) => {
     const video = videoRef.current;
     if (!video) return;
+    if (video.readyState === HTMLMediaElement.HAVE_NOTHING) {
+      pendingSyncRef.current = data;
+      return;
+    }
 
-    const elapsed = (Date.now() - data.updatedAt) / 1000;
-    const targetTime = data.currentTime + (data.isPlaying ? elapsed : 0);
+    pendingSyncRef.current = null;
+    const targetTime = data.currentTime;
     const diff = Math.abs(video.currentTime - targetTime);
 
-    setSynced(diff < SYNC_TOLERANCE_SEC * 2);
-
-    if (diff < SYNC_TOLERANCE_SEC) return;
+    const playbackMatches = data.isPlaying ? !video.paused : video.paused;
+    setSynced(diff < SYNC_TOLERANCE_SEC * 2 && playbackMatches);
 
     isApplyingSyncRef.current = true;
-    video.currentTime = targetTime;
+    if (diff >= SYNC_TOLERANCE_SEC) {
+      video.currentTime = Math.max(0, targetTime);
+    }
 
     if (data.isPlaying && video.paused) {
-      video.play().catch(() => {});
+      video.play().then(() => {
+        setPlaybackBlocked(false);
+        setSynced(true);
+      }).catch(() => {
+        setPlaybackBlocked(true);
+        setSynced(false);
+      });
     } else if (!data.isPlaying && !video.paused) {
       video.pause();
+      setSynced(diff < SYNC_TOLERANCE_SEC * 2);
     }
 
     if (syncTimeoutRef.current) clearTimeout(syncTimeoutRef.current);
     syncTimeoutRef.current = setTimeout(() => {
       isApplyingSyncRef.current = false;
-    }, 500);
+    }, APPLYING_SYNC_GUARD_MS);
   }, []);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    const applyPendingSync = () => {
+      if (pendingSyncRef.current) applySync(pendingSyncRef.current);
+    };
+    video.addEventListener("loadedmetadata", applyPendingSync);
+    return () => video.removeEventListener("loadedmetadata", applyPendingSync);
+  }, [applySync]);
 
   useEffect(() => {
     if (!socket) return;
@@ -194,12 +313,16 @@ function NativeSyncedPlayer({
 
     socket.on("playerSync", onPlayerSync);
 
-    if (!isHost) {
-      socket.emit("requestSync", { slug: roomSlug });
-    }
+    const requestCurrentSync = () => {
+      if (!isHost) socket.emit("requestSync", { slug: roomSlug });
+    };
+    socket.on("connect", requestCurrentSync);
+
+    requestCurrentSync();
 
     return () => {
       socket.off("playerSync", onPlayerSync);
+      socket.off("connect", requestCurrentSync);
     };
   }, [socket, roomSlug, isHost, applySync]);
 
@@ -356,11 +479,25 @@ function NativeSyncedPlayer({
     <div className="relative">
       <video
         ref={videoRef}
-        controls
+        controls={isHost}
         poster={safePoster}
         aria-label={animeTitle && episodeNumber != null ? `${animeTitle} — Episodio ${episodeNumber}` : "Player de video"}
         className="video-frame"
       />
+      {!isHost && playbackBlocked && (
+        <button
+          type="button"
+          onClick={() => {
+            videoRef.current?.play().then(() => {
+              setPlaybackBlocked(false);
+              socket?.emit("requestSync", { slug: roomSlug });
+            }).catch(() => {});
+          }}
+          className="absolute inset-0 m-auto h-fit w-fit rounded bg-black/80 px-4 py-2 text-body-sm font-medium text-snow"
+        >
+          Clique para ativar a reprodução sincronizada
+        </button>
+      )}
       <div className="absolute top-2 right-2 flex items-center gap-2 rounded bg-black/70 px-2 py-1 text-caption">
         <span className={`h-2 w-2 rounded-full ${synced ? "bg-ice" : "bg-signal"}`} />
         <span className="text-mist">

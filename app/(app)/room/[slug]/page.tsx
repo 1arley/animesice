@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import { api, ApiError, isProxyEmbed, type RoomInfo, type RoomMessageItem, type StreamSource } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import type { Episode, Anime } from "@/types";
@@ -14,6 +14,17 @@ interface Participant {
   name: string | null;
   avatar: string | null;
   isHost: boolean;
+}
+
+function mergeMessages(
+  current: RoomMessageItem[],
+  incoming: RoomMessageItem[],
+): RoomMessageItem[] {
+  const unique = new Map(current.map((message) => [message.id, message]));
+  for (const message of incoming) unique.set(message.id, message);
+  return Array.from(unique.values()).sort(
+    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+  );
 }
 
 export default function RoomPage({
@@ -32,13 +43,25 @@ export default function RoomPage({
   const [input, setInput] = useState("");
   const [connected, setConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [realtimeError, setRealtimeError] = useState<string | null>(null);
+  const [joined, setJoined] = useState(false);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [isHost, setIsHost] = useState(false);
   const [participants, setParticipants] = useState<Participant[]>([]);
+  const [socket, setSocket] = useState<Socket | null>(null);
+  const [unreadMessages, setUnreadMessages] = useState(0);
   const socketRef = useRef<Socket | null>(null);
-  const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const messagesRef = useRef<HTMLDivElement | null>(null);
+  const shouldStickToBottomRef = useRef(true);
+
+  const scrollChatToBottom = useCallback((behavior: ScrollBehavior = "smooth") => {
+    const element = messagesRef.current;
+    element?.scrollTo({ top: element.scrollHeight, behavior });
+    shouldStickToBottomRef.current = true;
+    setUnreadMessages(0);
+  }, []);
 
   useEffect(() => {
     params.then((p) => setSlug(p.slug));
@@ -56,13 +79,12 @@ export default function RoomPage({
         gotRoom = true;
         setRoom(r);
         setLoadingSource(true);
-        return Promise.all([
-          api.getEpisode(r.animeSlug, r.episodeNumber),
-          api.streamSource(r.animeSlug, r.episodeNumber),
-        ]);
+        return api.getEpisode(r.animeSlug, r.episodeNumber).then((ep) => {
+          setEpisode(ep);
+          return api.streamSource(r.animeSlug, r.episodeNumber);
+        });
       })
-      .then(([ep, src]) => {
-        setEpisode(ep);
+      .then((src) => {
         setSource(src);
       })
       .catch((e) => {
@@ -86,35 +108,47 @@ export default function RoomPage({
     const origin = apiUrl.replace(/\/api\/?$/, "");
     const socket = io(`${origin}/room`, {
       withCredentials: true,
-      transports: ["websocket"],
+      reconnection: true,
+      reconnectionAttempts: Infinity,
     });
     socketRef.current = socket;
+    setSocket(socket);
 
     let historyReceived = false;
 
     socket.on("connect", () => {
       setConnected(true);
+      setRealtimeError(null);
       socket.emit("joinRoom", { slug });
       socket.emit("loadHistory", { slug });
     });
 
-    socket.on("disconnect", () => setConnected(false));
+    socket.on("disconnect", () => {
+      setConnected(false);
+      setJoined(false);
+    });
 
     socket.on("connect_error", () => {
       setConnected(false);
+      setRealtimeError("Conexão com a sala interrompida. Tentando reconectar...");
     });
 
     socket.on("joinedRoom", (data: { roomId: string; isHost: boolean }) => {
       setIsHost(data.isHost);
+      setJoined(true);
+      setRealtimeError(null);
     });
 
     socket.on("newMessage", (msg: RoomMessageItem) => {
-      setMessages((prev) => [...prev, msg]);
+      setMessages((prev) => mergeMessages(prev, [msg]));
+      if (!shouldStickToBottomRef.current) {
+        setUnreadMessages((count) => count + 1);
+      }
     });
 
     socket.on("messageHistory", (msgs: RoomMessageItem[]) => {
       historyReceived = true;
-      setMessages(msgs.reverse());
+      setMessages((prev) => mergeMessages(prev, msgs));
     });
 
     socket.on("participantList", (list: Participant[]) => {
@@ -124,7 +158,7 @@ export default function RoomPage({
     const fallbackTimer = setTimeout(() => {
       if (!historyReceived) {
         api.getRoomMessages(slug)
-          .then((msgs) => setMessages(msgs))
+          .then((msgs) => setMessages((prev) => mergeMessages(prev, msgs)))
           .catch(() => {});
       }
     }, 3000);
@@ -135,6 +169,15 @@ export default function RoomPage({
     });
 
     socket.on("error", (data: { message: string }) => {
+      setRealtimeError(data.message);
+    });
+    socket.on("rateLimited", (data: { message: string }) => {
+      setRealtimeError(data.message);
+    });
+    socket.on("duplicate", (data: { message: string }) => {
+      setRealtimeError(data.message);
+    });
+    socket.on("suspended", (data: { message: string }) => {
       setError(data.message);
     });
 
@@ -143,16 +186,29 @@ export default function RoomPage({
       socket.emit("leaveRoom", { slug });
       socket.disconnect();
       socketRef.current = null;
+      setSocket(null);
     };
   }, [slug, user, room]);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (shouldStickToBottomRef.current) {
+      const element = messagesRef.current;
+      element?.scrollTo({ top: element.scrollHeight, behavior: "auto" });
+    }
   }, [messages]);
+
+  function handleChatScroll() {
+    const element = messagesRef.current;
+    if (!element) return;
+    const isNearBottom = element.scrollHeight - element.scrollTop - element.clientHeight < 48;
+    shouldStickToBottomRef.current = isNearBottom;
+    if (isNearBottom) setUnreadMessages(0);
+  }
 
   function sendMessage(e: React.FormEvent) {
     e.preventDefault();
     if (!input.trim() || !socketRef.current?.connected || !slug) return;
+    setRealtimeError(null);
     socketRef.current.emit("sendMessage", { slug, content: input });
     setInput("");
   }
@@ -214,7 +270,7 @@ export default function RoomPage({
         >
           ← Voltar ao episódio
         </a>
-        {confirmDelete ? (
+        {isHost && (confirmDelete ? (
           <div className="flex gap-2">
             <button
               onClick={handleDeleteRoom}
@@ -237,7 +293,7 @@ export default function RoomPage({
           >
             Deletar sala
           </button>
-        )}
+        ))}
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
@@ -249,6 +305,17 @@ export default function RoomPage({
             EP {room.episodeNumber} · Watch Party {isHost && "· Host"}
           </p>
 
+          {realtimeError && (
+            <p role="status" className="mt-2 text-caption text-signal">
+              {realtimeError}
+            </p>
+          )}
+          {joined && participants.length > 0 && !participants.some((p) => p.isHost) && (
+            <p role="status" className="mt-2 text-caption text-mist">
+              O host saiu. A reprodução ficará pausada até ele voltar.
+            </p>
+          )}
+
           <div className="mt-4">
             {episode && source && isProxyEmbed(source.src) ? (
               <SyncedVideoPlayer
@@ -257,7 +324,7 @@ export default function RoomPage({
                 posterUrl={source.thumbnailUrl ?? episode.thumbnailUrl ?? undefined}
                 animeSlug={room.animeSlug}
                 episodeNumber={room.episodeNumber}
-                socket={socketRef.current}
+                socket={socket}
                 roomSlug={slug}
                 isHost={isHost}
               />
@@ -271,7 +338,7 @@ export default function RoomPage({
                 posterUrl={source.thumbnailUrl ?? episode?.thumbnailUrl ?? undefined}
                 animeSlug={room.animeSlug}
                 episodeNumber={room.episodeNumber}
-                socket={socketRef.current}
+                socket={socket}
                 roomSlug={slug}
                 isHost={isHost}
               />
@@ -328,21 +395,35 @@ export default function RoomPage({
             </div>
           )}
 
-          <div className="flex-1 overflow-y-auto p-3 space-y-2">
-            {messages.length === 0 && (
-              <p className="text-caption text-mist">
-                Nenhuma mensagem ainda. Diga olá!
-              </p>
+          <div className="relative min-h-0 flex-1">
+            <div
+              ref={messagesRef}
+              onScroll={handleChatScroll}
+              className="h-full overflow-y-auto p-3 space-y-2"
+            >
+              {messages.length === 0 && (
+                <p className="text-caption text-mist">
+                  Nenhuma mensagem ainda. Diga olá!
+                </p>
+              )}
+              {messages.map((msg) => (
+                <div key={msg.id} className="text-body-sm">
+                  <span className="font-sans font-medium text-ice">
+                    {msg.user.userName ?? msg.user.name ?? "Anônimo"}:
+                  </span>{" "}
+                  <span className="text-mist">{msg.content}</span>
+                </div>
+              ))}
+            </div>
+            {unreadMessages > 0 && (
+              <button
+                type="button"
+                onClick={() => scrollChatToBottom()}
+                className="absolute bottom-2 left-1/2 -translate-x-1/2 rounded-full bg-ice px-3 py-1 text-caption font-medium text-ink shadow-lg"
+              >
+                {unreadMessages} {unreadMessages === 1 ? "nova mensagem" : "novas mensagens"} ↓
+              </button>
             )}
-            {messages.map((msg) => (
-              <div key={msg.id} className="text-body-sm">
-                <span className="font-sans font-medium text-ice">
-                  {msg.user.userName ?? msg.user.name ?? "Anônimo"}:
-                </span>{" "}
-                <span className="text-mist">{msg.content}</span>
-              </div>
-            ))}
-            <div ref={messagesEndRef} />
           </div>
 
           <form onSubmit={sendMessage} className="border-t border-hairline p-2">
