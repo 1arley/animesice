@@ -20,7 +20,7 @@ export default async function FeedPage() {
   return (
     <FeedView
       initialItems={data?.data ?? []}
-      initialTotalPages={data?.meta.totalPages ?? 1}
+      initialTotalPages={data?.meta?.totalPages ?? 1}
     />
   );
 }
