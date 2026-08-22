@@ -66,3 +66,11 @@ export function upgradeImageUrl(
 
   return url;
 }
+
+/**
+ * Escapa strings para uso seguro em JSON-LD dentro de <script type="application/ld+json">.
+ * Previne XSS via </script> injection em campos controlados pelo usuário (títulos, sinopses).
+ */
+export function escapeJsonLd(obj: unknown): string {
+  return JSON.stringify(obj).replace(/</g, '\\u003c').replace(/>/g, '\\u003e');
+}

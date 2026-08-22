@@ -4,6 +4,7 @@ import { AnimeCard } from "@/components/common/AnimeCard";
 import type { GenreAnimesResponse } from "@/types";
 import { serverFetchJson } from "@/lib/api-server";
 import { SITE_URL } from "@/lib/site";
+import { escapeJsonLd } from "@/lib/url";
 
 export const dynamic = "force-dynamic";
 
@@ -95,7 +96,7 @@ export default async function GenrePage({
     <div className="mx-auto max-w-shelf px-4 py-6">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: escapeJsonLd(jsonLd) }}
       />
 
       <nav className="mb-4 text-caption text-mist" aria-label="Breadcrumb">

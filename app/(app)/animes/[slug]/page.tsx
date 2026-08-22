@@ -3,7 +3,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { cache } from "react";
 import type { Anime } from "@/types";
-import { safeImageSrc, upgradeImageUrl } from "@/lib/url";
+import { safeImageSrc, upgradeImageUrl, escapeJsonLd } from "@/lib/url";
 import { AdaptiveImage } from "@/components/common/AdaptiveImage";
 import { blur } from "@/lib/blur";
 import { serverFetchJson } from "@/lib/api-server";
@@ -502,7 +502,7 @@ export default async function AnimeDetailPage({
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
+          __html: escapeJsonLd({
             "@context": "https://schema.org",
             "@type": "TVSeries",
             name: anime.title,
@@ -528,7 +528,7 @@ export default async function AnimeDetailPage({
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
+          __html: escapeJsonLd({
             "@context": "https://schema.org",
             "@type": "BreadcrumbList",
             itemListElement: [
@@ -542,7 +542,7 @@ export default async function AnimeDetailPage({
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
+          __html: escapeJsonLd({
             "@context": "https://schema.org",
             "@type": "FAQPage",
             mainEntity: [

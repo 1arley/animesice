@@ -86,10 +86,22 @@ export function blogPostDate(post: BlogPost): string {
 /** Defesa em profundidade; a sanitização autoritativa deve continuar no backend. */
 export function sanitizeBlogHtml(html: string): string {
   return html
+    // Remove tags perigosas completas (com conteúdo)
     .replace(/<\s*(script|iframe|object|embed|form|style|link|meta)[^>]*>[\s\S]*?<\s*\/\s*\1\s*>/gi, "")
+    // Remove tags perigosas self-closing ou sem fechamento
     .replace(/<\s*(script|iframe|object|embed|form|style|link|meta)\b[^>]*\/?\s*>/gi, "")
+    // Remove event handlers e srcdoc
     .replace(/\s(on\w+|srcdoc)\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, "")
-    .replace(/\s(href|src)\s*=\s*(["'])\s*(javascript:|data:text\/html)[\s\S]*?\2/gi, ' $1="#"');
+    // Remove javascript: e data:text/html em href/src
+    .replace(/\s(href|src)\s*=\s*(["'])\s*(javascript:|data:text\/html)[\s\S]*?\2/gi, ' $1="#"')
+    // Remove <base> tags que poderiam redirecionar recursos
+    .replace(/<\s*base\b[^>]*>/gi, "")
+    // Remove <meta http-equiv="refresh"> que poderia redirecionar
+    .replace(/<\s*meta\b[^>]*http-equiv\s*=\s*["']?refresh["']?[^>]*>/gi, "")
+    // Remove <svg/onload=...> e payloads via SVG
+    .replace(/<svg\b[^>]*\bon\w+\s*=[^>]*>/gi, "<svg>")
+    // Remove expression() em CSS inline
+    .replace(/expression\s*\(/gi, "expr(");
 }
 
 export function escapeXml(value: string): string {

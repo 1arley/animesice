@@ -6,6 +6,7 @@ import type { Episode, Anime } from "@/types";
 import { isHentaiAnime, hentaisPath } from "@/lib/hentai";
 import { WatchClient } from "@/components/common/WatchClient";
 import { SITE_URL } from "@/lib/site";
+import { escapeJsonLd } from "@/lib/url";
 
 /**
  * Converte formatos comuns de duração para ISO 8601 (PT{minutos}M).
@@ -160,8 +161,8 @@ export default async function WatchPage({
 
   return (
     <div className="mx-auto max-w-shelf px-4 py-6">
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(videoJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: escapeJsonLd(jsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: escapeJsonLd(videoJsonLd) }} />
       <WatchClient slug={slug} number={number} initialEpisode={episode} />
     </div>
   );

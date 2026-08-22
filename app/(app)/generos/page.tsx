@@ -4,6 +4,7 @@ import type { Genre } from "@/types";
 import { serverFetchJson } from "@/lib/api-server";
 import { SITE_URL } from "@/lib/site";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { escapeJsonLd } from "@/lib/url";
 
 export const revalidate = 300;
 
@@ -60,7 +61,7 @@ export default async function GenerosPage() {
     <div className="mx-auto max-w-shelf px-4 py-6">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: escapeJsonLd(jsonLd) }}
       />
 
       <nav className="mb-4 text-caption text-mist" aria-label="Breadcrumb">
