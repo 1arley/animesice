@@ -7,6 +7,7 @@ import { blogPostDate, normalizeBlogList, withLegacyFallback } from "@/lib/blog"
 
 const STATIC_ROUTES: { path: string; priority: number }[] = [
   { path: "", priority: 1.0 },
+  { path: "/animes", priority: 0.9 },
   { path: "/buscar", priority: 0.8 },
   { path: "/calendario", priority: 0.8 },
   { path: "/lancamentos", priority: 0.8 },
