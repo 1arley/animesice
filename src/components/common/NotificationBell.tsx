@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import type { NotificationItem } from "@/types";
 
@@ -15,6 +16,7 @@ export function NotificationBell() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [open, setOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement | null>(null);
+  const pathname = usePathname();
 
   const fetchNotifications = useCallback((signal?: AbortSignal) => {
     loadApi().then((api) => api.listNotifications(1, 5, false, signal))
@@ -43,6 +45,10 @@ export function NotificationBell() {
       ac.abort();
     };
   }, [user, fetchNotifications]);
+
+  useEffect(() => {
+    setOpen(false);
+  }, [pathname]);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -91,7 +97,7 @@ export function NotificationBell() {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full mt-2 z-50 w-80 border border-hairline bg-ink shadow-lg">
+        <div className="absolute right-0 top-full mt-2 z-50 w-80 max-w-[calc(100vw-2rem)] border border-hairline bg-ink shadow-lg">
           <div className="flex items-center justify-between border-b border-hairline px-3 py-2">
             <span className="font-display text-body-sm font-semibold text-ice">
               Notificações

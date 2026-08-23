@@ -9,20 +9,24 @@ export function Modal({ open, onClose, title, children, footer }: { open: boolea
   useEffect(() => {
     if (open) {
       setMounted(true);
+      document.body.style.overflow = "hidden";
       const handler = (e: KeyboardEvent) => {
         if (e.key === "Escape") onClose();
       };
       document.addEventListener("keydown", handler);
-      // focus first input inside the modal
       setTimeout(() => {
         const el = dialogRef.current?.querySelector<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>("input, textarea, select, button");
         el?.focus();
       }, 20);
-      return () => document.removeEventListener("keydown", handler);
-    } else {
-      setMounted(false);
+      return () => {
+        document.removeEventListener("keydown", handler);
+        document.body.style.overflow = "";
+      };
+    } else if (mounted) {
+      const t = setTimeout(() => setMounted(false), 120);
+      return () => clearTimeout(t);
     }
-  }, [open, onClose]);
+  }, [open, onClose, mounted]);
 
   if (!open && !mounted) return null;
 

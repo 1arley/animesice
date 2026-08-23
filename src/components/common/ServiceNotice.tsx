@@ -5,13 +5,13 @@ import { useEffect, useState } from "react";
 const STORAGE_KEY = "animesice:service-notice:2026-08-21";
 
 export function ServiceNotice() {
-  const [visible, setVisible] = useState(true);
+  const [visible, setVisible] = useState(false);
 
   useEffect(() => {
     try {
-      if (localStorage.getItem(STORAGE_KEY) === "dismissed") setVisible(false);
+      if (localStorage.getItem(STORAGE_KEY) !== "dismissed") setVisible(true);
     } catch {
-      // Storage can be unavailable in privacy modes; keep the notice visible.
+      setVisible(true);
     }
   }, []);
 

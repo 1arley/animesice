@@ -20,12 +20,6 @@ function Glyph({ d, active }: { d: string; active: boolean }) {
   );
 }
 
-function haptic() {
-  if (typeof navigator !== "undefined" && "vibrate" in navigator) {
-    navigator.vibrate(8);
-  }
-}
-
 export function MobileTabBar() {
   const pathname = usePathname();
   const { user } = useAuth();
@@ -72,7 +66,7 @@ export function MobileTabBar() {
     pathname.startsWith("/me");
 
   const allItems = [...tabs, { href: profileHref, label: user ? "Perfil" : "Entrar", match: () => profileActive, icon: null }];
-  const activeIndex = allItems.findIndex((t) => t.match(pathname)) ?? 0;
+  const activeIndex = Math.max(0, allItems.findIndex((t) => t.match(pathname)));
 
   return (
     <nav
