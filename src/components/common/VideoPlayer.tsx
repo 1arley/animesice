@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type Hls from "hls.js";
 import { safeImageSrc } from "@/lib/url";
 import { isProxyEmbed, API_URL } from "@/lib/api";
@@ -130,21 +130,28 @@ function NativeVideoPlayer({
 }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const { user } = useAuth();
+  const [fatalError, setFatalError] = useState(false);
 
   const safeSrc = safeImageSrc(src) ?? src;
   const safePoster = safeImageSrc(posterUrl);
   const isM3u8 = safeSrc.toLowerCase().endsWith(".m3u8");
 
+  const onPlaybackErrorRef = useRef(onPlaybackError);
+  onPlaybackErrorRef.current = onPlaybackError;
+
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
+    setFatalError(false);
 
     const resume = () => {
       if (startAt && Number.isFinite(startAt) && video.duration > startAt) {
         video.currentTime = startAt;
       }
     };
-    const fatal = () => onPlaybackError?.(video.currentTime || startAt || 0);
+    const fatal = () => {
+      onPlaybackErrorRef.current?.(video.currentTime || startAt || 0);
+    };
     video.addEventListener("loadedmetadata", resume);
     video.addEventListener("error", fatal);
 
@@ -169,28 +176,52 @@ function NativeVideoPlayer({
     }
 
     let hls: Hls | null = null;
-    let cancelled = false;
+    let destroyed = false;
 
     import("hls.js")
       .then(({ default: HlsCtor }) => {
-        if (cancelled) return;
+        if (destroyed) return;
         if (!HlsCtor || !HlsCtor.isSupported()) {
           video.src = safeSrc;
           return;
         }
-        hls = new HlsCtor();
+        hls = new HlsCtor({
+          enableWorker: true,
+          lowLatencyMode: false,
+          maxBufferLength: 30,
+          startFragPrefetch: true,
+        });
+
+        hls.on(HlsCtor.Events.ERROR, (_event, data) => {
+          if (destroyed) return;
+          if (data.fatal) {
+            switch (data.type) {
+              case HlsCtor.ErrorTypes.NETWORK_ERROR:
+                hls?.startLoad();
+                break;
+              case HlsCtor.ErrorTypes.MEDIA_ERROR:
+                hls?.recoverMediaError();
+                break;
+              default:
+                setFatalError(true);
+                onPlaybackErrorRef.current?.(video.currentTime || startAt || 0);
+                break;
+            }
+          }
+        });
+
         hls.loadSource(safeSrc);
         hls.attachMedia(video);
       })
       .catch(() => {
-        if (cancelled) return;
+        if (destroyed) return;
         video.src = safeSrc;
       });
 
     return () => {
       video.removeEventListener("loadedmetadata", resume);
       video.removeEventListener("error", fatal);
-      cancelled = true;
+      destroyed = true;
       if (hls) {
         hls.destroy();
         hls = null;
@@ -198,7 +229,7 @@ function NativeVideoPlayer({
       video.removeAttribute("src");
       video.load();
     };
-  }, [safeSrc, isM3u8, startAt, onPlaybackError]);
+  }, [safeSrc, isM3u8, startAt]);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -276,10 +307,34 @@ function NativeVideoPlayer({
     };
   }, [animeSlug, episodeNumber, user]);
 
+  const retry = useCallback(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    setFatalError(false);
+    video.load();
+  }, []);
+
+  if (fatalError) {
+    return (
+      <div className="video-frame flex flex-col items-center justify-center gap-3 text-center">
+        <p className="text-body-sm text-mist">Falha ao carregar o vídeo.</p>
+        <button
+          type="button"
+          onClick={retry}
+          className="btn-ghost"
+        >
+          Tentar novamente
+        </button>
+      </div>
+    );
+  }
+
   return (
     <video
       ref={videoRef}
       controls
+      playsInline
+      preload="metadata"
       poster={safePoster}
       aria-label={
         animeTitle && episodeNumber != null
