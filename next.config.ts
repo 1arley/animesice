@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { ASSET_URL } from "./src/lib/site";
 
 /**
  * Politica de Seguranca de Conteudo (CSP) para producao.
@@ -17,7 +18,7 @@ const localConnect = process.env.INCLUDE_LOCAL_API === '1' ? ' http://localhost:
 // cache policy reaches the browser unchanged. Preview/local builds stay local.
 const assetPrefix =
   process.env.VERCEL_ENV === "production"
-    ? "https://animesice.vercel.app"
+    ? ASSET_URL
     : undefined;
 
 const cspHeader = `
