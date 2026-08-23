@@ -870,6 +870,23 @@
   display: block;
   filter: blur(0) brightness(1);
   will-change: filter, transform, opacity;
+  background: transparent;
+}
+
+/* Fallback mobile: quando o <video> não toca, o componente troca por <img>
+   do poster para evitar o fundo preto do <video>. O <img> herda .crystal-logo
+   e mantém transparência natural do WebP RGBA. Glow e motes continuam
+   animando via keyframes existentes. */
+.crystal-motion.crystal-fallback-active[data-mode="loop"] .crystal-glow,
+.crystal-motion.crystal-fallback-active[data-mode="reveal"] .crystal-glow {
+  opacity: 0.22;
+  animation: loopGlow 2600ms ease-in-out infinite;
+}
+
+.crystal-motion.crystal-fallback-active[data-mode="loop"] .crystal-mote,
+.crystal-motion.crystal-fallback-active[data-mode="reveal"] .crystal-mote {
+  animation: loopMote var(--dur, 3600ms) ease-in-out infinite;
+  animation-delay: var(--d, 0s);
 }
 
 /* A animação vem em vídeo sobre fundo preto: o screen blend faz o preto sumir
