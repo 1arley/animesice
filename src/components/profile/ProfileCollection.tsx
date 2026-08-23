@@ -65,7 +65,7 @@ export function ProfileCollection({
               type="button"
               onClick={() => onStatusChange(f.id)}
               aria-pressed={active}
-              className={`px-3 py-1.5 font-mono text-caption uppercase tracking-wider transition-colors ${
+              className={`min-h-11 px-3 py-2.5 font-mono text-caption uppercase tracking-wider transition-colors ${
                 active
                   ? "bg-ice text-ink"
                   : "border border-hairline text-mist hover:border-ice/50 hover:text-ice"

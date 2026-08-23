@@ -453,7 +453,7 @@ export default async function AnimeDetailPage({
                     <Link
                       href={`/animes/${slug}/${ep.number}`}
                       className={`group block border border-hairline bg-panel px-1 py-2 text-center transition-all hover:border-ice hover:bg-hairline/50 ${
-                        available ? "" : "opacity-40"
+                        available ? "" : "opacity-60"
                       }`}
                       title={`Episódio ${ep.number}${available ? "" : " — sem vídeo"}`}
                     >

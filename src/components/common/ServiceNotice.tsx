@@ -47,7 +47,7 @@ export function ServiceNotice() {
         <button
           type="button"
           onClick={dismiss}
-          className="-mr-2 shrink-0 p-2 text-mist transition-colors hover:text-snow focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ice"
+          className="-mr-2 flex h-11 w-11 shrink-0 items-center justify-center text-mist transition-colors hover:text-snow focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ice"
           aria-label="Fechar aviso"
         >
           <svg

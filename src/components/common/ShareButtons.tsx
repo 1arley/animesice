@@ -71,6 +71,7 @@ export function ShareButtons({ title, url, description }: ShareButtonsProps) {
           rel="noopener noreferrer"
           className="flex h-11 w-11 items-center justify-center border border-hairline text-mist transition-colors duration-200 hover:border-ice hover:text-ice"
           title={`Compartilhar no ${link.name}`}
+          aria-label={`Compartilhar no ${link.name}`}
         >
           {link.icon}
         </a>

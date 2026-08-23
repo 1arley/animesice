@@ -77,7 +77,7 @@ export function NotificationBell() {
     <div ref={dropdownRef} className="relative">
       <button
         onClick={() => setOpen(!open)}
-        className="relative font-display text-body text-mist transition-colors hover:text-ice"
+        className="relative flex h-11 w-11 items-center justify-center text-mist transition-colors hover:text-ice"
         aria-label="Notificações"
       >
         <svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true">

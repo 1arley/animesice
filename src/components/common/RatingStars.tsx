@@ -99,19 +99,19 @@ export function RatingStars({ slug }: RatingStarsProps) {
             onKeyDown={(e) => {
               if (e.key === "ArrowRight" || e.key === "ArrowUp") {
                 e.preventDefault();
-                if (user) handleRate(Math.min(10, n + 1));
+                if (user && !loading) handleRate(Math.min(10, n + 1));
               } else if (e.key === "ArrowLeft" || e.key === "ArrowDown") {
                 e.preventDefault();
-                if (user) handleRate(Math.max(1, n - 1));
+                if (user && !loading) handleRate(Math.max(1, n - 1));
               } else if (e.key === "0") {
                 e.preventDefault();
-                if (user) handleRemove();
+                if (user && !loading) handleRemove();
               }
             }}
-            className={`transition-colors ${
+            className={`p-1.5 transition-colors ${
               displayScore != null && n <= displayScore
                 ? "text-ice"
-                : "text-hairline"
+                : "text-mist/40"
             } ${user ? "hover:text-ice cursor-pointer" : "cursor-default"}`}
             title={`${n}/10`}
           >
@@ -132,7 +132,7 @@ export function RatingStars({ slug }: RatingStarsProps) {
           <button
             onClick={handleRemove}
             disabled={loading}
-            className="font-mono text-caption text-mist transition-colors hover:text-signal"
+            className="inline-flex min-h-11 items-center px-2 font-mono text-caption text-mist transition-colors hover:text-signal"
           >
             Remover meu voto
           </button>

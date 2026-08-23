@@ -402,7 +402,19 @@
   .btn-ice,
   .btn-ghost,
   .btn-danger {
-    min-height: 2.65rem;
+    min-height: 2.75rem;
+  }
+
+  .btn-ice:disabled,
+  .btn-ghost:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    transform: none;
+  }
+  .btn-ice:disabled:hover,
+  .btn-ghost:disabled:hover {
+    transform: none;
+    box-shadow: none;
   }
 
   /* ===== Admin Panel ===== */
@@ -571,6 +583,7 @@
 
   /* Filtros do admin: Tabs/Botões de filtro */
   .admin-tab {
+    min-height: 2.75rem;
     padding: 0.4rem 0.875rem;
     font-family: theme("fontFamily.mono");
     font-size: theme("fontSize.caption");
@@ -597,6 +610,7 @@
   .admin-nav-item {
     display: flex;
     align-items: center;
+    min-height: 2.75rem;
     gap: 0.625rem;
     padding: 0.625rem 0.875rem;
     font-family: theme("fontFamily.mono");

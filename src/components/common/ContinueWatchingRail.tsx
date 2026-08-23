@@ -138,7 +138,7 @@ export function ContinueWatchingRail() {
                 <button
                   type="button"
                   onClick={() => setPendingDelete(item)}
-                  className="flex h-11 w-11 items-center justify-center rounded-sm border border-hairline bg-ink/80 text-mist backdrop-blur-sm transition-colors duration-200 hover:border-ice/60 hover:bg-ink hover:text-ice sm:h-9 sm:w-9 sm:opacity-0 sm:group-hover/card:opacity-100 sm:focus:opacity-100"
+                  className="flex h-11 w-11 items-center justify-center rounded-sm border border-hairline/60 bg-ink/70 text-mist/70 backdrop-blur-sm transition-colors duration-200 hover:border-ice/60 hover:bg-ink hover:text-ice"
                   aria-label={`Remover “${item.anime.title}”`}
                 >
                   <svg

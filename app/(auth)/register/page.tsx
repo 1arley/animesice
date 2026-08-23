@@ -191,7 +191,7 @@ export default function RegisterPage() {
 
         <p className="mt-6 text-center text-body-sm text-mist">
           Já tem conta?{" "}
-          <Link href="/login" className="text-ice transition-colors hover:opacity-70">
+          <Link href="/login" className="text-ice transition-colors hover:text-snow hover:underline">
             Entrar
           </Link>
         </p>

@@ -86,7 +86,7 @@ export function Header() {
           <button
             type="button"
             onClick={() => setMobileSearchOpen(!mobileSearchOpen)}
-            className="p-2.5 sm:hidden"
+            className="flex h-11 w-11 items-center justify-center sm:hidden"
             aria-label="Buscar"
             aria-expanded={mobileSearchOpen}
           >

@@ -45,7 +45,7 @@ export function AnimeCard({ anime, priority = false, spotlight = true, variant =
     <Link
       href={`/animes/${anime.slug}`}
       title={anime.title}
-      className="group relative block overflow-hidden bg-panel transition-[transform,box-shadow] duration-300 ease-out hover:-translate-y-1 hover:shadow-[0_16px_32px_-14px_rgba(2,4,8,0.9)] focus-visible:outline-offset-4 active:translate-y-0 active:scale-[0.98] active:duration-100"
+      className="group relative block bg-panel transition-[transform,box-shadow] duration-300 ease-out hover:-translate-y-1 hover:shadow-[0_16px_32px_-14px_rgba(2,4,8,0.9)] focus-visible:outline-offset-4 active:translate-y-0 active:scale-[0.98] active:duration-100"
     >
       {rank !== undefined && (
         <span className="absolute left-0 top-0 z-10 min-w-9 bg-snow px-2 py-1 font-display text-xl font-bold leading-none text-ink" aria-label={`Posição ${rank}`}>

@@ -46,7 +46,7 @@ export default function ErrorPage({
   }, [chunkError, reset]);
 
   if (chunkError && !recoveryExhausted) {
-    return <div className="min-h-[50vh] bg-night" aria-hidden="true" />;
+    return <div className="min-h-[50vh] bg-ink" aria-hidden="true" />;
   }
 
   return (
