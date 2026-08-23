@@ -41,7 +41,10 @@ export function CrystalSplash() {
     } catch {
       /* storage indisponível: mostra a abertura mesmo assim */
     }
-    if (reduce) return;
+    if (reduce) {
+      setPhase("gone");
+      return;
+    }
 
     if (!seen) {
       try {
@@ -83,7 +86,7 @@ export function CrystalSplash() {
     };
   }, [reduce]);
 
-  if (phase === "gone") return null;
+  if (phase === "gone" || reduce) return null;
 
   return (
     <div

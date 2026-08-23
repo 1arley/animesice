@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useRef, type CSSProperties } from "react";
+import { useCallback, useEffect, useMemo, useRef, type CSSProperties } from "react";
 import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
 
 export type CrystalMotionMode = "reveal" | "loop" | "transition" | "micro";
@@ -52,6 +52,13 @@ export function CrystalMotion({
 }: CrystalMotionProps) {
   const reduce = usePrefersReducedMotion();
   const rootRef = useRef<HTMLDivElement | null>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+
+  useEffect(() => {
+    const v = videoRef.current;
+    if (!v || reduce) return;
+    v.play().catch(() => {});
+  }, [reduce]);
 
   const motes = useMemo<MoteStyle[]>(
     () =>
@@ -125,17 +132,18 @@ export function CrystalMotion({
           ))}
         </div>
         {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
-        <video
-          className="crystal-logo crystal-video"
-          src={VIDEO_URL}
-          poster={LOGO_URL}
-          autoPlay
-          muted
-          loop
-          playsInline
-          preload="auto"
-          aria-hidden="true"
-        />
+          <video
+            className="crystal-logo crystal-video"
+            src={VIDEO_URL}
+            poster={LOGO_URL}
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="auto"
+            ref={videoRef}
+            aria-hidden="true"
+          />
       </div>
     </div>
   );
