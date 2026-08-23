@@ -39,7 +39,7 @@ export function EpisodeCard({ episode, priority = false }: EpisodeCardProps) {
             priority={priority}
             placeholder="blur"
             blurDataURL={blur.landscape}
-            className="object-cover opacity-90 transition-all duration-500 ease-out group-hover:opacity-100 group-hover:scale-105"
+            className="object-cover opacity-90 transition-opacity duration-500 ease-out group-hover:opacity-100"
             quality={80}
           />
         ) : (

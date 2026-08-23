@@ -19,7 +19,7 @@ import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
  */
 
 // "Sinal da madrugada": quase-vácuo → gelo → azul de prateleira.
-const DEFAULT_COLOR_STOPS = ["#0E141D", "#45F0E0", "#1C2534"];
+const DEFAULT_COLOR_STOPS = ["#0E141D", "#E8DFCC", "#1C2534"];
 
 const VERT = `#version 300 es
 in vec2 position;

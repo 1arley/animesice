@@ -85,7 +85,7 @@ export default function MyProfilePage() {
                       <div className="flex items-center justify-between">
                         <div>
                           <Link href={`/animes/${h.anime.slug}`} className="font-semibold text-ice">{h.anime.title}</Link>
-                          <div className="text-mist text-sm">Episódio {h.episode.number} • {new Date(h.watchedAt).toLocaleString()}</div>
+                          <div className="text-mist text-sm">Episódio {h.episode.number} • {new Date(h.watchedAt).toLocaleString("pt-BR")}</div>
                         </div>
                       </div>
                     </div>

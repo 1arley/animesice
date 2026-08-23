@@ -69,7 +69,7 @@ export function ShareButtons({ title, url, description }: ShareButtonsProps) {
           href={link.url}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex h-8 w-8 items-center justify-center border border-hairline text-mist transition-all duration-200 hover:border-ice hover:text-ice hover:scale-110 hover:shadow-md hover:shadow-ice/20"
+          className="flex h-11 w-11 items-center justify-center border border-hairline text-mist transition-colors duration-200 hover:border-ice hover:text-ice"
           title={`Compartilhar no ${link.name}`}
         >
           {link.icon}
@@ -78,7 +78,7 @@ export function ShareButtons({ title, url, description }: ShareButtonsProps) {
       <button
         type="button"
         onClick={copyToClipboard}
-        className="flex h-8 items-center gap-1 border border-hairline px-2 font-mono text-caption text-mist transition-all duration-200 hover:border-ice hover:text-ice hover:scale-105"
+        className="flex h-11 items-center gap-1 border border-hairline px-3 font-mono text-caption text-mist transition-colors duration-200 hover:border-ice hover:text-ice"
         title="Copiar link"
       >
         {copied ? (

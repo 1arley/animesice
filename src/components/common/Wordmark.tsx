@@ -49,7 +49,7 @@ export function Wordmark({ className = "" }: { className?: string }) {
           src="/images/animesice-mascot.svg"
           alt=""
           aria-hidden="true"
-          className="h-full w-full rounded-[4px] ring-1 ring-ice/25 transition-[box-shadow,filter] duration-300 group-hover:ring-ice/70 group-hover:shadow-[0_0_14px_-2px_rgba(69,240,224,0.55)]"
+          className="h-full w-full rounded-[4px] ring-1 ring-ice/25 transition-[box-shadow,filter] duration-300 group-hover:ring-ice/70"
         />
       </span>
       <span>Animes</span>

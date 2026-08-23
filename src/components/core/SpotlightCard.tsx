@@ -18,7 +18,7 @@ import { useRef, useState, type MouseEvent, type ReactNode } from "react";
 export function SpotlightCard({
   children,
   className = "",
-  spotlightColor = "rgba(69, 240, 224, 0.14)",
+  spotlightColor = "rgba(232, 223, 204, 0.14)",
   radius = 260,
 }: {
   children: ReactNode;

@@ -28,7 +28,7 @@ export function BroadcastCard({ anime, priority = false }: { anime: Anime; prior
           priority={priority}
           placeholder="blur"
           blurDataURL={blur.landscape}
-          className="object-cover opacity-75 transition-[transform,opacity] duration-500 ease-out group-hover:scale-[1.02] group-hover:opacity-90"
+          className="object-cover opacity-75 transition-opacity duration-500 ease-out group-hover:opacity-90"
           quality={80}
         />
       ) : (
@@ -36,7 +36,7 @@ export function BroadcastCard({ anime, priority = false }: { anime: Anime; prior
       )}
       <div className="absolute inset-0 bg-gradient-to-t from-ink via-ink/25 to-transparent" aria-hidden="true" />
       <div className="absolute inset-x-0 bottom-0 p-4 sm:p-5">
-        <span className="font-mono text-[0.65rem] uppercase tracking-[0.16em] text-mist">
+        <span className="font-mono text-label uppercase tracking-[0.16em] text-mist">
           {[anime.year, anime.audio === "DUBLADO" ? "Dublado" : "Legendado"].filter(Boolean).join("  /  ")}
         </span>
         <h3 className="mt-1 line-clamp-2 max-w-md font-display text-2xl font-bold leading-none text-snow sm:text-3xl">

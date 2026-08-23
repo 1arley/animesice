@@ -63,7 +63,7 @@ export function AnimeCard({ anime, priority = false, spotlight = true, variant =
             priority={priority}
             placeholder="blur"
             blurDataURL={blur.portrait}
-            className="object-cover opacity-90 transition-all duration-500 ease-out group-hover:opacity-100 group-hover:scale-105"
+            className="object-cover opacity-90 transition-opacity duration-500 ease-out group-hover:opacity-100"
             quality={80}
           />
         ) : (
@@ -103,7 +103,7 @@ export function AnimeCard({ anime, priority = false, spotlight = true, variant =
       <span className="block px-2.5 pb-2.5 pt-2">
         <span className="line-clamp-2 block font-sans text-body-sm font-medium text-snow transition-colors group-hover:text-ice">{anime.title}</span>
         {variant === "poster" && (
-          <span className="mt-1 flex items-center gap-2 font-sans text-[0.68rem] text-mist">
+          <span className="mt-1 flex items-center gap-2 font-sans text-label text-mist">
             <span className={onAir ? "text-signal" : undefined}>{onAir ? "No ar" : statusLabel(anime.status)}</span>
             <span aria-hidden="true" className="text-hairline">/</span>
             <span>{dub ? "Dublado" : "Legendado"}</span>

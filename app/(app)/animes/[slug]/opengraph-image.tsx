@@ -30,7 +30,7 @@ export default async function OpengraphImage({
             alignItems: "center",
             justifyContent: "center",
             background: "linear-gradient(135deg, #070B12, #0E141D)",
-            color: "#45F0E0",
+            color: "#E8DFCC",
             fontFamily: "sans-serif",
             fontSize: 48,
             fontWeight: 700,
@@ -113,7 +113,7 @@ export default async function OpengraphImage({
         >
           <div
             style={{
-              color: "#45F0E0",
+            color: "#E8DFCC",
               fontSize: 14,
               fontWeight: 600,
               textTransform: "uppercase",
@@ -126,7 +126,7 @@ export default async function OpengraphImage({
 
           <div
             style={{
-              color: "#E9EFF5",
+              color: "#EEE8DA",
               fontSize: 64,
               fontWeight: 700,
               lineHeight: 1.1,

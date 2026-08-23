@@ -8,28 +8,28 @@ export function DividerSvg() {
   <defs>
     
     <linearGradient id="beam-core" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0%"   stopColor="#38E8DA" stopOpacity="0"/>
-      <stop offset="10%"  stopColor="#38E8DA" stopOpacity="0.5"/>
-      <stop offset="35%"  stopColor="#38E8DA" stopOpacity="0.9"/>
-      <stop offset="50%"  stopColor="#00E5FF" stopOpacity="1"/>
-      <stop offset="65%"  stopColor="#38E8DA" stopOpacity="0.9"/>
-      <stop offset="90%"  stopColor="#38E8DA" stopOpacity="0.5"/>
-      <stop offset="100%" stopColor="#38E8DA" stopOpacity="0"/>
+      <stop offset="0%"   stopColor="#E8DFCC" stopOpacity="0"/>
+      <stop offset="10%"  stopColor="#E8DFCC" stopOpacity="0.5"/>
+      <stop offset="35%"  stopColor="#E8DFCC" stopOpacity="0.9"/>
+      <stop offset="50%"  stopColor="#F3ECDB" stopOpacity="1"/>
+      <stop offset="65%"  stopColor="#E8DFCC" stopOpacity="0.9"/>
+      <stop offset="90%"  stopColor="#E8DFCC" stopOpacity="0.5"/>
+      <stop offset="100%" stopColor="#E8DFCC" stopOpacity="0"/>
     </linearGradient>
 
     
     <linearGradient id="beam-bloom" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0%"   stopColor="#38E8DA" stopOpacity="0"/>
-      <stop offset="18%"  stopColor="#38E8DA" stopOpacity="0.08"/>
-      <stop offset="50%"  stopColor="#00E5FF" stopOpacity="0.22"/>
-      <stop offset="82%"  stopColor="#38E8DA" stopOpacity="0.08"/>
-      <stop offset="100%" stopColor="#38E8DA" stopOpacity="0"/>
+      <stop offset="0%"   stopColor="#E8DFCC" stopOpacity="0"/>
+      <stop offset="18%"  stopColor="#E8DFCC" stopOpacity="0.08"/>
+      <stop offset="50%"  stopColor="#F3ECDB" stopOpacity="0.22"/>
+      <stop offset="82%"  stopColor="#E8DFCC" stopOpacity="0.08"/>
+      <stop offset="100%" stopColor="#E8DFCC" stopOpacity="0"/>
     </linearGradient>
 
     
     <linearGradient id="shard-fill" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%"   stopColor="#00E5FF" stopOpacity="0.06"/>
-      <stop offset="100%" stopColor="#38E8DA" stopOpacity="0.02"/>
+      <stop offset="0%"   stopColor="#F3ECDB" stopOpacity="0.06"/>
+      <stop offset="100%" stopColor="#E8DFCC" stopOpacity="0.02"/>
     </linearGradient>
 
     
@@ -84,7 +84,7 @@ export function DividerSvg() {
     <polygon
       points="1148,68 1164,59 1178,62 1174,72 1156,74"
       fill="url(#shard-fill)"
-      stroke="#60F6E9"
+      stroke="#F3ECDB"
       strokeWidth="0.8"
       strokeLinejoin="miter"
       opacity="0.8"/>
@@ -92,7 +92,7 @@ export function DividerSvg() {
     <polyline
       points="1156,73 1166,63 1174,66"
       fill="none"
-      stroke="#60F6E9"
+      stroke="#F3ECDB"
       strokeWidth="0.4"
       opacity="0.35"/>
   </g>
@@ -103,7 +103,7 @@ export function DividerSvg() {
     <polygon
       points="1388,56 1406,49 1418,54 1404,63"
       fill="url(#shard-fill)"
-      stroke="#60F6E9"
+      stroke="#F3ECDB"
       strokeWidth="0.8"
       strokeLinejoin="miter"
       opacity="0.8"/>
@@ -111,7 +111,7 @@ export function DividerSvg() {
     <polyline
       points="1394,58 1406,52 1414,56"
       fill="none"
-      stroke="#60F6E9"
+      stroke="#F3ECDB"
       strokeWidth="0.4"
       opacity="0.35"/>
   </g>
