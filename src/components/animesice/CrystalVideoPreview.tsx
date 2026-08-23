@@ -148,7 +148,7 @@ export function CrystalVideoPreview({ size = 288 }: { size?: number }) {
           className="pointer-events-none absolute -inset-[55%]"
           style={{
             background:
-              "radial-gradient(circle at 50% 46%, rgba(238, 232, 218, 0.9) 0%, rgba(180, 170, 150, 0.28) 38%, rgba(180, 170, 150, 0) 68%)",
+              "radial-gradient(circle at 50% 46%, rgba(0, 229, 255, 0.9) 0%, rgba(0, 145, 234, 0.28) 38%, rgba(0, 145, 234, 0) 68%)",
             filter: "blur(22px)",
             opacity: 0.45,
           }}

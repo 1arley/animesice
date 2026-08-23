@@ -25,12 +25,10 @@ module.exports = {
         hairline: "#1F2B3E", // divisores refinados / bordas sutis
         "hairline-subtle": "rgba(255, 255, 255, 0.07)",
 
-        // Assinatura Ice: osso quente (bone) sobre grafite — paleta editorial,
-        // granulação de filme, sem neon. O acento é um off-white aquecido que
-        // sustenta contraste sobre o obsidiana sem virar clichê ciano/AI.
-        ice: "#E8DFCC", // accent principal - osso quente
-        "ice-bright": "#F3ECDB", // hover / specular highlight (osso mais claro)
-        "ice-dim": "rgba(232, 223, 204, 0.12)", // background de badges/pills
+        // Assinatura Ice: azul/ciano cristalino de alta pureza e contraste
+        ice: "#38E8DA", // accent principal - luminescência de gelo
+        "ice-bright": "#60F6E9", // hover / specular highlight
+        "ice-dim": "rgba(56, 232, 218, 0.12)", // background de badges/pills
 
         // Tipografia
         snow: "#F1F5F9", // texto primário: branco gelo cristalino
@@ -41,16 +39,14 @@ module.exports = {
         signal: "#FF6B4A", // indicador de status no ar / badge quente
         "signal-dim": "rgba(255, 107, 74, 0.12)",
 
-        // Tokens de Motion — retarget de ciano para osso/aço neutro. O cristal
-        // mantém leitura cristalina via frost (quase branco) e profundidade
-        // via aço, sem o tell ciano do palette anterior.
+        // Tokens de Motion — ciano cristalino e aço profundo para a identidade do gelo.
         motion: {
           void: "#05080E",
-          frost: "#EEE8DA",
-          glacier: "#BFC9C2",
-          cyan: "#E8DFCC",
-          azure: "#6E7A82",
-          teal: "#4A5358",
+          frost: "#E2F7F9",
+          glacier: "#7CF5EB",
+          cyan: "#00E5FF",
+          azure: "#008CDA",
+          teal: "#007A87",
         },
       },
       fontFamily: {
@@ -69,8 +65,8 @@ module.exports = {
       },
       boxShadow: {
         "cinematic": "0 20px 40px -15px rgba(0, 0, 0, 0.7), 0 0 1px 1px rgba(255, 255, 255, 0.05)",
-        "cinematic-hover": "0 24px 48px -12px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(232, 223, 204, 0.22)",
-        "glow-ice": "0 10px 30px -12px rgba(0, 0, 0, 0.65)",
+        "cinematic-hover": "0 24px 48px -12px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(56, 232, 218, 0.35)",
+        "glow-ice": "0 0 24px -4px rgba(56, 232, 218, 0.25)",
         "glow-subtle": "0 4px 20px -2px rgba(0, 0, 0, 0.5)",
       },
       // Raio da identidade: o cristal é angular, não uma pílula. Escala curta

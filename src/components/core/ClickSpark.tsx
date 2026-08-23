@@ -7,7 +7,7 @@ import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
  * ClickSpark — estilhas de luz no ponto do clique, adaptado de
  * React Bits (github.com/DavidHDev/react-bits, MIT + Commons Clause).
  *
- * Re-tematizado: a faísca padrão é o osso da marca (#E8DFCC), não branco.
+ * Re-tematizado: a faísca padrão é o gelo da marca (#45F0E0), não branco.
  * Otimizações sobre o original:
  *  - o loop de rAF só roda enquanto há faíscas (e desliga sozinho);
  *  - prefers-reduced-motion vira pass-through puro (sem canvas);
@@ -22,7 +22,7 @@ interface Spark {
 }
 
 export function ClickSpark({
-  sparkColor = "#E8DFCC",
+  sparkColor = "#45F0E0",
   sparkSize = 9,
   sparkRadius = 18,
   sparkCount = 8,
