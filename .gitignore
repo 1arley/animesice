@@ -18,3 +18,8 @@ playwright/.cache/
 # Large video files
 *.mov
 .vercel
+
+# opencode skill artifacts (not project code)
+.github/agents/
+.github/hooks/
+.github/skills/
