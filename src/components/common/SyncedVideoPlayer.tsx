@@ -347,26 +347,48 @@ function NativeSyncedPlayer({
     }
 
     let hls: Hls | null = null;
-    let cancelled = false;
+    let destroyed = false;
 
     import("hls.js")
       .then(({ default: HlsCtor }) => {
-        if (cancelled) return;
+        if (destroyed) return;
         if (!HlsCtor || !HlsCtor.isSupported()) {
           video.src = safeSrc;
           return;
         }
-        hls = new HlsCtor();
+        hls = new HlsCtor({
+          enableWorker: true,
+          lowLatencyMode: false,
+          maxBufferLength: 30,
+          startFragPrefetch: true,
+        });
+
+        hls.on(HlsCtor.Events.ERROR, (_event, data) => {
+          if (destroyed) return;
+          if (data.fatal) {
+            switch (data.type) {
+              case HlsCtor.ErrorTypes.NETWORK_ERROR:
+                hls?.startLoad();
+                break;
+              case HlsCtor.ErrorTypes.MEDIA_ERROR:
+                hls?.recoverMediaError();
+                break;
+              default:
+                break;
+            }
+          }
+        });
+
         hls.loadSource(safeSrc);
         hls.attachMedia(video);
       })
       .catch(() => {
-        if (cancelled) return;
+        if (destroyed) return;
         video.src = safeSrc;
       });
 
     return () => {
-      cancelled = true;
+      destroyed = true;
       if (hls) {
         hls.destroy();
         hls = null;
@@ -480,6 +502,8 @@ function NativeSyncedPlayer({
       <video
         ref={videoRef}
         controls={isHost}
+        playsInline
+        preload="metadata"
         poster={safePoster}
         aria-label={animeTitle && episodeNumber != null ? `${animeTitle} — Episodio ${episodeNumber}` : "Player de video"}
         className="video-frame"
