@@ -13,11 +13,10 @@ test.describe("Homepage & Shelf Navigation", () => {
     await expect(page.locator("body")).toBeVisible();
   });
 
-  test("should load ThirdPartyScripts without breaking main layout", async ({ page }) => {
+  test("should not load the invasive OnClick tag", async ({ page }) => {
     await page.goto("/");
 
-    // Monetag script presence
     const monetagScript = page.locator("script#monetag-loader");
-    await expect(monetagScript).toHaveCount(1);
+    await expect(monetagScript).toHaveCount(0);
   });
 });
