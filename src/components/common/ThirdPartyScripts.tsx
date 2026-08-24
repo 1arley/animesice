@@ -8,10 +8,16 @@ import { MonetagGate } from "./MonetagGate";
 const MONETAG_DISABLED = process.env.NEXT_PUBLIC_DISABLE_MONETAG === "1";
 
 /**
- * Loader do Monetag com proteções adicionais:
- * - Só injeta o script UMA vez por sessão (sessionStorage flag)
- * - Bloqueia qualquer tentativa de re-injeção pelo próprio script
- * - Interrompe o script Monetag após 3s para limitar anúncios
+ * Loader do Monetag — 1 anúncio por página.
+ *
+ * O MonetagGate (renderizado acima) cuida da limitação por página:
+ * - Intercepta window.open para popups
+ * - MutationObserver remove containers excessivos
+ * - CSS esconde anúncios que escapam do JS
+ *
+ * Este loader apenas carrega o script Monetag após interação do usuário.
+ * A flag sessionStorage foi removida porque impedia o carregamento em
+ * navegações client-side (SPA).
  */
 export function ThirdPartyScripts() {
   return (
@@ -25,46 +31,14 @@ export function ThirdPartyScripts() {
             dangerouslySetInnerHTML={{
               __html: `
                 (function() {
-                  // Flag de sessão: só permite 1 load por aba
-                  var KEY = 'animesice:monetag-loaded';
-                  if (sessionStorage.getItem(KEY)) return;
-
                   var injected = false;
                   function inject() {
                     if (injected) return;
                     injected = true;
-                    sessionStorage.setItem(KEY, '1');
 
                     var s = document.createElement('script');
                     s.dataset.zone = '11528359';
                     s.src = 'https://al5sm.com/tag.min.js';
-
-                    // Intercepta o script Monetag: após carregar, monitora
-                    // e remove scripts adicionais que ele possa criar
-                    s.addEventListener('load', function() {
-                      // Observa o DOM por 5s e remove qualquer script
-                      // Monetag que o tag.min.js tente injetar
-                      var mo = new MutationObserver(function(mutations) {
-                        mutations.forEach(function(m) {
-                          Array.from(m.addedNodes).forEach(function(node) {
-                            if (node.nodeType !== 1) return;
-                            var el = node;
-                            if (el.tagName === 'SCRIPT') {
-                              var src = el.src || '';
-                              if (/al5sm\\.com/.test(src) && el !== s) {
-                                el.remove();
-                              }
-                            }
-                          });
-                        });
-                      });
-                      mo.observe(document.documentElement, {
-                        childList: true,
-                        subtree: true
-                      });
-                      setTimeout(function() { mo.disconnect(); }, 5000);
-                    });
-
                     (document.body || document.documentElement).appendChild(s);
                   }
 
@@ -99,12 +73,6 @@ export function ThirdPartyScripts() {
                   } else {
                     window.addEventListener('load', gate, { once: true });
                   }
-
-                  // Safety net: força stop após 8s
-                  setTimeout(function() {
-                    injected = true;
-                    sessionStorage.setItem(KEY, '1');
-                  }, 8000);
                 })();
               `,
             }}
