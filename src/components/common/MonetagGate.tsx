@@ -1,23 +1,21 @@
 "use client";
 
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 
 /**
- * MonetagGate — limita o Monetag a 1 único anúncio por visita à página.
+ * MonetagGate — 1 anúncio por página.
  *
- * A abordagem anterior (MutationObserver + interceptação de window.open)
- * falhava porque o script Monetag injeta ads por múltiplos vetores:
- * document.write, iframes aninhadas, scripts dinâmicos que escapam do
- * observer, e timing assíncrono que cria race conditions.
+ * Comportamento:
+ * - Home: usuário vê 1 anúncio. Enquanto estiver na home, nenhum outro.
+ * - Navega para /anime/xyz: vê 1 novo anúncio. Enquanto estiver ali, nenhum outro.
+ * - Volta para home: vê 1 novo anúncio.
  *
- * Nova abordagem:三层防线
- * 1. Bloqueia TODOS os scripts Monetag após o primeiro carregamento
- * 2. Remove todos os containers Monetag no DOM (including primiero)
- * 3. Intercepta window.open para bloquear popups adicionais
- *
- * O Monetag injeta apenas 1 anúncio (o que estava no DOM quando o script
- * carrega). Scripts subsequentes e seus anúncios são bloqueados.
+ * Como funciona:
+ * 1. CSS esconde TODOS os containers Monetag
+ * 2. MutationObserver detecta o primeiro e mostra ele
+ * 3. Anúncios seguintes ficam escondidos (display: none)
+ * 4. Ao navegar: limpa DOM e reseta flags
  */
 
 const MONETAG_SCRIPT_SRC = /al5sm\.com\/tag\.min\.js/;
@@ -41,20 +39,17 @@ function isMonetagAd(el: Element): boolean {
   const tag = el.tagName?.toLowerCase();
   if (!tag) return false;
 
-  // Scripts Monetag (loader e injetados)
   if (tag === "script") {
     const src = el.getAttribute("src") || "";
     if (MONETAG_SCRIPT_SRC.test(src)) return true;
     if (el.getAttribute("data-zone")) return true;
   }
 
-  // Iframes Monetag
   if (tag === "iframe") {
     const src = el.getAttribute("src") || "";
     if (/al5sm|monetag/i.test(src)) return true;
   }
 
-  // Overlays fixos com z-index alto que contenham markup Monetag
   if (el instanceof HTMLElement) {
     try {
       const { position, zIndex } = getComputedStyle(el);
@@ -71,24 +66,19 @@ function isMonetagAd(el: Element): boolean {
 }
 
 /** Remove todos os containers Monetag do DOM. */
-function purgeMonetagAds(): number {
-  let removed = 0;
-  const all = document.querySelectorAll(AD_SELECTORS);
-  all.forEach((el) => {
-    el.remove();
-    removed++;
-  });
-  return removed;
+function purgeAllMonetagAds() {
+  document.querySelectorAll(AD_SELECTORS).forEach((el) => el.remove());
 }
 
 export function MonetagGate() {
   const pathname = usePathname();
-  const scriptAllowed = useRef(true);
+  const adAllowed = useRef(true);
   const popupAllowed = useRef(true);
 
-  // Reset ao navegar — permite 1 novo anúncio na nova página
+  // Ao navegar: limpa anúncios antigos e reseta flags
   useEffect(() => {
-    scriptAllowed.current = true;
+    purgeAllMonetagAds();
+    adAllowed.current = true;
     popupAllowed.current = true;
   }, [pathname]);
 
@@ -113,114 +103,21 @@ export function MonetagGate() {
     };
   }, []);
 
-  // 2. Triple-layer defense via MutationObserver
-  useEffect(() => {
-    let firstAdSeen = false;
-
-    const observer = new MutationObserver((mutations) => {
-      for (const mutation of mutations) {
-        for (const node of Array.from(mutation.addedNodes)) {
-          if (node.nodeType !== 1) continue;
-          const el = node as Element;
-
-          // Layer 1: Bloqueia scripts Monetag após o primeiro
-          if (
-            el.tagName?.toLowerCase() === "script" &&
-            el.getAttribute("src") &&
-            MONETAG_SCRIPT_SRC.test(el.getAttribute("src") || "")
-          ) {
-            if (!firstAdSeen) {
-              firstAdSeen = true;
-            } else {
-              el.remove();
-              continue;
-            }
-          }
-
-          // Layer 2: Detecta containers de anúncio
-          if (isMonetagAd(el)) {
-            if (!firstAdSeen) {
-              firstAdSeen = true;
-              // Primeiro anúncio: permite, mas agenda limpeza periódica
-              // para remover anúncios que o script injeta assincronamente
-              setTimeout(() => {
-                const excess = document.querySelectorAll(
-                  `[data-zone]:not(:first-child)`,
-                );
-                excess.forEach((e) => e.remove());
-              }, 500);
-            } else {
-              // Anúncios adicionais: remove imediatamente
-              el.remove();
-            }
-          }
-        }
-
-        // Layer 3: Observa atributos modificados (src mudanças em iframes/scripts)
-        if (mutation.type === "attributes") {
-          const el = mutation.target as Element;
-          if (isMonetagAd(el) && firstAdSeen) {
-            el.remove();
-          }
-        }
-      }
-    });
-
-    observer.observe(document.documentElement, {
-      childList: true,
-      subtree: true,
-      attributes: true,
-      attributeFilter: ["src", "data-zone"],
-    });
-
-    // Limpeza periódica: remove anúncios Monetag excessivos a cada 2s por 10s
-    let purgeCount = 0;
-    const purgeInterval = setInterval(() => {
-      if (purgeCount >= 5 || !scriptAllowed.current) {
-        clearInterval(purgeInterval);
-        return;
-      }
-      // Remove todos os data-zone exceto o primeiro
-      const zones = document.querySelectorAll("[data-zone]");
-      if (zones.length > 1) {
-        Array.from(zones)
-          .slice(1)
-          .forEach((z) => z.remove());
-      }
-      // Remove iframes Monetag excessivos
-      const iframes = document.querySelectorAll(
-        "iframe[src*='al5sm'], iframe[src*='monetag']",
-      );
-      if (iframes.length > 1) {
-        Array.from(iframes)
-          .slice(1)
-          .forEach((f) => f.remove());
-      }
-      purgeCount++;
-    }, 2000);
-
-    return () => {
-      observer.disconnect();
-      clearInterval(purgeInterval);
-    };
-  }, []);
-
-  // 3. CSS nuclear: esconde qualquer anúncio Monetag que escape do JS
+  // 2. CSS: esconde TODOS os anúncios Monetag
   useEffect(() => {
     const style = document.createElement("style");
+    style.id = "monetag-gate-css";
     style.textContent = `
-      /* Esconde containers Monetag além do primeiro */
-      [data-zone]:not(:first-of-type),
-      [id*="monetag"]:not(:first-of-type),
-      [class*="monetag"]:not(:first-of-type),
-      #sb_wrapper:not(:first-of-type),
-      #sb_loader:not(:first-of-type),
-      .social-bar:not(:first-of-type),
-      #interstitial-wrapper:not(:first-of-type) {
+      [data-zone],
+      [id*="monetag"],
+      [class*="monetag"],
+      #sb_wrapper,
+      #sb_loader,
+      .social-bar,
+      #interstitial-wrapper,
+      iframe[src*="al5sm"],
+      iframe[src*="monetag"] {
         display: none !important;
-        visibility: hidden !important;
-        height: 0 !important;
-        overflow: hidden !important;
       }
     `;
     document.head.appendChild(style);
@@ -228,6 +125,34 @@ export function MonetagGate() {
     return () => {
       style.remove();
     };
+  }, []);
+
+  // 3. MutationObserver: mostra o PRIMEIRO anúncio, esconde o resto
+  useEffect(() => {
+    const observer = new MutationObserver((mutations) => {
+      for (const mutation of mutations) {
+        for (const node of Array.from(mutation.addedNodes)) {
+          if (node.nodeType !== 1) continue;
+          const el = node as Element;
+
+          if (!isMonetagAd(el)) continue;
+
+          if (adAllowed.current) {
+            // Primeiro anúncio: mostra e bloqueia os próximos
+            adAllowed.current = false;
+            (el as HTMLElement).style.display = "";
+          }
+          // Anúncios adicionais: ficam escondidos pelo CSS
+        }
+      }
+    });
+
+    observer.observe(document.documentElement, {
+      childList: true,
+      subtree: true,
+    });
+
+    return () => observer.disconnect();
   }, []);
 
   return null;
