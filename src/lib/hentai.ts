@@ -3,9 +3,11 @@
  * O backend marca títulos adultos com o gênero `Hentai` (slug `hentai`).
  */
 import type { Anime, Genre } from "@/types";
+import { canonicalPublicUrl } from "@/lib/site";
 
-export const HENTAIS_SITE_URL =
-  process.env.NEXT_PUBLIC_HENTAIS_SITE_URL || "https://www.hentaisice.com";
+export const HENTAIS_SITE_URL = canonicalPublicUrl(
+  process.env.NEXT_PUBLIC_HENTAIS_SITE_URL || "https://www.hentaisice.com",
+);
 
 const HENTAI_GENRE_SLUG = "hentai";
 
