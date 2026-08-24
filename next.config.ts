@@ -1,5 +1,4 @@
 import type { NextConfig } from "next";
-import { ASSET_URL } from "./src/lib/site";
 
 /**
  * Politica de Seguranca de Conteudo (CSP) para producao.
@@ -9,17 +8,8 @@ import { ASSET_URL } from "./src/lib/site";
  * e para recursos nao-HTTPS; os vetores de XSS mais criticos (object-src,
  * base-uri, frame-ancestors, form-action) permanecem fechados.
  */
-const localConnect = process.env.INCLUDE_LOCAL_API === '1' ? ' http://localhost:3001' : '';
-
-// The custom domain is proxied by Cloudflare with a zone-wide minimum Browser
-// Cache TTL. That policy also rewrites temporary 404 responses for Next chunks,
-// which can leave a browser unable to hydrate after a deployment. Serve hashed
-// framework assets from Vercel's stable project domain so Vercel's status-aware
-// cache policy reaches the browser unchanged. Preview/local builds stay local.
-const assetPrefix =
-  process.env.VERCEL_ENV === "production"
-    ? ASSET_URL
-    : undefined;
+const localConnect =
+  process.env.INCLUDE_LOCAL_API === "1" ? " http://localhost:3001" : "";
 
 const cspHeader = `
   default-src 'self';
@@ -35,11 +25,12 @@ const cspHeader = `
   form-action 'self';
   frame-ancestors 'self';
   upgrade-insecure-requests;
-`.replace(/\s{2,}/g, ' ').trim();
+`
+  .replace(/\s{2,}/g, " ")
+  .trim();
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
-  assetPrefix,
   outputFileTracingRoot: process.cwd(),
   images: {
     // Servir as imagens remotas diretamente evita que todas as capas passem
@@ -67,14 +58,25 @@ const nextConfig: NextConfig = {
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
   },
   compiler: {
-    removeConsole: process.env.NODE_ENV === "production" ? { exclude: ["error", "warn"] } : false,
+    removeConsole:
+      process.env.NODE_ENV === "production"
+        ? { exclude: ["error", "warn"] }
+        : false,
   },
   // Rotas antigas da seção Comunidade movidas para /comunidade/*.
   // Redirects permanentes (308) preservam URLs indexadas (sitemap/backlinks).
   async redirects() {
     return [
-      { source: "/pedidos", destination: "/comunidade/pedidos", permanent: true },
-      { source: "/sugestoes", destination: "/comunidade/sugestoes", permanent: true },
+      {
+        source: "/pedidos",
+        destination: "/comunidade/pedidos",
+        permanent: true,
+      },
+      {
+        source: "/sugestoes",
+        destination: "/comunidade/sugestoes",
+        permanent: true,
+      },
       { source: "/regras", destination: "/comunidade/regras", permanent: true },
     ];
   },
@@ -87,8 +89,14 @@ const nextConfig: NextConfig = {
           { key: "X-Frame-Options", value: "SAMEORIGIN" },
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-          { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
-          { key: "Cross-Origin-Opener-Policy", value: "same-origin-allow-popups" },
+          {
+            key: "Permissions-Policy",
+            value: "camera=(), microphone=(), geolocation=()",
+          },
+          {
+            key: "Cross-Origin-Opener-Policy",
+            value: "same-origin-allow-popups",
+          },
         ],
       },
       // Vercel already marks existing Next assets as immutable. A route-wide
@@ -97,19 +105,28 @@ const nextConfig: NextConfig = {
       {
         source: "/icons/:path*",
         headers: [
-          { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
+          {
+            key: "Cache-Control",
+            value: "public, max-age=31536000, immutable",
+          },
         ],
       },
       {
         source: "/assets/:path*",
         headers: [
-          { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
+          {
+            key: "Cache-Control",
+            value: "public, max-age=31536000, immutable",
+          },
         ],
       },
       {
         source: "/images/:path*",
         headers: [
-          { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
+          {
+            key: "Cache-Control",
+            value: "public, max-age=31536000, immutable",
+          },
         ],
       },
     ];
