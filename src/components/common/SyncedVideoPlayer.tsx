@@ -5,6 +5,7 @@ import type Hls from "hls.js";
 import type { Socket } from "socket.io-client";
 import { safeImageSrc } from "@/lib/url";
 import { API_URL, isProxyEmbed } from "@/lib/api";
+import { isYouTubeEmbed } from "@/components/common/VideoPlayer";
 
 interface SyncedVideoPlayerProps {
   src: string;
@@ -40,10 +41,23 @@ export function SyncedVideoPlayer({
   roomSlug,
   isHost,
 }: SyncedVideoPlayerProps) {
-  if (embedUrl && isProxyEmbed(embedUrl)) {
+  if (embedUrl && (isProxyEmbed(embedUrl) || isYouTubeEmbed(embedUrl))) {
     return (
       <EmbedPlayer
         embedUrl={embedUrl}
+        animeSlug={animeSlug}
+        episodeNumber={episodeNumber}
+        animeTitle={animeTitle}
+        socket={socket}
+        roomSlug={roomSlug}
+        isHost={isHost}
+      />
+    );
+  }
+  if (src && isYouTubeEmbed(src)) {
+    return (
+      <EmbedPlayer
+        embedUrl={src}
         animeSlug={animeSlug}
         episodeNumber={episodeNumber}
         animeTitle={animeTitle}
@@ -223,15 +237,21 @@ function NativeSyncedPlayer({
   isHost: boolean;
 }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const videoContainerRef = useRef<HTMLDivElement | null>(null);
   const lastSyncSentRef = useRef<number>(0);
   const lastSyncPlayingRef = useRef<boolean | null>(null);
   const isApplyingSyncRef = useRef(false);
   const syncTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingSyncRef = useRef<PlayerSyncPayload | null>(null);
+  const guestUiHideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [synced, setSynced] = useState(isHost);
   const [playbackBlocked, setPlaybackBlocked] = useState(false);
   const [fatalError, setFatalError] = useState(false);
   const [retryAttempt, setRetryAttempt] = useState(0);
+  const [guestUiVisible, setGuestUiVisible] = useState(false);
+  const [guestMuted, setGuestMuted] = useState(false);
+  const [guestVolume, setGuestVolume] = useState(100);
+  const [guestFullscreen, setGuestFullscreen] = useState(false);
 
   const safeSrc = safeImageSrc(src) ?? src;
   const safePoster = safeImageSrc(posterUrl);
@@ -517,6 +537,46 @@ function NativeSyncedPlayer({
     setRetryAttempt((attempt) => attempt + 1);
   }, [isHost]);
 
+  const scheduleGuestUiHide = useCallback(() => {
+    if (guestUiHideTimerRef.current) clearTimeout(guestUiHideTimerRef.current);
+    guestUiHideTimerRef.current = setTimeout(() => {
+      setGuestUiVisible(false);
+    }, 3000);
+  }, []);
+
+  const showGuestUi = useCallback(() => {
+    setGuestUiVisible(true);
+    scheduleGuestUiHide();
+  }, [scheduleGuestUiHide]);
+
+  useEffect(() => {
+    if (isHost) return;
+    const video = videoRef.current;
+    if (!video) return;
+    const syncVolume = () => {
+      setGuestMuted(video.muted);
+      setGuestVolume(Math.round((video.volume || 0) * 100));
+    };
+    const syncFullscreen = () => {
+      setGuestFullscreen(Boolean(document.fullscreenElement));
+    };
+    video.addEventListener("volumechange", syncVolume);
+    video.addEventListener("loadedmetadata", syncVolume);
+    document.addEventListener("fullscreenchange", syncFullscreen);
+    syncVolume();
+    return () => {
+      video.removeEventListener("volumechange", syncVolume);
+      video.removeEventListener("loadedmetadata", syncVolume);
+      document.removeEventListener("fullscreenchange", syncFullscreen);
+      if (guestUiHideTimerRef.current) clearTimeout(guestUiHideTimerRef.current);
+    };
+  }, [isHost]);
+
+  const blockGuestVideoClick = useCallback((e: React.MouseEvent) => {
+    if (isHost) return;
+    e.preventDefault();
+  }, [isHost]);
+
   if (fatalError) {
     return (
       <div
@@ -534,7 +594,13 @@ function NativeSyncedPlayer({
   }
 
   return (
-    <div className="relative">
+    <div
+      ref={videoContainerRef}
+      className={`relative${!isHost ? " watch-party-guest" : ""}`}
+      onPointerMove={!isHost ? showGuestUi : undefined}
+      onPointerLeave={!isHost ? () => setGuestUiVisible(false) : undefined}
+      onClick={!isHost ? showGuestUi : undefined}
+    >
       <video
         ref={videoRef}
         controls={isHost}
@@ -543,6 +609,7 @@ function NativeSyncedPlayer({
         poster={safePoster}
         aria-label={animeTitle && episodeNumber != null ? `${animeTitle} — Episodio ${episodeNumber}` : "Player de video"}
         className="video-frame"
+        onClick={!isHost ? blockGuestVideoClick : undefined}
       />
       {!isHost && playbackBlocked && (
         <button
@@ -558,6 +625,59 @@ function NativeSyncedPlayer({
           Clique para ativar a reprodução sincronizada
         </button>
       )}
+      {!isHost && (
+        <div
+          className={`absolute inset-x-0 bottom-0 flex items-center gap-3 px-3 pb-3 transition-opacity duration-200 ${
+            guestUiVisible ? "opacity-100" : "pointer-events-none opacity-0"
+          }`}
+        >
+          <button
+            type="button"
+            aria-label={guestMuted ? "Ativar som" : "Silenciar"}
+            onClick={() => {
+              const video = videoRef.current;
+              if (video) video.muted = !video.muted;
+            }}
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded bg-black/70 text-snow transition-colors hover:bg-black/90 hover:text-ice"
+          >
+            {guestMuted ? <MutedIcon /> : <VolumeIcon />}
+          </button>
+          <input
+            type="range"
+            min={0}
+            max={100}
+            value={guestVolume}
+            onChange={(e) => {
+              const video = videoRef.current;
+              if (!video) return;
+              const volume = Number(e.target.value) / 100;
+              video.volume = volume;
+              if (volume === 0) {
+                video.muted = true;
+              } else if (video.muted) {
+                video.muted = false;
+              }
+            }}
+            className="guest-volume w-24"
+            aria-label="Volume"
+          />
+          <span className="flex-1" />
+          <button
+            type="button"
+            aria-label={guestFullscreen ? "Sair da tela cheia" : "Tela cheia"}
+            onClick={() => {
+              if (document.fullscreenElement) {
+                void document.exitFullscreen();
+              } else {
+                void videoContainerRef.current?.requestFullscreen?.();
+              }
+            }}
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded bg-black/70 text-snow transition-colors hover:bg-black/90 hover:text-ice"
+          >
+            {guestFullscreen ? <FullscreenExitIcon /> : <FullscreenEnterIcon />}
+          </button>
+        </div>
+      )}
       <div className="absolute top-2 right-2 flex items-center gap-2 rounded bg-black/70 px-2 py-1 text-caption">
         <span className={`h-2 w-2 rounded-full ${synced ? "bg-ice" : "bg-signal"}`} />
         <span className="text-mist">
@@ -565,6 +685,87 @@ function NativeSyncedPlayer({
         </span>
       </div>
     </div>
+  );
+}
+
+function VolumeIcon() {
+  return (
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M11 5 6 9H2v6h4l5 4z" />
+      <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+    </svg>
+  );
+}
+
+function MutedIcon() {
+  return (
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M11 5 6 9H2v6h4l5 4z" />
+      <line x1="22" y1="9" x2="16" y2="15" />
+      <line x1="16" y1="9" x2="22" y2="15" />
+    </svg>
+  );
+}
+
+function FullscreenEnterIcon() {
+  return (
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M8 3H5a2 2 0 0 0-2 2v3" />
+      <path d="M21 8V5a2 2 0 0 0-2-2h-3" />
+      <path d="M3 16v3a2 2 0 0 0 2 2h3" />
+      <path d="M16 21h3a2 2 0 0 0 2-2v-3" />
+    </svg>
+  );
+}
+
+function FullscreenExitIcon() {
+  return (
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M8 3v3a2 2 0 0 1-2 2H3" />
+      <path d="M21 8h-3a2 2 0 0 1-2-2V3" />
+      <path d="M3 16h3a2 2 0 0 1 2 2v3" />
+      <path d="M16 21v-3a2 2 0 0 1 2-2h3" />
+    </svg>
   );
 }
 
