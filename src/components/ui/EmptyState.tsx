@@ -26,7 +26,7 @@ export function EmptyState({
       aria-label={text}
     >
       {icon ? (
-        <div className="mb-4 text-mist/50 transition-transform duration-500 hover:scale-110">
+        <div className="mb-4 text-mist/50">
           {icon}
         </div>
       ) : (

@@ -20,12 +20,6 @@ function Glyph({ d, active }: { d: string; active: boolean }) {
   );
 }
 
-function haptic() {
-  if (typeof navigator !== "undefined" && "vibrate" in navigator) {
-    navigator.vibrate(8);
-  }
-}
-
 export function MobileTabBar() {
   const pathname = usePathname();
   const { user } = useAuth();
@@ -72,7 +66,7 @@ export function MobileTabBar() {
     pathname.startsWith("/me");
 
   const allItems = [...tabs, { href: profileHref, label: user ? "Perfil" : "Entrar", match: () => profileActive, icon: null }];
-  const activeIndex = allItems.findIndex((t) => t.match(pathname)) ?? 0;
+  const activeIndex = Math.max(0, allItems.findIndex((t) => t.match(pathname)));
 
   return (
     <nav
@@ -99,7 +93,7 @@ export function MobileTabBar() {
               key={tab.href}
               href={tab.href}
               aria-current={active ? "page" : undefined}
-              className={`flex min-h-14 flex-col items-center justify-center gap-0.5 py-1.5 font-mono text-[0.6rem] uppercase tracking-wider transition-colors active:scale-95 ${
+              className={`flex min-h-14 flex-col items-center justify-center gap-0.5 py-1.5 font-mono text-label uppercase tracking-wider transition-colors active:scale-95 ${
                 active ? "text-ice" : "text-mist"
               }`}
             >
@@ -112,7 +106,7 @@ export function MobileTabBar() {
         <Link
           href={profileHref}
           aria-current={profileActive ? "page" : undefined}
-          className={`flex min-h-14 flex-col items-center justify-center gap-0.5 py-1.5 font-mono text-[0.6rem] uppercase tracking-wider transition-colors active:scale-95 ${
+          className={`flex min-h-14 flex-col items-center justify-center gap-0.5 py-1.5 font-mono text-label uppercase tracking-wider transition-colors active:scale-95 ${
             profileActive ? "text-ice" : "text-mist"
           }`}
         >

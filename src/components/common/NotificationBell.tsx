@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import type { NotificationItem } from "@/types";
 
@@ -15,6 +16,7 @@ export function NotificationBell() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [open, setOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement | null>(null);
+  const pathname = usePathname();
 
   const fetchNotifications = useCallback((signal?: AbortSignal) => {
     loadApi().then((api) => api.listNotifications(1, 5, false, signal))
@@ -45,6 +47,10 @@ export function NotificationBell() {
   }, [user, fetchNotifications]);
 
   useEffect(() => {
+    setOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
         setOpen(false);
@@ -71,7 +77,7 @@ export function NotificationBell() {
     <div ref={dropdownRef} className="relative">
       <button
         onClick={() => setOpen(!open)}
-        className="relative font-display text-body text-mist transition-colors hover:text-ice"
+        className="relative flex h-11 w-11 items-center justify-center text-mist transition-colors hover:text-ice"
         aria-label="Notificações"
       >
         <svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true">
@@ -84,14 +90,14 @@ export function NotificationBell() {
           />
         </svg>
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 flex h-4 min-w-[1rem] items-center justify-center bg-ice px-1 font-mono text-[0.6rem] font-bold text-ink tabular-nums">
+          <span className="absolute -top-1 -right-1 flex h-4 min-w-[1rem] items-center justify-center bg-ice px-1 font-mono text-label font-bold text-ink tabular-nums">
             {unreadCount > 9 ? "9+" : unreadCount}
           </span>
         )}
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full mt-2 z-50 w-80 border border-hairline bg-ink shadow-lg">
+        <div className="absolute right-0 top-full mt-2 z-50 w-80 max-w-[calc(100vw-2rem)] border border-hairline bg-ink shadow-lg">
           <div className="flex items-center justify-between border-b border-hairline px-3 py-2">
             <span className="font-display text-body-sm font-semibold text-ice">
               Notificações

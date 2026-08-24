@@ -306,11 +306,11 @@ export function SiteNav() {
                           className={`flex flex-col items-center gap-1.5 rounded-md border p-3 transition-all duration-200 ${
                             isActive
                               ? "border-ice/40 bg-ice/5 text-ice"
-                              : "border-hairline text-mist hover:border-ice/30 hover:text-ice hover:bg-ice/5 hover:scale-105"
+                              : "border-hairline text-mist hover:border-ice/30 hover:text-ice hover:bg-ice/5"
                           }`}
                         >
                           <NavIcon d={ICONS[link.icon] || ""} />
-                          <span className="font-mono text-[0.6rem] uppercase tracking-wider text-center leading-tight">
+                          <span className="font-mono text-label uppercase tracking-wider text-center leading-tight">
                             {link.title}
                           </span>
                         </Link>

@@ -77,8 +77,8 @@ export function ProfileCurrentlyWatching({
                 {pct != null && (
                   <div className="mt-2 h-1 w-full bg-hairline">
                     <div
-                      className="h-full bg-ice transition-[width] duration-300"
-                      style={{ width: `${pct}%` }}
+                      className="h-full bg-ice origin-left transition-transform duration-300"
+                      style={{ transform: `scaleX(${pct / 100})` }}
                     />
                   </div>
                 )}

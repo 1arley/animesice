@@ -113,7 +113,7 @@ export default async function OpengraphImage({
         >
           <div
             style={{
-              color: "#45F0E0",
+            color: "#45F0E0",
               fontSize: 14,
               fontWeight: 600,
               textTransform: "uppercase",

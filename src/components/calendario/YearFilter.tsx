@@ -24,7 +24,7 @@ export function YearFilter({ season, year }: { season: string; year: string }) {
 
   return (
     <select
-      className="field !w-auto py-1.5"
+      className="field !w-auto min-h-11"
       value={value}
       onChange={(e) => onChange(e.target.value)}
       aria-label="Filtrar por ano"

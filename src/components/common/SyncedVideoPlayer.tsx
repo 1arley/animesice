@@ -230,6 +230,8 @@ function NativeSyncedPlayer({
   const pendingSyncRef = useRef<PlayerSyncPayload | null>(null);
   const [synced, setSynced] = useState(isHost);
   const [playbackBlocked, setPlaybackBlocked] = useState(false);
+  const [fatalError, setFatalError] = useState(false);
+  const [retryAttempt, setRetryAttempt] = useState(0);
 
   const safeSrc = safeImageSrc(src) ?? src;
   const safePoster = safeImageSrc(posterUrl);
@@ -301,7 +303,7 @@ function NativeSyncedPlayer({
     };
     video.addEventListener("loadedmetadata", applyPendingSync);
     return () => video.removeEventListener("loadedmetadata", applyPendingSync);
-  }, [applySync]);
+  }, [applySync, retryAttempt]);
 
   useEffect(() => {
     if (!socket) return;
@@ -329,10 +331,15 @@ function NativeSyncedPlayer({
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
+    setFatalError(false);
+
+    const handleVideoError = () => setFatalError(true);
+    video.addEventListener("error", handleVideoError);
 
     if (!isM3u8) {
       video.src = safeSrc;
       return () => {
+        video.removeEventListener("error", handleVideoError);
         video.removeAttribute("src");
         video.load();
       };
@@ -341,32 +348,59 @@ function NativeSyncedPlayer({
     if (video.canPlayType("application/vnd.apple.mpegurl")) {
       video.src = safeSrc;
       return () => {
+        video.removeEventListener("error", handleVideoError);
         video.removeAttribute("src");
         video.load();
       };
     }
 
     let hls: Hls | null = null;
-    let cancelled = false;
+    let destroyed = false;
 
     import("hls.js")
       .then(({ default: HlsCtor }) => {
-        if (cancelled) return;
+        if (destroyed) return;
         if (!HlsCtor || !HlsCtor.isSupported()) {
           video.src = safeSrc;
           return;
         }
-        hls = new HlsCtor();
+        hls = new HlsCtor({
+          enableWorker: true,
+          lowLatencyMode: false,
+          maxBufferLength: 30,
+          startFragPrefetch: true,
+        });
+
+        hls.on(HlsCtor.Events.ERROR, (_event, data) => {
+          if (destroyed) return;
+          if (data.fatal) {
+            switch (data.type) {
+              case HlsCtor.ErrorTypes.NETWORK_ERROR:
+                hls?.startLoad();
+                break;
+              case HlsCtor.ErrorTypes.MEDIA_ERROR:
+                hls?.recoverMediaError();
+                break;
+              default:
+                hls?.destroy();
+                hls = null;
+                setFatalError(true);
+                break;
+            }
+          }
+        });
+
         hls.loadSource(safeSrc);
         hls.attachMedia(video);
       })
       .catch(() => {
-        if (cancelled) return;
+        if (destroyed) return;
         video.src = safeSrc;
       });
 
     return () => {
-      cancelled = true;
+      video.removeEventListener("error", handleVideoError);
+      destroyed = true;
       if (hls) {
         hls.destroy();
         hls = null;
@@ -374,7 +408,7 @@ function NativeSyncedPlayer({
       video.removeAttribute("src");
       video.load();
     };
-  }, [safeSrc, isM3u8]);
+  }, [safeSrc, isM3u8, retryAttempt]);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -473,13 +507,39 @@ function NativeSyncedPlayer({
       if (timeSyncTimer) clearInterval(timeSyncTimer);
       if (syncTimeoutRef.current) clearTimeout(syncTimeoutRef.current);
     };
-  }, [animeSlug, episodeNumber, isHost, sendSync]);
+  }, [animeSlug, episodeNumber, isHost, sendSync, retryAttempt]);
+
+  const retry = useCallback(() => {
+    setFatalError(false);
+    setPlaybackBlocked(false);
+    setSynced(isHost);
+    pendingSyncRef.current = null;
+    setRetryAttempt((attempt) => attempt + 1);
+  }, [isHost]);
+
+  if (fatalError) {
+    return (
+      <div
+        className="video-frame flex flex-col items-center justify-center gap-3 text-center"
+        role="alert"
+      >
+        <p className="text-body-sm text-mist">
+          A reprodução sincronizada foi interrompida.
+        </p>
+        <button type="button" onClick={retry} className="btn-ghost">
+          Tentar novamente
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="relative">
       <video
         ref={videoRef}
         controls={isHost}
+        playsInline
+        preload="metadata"
         poster={safePoster}
         aria-label={animeTitle && episodeNumber != null ? `${animeTitle} — Episodio ${episodeNumber}` : "Player de video"}
         className="video-frame"

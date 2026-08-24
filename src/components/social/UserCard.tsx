@@ -47,7 +47,7 @@ export function UserCard({ user }: { user: UserSearchResult }) {
           o respiro mínimo de 12px (h-3) quando o card é o mais alto da linha. */}
       <div className="mt-auto h-3" aria-hidden="true" />
       <div className="flex items-center justify-between gap-2 border-t border-hairline pt-3">
-        <span className="truncate font-mono text-caption text-mist/60">
+        <span className="truncate font-mono text-caption text-mist/70">
           desde {formatDate(user.createdAt)}
         </span>
         <FollowButton userId={user.id} initialFollowing={user.isFollowing} compact />

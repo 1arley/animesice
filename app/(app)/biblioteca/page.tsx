@@ -115,7 +115,8 @@ export default function LibraryPage() {
           <button
             key={t}
             onClick={() => setTab(t)}
-            className={`pb-2 font-display text-body-sm transition-colors ${
+            aria-pressed={tab === t}
+            className={`min-h-11 py-2 font-display text-body-sm transition-colors ${
               tab === t ? "border-b-2 border-ice text-ice" : "text-mist hover:text-ice"
             }`}
           >
@@ -159,7 +160,8 @@ export default function LibraryPage() {
               <AnimeCard anime={item.anime} />
               <button
                 onClick={() => removeFromList(item.anime.slug)}
-                className="absolute left-1 top-1 bg-ink/80 px-1.5 py-0.5 font-mono text-caption font-semibold text-signal opacity-0 transition-opacity group-hover:opacity-100 hover:bg-signal hover:text-ink"
+                className="absolute left-1 top-1 flex h-9 w-9 items-center justify-center bg-ink/80 font-mono text-caption font-semibold text-signal backdrop-blur-sm transition-colors hover:bg-signal hover:text-ink"
+                aria-label="Remover da lista"
                 title="Remover da lista"
               >
                 ×

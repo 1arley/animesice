@@ -43,6 +43,7 @@ export function FeedPost({
 
   const [shareCount, setShareCount] = useState(post.shareCount);
   const [shared, setShared] = useState(false);
+  const [shareBusy, setShareBusy] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
   const isMine = !!user && user.id === post.user.id;
@@ -67,7 +68,8 @@ export function FeedPost({
   }
 
   async function handleShare() {
-    if (!user) return;
+    if (!user || shareBusy) return;
+    setShareBusy(true);
     try {
       const res = await api.sharePost(post.id);
       setShareCount(res.shareCount);
@@ -76,6 +78,8 @@ export function FeedPost({
       setTimeout(() => setShared(false), 2000);
     } catch {
       /* silencioso */
+    } finally {
+      setShareBusy(false);
     }
   }
 
@@ -153,7 +157,7 @@ export function FeedPost({
           >
             {authorName}
           </Link>
-          <p className="font-mono text-caption text-mist/60">
+          <p className="font-mono text-caption text-mist/70">
             @{post.user.userName ?? post.user.id} · {timeAgo(post.createdAt)}
           </p>
         </div>
@@ -215,7 +219,7 @@ export function FeedPost({
           onClick={handleLike}
           disabled={!user || likeBusy}
           title={user ? "Curtir post" : "Entre para curtir"}
-          className={`inline-flex items-center gap-1.5 transition-colors ${
+          className={`inline-flex min-h-11 items-center gap-1.5 py-2 transition-colors ${
             liked ? "text-signal" : "text-mist/70 hover:text-signal"
           } ${user ? "cursor-pointer" : "cursor-default"}`}
         >
@@ -226,7 +230,7 @@ export function FeedPost({
         <button
           type="button"
           onClick={openComments}
-          className="inline-flex items-center gap-1.5 text-mist/70 transition-colors hover:text-ice"
+          className="inline-flex min-h-11 items-center gap-1.5 py-2 text-mist/70 transition-colors hover:text-ice"
         >
           <CommentGlyph />
           {commentsTotal > 0 ? commentsTotal : "Comentar"}
@@ -235,8 +239,8 @@ export function FeedPost({
         <button
           type="button"
           onClick={handleShare}
-          disabled={!user}
-          className="ml-auto inline-flex items-center gap-1.5 text-mist/70 transition-colors hover:text-ice disabled:cursor-default"
+          disabled={!user || shareBusy}
+          className="ml-auto inline-flex min-h-11 items-center gap-1.5 py-2 text-mist/70 transition-colors hover:text-ice disabled:cursor-default"
         >
           <ShareGlyph />
           {shared ? "Copiado!" : shareCount > 0 ? `Compartilhar · ${shareCount}` : "Compartilhar"}

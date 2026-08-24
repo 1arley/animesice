@@ -137,7 +137,7 @@ export function FeedView({ initialItems, initialTotalPages }: FeedViewProps) {
             type="button"
             onClick={() => handleScope(tab.key)}
             aria-pressed={scope === tab.key}
-            className={`border-b-2 px-4 py-2 font-mono text-body-sm uppercase tracking-wider transition-colors ${
+            className={`min-h-11 border-b-2 px-4 py-3 font-mono text-body-sm uppercase tracking-wider transition-colors ${
               scope === tab.key
                 ? "border-ice text-ice"
                 : "border-transparent text-mist hover:text-snow"

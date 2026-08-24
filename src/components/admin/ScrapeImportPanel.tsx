@@ -115,7 +115,7 @@ export function ScrapeImportPanel({ onUseVideo, onUseIframe }: ScrapeImportPanel
               <li key={i} className="break-all">
                 <a
                   href="#"
-                  className="text-ice transition-colors hover:opacity-70"
+                  className="text-ice transition-colors hover:text-snow hover:underline"
                   onClick={(e) => {
                     e.preventDefault();
                     onUseVideo(v);
@@ -143,7 +143,7 @@ export function ScrapeImportPanel({ onUseVideo, onUseIframe }: ScrapeImportPanel
               <li key={i} className="break-all">
                 <a
                   href="#"
-                  className="text-ice transition-colors hover:opacity-70"
+                  className="text-ice transition-colors hover:text-snow hover:underline"
                   onClick={(e) => {
                     e.preventDefault();
                     onUseIframe(v);

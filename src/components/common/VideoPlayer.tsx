@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type Hls from "hls.js";
 import { safeImageSrc } from "@/lib/url";
 import { isProxyEmbed, API_URL } from "@/lib/api";
@@ -130,27 +130,51 @@ function NativeVideoPlayer({
 }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const { user } = useAuth();
+  const [fatalError, setFatalError] = useState(false);
+  const [retryAttempt, setRetryAttempt] = useState(0);
 
   const safeSrc = safeImageSrc(src) ?? src;
   const safePoster = safeImageSrc(posterUrl);
   const isM3u8 = safeSrc.toLowerCase().endsWith(".m3u8");
 
+  const onPlaybackErrorRef = useRef(onPlaybackError);
+  onPlaybackErrorRef.current = onPlaybackError;
+
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
+    setFatalError(false);
+
+    let recoveryRequested = false;
+    const requestRecovery = () => {
+      if (recoveryRequested) return;
+      recoveryRequested = true;
+      onPlaybackErrorRef.current?.(video.currentTime || startAt || 0);
+    };
+
+    // Certas CDNs/proxies não encerram a resposta quando a URL assinada
+    // expirou. Nesse cenário o elemento não dispara `error`: permanece sem
+    // metadata e o botão de play fica desabilitado. O watchdog transforma a
+    // falha silenciosa no mesmo refresh forçado usado para erros explícitos.
+    const metadataWatchdog = window.setTimeout(() => {
+      if (video.readyState === HTMLMediaElement.HAVE_NOTHING) requestRecovery();
+    }, 10_000);
+    const clearMetadataWatchdog = () => window.clearTimeout(metadataWatchdog);
 
     const resume = () => {
+      clearMetadataWatchdog();
       if (startAt && Number.isFinite(startAt) && video.duration > startAt) {
         video.currentTime = startAt;
       }
     };
-    const fatal = () => onPlaybackError?.(video.currentTime || startAt || 0);
+    const fatal = requestRecovery;
     video.addEventListener("loadedmetadata", resume);
     video.addEventListener("error", fatal);
 
     if (!isM3u8) {
       video.src = safeSrc;
       return () => {
+        clearMetadataWatchdog();
         video.removeEventListener("loadedmetadata", resume);
         video.removeEventListener("error", fatal);
         video.removeAttribute("src");
@@ -161,6 +185,7 @@ function NativeVideoPlayer({
     if (video.canPlayType("application/vnd.apple.mpegurl")) {
       video.src = safeSrc;
       return () => {
+        clearMetadataWatchdog();
         video.removeEventListener("loadedmetadata", resume);
         video.removeEventListener("error", fatal);
         video.removeAttribute("src");
@@ -169,28 +194,53 @@ function NativeVideoPlayer({
     }
 
     let hls: Hls | null = null;
-    let cancelled = false;
+    let destroyed = false;
 
     import("hls.js")
       .then(({ default: HlsCtor }) => {
-        if (cancelled) return;
+        if (destroyed) return;
         if (!HlsCtor || !HlsCtor.isSupported()) {
           video.src = safeSrc;
           return;
         }
-        hls = new HlsCtor();
+        hls = new HlsCtor({
+          enableWorker: true,
+          lowLatencyMode: false,
+          maxBufferLength: 30,
+          startFragPrefetch: true,
+        });
+
+        hls.on(HlsCtor.Events.ERROR, (_event, data) => {
+          if (destroyed) return;
+          if (data.fatal) {
+            switch (data.type) {
+              case HlsCtor.ErrorTypes.NETWORK_ERROR:
+                hls?.startLoad();
+                break;
+              case HlsCtor.ErrorTypes.MEDIA_ERROR:
+                hls?.recoverMediaError();
+                break;
+              default:
+                setFatalError(true);
+                onPlaybackErrorRef.current?.(video.currentTime || startAt || 0);
+                break;
+            }
+          }
+        });
+
         hls.loadSource(safeSrc);
         hls.attachMedia(video);
       })
       .catch(() => {
-        if (cancelled) return;
+        if (destroyed) return;
         video.src = safeSrc;
       });
 
     return () => {
+      clearMetadataWatchdog();
       video.removeEventListener("loadedmetadata", resume);
       video.removeEventListener("error", fatal);
-      cancelled = true;
+      destroyed = true;
       if (hls) {
         hls.destroy();
         hls = null;
@@ -198,7 +248,7 @@ function NativeVideoPlayer({
       video.removeAttribute("src");
       video.load();
     };
-  }, [safeSrc, isM3u8, startAt, onPlaybackError]);
+  }, [safeSrc, isM3u8, startAt, retryAttempt]);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -274,12 +324,37 @@ function NativeVideoPlayer({
       video.removeEventListener("ended", onEnded);
       if (progressTimer) clearInterval(progressTimer);
     };
-  }, [animeSlug, episodeNumber, user]);
+  }, [animeSlug, episodeNumber, user, retryAttempt]);
+
+  const retry = useCallback(() => {
+    setFatalError(false);
+    // O estado de erro desmonta o <video>, portanto o ref ainda está nulo
+    // neste clique. A tentativa força o efeito da fonte a rodar novamente
+    // depois que o elemento for remontado.
+    setRetryAttempt((attempt) => attempt + 1);
+  }, []);
+
+  if (fatalError) {
+    return (
+      <div className="video-frame flex flex-col items-center justify-center gap-3 text-center">
+        <p className="text-body-sm text-mist">Falha ao carregar o vídeo.</p>
+        <button
+          type="button"
+          onClick={retry}
+          className="btn-ghost"
+        >
+          Tentar novamente
+        </button>
+      </div>
+    );
+  }
 
   return (
     <video
       ref={videoRef}
       controls
+      playsInline
+      preload="metadata"
       poster={safePoster}
       aria-label={
         animeTitle && episodeNumber != null

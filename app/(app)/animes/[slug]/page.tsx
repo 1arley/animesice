@@ -7,7 +7,7 @@ import { safeImageSrc, upgradeImageUrl, escapeJsonLd } from "@/lib/url";
 import { AdaptiveImage } from "@/components/common/AdaptiveImage";
 import { blur } from "@/lib/blur";
 import { serverFetchJson } from "@/lib/api-server";
-import { isHentaiAnime, hentaisPath } from "@/lib/hentai";
+import { findHentaisMigration, isHentaiAnime, hentaisPath } from "@/lib/hentai";
 import { isOnAir } from "@/lib/status";
 import { CommentSection } from "@/components/common/CommentSection";
 import { FavoriteButton } from "@/components/common/FavoriteButton";
@@ -73,7 +73,11 @@ export default async function AnimeDetailPage({
 }) {
   const { slug } = await params;
   const anime = await getAnime(slug);
-  if (!anime) notFound();
+  if (!anime) {
+    const migratedTo = await findHentaisMigration(slug);
+    if (migratedTo) permanentRedirect(migratedTo);
+    notFound();
+  }
 
   if (isHentaiAnime(anime)) permanentRedirect(hentaisPath(slug));
 
@@ -453,7 +457,7 @@ export default async function AnimeDetailPage({
                     <Link
                       href={`/animes/${slug}/${ep.number}`}
                       className={`group block border border-hairline bg-panel px-1 py-2 text-center transition-all hover:border-ice hover:bg-hairline/50 ${
-                        available ? "" : "opacity-40"
+                        available ? "" : "opacity-60"
                       }`}
                       title={`Episódio ${ep.number}${available ? "" : " — sem vídeo"}`}
                     >

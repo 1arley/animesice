@@ -35,6 +35,7 @@ export function PrivacySection() {
   const [settings, setSettings] = useState<PrivacySettings | null>(null);
   const [msg, setMsg] = useState("");
   const [err, setErr] = useState("");
+  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     api
@@ -44,6 +45,8 @@ export function PrivacySection() {
   }, []);
 
   async function toggle(key: keyof Omit<PrivacySettings, "privateAnimeLists">, value: boolean) {
+    if (busy) return;
+    setBusy(true);
     setMsg("");
     setErr("");
     setSettings((prev) => (prev ? { ...prev, [key]: value } : prev));
@@ -57,6 +60,8 @@ export function PrivacySection() {
         .getPrivacySettings()
         .then(setSettings)
         .catch(() => {});
+    } finally {
+      setBusy(false);
     }
   }
 
@@ -102,14 +107,15 @@ export function PrivacySection() {
                 type="button"
                 role="switch"
                 aria-checked={value}
+                disabled={busy}
                 onClick={() => toggle(f.key, !value)}
-                className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
+                className={`relative h-7 w-11 shrink-0 rounded-full transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${
                   value ? "bg-ice" : "bg-hairline"
                 }`}
               >
                 <span
-                  className={`absolute top-0.5 h-5 w-5 rounded-full bg-ink transition-all ${
-                    value ? "left-[calc(100%-1.25rem)]" : "left-0.5"
+                  className={`absolute top-0.5 h-6 w-6 rounded-full bg-ink transition-all ${
+                    value ? "left-[calc(100%-1.5rem)]" : "left-0.5"
                   }`}
                 />
               </button>

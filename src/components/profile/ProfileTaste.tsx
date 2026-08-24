@@ -25,8 +25,8 @@ export function ProfileTaste({ genres }: { genres: TasteGenre[] }) {
             </span>
             <div className="h-1 flex-1 bg-hairline">
               <div
-                className="h-full bg-ice/80 transition-[width] duration-500"
-                style={{ width: `${max ? (g.count / max) * 100 : 0}%` }}
+                className="h-full bg-ice/80 origin-left transition-transform duration-500"
+                style={{ transform: `scaleX(${max ? g.count / max : 0})` }}
               />
             </div>
             <span className="w-6 shrink-0 text-right font-mono text-caption tabular-nums text-mist/70">

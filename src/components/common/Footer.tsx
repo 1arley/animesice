@@ -20,6 +20,7 @@ export function Footer() {
     { href: "/generos", title: "Gêneros" },
     { href: "/buscar", title: "Buscar" },
     { href: "/blog", title: "Blog" },
+    { href: "/sobre", title: "Sobre" },
     ...(isAdmin ? [{ href: "/admin", title: "Painel admin" }] : []),
   ];
   const conta: FooterLink[] = user

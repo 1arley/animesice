@@ -34,7 +34,7 @@ export default function HomePage() {
     </div>
     <noscript>
       <div className="mx-auto max-w-shelf px-4 py-8 text-center">
-        <p className="text-body text-mist">
+        <p className="mx-auto max-w-xl text-body text-mist">
           AnimesIce é o melhor lugar para assistir animes online em HD, legendados e dublados.
           Explore nosso catálogo completo com milhares de títulos, sinopses detalhadas e avaliações da comunidade.
         </p>

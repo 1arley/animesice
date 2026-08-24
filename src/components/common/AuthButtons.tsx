@@ -9,6 +9,7 @@ import { Avatar } from "@/components/common/Avatar";
 export function AuthButtons() {
   const { user, logout, logoutError } = useAuth();
   const [showErr, setShowErr] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
 
   useEffect(() => {
     if (logoutError) setShowErr(true);
@@ -26,20 +27,28 @@ export function AuthButtons() {
         </Link>
         <button
           onClick={async () => {
-            await logout();
+            if (loggingOut) return;
+            setLoggingOut(true);
+            try {
+              await logout();
+            } finally {
+              setLoggingOut(false);
+            }
           }}
+          disabled={loggingOut}
           className="btn-ghost"
         >
-          Sair
+          {loggingOut ? "Saindo…" : "Sair"}
         </button>
         {showErr && logoutError && (
-          <span
+          <button
+            type="button"
             role="alert"
-            className="text-caption text-signal"
+            className="cursor-pointer text-caption text-signal"
             onClick={() => setShowErr(false)}
           >
             {logoutError}
-          </span>
+          </button>
         )}
       </div>
     );

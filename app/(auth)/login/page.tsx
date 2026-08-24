@@ -130,7 +130,7 @@ function LoginForm() {
 
         <p className="mt-6 text-center text-body-sm text-mist">
           Não tem conta?{" "}
-          <Link href="/register" className="text-ice transition-colors hover:opacity-70">
+          <Link href="/register" className="text-ice transition-colors hover:text-snow hover:underline">
             Cadastrar
           </Link>
         </p>

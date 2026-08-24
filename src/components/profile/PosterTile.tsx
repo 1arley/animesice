@@ -69,8 +69,8 @@ export function PosterTile({
         {pct != null && pct < 100 && (
           <div className="absolute inset-x-0 bottom-0 h-[3px] bg-ink/70">
             <div
-              className="h-full bg-ice transition-[width] duration-300"
-              style={{ width: `${pct}%` }}
+              className="h-full bg-ice origin-left transition-transform duration-300"
+              style={{ transform: `scaleX(${pct / 100})` }}
             />
           </div>
         )}

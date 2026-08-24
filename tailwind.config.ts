@@ -35,11 +35,11 @@ module.exports = {
         mist: "#94A3B8", // texto secundário: titânio suave
         "mist-dim": "#64748B", // legendas, metadados discretos
 
-        // Sinal / Nota quente
+        // Sinal / Nota quente — único acento cromático (status "no ar")
         signal: "#FF6B4A", // indicador de status no ar / badge quente
         "signal-dim": "rgba(255, 107, 74, 0.12)",
 
-        // Tokens de Motion
+        // Tokens de Motion — ciano cristalino e aço profundo para a identidade do gelo.
         motion: {
           void: "#05080E",
           frost: "#E2F7F9",
@@ -61,6 +61,7 @@ module.exports = {
         body: ["1rem", { lineHeight: "1.6" }],
         "body-sm": ["0.875rem", { lineHeight: "1.55" }],
         caption: ["0.75rem", { lineHeight: "1.4" }],
+        label: ["0.6875rem", { lineHeight: "1.3", letterSpacing: "0.02em" }],
       },
       boxShadow: {
         "cinematic": "0 20px 40px -15px rgba(0, 0, 0, 0.7), 0 0 1px 1px rgba(255, 255, 255, 0.05)",
