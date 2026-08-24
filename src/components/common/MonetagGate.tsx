@@ -14,27 +14,37 @@ export function MonetagGate() {
   }, [pathname]);
 
   useEffect(() => {
-    const original = window.open.bind(window);
+    function isLinkOrButton(el: Element | null): boolean {
+      let node = el;
+      for (let i = 0; i < 5 && node; i++) {
+        const tag = node.tagName?.toLowerCase();
+        if (tag === "a" && (node as HTMLAnchorElement).href) return true;
+        if (tag === "button") return true;
+        if (tag === "input" && (node as HTMLInputElement).type === "submit") return true;
+        node = node.parentElement;
+      }
+      return false;
+    }
 
-    window.open = function (
-      url?: string | URL,
-      target?: string,
-      features?: string,
-    ) {
+    function handleClick(e: MouseEvent) {
       const now = Date.now();
       const lastAd = parseInt(sessionStorage.getItem(STORAGE_KEY) || "0", 10);
 
       if (lastAd && now - lastAd < COOLDOWN_MS) {
-        return null;
+        if (!isLinkOrButton(e.target as Element)) {
+          e.stopPropagation();
+          e.stopImmediatePropagation();
+        }
+        return;
       }
 
-      sessionStorage.setItem(STORAGE_KEY, now.toString());
-      return original(url, target, features);
-    };
+      if (!lastAd || now - lastAd >= COOLDOWN_MS) {
+        sessionStorage.setItem(STORAGE_KEY, now.toString());
+      }
+    }
 
-    return () => {
-      window.open = original;
-    };
+    document.addEventListener("click", handleClick, true);
+    return () => document.removeEventListener("click", handleClick, true);
   }, []);
 
   return null;
