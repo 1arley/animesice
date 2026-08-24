@@ -533,16 +533,23 @@ function NativeSyncedPlayer({
     );
   }
 
+  const blockGuestVideoClick = useCallback((e: React.MouseEvent) => {
+    if (isHost) return;
+    e.preventDefault();
+    e.stopPropagation();
+  }, [isHost]);
+
   return (
-    <div className="relative">
+    <div className={`relative${!isHost ? " watch-party-guest" : ""}`}>
       <video
         ref={videoRef}
-        controls={isHost}
+        controls
         playsInline
         preload="metadata"
         poster={safePoster}
         aria-label={animeTitle && episodeNumber != null ? `${animeTitle} — Episodio ${episodeNumber}` : "Player de video"}
         className="video-frame"
+        onClick={!isHost ? blockGuestVideoClick : undefined}
       />
       {!isHost && playbackBlocked && (
         <button

@@ -741,6 +741,16 @@
     }
   }
 
+  /* ===== Watch Party – Controles do Convidado =====
+     Esconde play/pause e desabilita seek na timeline. */
+  .watch-party-guest .video-frame::-webkit-media-controls-play-button {
+    display: none;
+  }
+  .watch-party-guest .video-frame::-webkit-media-controls-timeline {
+    pointer-events: none;
+    opacity: 0.4;
+  }
+
   /* ===== Mobile Nav Sheet ===== */
 
   .nav-backdrop {
