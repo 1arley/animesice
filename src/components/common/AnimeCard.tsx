@@ -44,6 +44,7 @@ export function AnimeCard({ anime, priority = false, spotlight = true, variant =
   const card = (
     <Link
       href={`/animes/${anime.slug}`}
+      prefetch
       title={anime.title}
       className="group relative block bg-panel transition-[transform,box-shadow] duration-300 ease-out hover:-translate-y-1 hover:shadow-[0_16px_32px_-14px_rgba(2,4,8,0.9)] focus-visible:outline-offset-4 active:translate-y-0 active:scale-[0.98] active:duration-100"
     >

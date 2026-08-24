@@ -13,16 +13,24 @@ import { CommentSection } from "@/components/common/CommentSection";
 import { FavoriteButton } from "@/components/common/FavoriteButton";
 import { AnimeListButton } from "@/components/common/AnimeListButton";
 import { RatingStars, AnimeStatsDisplay } from "@/components/common/RatingStars";
-import { AnimeCard } from "@/components/common/AnimeCard";
 import { SpotlightCard } from "@/components/core/SpotlightCard";
+import { RelatedSimilarSections } from "@/components/common/RelatedSimilarSections";
 import { PageTitle } from "@/components/ui/PageTitle";
 import { ShareButtons } from "@/components/common/ShareButtons";
 import Image from "next/image";
 import { SITE_URL } from "@/lib/site";
 
-export const revalidate = 60;
+export const revalidate = 300;
 
-const getAnime = cache(async (slug: string) => serverFetchJson<Anime>(`/anime/${slug}`, { cache: "force-cache", next: { revalidate: 60, tags: [`anime:${slug}`] } }));
+const getAnime = cache(async (slug: string) => serverFetchJson<Anime>(`/anime/${slug}`, { cache: "force-cache", next: { revalidate: 300, tags: [`anime:${slug}`] } }));
+
+export async function generateStaticParams() {
+  const trending = await serverFetchJson<Pick<Anime, "slug">[]>("/anime/trending?limit=24", {
+    cache: "force-cache",
+    next: { revalidate: 3600 },
+  });
+  return (trending ?? []).map((a) => ({ slug: a.slug }));
+}
 
 export async function generateMetadata({
   params,
@@ -82,14 +90,6 @@ export default async function AnimeDetailPage({
   if (isHentaiAnime(anime)) permanentRedirect(hentaisPath(slug));
 
   const episodes = (anime.episodes ?? []).slice().sort((a, b) => a.number - b.number);
-  const [related, similar] = await Promise.all([
-    serverFetchJson<Anime[]>(`/anime/${slug}/related`, { cache: "force-cache", next: { revalidate: 300, tags: [`related:${slug}`] } }),
-    serverFetchJson<Anime[]>(`/recommendation/similar/${slug}?limit=12`, { cache: "force-cache", next: { revalidate: 300, tags: [`similar:${slug}`] } }),
-  ]);
-  const relatedAnimes = related ?? [];
-  const similarAnimes = (similar ?? []).filter(
-    (s) => !relatedAnimes.some((r) => r.id === s.id),
-  ).slice(0, 6);
   const ongoing = isOnAir(anime.status);
   const dub = anime.audio === "DUBLADO";
   // upgradeImageUrl: sobe a resolução quando a fonte oferece (MAL l / AniList
@@ -293,6 +293,7 @@ export default async function AnimeDetailPage({
             {episodes.length > 0 && (
               <Link
                 href={`/animes/${slug}/${episodes[0].number}`}
+                prefetch
                 className="btn-primary col-span-2 justify-center sm:col-span-1 sm:justify-start"
               >
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true">
@@ -333,10 +334,11 @@ export default async function AnimeDetailPage({
               {anime.editorialWhereToWatch || "Assista no AnimesIce"}
             </p>
             {episodes.length > 0 && (
-              <Link
-                href={`/animes/${slug}/${episodes[0].number}`}
-                className="btn-primary mt-3 inline-flex"
-              >
+                <Link
+                  href={`/animes/${slug}/${episodes[0].number}`}
+                  prefetch
+                  className="btn-primary mt-3 inline-flex"
+                >
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true">
                   <path d="M3 2l9 5-9 5z" />
                 </svg>
@@ -436,6 +438,7 @@ export default async function AnimeDetailPage({
           {episodes.length > 12 && (
             <Link
               href={`/animes/${slug}/${episodes[0].number}`}
+              prefetch
               className="font-mono text-caption text-ice transition-colors hover:text-snow"
             >
               Ver todos →
@@ -456,6 +459,7 @@ export default async function AnimeDetailPage({
                   <li key={ep.id}>
                     <Link
                       href={`/animes/${slug}/${ep.number}`}
+                      prefetch
                       className={`group block border border-hairline bg-panel px-1 py-2 text-center transition-all hover:border-ice hover:bg-hairline/50 ${
                         available ? "" : "opacity-60"
                       }`}
@@ -476,30 +480,7 @@ export default async function AnimeDetailPage({
         )}
       </section>
 
-      {relatedAnimes.length > 0 && (
-        <section className="mt-10">
-          <h2 className="shelf-label">Você também pode gostar</h2>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-            {relatedAnimes.map((item) => (
-              <AnimeCard key={item.id} anime={item} />
-            ))}
-          </div>
-        </section>
-      )}
-
-      {similarAnimes.length > 0 && (
-        <section className="mt-10">
-          <h2 className="shelf-label">
-            Animes similares{" "}
-            <span className="shelf-label-data">{similarAnimes.length}</span>
-          </h2>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-            {similarAnimes.map((item) => (
-              <AnimeCard key={`sim-${item.id}`} anime={item} />
-            ))}
-          </div>
-        </section>
-      )}
+      <RelatedSimilarSections slug={slug} />
 
       <CommentSection animeId={anime.id} />
 

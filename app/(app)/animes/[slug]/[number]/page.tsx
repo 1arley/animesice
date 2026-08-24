@@ -50,17 +50,12 @@ function toIso8601Duration(raw: string | null | undefined): string {
   return "PT24M";
 }
 
-export const revalidate = 60;
+export const revalidate = 300;
 
-// Getter compartilhado (generateMetadata + page) com cache ISR. Antes cada
-// render de página de episódio batia 2x na API sem cache — com o backend atrás
-// do Cloudflare, isso estourava o throttle (429) e transformava a página num
-// not-found 200 + noindex para o Google. force-cache + revalidate 60 reduz
-// drasticamente os hits de origem.
 const getEpisode = cache((slug: string, number: string) =>
   serverFetchJson<Episode & { anime: Anime }>(`/episode/${slug}/${number}`, {
     cache: "force-cache",
-    next: { revalidate: 60, tags: [`episode:${slug}:${number}`] },
+    next: { revalidate: 300, tags: [`episode:${slug}:${number}`] },
   }),
 );
 
