@@ -69,9 +69,18 @@ export default function RoomPage({
 
   useEffect(() => {
     if (!slug) return;
+    // Reset de estado da sala anterior (navegação client-side entre salas).
     setLoading(true);
+    setRoom(null);
+    setEpisode(null);
     setSource(null);
     setSourceError(null);
+    setMessages([]);
+    setParticipants([]);
+    setJoined(false);
+    setConnected(false);
+    setError(null);
+    setRealtimeError(null);
     let gotRoom = false;
     api
       .getRoom(slug)
