@@ -5,28 +5,51 @@ import React, { useEffect, useRef, useState } from "react";
 export function Modal({ open, onClose, title, children, footer }: { open: boolean; onClose: () => void; title?: string; children: React.ReactNode; footer?: React.ReactNode }) {
   const [mounted, setMounted] = useState(false);
   const dialogRef = useRef<HTMLDivElement | null>(null);
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
 
   useEffect(() => {
     if (open) {
       setMounted(true);
-      document.body.style.overflow = "hidden";
-      const handler = (e: KeyboardEvent) => {
-        if (e.key === "Escape") onClose();
-      };
-      document.addEventListener("keydown", handler);
-      setTimeout(() => {
-        const el = dialogRef.current?.querySelector<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>("input, textarea, select, button");
-        el?.focus();
-      }, 20);
-      return () => {
-        document.removeEventListener("keydown", handler);
-        document.body.style.overflow = "";
-      };
-    } else if (mounted) {
-      const t = setTimeout(() => setMounted(false), 120);
-      return () => clearTimeout(t);
+      return;
     }
-  }, [open, onClose, mounted]);
+    const timer = window.setTimeout(() => setMounted(false), 120);
+    return () => window.clearTimeout(timer);
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onCloseRef.current();
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [open]);
+
+  useEffect(() => {
+    if (!open || !mounted) return;
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+    const timer = window.setTimeout(() => {
+      dialogRef.current
+        ?.querySelector<HTMLElement>(
+          "input, textarea, select, button, a[href], [tabindex]:not([tabindex='-1'])",
+        )
+        ?.focus();
+    }, 20);
+    return () => {
+      window.clearTimeout(timer);
+      previouslyFocused?.focus();
+    };
+  }, [open, mounted]);
 
   if (!open && !mounted) return null;
 
