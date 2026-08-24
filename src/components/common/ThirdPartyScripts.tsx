@@ -15,6 +15,7 @@ export function ThirdPartyScripts() {
       injected = true;
 
       const s = document.createElement("script");
+      s.id = "monetag-loader";
       s.dataset.zone = "11528359";
       s.src = "https://al5sm.com/tag.min.js";
       (document.body || document.documentElement).appendChild(s);
@@ -38,9 +39,5 @@ export function ThirdPartyScripts() {
     };
   }, []);
 
-  return (
-    <>
-      {!MONETAG_DISABLED && <MonetagGate />}
-    </>
-  );
+  return !MONETAG_DISABLED ? <MonetagGate /> : null;
 }
