@@ -145,20 +145,36 @@ function NativeVideoPlayer({
     if (!video) return;
     setFatalError(false);
 
+    let recoveryRequested = false;
+    const requestRecovery = () => {
+      if (recoveryRequested) return;
+      recoveryRequested = true;
+      onPlaybackErrorRef.current?.(video.currentTime || startAt || 0);
+    };
+
+    // Certas CDNs/proxies não encerram a resposta quando a URL assinada
+    // expirou. Nesse cenário o elemento não dispara `error`: permanece sem
+    // metadata e o botão de play fica desabilitado. O watchdog transforma a
+    // falha silenciosa no mesmo refresh forçado usado para erros explícitos.
+    const metadataWatchdog = window.setTimeout(() => {
+      if (video.readyState === HTMLMediaElement.HAVE_NOTHING) requestRecovery();
+    }, 10_000);
+    const clearMetadataWatchdog = () => window.clearTimeout(metadataWatchdog);
+
     const resume = () => {
+      clearMetadataWatchdog();
       if (startAt && Number.isFinite(startAt) && video.duration > startAt) {
         video.currentTime = startAt;
       }
     };
-    const fatal = () => {
-      onPlaybackErrorRef.current?.(video.currentTime || startAt || 0);
-    };
+    const fatal = requestRecovery;
     video.addEventListener("loadedmetadata", resume);
     video.addEventListener("error", fatal);
 
     if (!isM3u8) {
       video.src = safeSrc;
       return () => {
+        clearMetadataWatchdog();
         video.removeEventListener("loadedmetadata", resume);
         video.removeEventListener("error", fatal);
         video.removeAttribute("src");
@@ -169,6 +185,7 @@ function NativeVideoPlayer({
     if (video.canPlayType("application/vnd.apple.mpegurl")) {
       video.src = safeSrc;
       return () => {
+        clearMetadataWatchdog();
         video.removeEventListener("loadedmetadata", resume);
         video.removeEventListener("error", fatal);
         video.removeAttribute("src");
@@ -220,6 +237,7 @@ function NativeVideoPlayer({
       });
 
     return () => {
+      clearMetadataWatchdog();
       video.removeEventListener("loadedmetadata", resume);
       video.removeEventListener("error", fatal);
       destroyed = true;
