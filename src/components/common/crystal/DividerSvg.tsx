@@ -11,7 +11,7 @@ export function DividerSvg() {
       <stop offset="0%"   stopColor="#38E8DA" stopOpacity="0"/>
       <stop offset="10%"  stopColor="#38E8DA" stopOpacity="0.5"/>
       <stop offset="35%"  stopColor="#38E8DA" stopOpacity="0.9"/>
-      <stop offset="50%"  stopColor="#00E5FF" stopOpacity="1"/>
+      <stop offset="50%"  stopColor="#60F6E9" stopOpacity="1"/>
       <stop offset="65%"  stopColor="#38E8DA" stopOpacity="0.9"/>
       <stop offset="90%"  stopColor="#38E8DA" stopOpacity="0.5"/>
       <stop offset="100%" stopColor="#38E8DA" stopOpacity="0"/>
@@ -21,14 +21,14 @@ export function DividerSvg() {
     <linearGradient id="beam-bloom" x1="0" y1="0" x2="1" y2="0">
       <stop offset="0%"   stopColor="#38E8DA" stopOpacity="0"/>
       <stop offset="18%"  stopColor="#38E8DA" stopOpacity="0.08"/>
-      <stop offset="50%"  stopColor="#00E5FF" stopOpacity="0.22"/>
+      <stop offset="50%"  stopColor="#60F6E9" stopOpacity="0.22"/>
       <stop offset="82%"  stopColor="#38E8DA" stopOpacity="0.08"/>
       <stop offset="100%" stopColor="#38E8DA" stopOpacity="0"/>
     </linearGradient>
 
     
     <linearGradient id="shard-fill" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%"   stopColor="#00E5FF" stopOpacity="0.06"/>
+      <stop offset="0%"   stopColor="#60F6E9" stopOpacity="0.06"/>
       <stop offset="100%" stopColor="#38E8DA" stopOpacity="0.02"/>
     </linearGradient>
 

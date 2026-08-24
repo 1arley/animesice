@@ -171,7 +171,7 @@ export function CrystalVideoPreview({ size = 288 }: { size?: number }) {
       <button
         type="button"
         onClick={toggleRaw}
-        className="rounded-full border border-hairline bg-panel px-4 py-1.5 font-mono text-caption uppercase tracking-[0.14em] text-motion-glacier/90 transition-colors hover:border-ice/60 hover:text-ice"
+        className="min-h-11 rounded-full border border-hairline bg-panel px-4 py-2.5 font-mono text-caption uppercase tracking-[0.14em] text-motion-glacier/90 transition-colors hover:border-ice/60 hover:text-ice"
       >
         {raw ? "Com fundo branco (original)" : "Fundo branco removido"}
       </button>

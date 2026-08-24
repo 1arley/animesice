@@ -45,7 +45,7 @@ export function AnimeCard({ anime, priority = false, spotlight = true, variant =
     <Link
       href={`/animes/${anime.slug}`}
       title={anime.title}
-      className="group relative block overflow-hidden bg-panel transition-[transform,box-shadow] duration-300 ease-out hover:-translate-y-1 hover:shadow-[0_16px_32px_-14px_rgba(2,4,8,0.9)] focus-visible:outline-offset-4 active:translate-y-0 active:scale-[0.98] active:duration-100"
+      className="group relative block bg-panel transition-[transform,box-shadow] duration-300 ease-out hover:-translate-y-1 hover:shadow-[0_16px_32px_-14px_rgba(2,4,8,0.9)] focus-visible:outline-offset-4 active:translate-y-0 active:scale-[0.98] active:duration-100"
     >
       {rank !== undefined && (
         <span className="absolute left-0 top-0 z-10 min-w-9 bg-snow px-2 py-1 font-display text-xl font-bold leading-none text-ink" aria-label={`Posição ${rank}`}>
@@ -63,7 +63,7 @@ export function AnimeCard({ anime, priority = false, spotlight = true, variant =
             priority={priority}
             placeholder="blur"
             blurDataURL={blur.portrait}
-            className="object-cover opacity-90 transition-all duration-500 ease-out group-hover:opacity-100 group-hover:scale-105"
+            className="object-cover opacity-90 transition-opacity duration-500 ease-out group-hover:opacity-100"
             quality={80}
           />
         ) : (
@@ -103,7 +103,7 @@ export function AnimeCard({ anime, priority = false, spotlight = true, variant =
       <span className="block px-2.5 pb-2.5 pt-2">
         <span className="line-clamp-2 block font-sans text-body-sm font-medium text-snow transition-colors group-hover:text-ice">{anime.title}</span>
         {variant === "poster" && (
-          <span className="mt-1 flex items-center gap-2 font-sans text-[0.68rem] text-mist">
+          <span className="mt-1 flex items-center gap-2 font-sans text-label text-mist">
             <span className={onAir ? "text-signal" : undefined}>{onAir ? "No ar" : statusLabel(anime.status)}</span>
             <span aria-hidden="true" className="text-hairline">/</span>
             <span>{dub ? "Dublado" : "Legendado"}</span>

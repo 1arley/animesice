@@ -294,7 +294,8 @@ export function CommentRow({
           <div className="mt-2 flex items-center gap-4">
             <button
               onClick={() => onLike(comment.id)}
-              className="inline-flex items-center gap-1 font-mono text-caption text-mist transition-colors hover:text-ice"
+              aria-label="Curtir comentário"
+              className="inline-flex min-h-11 items-center gap-1 px-2 py-2 font-mono text-caption text-mist transition-colors hover:text-ice"
             >
               <HeartIcon filled />
               {likeCount > 0 ? likeCount : ""}

@@ -439,6 +439,7 @@ export default function RoomPage({
               <button
                 type="submit"
                 disabled={!input.trim() || !connected}
+                aria-label="Enviar mensagem"
                 className="btn-ice"
               >
                 →

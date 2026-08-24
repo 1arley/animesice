@@ -11,3 +11,7 @@ export const SITE_URL =
   (process.env.NODE_ENV === "production"
     ? "https://www.animesice.app"
     : "http://localhost:3000");
+
+/** Origem pública usada apenas pelos assets imutáveis de produção. */
+export const ASSET_URL =
+  process.env.NEXT_PUBLIC_ASSET_URL || "https://animesice.vercel.app";

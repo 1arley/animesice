@@ -101,7 +101,7 @@ function FollowRow({ user }: { user: UserSearchResult }) {
           initialFollowing={user.isFollowing}
           compact
         />
-        <span className="font-mono text-caption text-mist/50">
+        <span className="font-mono text-caption text-mist/70">
           desde {formatDate(user.createdAt)}
         </span>
       </div>

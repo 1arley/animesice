@@ -176,7 +176,7 @@ export function ProfileHero({
           onClick={() => setMenuOpen((o) => !o)}
           aria-label="Mais ações"
           aria-expanded={menuOpen}
-          className="flex h-9 w-9 items-center justify-center border border-hairline bg-ink/70 text-mist backdrop-blur-sm transition-colors hover:border-ice/60 hover:text-ice"
+          className="flex h-11 w-11 items-center justify-center border border-hairline bg-ink/70 text-mist backdrop-blur-sm transition-colors hover:border-ice/60 hover:text-ice"
         >
           <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
             <circle cx="3" cy="8" r="1.4" fill="currentColor" />
@@ -186,7 +186,7 @@ export function ProfileHero({
         </button>
 
         {menuOpen && (
-          <div className="absolute right-0 z-30 mt-2 w-60 border border-hairline bg-panel shadow-lg shadow-ink/60">
+          <div className="absolute right-0 z-50 mt-2 w-60 border border-hairline bg-panel shadow-lg shadow-ink/60">
             <button
               onClick={handleShare}
               className="flex w-full items-center gap-3 px-4 py-3 text-left font-mono text-body-sm text-mist transition-colors hover:bg-slate hover:text-snow"

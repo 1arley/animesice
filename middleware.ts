@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { ASSET_URL, SITE_URL } from "@/lib/site";
 
 /**
  * Middleware para rotas do Next.js.
@@ -15,6 +16,17 @@ import { NextResponse, type NextRequest } from "next/server";
  * Mantemos o middleware limpo e performático sem verificações ingênuas baseadas em cookies não-httpOnly.
  */
 export async function middleware(req: NextRequest) {
+  // O domínio da Vercel continua servindo os chunks referenciados por
+  // `assetPrefix`, mas não deve oferecer uma segunda cópia navegável do site.
+  // A comparação vem das URLs configuráveis, não de uma lista de hosts.
+  const requestHost = req.headers.get("host")?.split(":")[0];
+  const assetHost = new URL(ASSET_URL).hostname;
+  const canonical = new URL(SITE_URL);
+  if (requestHost === assetHost && assetHost !== canonical.hostname) {
+    const destination = new URL(req.nextUrl.pathname + req.nextUrl.search, canonical);
+    return NextResponse.redirect(destination, 308);
+  }
+
   if (req.nextUrl.pathname.startsWith("/settings/confirm-email")) {
     return NextResponse.next();
   }
@@ -23,9 +35,5 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: [
-    "/admin/:path*",
-    "/settings/:path*",
-    "/biblioteca",
-  ],
+  matcher: ["/((?!_next/|assets/|icons/|images/|favicon.ico|api/).*)"],
 };

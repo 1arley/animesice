@@ -52,6 +52,8 @@ export default function SettingsPage() {
   const [pwErr, setPwErr] = useState("");
   const [pwLoading, setPwLoading] = useState(false);
 
+  const [loggingOut, setLoggingOut] = useState(false);
+
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -607,12 +609,19 @@ export default function SettingsPage() {
               <div className="mt-4 border-t border-hairline pt-4">
                 <button
                   onClick={async () => {
-                    await logout();
-                    router.push("/");
+                    if (loggingOut) return;
+                    setLoggingOut(true);
+                    try {
+                      await logout();
+                      router.push("/");
+                    } finally {
+                      setLoggingOut(false);
+                    }
                   }}
+                  disabled={loggingOut}
                   className="btn-ghost"
                 >
-                  Encerrar sessão
+                  {loggingOut ? "Encerrando…" : "Encerrar sessão"}
                 </button>
               </div>
             </section>

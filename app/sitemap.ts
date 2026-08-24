@@ -8,21 +8,18 @@ import { blogPostDate, normalizeBlogList, withLegacyFallback } from "@/lib/blog"
 const STATIC_ROUTES: { path: string; priority: number }[] = [
   { path: "", priority: 1.0 },
   { path: "/animes", priority: 0.9 },
-  { path: "/buscar", priority: 0.8 },
   { path: "/calendario", priority: 0.8 },
   { path: "/lancamentos", priority: 0.8 },
   { path: "/top", priority: 0.7 },
   { path: "/generos", priority: 0.7 },
   { path: "/blog", priority: 0.6 },
-  { path: "/comunidade/sugestoes", priority: 0.6 },
-  { path: "/aleatorio", priority: 0.6 },
+  { path: "/sobre", priority: 0.5 },
 ];
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticEntries: MetadataRoute.Sitemap = STATIC_ROUTES.map(
     ({ path, priority }) => ({
       url: `${SITE_URL}${path}`,
-      lastModified: new Date(),
       changeFrequency: "daily",
       priority,
     }),
@@ -44,7 +41,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   })) ?? [];
   const genreEntries: MetadataRoute.Sitemap = genres.map((genre) => ({
     url: `${SITE_URL}/generos/${genre.slug}`,
-    lastModified: new Date(),
     changeFrequency: "weekly" as const,
     priority: 0.6,
   }));

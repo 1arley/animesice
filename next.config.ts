@@ -8,17 +8,8 @@ import type { NextConfig } from "next";
  * e para recursos nao-HTTPS; os vetores de XSS mais criticos (object-src,
  * base-uri, frame-ancestors, form-action) permanecem fechados.
  */
-const localConnect = process.env.INCLUDE_LOCAL_API === '1' ? ' http://localhost:3001' : '';
-
-// The custom domain is proxied by Cloudflare with a zone-wide minimum Browser
-// Cache TTL. That policy also rewrites temporary 404 responses for Next chunks,
-// which can leave a browser unable to hydrate after a deployment. Serve hashed
-// framework assets from Vercel's stable project domain so Vercel's status-aware
-// cache policy reaches the browser unchanged. Preview/local builds stay local.
-const assetPrefix =
-  process.env.VERCEL_ENV === "production"
-    ? "https://animesice.vercel.app"
-    : undefined;
+const localConnect =
+  process.env.INCLUDE_LOCAL_API === "1" ? " http://localhost:3001" : "";
 
 const cspHeader = `
   default-src 'self';
@@ -26,7 +17,7 @@ const cspHeader = `
   style-src 'self' 'unsafe-inline' data: https: https://fonts.googleapis.com;
   img-src 'self' blob: data: https: https://cdn.myanimelist.net https://*.myanimelist.net https://meusanimes.blog https://*.meusanimes.blog https://svuaszdqsgztnetefcex.supabase.co https://*.anilist.co;
   font-src 'self' data: https: https://fonts.gstatic.com;
-  media-src 'self' blob: data: https://api.animesice.app;
+  media-src 'self' blob: data: https://api.animesice.app https://api.dev.animesice.app;
   connect-src 'self' https: https://api.animesice.app wss://api.animesice.app https://al5sm.com https://static.cloudflareinsights.com https://challenges.cloudflare.com https://www.google-analytics.com https://www.googletagmanager.com${localConnect};
   frame-src 'self' https: https://www.youtube.com https://www.youtube-nocookie.com https://challenges.cloudflare.com;
   object-src 'none';
@@ -34,11 +25,12 @@ const cspHeader = `
   form-action 'self';
   frame-ancestors 'self';
   upgrade-insecure-requests;
-`.replace(/\s{2,}/g, ' ').trim();
+`
+  .replace(/\s{2,}/g, " ")
+  .trim();
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
-  assetPrefix,
   outputFileTracingRoot: process.cwd(),
   images: {
     // Servir as imagens remotas diretamente evita que todas as capas passem
@@ -66,14 +58,25 @@ const nextConfig: NextConfig = {
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
   },
   compiler: {
-    removeConsole: process.env.NODE_ENV === "production" ? { exclude: ["error", "warn"] } : false,
+    removeConsole:
+      process.env.NODE_ENV === "production"
+        ? { exclude: ["error", "warn"] }
+        : false,
   },
   // Rotas antigas da seção Comunidade movidas para /comunidade/*.
   // Redirects permanentes (308) preservam URLs indexadas (sitemap/backlinks).
   async redirects() {
     return [
-      { source: "/pedidos", destination: "/comunidade/pedidos", permanent: true },
-      { source: "/sugestoes", destination: "/comunidade/sugestoes", permanent: true },
+      {
+        source: "/pedidos",
+        destination: "/comunidade/pedidos",
+        permanent: true,
+      },
+      {
+        source: "/sugestoes",
+        destination: "/comunidade/sugestoes",
+        permanent: true,
+      },
       { source: "/regras", destination: "/comunidade/regras", permanent: true },
     ];
   },
@@ -86,8 +89,14 @@ const nextConfig: NextConfig = {
           { key: "X-Frame-Options", value: "SAMEORIGIN" },
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-          { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
-          { key: "Cross-Origin-Opener-Policy", value: "same-origin-allow-popups" },
+          {
+            key: "Permissions-Policy",
+            value: "camera=(), microphone=(), geolocation=()",
+          },
+          {
+            key: "Cross-Origin-Opener-Policy",
+            value: "same-origin-allow-popups",
+          },
         ],
       },
       // Vercel already marks existing Next assets as immutable. A route-wide
@@ -96,19 +105,28 @@ const nextConfig: NextConfig = {
       {
         source: "/icons/:path*",
         headers: [
-          { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
+          {
+            key: "Cache-Control",
+            value: "public, max-age=31536000, immutable",
+          },
         ],
       },
       {
         source: "/assets/:path*",
         headers: [
-          { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
+          {
+            key: "Cache-Control",
+            value: "public, max-age=31536000, immutable",
+          },
         ],
       },
       {
         source: "/images/:path*",
         headers: [
-          { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
+          {
+            key: "Cache-Control",
+            value: "public, max-age=31536000, immutable",
+          },
         ],
       },
     ];

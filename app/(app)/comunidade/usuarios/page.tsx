@@ -106,7 +106,7 @@ export default function UsuariosPage() {
             type="button"
             onClick={() => handleSort(tab.key)}
             aria-pressed={sort === tab.key}
-            className={`border-b-2 px-4 py-2 font-mono text-body-sm uppercase tracking-wider transition-colors ${
+            className={`min-h-11 border-b-2 px-4 py-3 font-mono text-body-sm uppercase tracking-wider transition-colors ${
               sort === tab.key
                 ? "border-ice text-ice"
                 : "border-transparent text-mist hover:text-snow"

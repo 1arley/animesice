@@ -1,6 +1,7 @@
 "use client";
 
 import Script from "next/script";
+import { MonetagGate } from "./MonetagGate";
 
 // Monetag ativo por padrão; desliga explicitamente com
 // NEXT_PUBLIC_DISABLE_MONETAG=1. Antes a ativação dependia de
@@ -13,6 +14,8 @@ export function ThirdPartyScripts() {
   return (
     <>
       {!MONETAG_DISABLED && (
+        <>
+        <MonetagGate />
         <Script
           id="monetag-loader"
           // O loader precisa existir deterministicamente no DOM; o código
@@ -62,6 +65,7 @@ export function ThirdPartyScripts() {
             `,
           }}
         />
+        </>
       )}
 
     </>

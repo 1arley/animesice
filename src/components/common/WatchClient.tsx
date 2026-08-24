@@ -145,6 +145,7 @@ export function WatchClient({
         ) : source ? (
           <VideoPlayer
             src={source.src}
+            embedUrl={source.embedUrl}
             posterUrl={source.thumbnailUrl ?? episode.thumbnailUrl ?? undefined}
             animeSlug={slug}
             episodeNumber={episode.number}
@@ -164,11 +165,7 @@ export function WatchClient({
       <CommentSection episodeId={episode.id} title="Discussão do episódio" />
 
       {/* Navegação de episódios — Peak-End Rule: melhor experiência no fim */}
-      <EpisodeNavigation
-        slug={slug}
-        number={number}
-        episodeCount={episode.anime.episodeCount}
-      />
+      <EpisodeNavigation slug={slug} number={number} />
     </>
   );
 }
@@ -178,30 +175,36 @@ export function WatchClient({
  * Peak-End Rule: usuários lembram do fim da experiência.
  * Lei de Proximidade: botões agrupados por função (anterior/próximo).
  */
-function EpisodeNavigation({
-  slug,
-  number,
-  episodeCount,
-}: {
-  slug: string;
-  number: number;
-  episodeCount?: number | null;
-}) {
-  const [hasNext, setHasNext] = useState<boolean | null>(null);
-  const hasPrevious = number > 1;
+function EpisodeNavigation({ slug, number }: { slug: string; number: number }) {
+  const [adjacent, setAdjacent] = useState<{
+    previous: number | null;
+    next: number | null;
+  } | null>(null);
 
   useEffect(() => {
-    if (episodeCount != null && number >= episodeCount) {
-      setHasNext(false);
-      return;
-    }
+    let cancelled = false;
     api
-      .getEpisode(slug, number + 1)
-      .then(() => setHasNext(true))
-      .catch(() => setHasNext(false));
-  }, [slug, number, episodeCount]);
+      .getEpisodes(slug)
+      .then((episodes) => {
+        if (cancelled) return;
+        const numbers = [...new Set(episodes.map((ep) => ep.number))].sort(
+          (a, b) => a - b,
+        );
+        setAdjacent({
+          previous: numbers.filter((value) => value < number).at(-1) ?? null,
+          next: numbers.find((value) => value > number) ?? null,
+        });
+      })
+      .catch(() => {
+        if (!cancelled) setAdjacent({ previous: null, next: null });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [slug, number]);
 
-  if (!hasPrevious && (hasNext === null || !hasNext)) return null;
+  if (adjacent && adjacent.previous === null && adjacent.next === null)
+    return null;
 
   return (
     <div className="reveal mt-6 border-t border-hairline pt-6">
@@ -210,9 +213,9 @@ function EpisodeNavigation({
       </h3>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {/* Episódio anterior */}
-        {hasPrevious ? (
+        {adjacent?.previous != null ? (
           <Link
-            href={`/animes/${slug}/${number - 1}`}
+            href={`/animes/${slug}/${adjacent.previous}`}
             className="group flex items-center gap-3 rounded-md border border-hairline bg-panel p-3 transition-all duration-200 hover:border-ice/40 hover:bg-ice/5"
           >
             <svg
@@ -229,9 +232,11 @@ function EpisodeNavigation({
               <path d="M15 18l-6-6 6-6" />
             </svg>
             <div className="min-w-0">
-              <p className="font-mono text-caption text-mist">Episódio anterior</p>
+              <p className="font-mono text-caption text-mist">
+                Episódio anterior
+              </p>
               <p className="truncate font-sans text-body-sm font-medium text-snow transition-colors group-hover:text-ice">
-                EP {number - 1}
+                EP {adjacent.previous}
               </p>
             </div>
           </Link>
@@ -240,20 +245,24 @@ function EpisodeNavigation({
         )}
 
         {/* Próximo episódio */}
-        {hasNext === null ? (
+        {adjacent === null ? (
           <div className="flex items-center justify-center rounded-md border border-hairline bg-panel p-3">
             <div className="h-4 w-4 animate-spin rounded-full border-2 border-ice border-t-transparent" />
-            <span className="ml-2 font-mono text-caption text-mist">Verificando...</span>
+            <span className="ml-2 font-mono text-caption text-mist">
+              Verificando...
+            </span>
           </div>
-        ) : hasNext ? (
+        ) : adjacent.next != null ? (
           <Link
-            href={`/animes/${slug}/${number + 1}`}
+            href={`/animes/${slug}/${adjacent.next}`}
             className="group flex items-center justify-end gap-3 rounded-md border border-hairline bg-panel p-3 transition-all duration-200 hover:border-ice/40 hover:bg-ice/5"
           >
             <div className="min-w-0 text-right">
-              <p className="font-mono text-caption text-mist">Próximo episódio</p>
+              <p className="font-mono text-caption text-mist">
+                Próximo episódio
+              </p>
               <p className="truncate font-sans text-body-sm font-medium text-snow transition-colors group-hover:text-ice">
-                EP {number + 1}
+                EP {adjacent.next}
               </p>
             </div>
             <svg
@@ -272,7 +281,9 @@ function EpisodeNavigation({
           </Link>
         ) : (
           <div className="flex items-center justify-center rounded-md border border-hairline bg-panel p-3">
-            <span className="font-mono text-caption text-mist">Último episódio</span>
+            <span className="font-mono text-caption text-mist">
+              Último episódio
+            </span>
           </div>
         )}
       </div>

@@ -5,13 +5,13 @@ import { useEffect, useState } from "react";
 const STORAGE_KEY = "animesice:service-notice:2026-08-21";
 
 export function ServiceNotice() {
-  const [visible, setVisible] = useState(true);
+  const [visible, setVisible] = useState(false);
 
   useEffect(() => {
     try {
-      if (localStorage.getItem(STORAGE_KEY) === "dismissed") setVisible(false);
+      if (localStorage.getItem(STORAGE_KEY) !== "dismissed") setVisible(true);
     } catch {
-      // Storage can be unavailable in privacy modes; keep the notice visible.
+      setVisible(true);
     }
   }, []);
 
@@ -38,7 +38,7 @@ export function ServiceNotice() {
           className="mt-1.5 h-1.5 w-1.5 shrink-0 rotate-45 bg-ice shadow-[0_0_10px_rgba(125,211,252,0.8)] sm:mt-0"
         />
         <p className="min-w-0 flex-1 font-sans text-xs leading-relaxed text-mist sm:text-sm">
-          <strong className="mr-2 font-mono text-[0.65rem] uppercase tracking-[0.14em] text-ice sm:text-xs">
+          <strong className="mr-2 font-mono text-label uppercase tracking-[0.14em] text-ice sm:text-xs">
             Aviso de serviço
           </strong>
           Pedimos desculpas pela instabilidade temporária. O sinal foi
@@ -47,7 +47,7 @@ export function ServiceNotice() {
         <button
           type="button"
           onClick={dismiss}
-          className="-mr-2 shrink-0 p-2 text-mist transition-colors hover:text-snow focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ice"
+          className="-mr-2 flex h-11 w-11 shrink-0 items-center justify-center text-mist transition-colors hover:text-snow focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ice"
           aria-label="Fechar aviso"
         >
           <svg

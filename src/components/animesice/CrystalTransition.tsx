@@ -20,7 +20,10 @@ export function CrystalTransition() {
   const prevPath = useRef(pathname);
 
   useEffect(() => {
-    if (reduce) return;
+    if (reduce) {
+      setActive(false);
+      return;
+    }
     if (prevPath.current === pathname) return;
     prevPath.current = pathname;
     setActive(true);

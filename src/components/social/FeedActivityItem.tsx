@@ -79,7 +79,7 @@ export function FeedActivityItem({
         {event.type === "comment" && (
           <CommentLike commentId={event.id} initial={event.likeCount} />
         )}
-        <span className="font-mono text-caption text-mist/60">
+        <span className="font-mono text-caption text-mist/70">
           {timeAgo(event.createdAt)}
         </span>
       </div>
@@ -119,8 +119,9 @@ function CommentLike({
       onClick={handleLike}
       disabled={!user}
       title={user ? "Curtir comentário" : "Entre para curtir"}
-      className={`inline-flex items-center gap-1 font-mono text-caption transition-colors ${
-        liked ? "text-signal" : "text-mist/60 hover:text-signal"
+      aria-label={count > 0 ? `Curtir comentário (${count})` : "Curtir comentário"}
+      className={`inline-flex min-h-11 items-center gap-1 px-2 py-2 font-mono text-caption transition-colors ${
+        liked ? "text-signal" : "text-mist/70 hover:text-signal"
       } ${user ? "cursor-pointer" : "cursor-default"}`}
     >
       <svg width="11" height="11" viewBox="0 0 16 16" aria-hidden="true">

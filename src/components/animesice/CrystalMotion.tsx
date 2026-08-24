@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useRef, type CSSProperties } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
 
 export type CrystalMotionMode = "reveal" | "loop" | "transition" | "micro";
@@ -43,6 +43,11 @@ function moteValue(index: number, salt: number): number {
  * A animação roda num <video> sem fundo (screen blend); os motes de gelo são
  * gerados em JS com custom props. Com `prefers-reduced-motion`, renderiza o
  * cristal estático, sem animação.
+ *
+ * Fallback mobile: quando o navegador bloqueia autoplay (comum em iOS/Android
+ * em modo bateria, low-power, ou WebM VP9+alpha sem suporte), o componente
+ * detecta e ativa um fallback CSS que pulsa o poster + glow via keyframes,
+ * evitando o PNG estático com fundo preto do <video>.
  */
 export function CrystalMotion({
   mode,
@@ -52,6 +57,39 @@ export function CrystalMotion({
 }: CrystalMotionProps) {
   const reduce = usePrefersReducedMotion();
   const rootRef = useRef<HTMLDivElement | null>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const [videoFailed, setVideoFailed] = useState(false);
+
+  useEffect(() => {
+    const v = videoRef.current;
+    if (!v || reduce || videoFailed) return;
+
+    let cancelled = false;
+
+    const tryPlay = async () => {
+      try {
+        await v.play();
+        // Se chegou aqui, o vídeo está tocando — nada a fazer
+      } catch {
+        if (!cancelled) setVideoFailed(true);
+      }
+    };
+
+    tryPlay();
+
+    // Segurança extra: se após 800ms o vídeo não emiti um frame, assume falha.
+    // Alguns browsers aceitam play() mas travam o buffer no mobile.
+    const stallTimer = setTimeout(() => {
+      if (!cancelled && v.paused && !v.ended) {
+        setVideoFailed(true);
+      }
+    }, 800);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(stallTimer);
+    };
+  }, [reduce, videoFailed]);
 
   const motes = useMemo<MoteStyle[]>(
     () =>
@@ -79,6 +117,11 @@ export function CrystalMotion({
     el.classList.add("crystal-pulsing");
   }, [mode]);
 
+  /** Quando o vídeo não toca, o poster fica estático e o fundo preto do
+   *  <video> aparece. Ativamos a classe `crystal-fallback` que aplica um
+   *  glow pulsante via CSS, mantendo a identidade visual. */
+  const showFallback = !reduce && videoFailed;
+
   if (reduce) {
     return (
       <div
@@ -89,16 +132,13 @@ export function CrystalMotion({
         aria-hidden="true"
       >
         <div className="crystal-wrap">
-          {/* Mesmo elemento do SSR (<video>) para não quebrar a hidratação;
-              sem autoplay/loop e preload="none": mostra só o poster estático. */}
-          {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
-          <video
+          {/* Com prefers-reduced-motion: mostra só o poster como imagem
+              transparente, sem o fundo preto do <video>. */}
+          <img
             className="crystal-logo"
-            src={VIDEO_URL}
-            poster={LOGO_URL}
-            muted
-            playsInline
-            preload="none"
+            src={LOGO_URL}
+            alt=""
+            draggable={false}
             style={{ animation: "none", opacity: 1, filter: "none" }}
             aria-hidden="true"
           />
@@ -110,7 +150,7 @@ export function CrystalMotion({
   return (
     <div
       ref={rootRef}
-      className={`crystal-motion ${className}`}
+      className={`crystal-motion ${showFallback ? "crystal-fallback-active" : ""} ${className}`}
       style={rootStyle}
       data-mode={mode}
       aria-hidden="true"
@@ -124,18 +164,32 @@ export function CrystalMotion({
             <span key={i} className="crystal-mote" style={m as CSSProperties} />
           ))}
         </div>
-        {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
-        <video
-          className="crystal-logo crystal-video"
-          src={VIDEO_URL}
-          poster={LOGO_URL}
-          autoPlay
-          muted
-          loop
-          playsInline
-          preload="auto"
-          aria-hidden="true"
-        />
+        {/* Quando o vídeo não toca (mobile), trocamos pelo poster estático
+            para evitar o fundo preto do player. A imagem mantém a
+            transparência natural do WebP RGBA. */}
+        {showFallback ? (
+          <img
+            className="crystal-logo"
+            src={LOGO_URL}
+            alt=""
+            draggable={false}
+            aria-hidden="true"
+          />
+        ) : (
+          /* eslint-disable-next-line jsx-a11y/media-has-caption */
+          <video
+            className="crystal-logo crystal-video"
+            src={VIDEO_URL}
+            poster={LOGO_URL}
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="auto"
+            ref={videoRef}
+            aria-hidden="true"
+          />
+        )}
       </div>
     </div>
   );

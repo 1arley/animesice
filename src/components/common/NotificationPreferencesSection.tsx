@@ -117,7 +117,7 @@ export function NotificationPreferencesSection() {
                       <button
                         onClick={() => toggle(typeId, c.key, enabled)}
                         disabled={saving}
-                        className={`relative inline-flex h-6 w-11 items-center rounded-full border transition-colors ${
+                        className={`relative inline-flex h-7 w-11 items-center rounded-full border transition-colors ${
                           enabled
                             ? "border-ice bg-ice/20"
                             : "border-hairline bg-panel"
@@ -125,7 +125,7 @@ export function NotificationPreferencesSection() {
                         aria-label={`${enabled ? "Desligar" : "Ligar"} ${NOTIFICATION_LABELS[typeId]} (${c.label})`}
                       >
                         <span
-                          className={`inline-block h-4 w-4 transform rounded-full transition-transform ${
+                          className={`inline-block h-5 w-5 transform rounded-full transition-transform ${
                             enabled ? "translate-x-6" : "translate-x-1"
                           } ${enabled ? "" : "bg-mist"}`}
                           style={enabled ? { backgroundColor: "oklch(0.86 0.12 194)" } : {}}
