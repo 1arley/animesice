@@ -132,7 +132,7 @@ export function CrystalMotion({
         aria-hidden="true"
       >
         <div className="crystal-wrap">
-          {/* Com prefers-reduced-motion: mostra só o poster como <img>
+          {/* Com prefers-reduced-motion: mostra só o poster como imagem
               transparente, sem o fundo preto do <video>. */}
           <img
             className="crystal-logo"
@@ -164,8 +164,8 @@ export function CrystalMotion({
             <span key={i} className="crystal-mote" style={m as CSSProperties} />
           ))}
         </div>
-        {/* Quando o vídeo não toca (mobile), trocamos por <img> do poster
-            para evitar o fundo preto do <video>. O <img> mantém a
+        {/* Quando o vídeo não toca (mobile), trocamos pelo poster estático
+            para evitar o fundo preto do player. A imagem mantém a
             transparência natural do WebP RGBA. */}
         {showFallback ? (
           <img

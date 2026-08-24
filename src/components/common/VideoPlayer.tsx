@@ -131,6 +131,7 @@ function NativeVideoPlayer({
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const { user } = useAuth();
   const [fatalError, setFatalError] = useState(false);
+  const [retryAttempt, setRetryAttempt] = useState(0);
 
   const safeSrc = safeImageSrc(src) ?? src;
   const safePoster = safeImageSrc(posterUrl);
@@ -229,7 +230,7 @@ function NativeVideoPlayer({
       video.removeAttribute("src");
       video.load();
     };
-  }, [safeSrc, isM3u8, startAt]);
+  }, [safeSrc, isM3u8, startAt, retryAttempt]);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -305,13 +306,14 @@ function NativeVideoPlayer({
       video.removeEventListener("ended", onEnded);
       if (progressTimer) clearInterval(progressTimer);
     };
-  }, [animeSlug, episodeNumber, user]);
+  }, [animeSlug, episodeNumber, user, retryAttempt]);
 
   const retry = useCallback(() => {
-    const video = videoRef.current;
-    if (!video) return;
     setFatalError(false);
-    video.load();
+    // O estado de erro desmonta o <video>, portanto o ref ainda está nulo
+    // neste clique. A tentativa força o efeito da fonte a rodar novamente
+    // depois que o elemento for remontado.
+    setRetryAttempt((attempt) => attempt + 1);
   }, []);
 
   if (fatalError) {

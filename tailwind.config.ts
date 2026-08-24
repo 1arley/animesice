@@ -109,12 +109,5 @@ module.exports = {
       },
     },
   },
-  plugins: [
-    // Gate hover/group-hover behind @media (hover: hover) so touch devices
-    // don't flash hover states on tap (Rauno Touch guideline).
-    function ({ addVariant }: { addVariant: (variant: string, selector: string) => void }) {
-      addVariant("hover", "@media (hover: hover) &:hover");
-      addVariant("group-hover", "@media (hover: hover) .group &:hover");
-    },
-  ],
+  plugins: [],
 };
