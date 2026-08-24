@@ -103,7 +103,6 @@ export default function RootLayout({
             (Lighthouse pede <= 4 e penaliza preconnect não usado):
             fonts são self-hosted via next/font e o beacon do Cloudflare
             carrega lazyOnload. */}
-        <link rel="preconnect" href="https://al5sm.com" crossOrigin="anonymous" />
         <script
           dangerouslySetInnerHTML={{
             __html: chunkRecoveryScript,
@@ -121,8 +120,7 @@ export default function RootLayout({
             por sessão, dispensável a qualquer toque/tecla. Nunca bloqueia. */}
         <DeferredCrystalSplash />
         <SpeedInsights />
-        {/* Scripts de terceiros: lazyOnload + IntersectionObserver para Monetag.
-            Não bloqueiam o paint inicial nem competem com o LCP. */}
+        {/* Direct Link controlado localmente; nenhum script de anúncios remoto. */}
         <ThirdPartyScripts />
       </body>
     </html>
