@@ -18,6 +18,9 @@ export function ThirdPartyScripts() {
       s.id = "monetag-loader";
       s.dataset.zone = "11528359";
       s.src = "https://al5sm.com/tag.min.js";
+      s.addEventListener("load", () => {
+        window.dispatchEvent(new Event("monetag:ready"));
+      });
       (document.body || document.documentElement).appendChild(s);
     }
 

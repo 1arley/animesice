@@ -4,7 +4,6 @@ import { useEffect, useLayoutEffect } from "react";
 import { usePathname } from "next/navigation";
 
 const COOLDOWN_MS = 60_000;
-const STORAGE_KEY = "monetag_last_ad";
 const MONETAG_SOURCE = /(?:al5sm\.com|tag\.min\.js)/i;
 const ACTIVATION_EVENTS = new Set([
   "click",
@@ -18,57 +17,21 @@ const ACTIVATION_EVENTS = new Set([
 
 type Listener = EventListenerOrEventListenerObject;
 
+type Registration = {
+  target: EventTarget;
+  type: string;
+  listener: Listener;
+  options?: boolean | AddEventListenerOptions;
+  attached: boolean;
+};
+
 let installed = false;
-let gestureAllowed = false;
-let gestureTimer: number | undefined;
-const wrappedListeners = new WeakMap<Listener, EventListener>();
-
-function lastAdAt(): number {
-  try {
-    return Number(sessionStorage.getItem(STORAGE_KEY)) || 0;
-  } catch {
-    return 0;
-  }
-}
-
-function beginAllowedGesture() {
-  gestureAllowed = true;
-  try {
-    sessionStorage.setItem(STORAGE_KEY, String(Date.now()));
-  } catch {
-    // Storage can be unavailable in privacy modes; the in-memory gate still works.
-  }
-
-  window.clearTimeout(gestureTimer);
-  // One activation can emit pointer/mouse/click events in sequence. Keep that
-  // sequence intact so Monetag can finish opening a single ad.
-  gestureTimer = window.setTimeout(() => {
-    gestureAllowed = false;
-  }, 1_000);
-}
-
-function finishAllowedGesture(event: Event) {
-  if (event.type !== "click" && event.type !== "touchend") return;
-  window.clearTimeout(gestureTimer);
-  // All listeners for the current event run synchronously. Closing on the next
-  // task lets those listeners finish but rejects the very next user gesture.
-  gestureTimer = window.setTimeout(() => {
-    gestureAllowed = false;
-  }, 0);
-}
-
-function monetagMayHandle(event: Event): boolean {
-  if (!ACTIVATION_EVENTS.has(event.type)) return true;
-  if (gestureAllowed) return true;
-
-  const lastAd = lastAdAt();
-  if (!lastAd || Date.now() - lastAd >= COOLDOWN_MS) {
-    beginAllowedGesture();
-    return true;
-  }
-
-  return false;
-}
+let monetagReady = false;
+let coolingDown = false;
+let cooldownTimer: number | undefined;
+let originalAdd: typeof EventTarget.prototype.addEventListener;
+let originalRemove: typeof EventTarget.prototype.removeEventListener;
+const registrations: Registration[] = [];
 
 function calledByMonetag(): boolean {
   try {
@@ -78,12 +41,64 @@ function calledByMonetag(): boolean {
   }
 }
 
-function installListenerGate() {
+function sameCapture(
+  left?: boolean | AddEventListenerOptions,
+  right?: boolean | EventListenerOptions,
+) {
+  const capture = (value?: boolean | EventListenerOptions) =>
+    typeof value === "boolean" ? value : Boolean(value?.capture);
+  return capture(left) === capture(right);
+}
+
+function detachMonetag() {
+  for (const registration of registrations) {
+    if (!registration.attached) continue;
+    originalRemove.call(
+      registration.target,
+      registration.type,
+      registration.listener,
+      registration.options,
+    );
+    registration.attached = false;
+  }
+}
+
+function attachMonetag() {
+  for (const registration of registrations) {
+    if (registration.attached) continue;
+    originalAdd.call(
+      registration.target,
+      registration.type,
+      registration.listener,
+      registration.options,
+    );
+    registration.attached = true;
+  }
+}
+
+function resetCooldown() {
+  window.clearTimeout(cooldownTimer);
+  coolingDown = false;
+  attachMonetag();
+}
+
+function startCooldownAfterCurrentClick(event: Event) {
+  if (!monetagReady || coolingDown || !event.isTrusted) return;
+
+  // The Monetag listeners still receive this event unchanged. Detachment only
+  // happens in the next task, after the popunder code has finished the gesture.
+  window.setTimeout(() => {
+    coolingDown = true;
+    detachMonetag();
+    cooldownTimer = window.setTimeout(resetCooldown, COOLDOWN_MS);
+  }, 0);
+}
+
+function installGate() {
   if (installed) return;
   installed = true;
-
-  const originalAdd = EventTarget.prototype.addEventListener;
-  const originalRemove = EventTarget.prototype.removeEventListener;
+  originalAdd = EventTarget.prototype.addEventListener;
+  originalRemove = EventTarget.prototype.removeEventListener;
 
   EventTarget.prototype.addEventListener = function (
     type: string,
@@ -94,21 +109,24 @@ function installListenerGate() {
       return originalAdd.call(this, type, listener, options);
     }
 
-    let wrapped = wrappedListeners.get(listener);
-    if (!wrapped) {
-      wrapped = function (this: EventTarget, event: Event) {
-        if (!monetagMayHandle(event)) return;
-        try {
-          if (typeof listener === "function") return listener.call(this, event);
-          return listener.handleEvent(event);
-        } finally {
-          finishAllowedGesture(event);
-        }
-      };
-      wrappedListeners.set(listener, wrapped);
+    const existing = registrations.find(
+      (item) =>
+        item.target === this &&
+        item.type === type &&
+        item.listener === listener &&
+        sameCapture(item.options, options),
+    );
+    if (!existing) {
+      registrations.push({
+        target: this,
+        type,
+        listener,
+        options,
+        attached: !coolingDown,
+      });
     }
 
-    return originalAdd.call(this, type, wrapped, options);
+    if (!coolingDown) return originalAdd.call(this, type, listener, options);
   };
 
   EventTarget.prototype.removeEventListener = function (
@@ -116,32 +134,35 @@ function installListenerGate() {
     listener: Listener | null,
     options?: boolean | EventListenerOptions,
   ) {
-    const wrapped = listener ? wrappedListeners.get(listener) : undefined;
-    return originalRemove.call(this, type, wrapped ?? listener, options);
+    if (listener) {
+      const index = registrations.findIndex(
+        (item) =>
+          item.target === this &&
+          item.type === type &&
+          item.listener === listener &&
+          sameCapture(item.options, options),
+      );
+      if (index >= 0) registrations.splice(index, 1);
+    }
+    return originalRemove.call(this, type, listener, options);
   };
-}
 
-function resetForNavigation() {
-  gestureAllowed = false;
-  window.clearTimeout(gestureTimer);
-  try {
-    sessionStorage.setItem(STORAGE_KEY, "0");
-  } catch {
-    // The in-memory state above is sufficient when storage is unavailable.
-  }
+  originalAdd.call(document, "click", startCooldownAfterCurrentClick, true);
+  originalAdd.call(window, "monetag:ready", () => {
+    monetagReady = true;
+  });
 }
 
 export function MonetagGate() {
   const pathname = usePathname();
 
-  useEffect(() => {
-    resetForNavigation();
-  }, [pathname]);
-
-  // Must run before ThirdPartyScripts' passive effect injects the remote tag.
   useLayoutEffect(() => {
-    installListenerGate();
+    installGate();
   }, []);
+
+  useEffect(() => {
+    resetCooldown();
+  }, [pathname]);
 
   return null;
 }
