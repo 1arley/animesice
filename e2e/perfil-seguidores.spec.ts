@@ -116,6 +116,13 @@ test.describe("Perfil público / seguidores e seguindo", () => {
 
     // Hero carregado + contadores de follow nas stats (label + valor juntos).
     await expect(page.getByText("Ana Teste").first()).toBeVisible();
+
+    // Rola até as stats para garantir que o IntersectionObserver do CountUp
+    // dispara na terceira linha do grid mobile (Seguindo/Seguidores).
+    await page
+      .getByRole("button", { name: /^Seguindo \d+$/ })
+      .scrollIntoViewIfNeeded();
+
     await expect(
       page.getByRole("button", { name: "Seguidores 3" }),
     ).toBeVisible();
