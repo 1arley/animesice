@@ -192,7 +192,7 @@ function HistoryRow({ item }: { item: WatchHistoryItem }) {
         {cover && (
           <Image
             src={cover}
-            alt=""
+            alt={item.anime.title}
             width={40}
             height={56}
             sizes="40px"

@@ -22,7 +22,7 @@ export function Avatar({ name, src, size = 32, className = "" }: AvatarProps) {
         canUseNextImage ? (
           <Image
             src={src as string}
-            alt=""
+            alt={name ?? "Avatar"}
             width={size}
             height={size}
             placeholder="blur"
@@ -32,7 +32,7 @@ export function Avatar({ name, src, size = 32, className = "" }: AvatarProps) {
           />
         ) : (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={src} alt="" className="h-full w-full object-cover" />
+          <img src={src} alt={name ?? "Avatar"} className="h-full w-full object-cover" />
         )
       ) : (
         <span style={{ fontSize: Math.max(Math.round(size * 0.4), 10) }}>

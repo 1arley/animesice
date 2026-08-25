@@ -1,23 +1,54 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 
 const COOLDOWN_MS = 60_000;
+const PAGE_ENTRY_GRACE_MS = 10_000;
+const MAX_SEEN_PAGES = 20;
 const DIRECT_LINK =
   process.env.NEXT_PUBLIC_MONETAG_DIRECT_LINK ||
   "https://omg10.com/4/11645885";
 
+const SESSION_KEY = "animesice:ad-state";
+
+type AdSession = {
+  lastOpenAt: number;
+  seenPages: string[];
+};
+
+function readSession(): AdSession {
+  if (typeof window === "undefined") {
+    return { lastOpenAt: 0, seenPages: [] };
+  }
+  try {
+    const raw = window.sessionStorage.getItem(SESSION_KEY);
+    if (!raw) return { lastOpenAt: 0, seenPages: [] };
+    const parsed = JSON.parse(raw) as Partial<AdSession>;
+    return {
+      lastOpenAt: typeof parsed.lastOpenAt === "number" ? parsed.lastOpenAt : 0,
+      seenPages: Array.isArray(parsed.seenPages) ? parsed.seenPages : [],
+    };
+  } catch {
+    return { lastOpenAt: 0, seenPages: [] };
+  }
+}
+
+function writeSession(state: AdSession) {
+  if (typeof window === "undefined") return;
+  try {
+    window.sessionStorage.setItem(SESSION_KEY, JSON.stringify(state));
+  } catch {
+    // ignore quota/disabled storage
+  }
+}
+
 export function MonetagDirectLink() {
   const pathname = usePathname();
-  const lastOpenAt = useRef(0);
 
   useEffect(() => {
-    // A new SPA page starts with one ad opportunity, as requested.
-    lastOpenAt.current = 0;
-  }, [pathname]);
+    const pageEnteredAt = Date.now();
 
-  useEffect(() => {
     function openAd(event: MouseEvent) {
       if (
         !event.isTrusted ||
@@ -30,18 +61,30 @@ export function MonetagDirectLink() {
         return;
       }
 
+      const session = readSession();
       const now = Date.now();
-      if (now - lastOpenAt.current < COOLDOWN_MS) return;
+
+      if (pathname && session.seenPages.includes(pathname)) return;
+      if (now - pageEnteredAt < PAGE_ENTRY_GRACE_MS) return;
+      const elapsed = now - session.lastOpenAt;
+      if (elapsed < COOLDOWN_MS) return;
+
+      session.lastOpenAt = now;
+      if (pathname) {
+        const next = session.seenPages.filter((p) => p !== pathname);
+        next.push(pathname);
+        session.seenPages = next.slice(-MAX_SEEN_PAGES);
+      }
+      writeSession(session);
 
       // Run synchronously inside the trusted click so popup blockers recognize
       // the user activation. Never cancel or alter the site's original click.
-      lastOpenAt.current = now;
       window.open(DIRECT_LINK, "_blank", "noopener,noreferrer");
     }
 
     document.addEventListener("click", openAd, true);
     return () => document.removeEventListener("click", openAd, true);
-  }, []);
+  }, [pathname]);
 
   return null;
 }
