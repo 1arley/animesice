@@ -187,7 +187,7 @@ export function FeedPost({
             <div className="card-scan relative h-14 w-10 shrink-0 overflow-hidden bg-hairline">
               <Image
                 src={safeImageSrc(post.anime.coverImage) ?? ""}
-                alt=""
+                alt={post.anime.title}
                 fill
                 sizes="40px"
                 placeholder="blur"
