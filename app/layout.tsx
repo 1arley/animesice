@@ -80,7 +80,6 @@ export const metadata: Metadata = {
     shortcut: "/icons/favicon.ico",
   },
   manifest: "/icons/site.webmanifest",
-  other: {},
 };
 
 export const viewport: Viewport = {

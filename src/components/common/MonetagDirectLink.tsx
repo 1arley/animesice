@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 
 const COOLDOWN_MS = 60_000;
 const PAGE_ENTRY_GRACE_MS = 10_000;
+const MAX_SEEN_PAGES = 20;
 const DIRECT_LINK =
   process.env.NEXT_PUBLIC_MONETAG_DIRECT_LINK ||
   "https://omg10.com/4/11645885";
@@ -69,7 +70,11 @@ export function MonetagDirectLink() {
       if (elapsed < COOLDOWN_MS) return;
 
       session.lastOpenAt = now;
-      session.seenPages = pathname ? [...session.seenPages, pathname] : session.seenPages;
+      if (pathname) {
+        const next = session.seenPages.filter((p) => p !== pathname);
+        next.push(pathname);
+        session.seenPages = next.slice(-MAX_SEEN_PAGES);
+      }
       writeSession(session);
 
       // Run synchronously inside the trusted click so popup blockers recognize
