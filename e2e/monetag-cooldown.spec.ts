@@ -42,23 +42,19 @@ async function getSession(
   });
 }
 
-async function setSessionState(
+async function setLastOpenAt(
   page: import("@playwright/test").Page,
-  mutate: (state: { lastOpenAt: number; seenPages: string[] }) => void,
+  lastOpenAt: number,
 ) {
-  await page.evaluate((mutatorSource) => {
-    const fn = new Function(
-      "state",
-      `return (${mutatorSource})(state);`,
-    ) as (state: { lastOpenAt: number; seenPages: string[] }) => void;
+  await page.evaluate((value) => {
     const KEY = "animesice:ad-state";
     const raw = window.sessionStorage.getItem(KEY);
     const initial = raw
       ? (JSON.parse(raw) as { lastOpenAt: number; seenPages: string[] })
       : { lastOpenAt: 0, seenPages: [] };
-    fn(initial);
+    initial.lastOpenAt = value;
     window.sessionStorage.setItem(KEY, JSON.stringify(initial));
-  }, mutate.toString());
+  }, lastOpenAt);
 }
 
 test.describe("Monetag direct link cooldown", () => {
@@ -107,9 +103,7 @@ test.describe("Monetag direct link cooldown", () => {
   }) => {
     await clickAndAwaitAd(page, context);
     await page.goto("/lancamentos");
-    await setSessionState(page, (state) => {
-      state.lastOpenAt = Date.now() - 11_000;
-    });
+    await setLastOpenAt(page, Date.now() - 11_000);
     await page.goto("/buscar");
     await expectNoAdOpen(page);
   });
@@ -125,9 +119,7 @@ test.describe("Monetag direct link cooldown", () => {
     expect(stateAfterFirst.lastOpenAt).toBeGreaterThan(0);
 
     await page.goto("/lancamentos");
-    await setSessionState(page, (state) => {
-      state.lastOpenAt = Date.now() - 61_000;
-    });
+    await setLastOpenAt(page, Date.now() - 61_000);
     const before = await getSession(page);
 
     await page.goto("/buscar");
@@ -167,9 +159,7 @@ test.describe("Monetag direct link cooldown", () => {
   }) => {
     await clickAndAwaitAd(page, context);
     await page.goto("/lancamentos");
-    await setSessionState(page, (state) => {
-      state.lastOpenAt = Date.now() - 61_000;
-    });
+    await setLastOpenAt(page, Date.now() - 61_000);
     await page.goto("/");
     await expectNoAdOpen(page);
   });
