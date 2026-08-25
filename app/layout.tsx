@@ -80,9 +80,7 @@ export const metadata: Metadata = {
     shortcut: "/icons/favicon.ico",
   },
   manifest: "/icons/site.webmanifest",
-  other: {
-    monetag: "5b3cadc15f39db60af150e8c05e089d0",
-  },
+  other: {},
 };
 
 export const viewport: Viewport = {
