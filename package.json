@@ -9,6 +9,7 @@
     "start": "next start",
     "test:e2e": "playwright test",
     "lint": "next lint",
+    "typecheck": "tsc --noEmit",
     "release": "semantic-release",
     "release:dry": "semantic-release --dry-run"
   },
