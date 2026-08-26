@@ -20,6 +20,11 @@ interface WatchClientProps {
   initialEpisode: Episode & { anime: Anime };
 }
 
+/** Máximo de tentativas de polling para extração assíncrona */
+const MAX_POLL_ATTEMPTS = 30;
+/** Intervalo base de polling (ms) — aumenta exponencialmente */
+const POLL_INTERVAL_BASE = 1_500;
+
 export function WatchClient({
   slug,
   number,
@@ -29,6 +34,7 @@ export function WatchClient({
   const [source, setSource] = useState<StreamSource | null>(null);
   const [sourceError, setSourceError] = useState<string | null>(null);
   const [loadingSource, setLoadingSource] = useState(false);
+  const [extracting, setExtracting] = useState(false);
   const loadSourceId = useRef(0);
   const recoveryAttempts = useRef(0);
   const resumeAt = useRef(0);
@@ -39,6 +45,7 @@ export function WatchClient({
       setLoadingSource(true);
       setSourceError(null);
       setSource(null);
+      setExtracting(false);
       try {
         const res = await api.streamSource(slug, number, refresh);
         if (id === loadSourceId.current) setSource(res);
@@ -57,6 +64,108 @@ export function WatchClient({
     [slug, number],
   );
 
+  /**
+   * Tenta extração assíncrona com polling. Se o backend retornar 202,
+   * inicia polling com backoff exponencial até o vídeo ficar pronto.
+   */
+  const loadSourceAsync = useCallback(async () => {
+    const id = ++loadSourceId.current;
+    setLoadingSource(true);
+    setSourceError(null);
+    setSource(null);
+
+    try {
+      const res = await api.streamSourceAsync(slug, number);
+
+      // Se já tem o source direto (vídeo existia), retorna
+      if ("src" in res && id === loadSourceId.current) {
+        setSource(res as StreamSource);
+        setLoadingSource(false);
+        return;
+      }
+
+      // jobId = extração assíncrona em andamento
+      if ("jobId" in res && id === loadSourceId.current) {
+        setExtracting(true);
+        const jobId = (res as { jobId: string }).jobId;
+
+        // Polling com backoff
+        for (let attempt = 0; attempt < MAX_POLL_ATTEMPTS; attempt++) {
+          if (id !== loadSourceId.current) return; // componente desmontou
+
+          const delay = Math.min(
+            POLL_INTERVAL_BASE * Math.pow(1.3, attempt),
+            10_000,
+          );
+          await new Promise((r) => setTimeout(r, delay));
+
+          if (id !== loadSourceId.current) return;
+
+          try {
+            const poll = await api.pollExtractionJob(slug, number, jobId);
+
+            if ("src" in poll && id === loadSourceId.current) {
+              setSource(poll as StreamSource);
+              setExtracting(false);
+              setLoadingSource(false);
+              return;
+            }
+
+            if ("status" in poll) {
+              const status = poll as { status: string; error?: string };
+              if (status.status === "failed") {
+                if (id === loadSourceId.current) {
+                  setSourceError(
+                    status.error ?? "Extração falhou. Tente novamente.",
+                  );
+                  setExtracting(false);
+                  setLoadingSource(false);
+                }
+                return;
+              }
+              // completed — chama getSource normalmente
+              if (status.status === "completed") {
+                const source = await api.streamSource(slug, number);
+                if (id === loadSourceId.current) {
+                  setSource(source);
+                  setExtracting(false);
+                  setLoadingSource(false);
+                }
+                return;
+              }
+            }
+          } catch {
+            // Continua polling em caso de erro de rede
+          }
+        }
+
+        // Esgotou tentativas — fallback para modo síncrono
+        if (id === loadSourceId.current) {
+          setExtracting(false);
+          await loadSource();
+        }
+      }
+    } catch (e) {
+      if (id === loadSourceId.current) {
+        // Fallback: tenta o modo síncrono normal
+        try {
+          const res = await api.streamSource(slug, number);
+          if (id === loadSourceId.current) setSource(res);
+        } catch {
+          if (id === loadSourceId.current) {
+            setSourceError(
+              e instanceof ApiError
+                ? e.message
+                : "Não foi possível obter o vídeo deste episódio.",
+            );
+          }
+        }
+      }
+    } finally {
+      if (id === loadSourceId.current) setLoadingSource(false);
+    }
+  }, [slug, number, loadSource]);
+
   const recoverPlayback = useCallback(
     (currentTime: number) => {
       if (recoveryAttempts.current >= 1 || loadingSource) return;
@@ -70,8 +179,8 @@ export function WatchClient({
   useEffect(() => {
     recoveryAttempts.current = 0;
     resumeAt.current = 0;
-    void loadSource();
-  }, [loadSource]);
+    void loadSourceAsync();
+  }, [loadSourceAsync]);
 
   if (!episode) {
     return <p className="text-body-sm text-mist">Carregando...</p>;
@@ -107,6 +216,18 @@ export function WatchClient({
           />
         ) : sourceError ? (
           <p className="text-body-sm text-signal">{sourceError}</p>
+        ) : extracting ? (
+          <div className="flex items-center gap-3 rounded-md border border-hairline bg-panel p-4">
+            <div className="h-5 w-5 animate-spin rounded-full border-2 border-ice border-t-transparent" />
+            <div>
+              <p className="font-mono text-body-sm font-medium text-snow">
+                Preparando episódio...
+              </p>
+              <p className="font-mono text-caption text-mist">
+                Extraindo vídeo da fonte. Isso pode levar alguns segundos.
+              </p>
+            </div>
+          </div>
         ) : loadingSource ? (
           <EpisodeLoadingState />
         ) : source ? (
@@ -147,6 +268,7 @@ function EpisodeNavigation({ slug, number }: { slug: string; number: number }) {
     previous: number | null;
     next: number | null;
   } | null>(null);
+  const prefetched = useRef(new Set<number>());
 
   useEffect(() => {
     let cancelled = false;
@@ -170,6 +292,20 @@ function EpisodeNavigation({ slug, number }: { slug: string; number: number }) {
     };
   }, [slug, number]);
 
+  /**
+   * Prefetch de stream source ao hover: aquece o cache do backend
+   * para que a próxima navegação já tenha o vídeo pronto.
+   */
+  const prefetchEpisode = useCallback(
+    (episodeNumber: number) => {
+      if (prefetched.current.has(episodeNumber)) return;
+      prefetched.current.add(episodeNumber);
+      // Fire-and-forget: não bloqueia o UI, só aquece o cache do backend
+      api.streamSourceAsync(slug, episodeNumber).catch(() => undefined);
+    },
+    [slug],
+  );
+
   if (adjacent && adjacent.previous === null && adjacent.next === null)
     return null;
 
@@ -183,6 +319,7 @@ function EpisodeNavigation({ slug, number }: { slug: string; number: number }) {
         {adjacent?.previous != null ? (
           <Link
             href={`/animes/${slug}/${adjacent.previous}`}
+            onMouseEnter={() => prefetchEpisode(adjacent.previous!)}
             className="group flex items-center gap-3 rounded-md border border-hairline bg-panel p-3 transition-all duration-200 hover:border-ice/40 hover:bg-ice/5"
           >
             <svg
@@ -222,6 +359,7 @@ function EpisodeNavigation({ slug, number }: { slug: string; number: number }) {
         ) : adjacent.next != null ? (
           <Link
             href={`/animes/${slug}/${adjacent.next}`}
+            onMouseEnter={() => prefetchEpisode(adjacent.next!)}
             className="group flex items-center justify-end gap-3 rounded-md border border-hairline bg-panel p-3 transition-all duration-200 hover:border-ice/40 hover:bg-ice/5"
           >
             <div className="min-w-0 text-right">
