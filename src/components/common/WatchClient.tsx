@@ -25,35 +25,13 @@ export function WatchClient({
   number,
   initialEpisode,
 }: WatchClientProps) {
-  const [episode, setEpisode] = useState<(Episode & { anime: Anime }) | null>(
-    initialEpisode,
-  );
-  const [error, setError] = useState<string | null>(null);
+  const episode = initialEpisode;
   const [source, setSource] = useState<StreamSource | null>(null);
   const [sourceError, setSourceError] = useState<string | null>(null);
   const [loadingSource, setLoadingSource] = useState(false);
   const loadSourceId = useRef(0);
   const recoveryAttempts = useRef(0);
   const resumeAt = useRef(0);
-
-  useEffect(() => {
-    let cancelled = false;
-    setError(null);
-    api
-      .getEpisode(slug, number)
-      .then((ep) => {
-        if (!cancelled) setEpisode(ep);
-      })
-      .catch((e) => {
-        if (!cancelled)
-          setError(
-            e instanceof ApiError ? e.message : "Erro ao carregar episódio.",
-          );
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [slug, number]);
 
   const loadSource = useCallback(
     async (refresh = false) => {
@@ -94,17 +72,6 @@ export function WatchClient({
     resumeAt.current = 0;
     void loadSource();
   }, [loadSource]);
-
-  if (error) {
-    return (
-      <div>
-        <p className="mb-3 text-body-sm text-signal">{error}</p>
-        <Link href={`/animes/${slug}`} className="btn-ghost">
-          Voltar ao anime
-        </Link>
-      </div>
-    );
-  }
 
   if (!episode) {
     return <p className="text-body-sm text-mist">Carregando...</p>;

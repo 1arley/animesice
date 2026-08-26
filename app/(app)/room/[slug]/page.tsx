@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState, useRef } from "react";
+import { useCallback, useEffect, useState, useRef, use } from "react";
 import { api, ApiError, isProxyEmbed, type RoomInfo, type RoomMessageItem, type StreamSource } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import type { Episode, Anime } from "@/types";
@@ -32,8 +32,8 @@ export default function RoomPage({
 }: {
   params: Promise<{ slug: string }>;
 }) {
-  const { user } = useAuth();
-  const [slug, setSlug] = useState("");
+  const { slug } = use(params);
+  const { user, loading: authLoading } = useAuth();
   const [room, setRoom] = useState<RoomInfo | null>(null);
   const [episode, setEpisode] = useState<(Episode & { anime: Anime }) | null>(null);
   const [source, setSource] = useState<StreamSource | null>(null);
@@ -64,10 +64,6 @@ export default function RoomPage({
   }, []);
 
   useEffect(() => {
-    params.then((p) => setSlug(p.slug));
-  }, [params]);
-
-  useEffect(() => {
     if (!slug) return;
     // Reset de estado da sala anterior (navegação client-side entre salas).
     setLoading(true);
@@ -88,12 +84,14 @@ export default function RoomPage({
         gotRoom = true;
         setRoom(r);
         setLoadingSource(true);
-        return api.getEpisode(r.animeSlug, r.episodeNumber).then((ep) => {
-          setEpisode(ep);
-          return api.streamSource(r.animeSlug, r.episodeNumber);
-        });
+        // Parallelize episode + source — they are independent once we have the room.
+        return Promise.all([
+          api.getEpisode(r.animeSlug, r.episodeNumber),
+          api.streamSource(r.animeSlug, r.episodeNumber),
+        ]);
       })
-      .then((src) => {
+      .then(([ep, src]) => {
+        setEpisode(ep);
         setSource(src);
       })
       .catch((e) => {
@@ -234,6 +232,14 @@ export default function RoomPage({
     } finally {
       setDeleting(false);
     }
+  }
+
+  if (authLoading) {
+    return (
+      <div className="mx-auto max-w-shelf px-4 py-6">
+        <p className="text-body-sm text-mist">Carregando...</p>
+      </div>
+    );
   }
 
   if (!user) {
