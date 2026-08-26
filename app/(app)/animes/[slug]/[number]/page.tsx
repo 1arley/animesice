@@ -6,7 +6,7 @@ import type { Episode, Anime } from "@/types";
 import { findHentaisMigration, isHentaiAnime, hentaisPath } from "@/lib/hentai";
 import { WatchClient } from "@/components/common/WatchClient";
 import { SITE_URL } from "@/lib/site";
-import { escapeJsonLd, safeImageSrc } from "@/lib/url";
+import { escapeJsonLd } from "@/lib/url";
 
 /**
  * Converte formatos comuns de duração para ISO 8601 (PT{minutos}M).
@@ -163,26 +163,7 @@ export default async function WatchPage({
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: escapeJsonLd(jsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: escapeJsonLd(videoJsonLd) }} />
 
-      <div className="relative mb-4">
-        {/* Poster above-the-fold: renders server-side with fetchPriority="high"
-            so the browser can start downloading the LCP image immediately,
-            before client hydration and the dynamic video player load.
-            Positioned absolutely to overlay the player area. */}
-        {safeImageSrc(episode.thumbnailUrl) && (
-          <img
-            src={episode.thumbnailUrl!}
-            alt={`${episode.anime.title} — Episódio ${episode.number}`}
-            width={1280}
-            height={720}
-            fetchPriority="high"
-            decoding="async"
-            className="pointer-events-none absolute inset-0 z-10 w-full object-cover poster-fade"
-            style={{ aspectRatio: "16 / 9" }}
-          />
-        )}
-
-        <WatchClient slug={slug} number={number} initialEpisode={episode} />
-      </div>
+      <WatchClient slug={slug} number={number} initialEpisode={episode} />
     </div>
   );
 }
