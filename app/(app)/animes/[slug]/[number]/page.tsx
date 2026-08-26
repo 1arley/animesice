@@ -163,23 +163,26 @@ export default async function WatchPage({
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: escapeJsonLd(jsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: escapeJsonLd(videoJsonLd) }} />
 
-      {/* Poster above-the-fold: renders server-side with fetchPriority="high"
-          so the browser can start downloading the LCP image immediately,
-          before client hydration and the dynamic video player load. */}
-      {safeImageSrc(episode.thumbnailUrl) && (
-        <img
-          src={episode.thumbnailUrl!}
-          alt={`${episode.anime.title} — Episódio ${episode.number}`}
-          width={1280}
-          height={720}
-          fetchPriority="high"
-          decoding="async"
-          className="mb-4 w-full object-cover"
-          style={{ aspectRatio: "16 / 9" }}
-        />
-      )}
+      <div className="relative mb-4">
+        {/* Poster above-the-fold: renders server-side with fetchPriority="high"
+            so the browser can start downloading the LCP image immediately,
+            before client hydration and the dynamic video player load.
+            Positioned absolutely to overlay the player area. */}
+        {safeImageSrc(episode.thumbnailUrl) && (
+          <img
+            src={episode.thumbnailUrl!}
+            alt={`${episode.anime.title} — Episódio ${episode.number}`}
+            width={1280}
+            height={720}
+            fetchPriority="high"
+            decoding="async"
+            className="pointer-events-none absolute inset-0 z-10 w-full object-cover poster-fade"
+            style={{ aspectRatio: "16 / 9" }}
+          />
+        )}
 
-      <WatchClient slug={slug} number={number} initialEpisode={episode} />
+        <WatchClient slug={slug} number={number} initialEpisode={episode} />
+      </div>
     </div>
   );
 }
