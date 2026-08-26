@@ -4,6 +4,7 @@ import "./globals.css";
 import { AuthProvider } from "@/lib/auth-context";
 import { ToastProvider } from "@/components/common/ToastProvider";
 import { SITE_URL } from "@/lib/site";
+import { escapeJsonLd } from "@/lib/url";
 import { ThirdPartyScripts } from "@/components/common/ThirdPartyScripts";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { DeferredCrystalSplash } from "@/components/animesice/DeferredCrystalSplash";
@@ -103,6 +104,47 @@ export default function RootLayout({
         <script
           dangerouslySetInnerHTML={{
             __html: chunkRecoveryScript,
+          }}
+        />
+        {/* Structured data global: declara o nome da marca (WebSite +
+            Organization) para o Google montar a entidade "AnimesIce" e
+            habilita a caixa de busca nos sitelinks via SearchAction. */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: escapeJsonLd({
+              "@context": "https://schema.org",
+              "@graph": [
+                {
+                  "@type": "WebSite",
+                  "@id": `${SITE_URL}/#website`,
+                  url: SITE_URL,
+                  name: "AnimesIce",
+                  description:
+                    "Assistir animes online em HD, legendados e dublados.",
+                  inLanguage: "pt-BR",
+                  publisher: { "@id": `${SITE_URL}/#organization` },
+                  potentialAction: {
+                    "@type": "SearchAction",
+                    target: {
+                      "@type": "EntryPoint",
+                      urlTemplate: `${SITE_URL}/buscar?q={search_term_string}`,
+                    },
+                    "query-input": "required name=search_term_string",
+                  },
+                },
+                {
+                  "@type": "Organization",
+                  "@id": `${SITE_URL}/#organization`,
+                  url: SITE_URL,
+                  name: "AnimesIce",
+                  logo: {
+                    "@type": "ImageObject",
+                    url: `${SITE_URL}/icons/favicon-96x96.png`,
+                  },
+                },
+              ],
+            }),
           }}
         />
       </head>
