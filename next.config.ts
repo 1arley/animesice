@@ -8,8 +8,9 @@ import type { NextConfig } from "next";
  * e para recursos nao-HTTPS; os vetores de XSS mais criticos (object-src,
  * base-uri, frame-ancestors, form-action) permanecem fechados.
  */
+const isDev = process.env.NODE_ENV !== "production";
 const localConnect =
-  process.env.INCLUDE_LOCAL_API === "1" ? " http://localhost:3001" : "";
+  isDev || process.env.INCLUDE_LOCAL_API === "1" ? " http://localhost:3001" : "";
 
 const cspHeader = `
   default-src 'self';
@@ -17,9 +18,9 @@ const cspHeader = `
   style-src 'self' 'unsafe-inline' data: https: https://fonts.googleapis.com;
   img-src 'self' blob: data: https: https://cdn.myanimelist.net https://*.myanimelist.net https://meusanimes.blog https://*.meusanimes.blog https://svuaszdqsgztnetefcex.supabase.co https://*.anilist.co;
   font-src 'self' data: https: https://fonts.gstatic.com;
-  media-src 'self' blob: data: https://api.animesice.app https://api.dev.animesice.app;
+  media-src 'self' blob: data: https://api.animesice.app https://api.dev.animesice.app${localConnect};
   connect-src 'self' https: https://api.animesice.app wss://api.animesice.app https://al5sm.com https://static.cloudflareinsights.com https://challenges.cloudflare.com https://www.google-analytics.com https://www.googletagmanager.com${localConnect};
-  frame-src 'self' https: https://www.youtube.com https://www.youtube-nocookie.com https://challenges.cloudflare.com;
+  frame-src 'self' https: https://www.youtube.com https://www.youtube-nocookie.com https://challenges.cloudflare.com${localConnect};
   object-src 'none';
   base-uri 'self';
   form-action 'self';
