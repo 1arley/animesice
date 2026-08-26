@@ -708,15 +708,6 @@
     }
   }
 
-  .poster-fade {
-    opacity: 1;
-    transition: opacity 0.3s ease-out;
-  }
-  .poster-fade.poster-hidden {
-    opacity: 0;
-    pointer-events: none;
-  }
-
   /* ===== Modo Cinema =====
      Tela cheia sem remontar o player (o nó DOM persiste, o iframe/vídeo
      não reinicia). O wrapper troca para fixed inset-0; o frame cresce

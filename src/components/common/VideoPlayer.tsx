@@ -100,11 +100,6 @@ function EmbedPlayer({
     }).catch(() => {});
   }, [animeSlug, episodeNumber]);
 
-  const onEmbedLoad = useCallback(() => {
-    const poster = document.querySelector('.poster-fade:not(.poster-hidden)');
-    if (poster) poster.classList.add('poster-hidden');
-  }, []);
-
   return (
     <iframe
       src={embedUrl}
@@ -112,7 +107,6 @@ function EmbedPlayer({
       allowFullScreen
       className="video-frame"
       style={{ border: 0 }}
-      onLoad={onEmbedLoad}
     />
   );
 }
@@ -169,9 +163,6 @@ function NativeVideoPlayer({
 
     const resume = () => {
       clearMetadataWatchdog();
-      // Hide the server-rendered poster overlay when the first frame is ready
-      const poster = document.querySelector('.poster-fade:not(.poster-hidden)');
-      if (poster) poster.classList.add('poster-hidden');
       if (startAt && Number.isFinite(startAt) && video.duration > startAt) {
         video.currentTime = startAt;
       }
