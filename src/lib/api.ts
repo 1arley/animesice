@@ -354,6 +354,33 @@ export const api = {
       `/stream/source?anime=${encodeURIComponent(animeSlug)}&episode=${episodeNumber}${refresh ? "&refresh=1" : ""}`,
     ),
 
+  /**
+   * Solicita extração assíncrona de um episódio. Retorna 202 com jobId
+   * quando extração é necessária, ou o StreamSource diretamente se o vídeo
+   * já está disponível.
+   */
+  streamSourceAsync: (animeSlug: string, episodeNumber: number) =>
+    request<
+      StreamSource | { jobId: string; status: string; message: string }
+    >(
+      `/stream/source?anime=${encodeURIComponent(animeSlug)}&episode=${episodeNumber}&async=1`,
+    ),
+
+  /**
+   * Poll status de um job de extração assíncrona.
+   * Retorna StreamSource quando completo, ou status while processing.
+   */
+  pollExtractionJob: (
+    animeSlug: string,
+    episodeNumber: number,
+    jobId: string,
+  ) =>
+    request<
+      StreamSource | { jobId: string; status: string; message?: string; error?: string }
+    >(
+      `/stream/source?anime=${encodeURIComponent(animeSlug)}&episode=${episodeNumber}&jobId=${encodeURIComponent(jobId)}`,
+    ),
+
   // --- Embed / Scrape (animefire proxy backend) ---
   embedProxyUrl: (targetUrl: string): string =>
     `${API_URL}/embed/proxy?url=${encodeURIComponent(targetUrl)}`,
