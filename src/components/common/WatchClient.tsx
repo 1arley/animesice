@@ -22,8 +22,10 @@ interface WatchClientProps {
 
 /** Máximo de tentativas de polling para extração assíncrona */
 const MAX_POLL_ATTEMPTS = 30;
-/** Intervalo base de polling (ms) — aumenta exponencialmente */
-const POLL_INTERVAL_BASE = 1_500;
+/** Intervalo base de polling (ms) — curva suave para capturar extrações rápidas */
+const POLL_INTERVAL_BASE = 800;
+/** Fator de backoff — mais agente no início, mais conservador depois */
+const POLL_BACKOFF = 1.4;
 
 export function WatchClient({
   slug,
@@ -35,9 +37,21 @@ export function WatchClient({
   const [sourceError, setSourceError] = useState<string | null>(null);
   const [loadingSource, setLoadingSource] = useState(false);
   const [extracting, setExtracting] = useState(false);
+  const [extractionElapsed, setExtractionElapsed] = useState(0);
+  const extractionStart = useRef(0);
   const loadSourceId = useRef(0);
   const recoveryAttempts = useRef(0);
   const resumeAt = useRef(0);
+
+  // Timer de extração — mostra segundos enquanto o backend processa
+  useEffect(() => {
+    if (!extracting) { setExtractionElapsed(0); return; }
+    extractionStart.current = Date.now();
+    const id = setInterval(() => {
+      setExtractionElapsed(Math.floor((Date.now() - extractionStart.current) / 1000));
+    }, 1000);
+    return () => clearInterval(id);
+  }, [extracting]);
 
   const loadSource = useCallback(
     async (refresh = false) => {
@@ -48,7 +62,10 @@ export function WatchClient({
       setExtracting(false);
       try {
         const res = await api.streamSource(slug, number, refresh);
-        if (id === loadSourceId.current) setSource(res);
+        if (id === loadSourceId.current) {
+          setSource(res);
+          api._sourceCache.set(slug, number, res);
+        }
       } catch (e) {
         if (id === loadSourceId.current) {
           setSourceError(
@@ -75,6 +92,14 @@ export function WatchClient({
     setSource(null);
 
     try {
+      // Check client-side cache first (sessionStorage, 1h TTL)
+      const cached = api._sourceCache.get(slug, number);
+      if (cached && id === loadSourceId.current) {
+        setSource(cached);
+        setLoadingSource(false);
+        return;
+      }
+
       const res = await api.streamSourceAsync(slug, number);
 
       // Se já tem o source direto (vídeo existia), retorna
@@ -94,7 +119,7 @@ export function WatchClient({
           if (id !== loadSourceId.current) return; // componente desmontou
 
           const delay = Math.min(
-            POLL_INTERVAL_BASE * Math.pow(1.3, attempt),
+            POLL_INTERVAL_BASE * Math.pow(POLL_BACKOFF, attempt),
             10_000,
           );
           await new Promise((r) => setTimeout(r, delay));
@@ -105,7 +130,9 @@ export function WatchClient({
             const poll = await api.pollExtractionJob(slug, number, jobId);
 
             if ("src" in poll && id === loadSourceId.current) {
-              setSource(poll as StreamSource);
+              const src = poll as StreamSource;
+              setSource(src);
+              api._sourceCache.set(slug, number, src);
               setExtracting(false);
               setLoadingSource(false);
               return;
@@ -128,6 +155,7 @@ export function WatchClient({
                 const source = await api.streamSource(slug, number);
                 if (id === loadSourceId.current) {
                   setSource(source);
+                  api._sourceCache.set(slug, number, source);
                   setExtracting(false);
                   setLoadingSource(false);
                 }
@@ -150,7 +178,10 @@ export function WatchClient({
         // Fallback: tenta o modo síncrono normal
         try {
           const res = await api.streamSource(slug, number);
-          if (id === loadSourceId.current) setSource(res);
+          if (id === loadSourceId.current) {
+            setSource(res);
+            api._sourceCache.set(slug, number, res);
+          }
         } catch {
           if (id === loadSourceId.current) {
             setSourceError(
@@ -221,10 +252,17 @@ export function WatchClient({
             <div className="h-5 w-5 animate-spin rounded-full border-2 border-ice border-t-transparent" />
             <div>
               <p className="font-mono text-body-sm font-medium text-snow">
-                Preparando episódio...
+                Preparando episódio…
+                {extractionElapsed > 3 && (
+                  <span className="ml-1 text-caption text-mist tabular-nums">
+                    ({extractionElapsed}s)
+                  </span>
+                )}
               </p>
               <p className="font-mono text-caption text-mist">
-                Extraindo vídeo da fonte. Isso pode levar alguns segundos.
+                {extractionElapsed > 8
+                  ? "Pode levar mais um momento — o servidor de vídeo pode estar sobrecarregado."
+                  : "Extraindo vídeo da fonte. Isso pode levar alguns segundos."}
               </p>
             </div>
           </div>

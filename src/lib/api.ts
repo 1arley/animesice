@@ -349,6 +349,29 @@ export const api = {
     ),
 
   // --- Streaming ---
+
+  // --- Source cache (sessionStorage, 1h TTL) ---
+  _sourceCache: {
+    get(slug: string, episode: number): StreamSource | null {
+      try {
+        const key = `src:${slug}:${episode}`;
+        const raw = sessionStorage.getItem(key);
+        if (!raw) return null;
+        const { source, ts } = JSON.parse(raw) as { source: StreamSource; ts: number };
+        if (Date.now() - ts > 3_600_000) {
+          sessionStorage.removeItem(key);
+          return null;
+        }
+        return source;
+      } catch { return null; }
+    },
+    set(slug: string, episode: number, source: StreamSource) {
+      try {
+        sessionStorage.setItem(`src:${slug}:${episode}`, JSON.stringify({ source, ts: Date.now() }));
+      } catch { /* quota exceeded — ignore */ }
+    },
+  },
+
   streamSource: (animeSlug: string, episodeNumber: number, refresh = false) =>
     request<StreamSource>(
       `/stream/source?anime=${encodeURIComponent(animeSlug)}&episode=${episodeNumber}${refresh ? "&refresh=1" : ""}`,
