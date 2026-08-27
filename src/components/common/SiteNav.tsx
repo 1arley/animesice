@@ -198,6 +198,24 @@ export function SiteNav() {
                 <div
                   role="menu"
                   className="absolute left-0 top-full z-50 min-w-40 border border-hairline bg-panel py-1 shadow-lg shadow-black/40"
+                  onKeyDown={(e) => {
+                    const menu = e.currentTarget;
+                    const items = Array.from(menu.querySelectorAll<HTMLElement>('[role="menuitem"]'));
+                    const idx = items.indexOf(document.activeElement as HTMLElement);
+                    if (e.key === "ArrowDown") {
+                      e.preventDefault();
+                      items[(idx + 1) % items.length]?.focus();
+                    } else if (e.key === "ArrowUp") {
+                      e.preventDefault();
+                      items[(idx - 1 + items.length) % items.length]?.focus();
+                    } else if (e.key === "Home") {
+                      e.preventDefault();
+                      items[0]?.focus();
+                    } else if (e.key === "End") {
+                      e.preventDefault();
+                      items[items.length - 1]?.focus();
+                    }
+                  }}
                 >
                   {item.links.map((link) => (
                     <a
@@ -310,7 +328,7 @@ export function SiteNav() {
                           }`}
                         >
                           <NavIcon d={ICONS[link.icon] || ""} />
-                          <span className="font-mono text-label uppercase tracking-wider text-center leading-tight">
+                          <span className="font-mono text-caption uppercase tracking-wider text-center leading-tight">
                             {link.title}
                           </span>
                         </Link>
