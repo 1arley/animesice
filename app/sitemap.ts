@@ -2,7 +2,6 @@ import type { MetadataRoute } from "next";
 import { SITE_URL } from "@/lib/site";
 import { serverFetchJson, serverListBlogPosts } from "@/lib/api-server";
 import type { Anime, Genre, Paginated } from "@/types";
-import { isHentaiAnime } from "@/lib/hentai";
 import { blogPostDate, normalizeBlogList, withLegacyFallback } from "@/lib/blog";
 
 const STATIC_ROUTES: { path: string; priority: number }[] = [
@@ -65,7 +64,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     for (const anime of items) {
       // Conteúdo +18 foi movido para hentaisice.com — não pode mais
       // aparecer no sitemap do animesice.
-      if (isHentaiAnime(anime)) continue;
+      if (anime.genres?.some((g) => g.slug === "hentai")) continue;
       animeEntries.push({
         url: `${SITE_URL}/animes/${anime.slug}`,
         lastModified: new Date(anime.updatedAt ?? new Date()),
