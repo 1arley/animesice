@@ -148,7 +148,6 @@
     *::after {
       animation-duration: 0.01ms !important;
       animation-iteration-count: 1 !important;
-      transition-duration: 0.01ms !important;
     }
   }
 }
@@ -163,13 +162,14 @@
     font-size: 1.65rem;
     line-height: 1;
     font-weight: 700;
-    letter-spacing: -0.015em;
-    color: theme("colors.snow");
-    padding-bottom: 0.65rem;
-    margin-bottom: 1rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-    position: relative;
-  }
+  letter-spacing: -0.015em;
+  line-height: 1.1;
+  color: theme("colors.snow");
+  padding-bottom: 0.65rem;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  position: relative;
+}
 
   .shelf-label::before {
     content: "";
@@ -313,7 +313,7 @@
     transition: all 180ms ease;
   }
   .field::placeholder {
-    color: #64748B;
+    color: theme("colors.mist-soft");
   }
   .field:focus {
     outline: none;
@@ -852,6 +852,149 @@
     .tab-active-bar {
       transition: none;
     }
+  }
+
+  /* ===== Blog prose =====
+     Tipografia para conteúdo HTML sanitizado no blog (Read mode).
+     O container recebe .prose-body; os estilos abaixo cobrem os elementos
+     que o sanitizer permite (h2-h4, p, ul, ol, blockquote, a, code, img,
+     strong, em, hr). */
+  .prose-body h2 {
+    margin-top: 2rem;
+    margin-bottom: 0.75rem;
+    font-family: theme("fontFamily.display");
+    font-size: theme("fontSize.display-lg");
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+    color: theme("colors.snow");
+  }
+  .prose-body h3 {
+    margin-top: 1.5rem;
+    margin-bottom: 0.5rem;
+    font-family: theme("fontFamily.display");
+    font-size: 1.25rem;
+    font-weight: 600;
+    line-height: 1.25;
+    letter-spacing: -0.01em;
+    color: theme("colors.snow");
+  }
+  .prose-body h4 {
+    margin-top: 1.25rem;
+    margin-bottom: 0.5rem;
+    font-family: theme("fontFamily.sans");
+    font-size: theme("fontSize.body");
+    font-weight: 600;
+    line-height: 1.4;
+    color: theme("colors.snow");
+  }
+  .prose-body p {
+    margin-top: 0;
+    margin-bottom: 1rem;
+  }
+  .prose-body p:last-child {
+    margin-bottom: 0;
+  }
+  .prose-body ul,
+  .prose-body ol {
+    margin-top: 0;
+    margin-bottom: 1rem;
+    padding-left: 1.5rem;
+  }
+  .prose-body li {
+    margin-bottom: 0.4rem;
+  }
+  .prose-body li:last-child {
+    margin-bottom: 0;
+  }
+  .prose-body ul {
+    list-style-type: disc;
+  }
+  .prose-body ol {
+    list-style-type: decimal;
+  }
+  .prose-body a {
+    color: theme("colors.ice");
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    transition: color 150ms ease;
+  }
+  .prose-body a:hover {
+    color: theme("colors.ice-bright");
+  }
+  .prose-body strong {
+    color: theme("colors.snow");
+    font-weight: 500;
+  }
+  .prose-body em {
+    font-style: italic;
+  }
+  .prose-body blockquote {
+    margin-top: 1.25rem;
+    margin-bottom: 1.25rem;
+    padding: 0.5rem 0 0.5rem 1rem;
+    border-left: 2px solid rgba(56, 232, 218, 0.4);
+    color: theme("colors.mist");
+    font-style: italic;
+  }
+  .prose-body code {
+    font-family: theme("fontFamily.mono");
+    font-size: 0.85em;
+    padding: 0.15em 0.35em;
+    background: rgba(56, 232, 218, 0.08);
+    border-radius: 3px;
+    color: theme("colors.ice");
+  }
+  .prose-body pre {
+    margin-top: 1.25rem;
+    margin-bottom: 1.25rem;
+    padding: 1rem 1.25rem;
+    background: theme("colors.panel");
+    border: 1px solid theme("colors.hairline");
+    border-radius: 4px;
+    overflow-x: auto;
+  }
+  .prose-body pre code {
+    padding: 0;
+    background: none;
+    color: theme("colors.snow");
+    font-size: theme("fontSize.body-sm");
+  }
+  .prose-body img {
+    margin-top: 1.5rem;
+    margin-bottom: 1.5rem;
+    border-radius: 4px;
+    border: 1px solid theme("colors.hairline");
+  }
+  .prose-body hr {
+    margin-top: 2rem;
+    margin-bottom: 2rem;
+    border: none;
+    border-top: 1px solid theme("colors.hairline");
+  }
+  .prose-body table {
+    width: 100%;
+    margin-top: 1.25rem;
+    margin-bottom: 1.25rem;
+    border-collapse: collapse;
+  }
+  .prose-body th,
+  .prose-body td {
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid theme("colors.hairline");
+    text-align: left;
+  }
+  .prose-body th {
+    font-family: theme("fontFamily.mono");
+    font-size: theme("fontSize.caption");
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: theme("colors.mist");
+  }
+  .prose-body td {
+    font-size: theme("fontSize.body-sm");
+    color: theme("colors.snow");
   }
 }
 
