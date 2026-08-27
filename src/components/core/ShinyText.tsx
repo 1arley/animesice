@@ -33,7 +33,7 @@ interface ShinyTextProps {
 export function ShinyText({
   text,
   className = "",
-  color = "#45F0E0",
+  color = "#38E8DA",
   shineColor = "#E9EFF5",
   spread = 90,
   speed = 4,

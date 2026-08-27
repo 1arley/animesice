@@ -186,7 +186,7 @@ export default async function SearchPage({
                       />
                       {g.name}
                       {g._count && (
-                        <span className="font-mono text-caption text-mist/60 tabular-nums">
+                        <span className="font-mono text-caption text-mist-soft tabular-nums">
                           {g._count.animes}
                         </span>
                       )}

@@ -20,7 +20,7 @@ export function ProfileCurrentlyWatching({
     return (
       <section>
         <SectionLabel level={2}>Agora assistindo</SectionLabel>
-        <p className="text-body-sm text-mist/70">
+        <p className="text-body-sm text-mist-soft">
           Não está acompanhando nenhum anime no momento.
         </p>
       </section>
@@ -83,7 +83,7 @@ export function ProfileCurrentlyWatching({
                   </div>
                 )}
               </div>
-              <span className="hidden shrink-0 font-mono text-caption text-mist/60 sm:block">
+              <span className="hidden shrink-0 font-mono text-caption text-mist-soft sm:block">
                 {timeAgo(item.updatedAt)}
               </span>
             </Link>
