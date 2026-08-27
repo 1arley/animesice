@@ -126,7 +126,7 @@ export function PrivacySection() {
 
       {typeof settings?.privateAnimeLists === "number" &&
         settings.privateAnimeLists > 0 && (
-          <p className="mt-4 border-t border-hairline pt-3 text-caption text-mist/70">
+          <p className="mt-4 border-t border-hairline pt-3 text-caption text-mist-soft">
             {settings.privateAnimeLists} anime(s) da sua biblioteca estão marcados
             como privados e não aparecem para outros usuários.
           </p>

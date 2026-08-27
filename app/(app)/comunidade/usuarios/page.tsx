@@ -90,7 +90,7 @@ export default function UsuariosPage() {
             viewBox="0 0 16 16"
             fill="none"
             aria-hidden="true"
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-mist/60"
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-mist-soft"
           >
             <circle cx="7" cy="7" r="5" stroke="currentColor" strokeWidth="1.5" />
             <path d="M11 11l3.5 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />

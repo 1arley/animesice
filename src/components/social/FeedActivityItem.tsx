@@ -63,13 +63,13 @@ export function FeedActivityItem({
             <span className="text-mist">{animeTitle}</span>
           )}
           {event.type === "watch" && (
-            <span className="font-mono text-caption text-mist/70"> — EP {event.episodeNumber}</span>
+            <span className="font-mono text-caption text-mist-soft"> — EP {event.episodeNumber}</span>
           )}
         </p>
         {event.type === "comment" && event.content && (
-          <p className="mt-0.5 line-clamp-2 text-body-sm text-mist/80">
+          <p className="mt-0.5 line-clamp-2 text-body-sm text-mist-soft">
             “{event.content}”
-            {event.edited && <span className="ml-1 text-caption text-mist/50">(editado)</span>}
+            {event.edited && <span className="ml-1 text-caption text-mist-soft">(editado)</span>}
           </p>
         )}
       </div>
@@ -79,7 +79,7 @@ export function FeedActivityItem({
         {event.type === "comment" && (
           <CommentLike commentId={event.id} initial={event.likeCount} />
         )}
-        <span className="font-mono text-caption text-mist/70">
+        <span className="font-mono text-caption text-mist-soft">
           {timeAgo(event.createdAt)}
         </span>
       </div>
@@ -121,7 +121,7 @@ function CommentLike({
       title={user ? "Curtir comentário" : "Entre para curtir"}
       aria-label={count > 0 ? `Curtir comentário (${count})` : "Curtir comentário"}
       className={`inline-flex min-h-11 items-center gap-1 px-2 py-2 font-mono text-caption transition-colors ${
-        liked ? "text-signal" : "text-mist/70 hover:text-signal"
+        liked ? "text-signal" : "text-mist-soft hover:text-signal"
       } ${user ? "cursor-pointer" : "cursor-default"}`}
     >
       <svg width="11" height="11" viewBox="0 0 16 16" aria-hidden="true">

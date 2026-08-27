@@ -16,7 +16,7 @@ export function ProfileAbout({ profile }: { profile: PublicUserProfile }) {
     return (
       <section>
         <SectionLabel level={2}>Sobre</SectionLabel>
-        <p className="text-body-sm text-mist/70">Sem descrição ainda.</p>
+        <p className="text-body-sm text-mist-soft">Sem descrição ainda.</p>
       </section>
     );
   }

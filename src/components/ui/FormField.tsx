@@ -27,7 +27,7 @@ export function FormField({
       </label>
       {children}
       {hint && !error && (
-        <p className="mt-1 text-caption text-mist/70">{hint}</p>
+        <p className="mt-1 text-caption text-mist-soft">{hint}</p>
       )}
       {error && <p className="mt-1 text-caption text-signal">{error}</p>}
     </div>

@@ -128,7 +128,7 @@ export function CrystalReveal() {
 
         <div
           ref={captionRef}
-          className="absolute bottom-8 left-8 flex items-center gap-3 font-mono text-caption uppercase tracking-[0.25em] text-mist/80"
+          className="absolute bottom-8 left-8 flex items-center gap-3 font-mono text-caption uppercase tracking-[0.25em] text-mist-soft"
         >
           <span className="h-1.5 w-1.5 bg-ice" aria-hidden="true" />
           Sinal da madrugada — foco puxado

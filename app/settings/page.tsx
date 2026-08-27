@@ -278,7 +278,7 @@ export default function SettingsPage() {
                 <label className="block">
                   <span className="mb-1.5 block font-sans text-caption uppercase tracking-wider text-mist">
                     Apelido{" "}
-                    <span className="normal-case text-mist/70">(opcional)</span>
+                    <span className="normal-case text-mist-soft">(opcional)</span>
                   </span>
                   <input
                     type="text"
@@ -292,7 +292,7 @@ export default function SettingsPage() {
                     autoComplete="username"
                     className="field"
                   />
-                  <span className="mt-1 block font-mono text-caption text-mist/70">
+                  <span className="mt-1 block font-mono text-caption text-mist-soft">
                     3-20 caracteres: minúsculas, números, _ ou -.
                   </span>
                 </label>
@@ -413,7 +413,7 @@ export default function SettingsPage() {
                   className="field resize-none"
                 />
                 <div className="flex items-center justify-between gap-4">
-                  <span className="font-mono text-caption text-mist/70">
+                  <span className="font-mono text-caption text-mist-soft">
                     {bio.length}/500
                   </span>
                   <button

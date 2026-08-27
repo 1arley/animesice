@@ -157,7 +157,7 @@ export function FeedPost({
           >
             {authorName}
           </Link>
-          <p className="font-mono text-caption text-mist/70">
+          <p className="font-mono text-caption text-mist-soft">
             @{post.user.userName ?? post.user.id} · {timeAgo(post.createdAt)}
           </p>
         </div>
@@ -166,7 +166,7 @@ export function FeedPost({
             type="button"
             onClick={handleDelete}
             disabled={deleting}
-            className="font-mono text-caption text-mist/60 transition-colors hover:text-signal"
+            className="font-mono text-caption text-mist-soft transition-colors hover:text-signal"
           >
             {deleting ? "…" : "Excluir"}
           </button>
@@ -220,7 +220,7 @@ export function FeedPost({
           disabled={!user || likeBusy}
           title={user ? "Curtir post" : "Entre para curtir"}
           className={`inline-flex min-h-11 items-center gap-1.5 py-2 transition-colors ${
-            liked ? "text-signal" : "text-mist/70 hover:text-signal"
+            liked ? "text-signal" : "text-mist-soft hover:text-signal"
           } ${user ? "cursor-pointer" : "cursor-default"}`}
         >
           <HeartGlyph filled={liked} />
@@ -230,7 +230,7 @@ export function FeedPost({
         <button
           type="button"
           onClick={openComments}
-          className="inline-flex min-h-11 items-center gap-1.5 py-2 text-mist/70 transition-colors hover:text-ice"
+          className="inline-flex min-h-11 items-center gap-1.5 py-2 text-mist-soft transition-colors hover:text-ice"
         >
           <CommentGlyph />
           {commentsTotal > 0 ? commentsTotal : "Comentar"}
@@ -240,7 +240,7 @@ export function FeedPost({
           type="button"
           onClick={handleShare}
           disabled={!user || shareBusy}
-          className="ml-auto inline-flex min-h-11 items-center gap-1.5 py-2 text-mist/70 transition-colors hover:text-ice disabled:cursor-default"
+          className="ml-auto inline-flex min-h-11 items-center gap-1.5 py-2 text-mist-soft transition-colors hover:text-ice disabled:cursor-default"
         >
           <ShareGlyph />
           {shared ? "Copiado!" : shareCount > 0 ? `Compartilhar · ${shareCount}` : "Compartilhar"}
@@ -253,7 +253,7 @@ export function FeedPost({
           {commentsLoading ? (
             <div className="flex items-center justify-center py-4" aria-busy="true">
               <div className="h-3 w-3 animate-spin rounded-full border-2 border-ice border-t-transparent" />
-              <span className="ml-2 font-mono text-caption text-mist/60">Carregando...</span>
+              <span className="ml-2 font-mono text-caption text-mist-soft">Carregando...</span>
             </div>
           ) : comments.length === 0 ? (
             <EmptyState
@@ -278,9 +278,9 @@ export function FeedPost({
                     >
                       {c.user.name || c.user.userName || "Usuário"}
                     </Link>{" "}
-                    <span className="text-mist/80">{c.content}</span>
+                    <span className="text-mist-soft">{c.content}</span>
                   </p>
-                  <p className="font-mono text-caption text-mist/50">
+                  <p className="font-mono text-caption text-mist-soft">
                     {timeAgo(c.createdAt)}
                   </p>
                 </div>
