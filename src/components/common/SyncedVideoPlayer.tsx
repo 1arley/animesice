@@ -5,7 +5,7 @@ import type Hls from "hls.js";
 import type { Socket } from "socket.io-client";
 import { safeImageSrc } from "@/lib/url";
 import { API_URL, isProxyEmbed } from "@/lib/api";
-import { isYouTubeEmbed } from "@/components/common/VideoPlayer";
+import { isYouTubeEmbed, isBloggerEmbed } from "@/components/common/VideoPlayer";
 
 interface SyncedVideoPlayerProps {
   src: string;
@@ -41,6 +41,37 @@ export function SyncedVideoPlayer({
   roomSlug,
   isHost,
 }: SyncedVideoPlayerProps) {
+  if (
+    (embedUrl && isBloggerEmbed(embedUrl)) ||
+    (src && isBloggerEmbed(src))
+  ) {
+    return (
+      <div className="video-frame flex flex-col items-center justify-center gap-4 text-center">
+        <svg
+          width="48"
+          height="48"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className="text-mist"
+        >
+          <circle cx="12" cy="12" r="10" />
+          <polygon points="10 8 16 12 10 16 10 8" />
+        </svg>
+        <div>
+          <p className="text-body-sm text-snow font-medium">
+            Vídeo indisponível no momento
+          </p>
+          <p className="mt-1 text-caption text-mist">
+            A fonte está sendo re-extraída. Tente novamente em alguns segundos.
+          </p>
+        </div>
+      </div>
+    );
+  }
   if (embedUrl && (isProxyEmbed(embedUrl) || isYouTubeEmbed(embedUrl))) {
     return (
       <EmbedPlayer

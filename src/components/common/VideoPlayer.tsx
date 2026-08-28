@@ -32,6 +32,24 @@ export function isYouTubeEmbed(url: string): boolean {
   return /youtube(?:-nocookie)?\.com\/(?:embed|watch|shorts)\//i.test(url);
 }
 
+/**
+ * Detecta player Blogger (blogger.com/video.g?token=...).
+ * Quando o backend não consegue resolver o token para .mp4 via Chromium,
+ * devolve o token embrulhado em /embed/proxy — o iframe sandboxed não
+ * consegue reproduzir (CSP impede requests same-origin ao googlevideo).
+ */
+export function isBloggerEmbed(url: string): boolean {
+  if (/blogger\.com\/video\.g\?token=/i.test(url)) return true;
+  try {
+    if (url.includes("/embed/proxy?")) {
+      const u = new URL(url);
+      const inner = u.searchParams.get("url");
+      if (inner && /blogger\.com\/video\.g\?token=/i.test(inner)) return true;
+    }
+  } catch { /* ignore */ }
+  return false;
+}
+
 export function VideoPlayer({
   src,
   posterUrl,
@@ -42,6 +60,22 @@ export function VideoPlayer({
   startAt,
   onPlaybackError,
 }: VideoPlayerProps) {
+  const bloggerSource = embedUrl && isBloggerEmbed(embedUrl)
+    ? embedUrl
+    : src && isBloggerEmbed(src)
+      ? src
+      : null;
+
+  if (bloggerSource) {
+    return (
+      <BloggerFallback
+        onRetry={() => onPlaybackError?.(0)}
+        animeTitle={animeTitle}
+        episodeNumber={episodeNumber}
+      />
+    );
+  }
+
   if (embedUrl && isProxyEmbed(embedUrl)) {
     return (
       <EmbedPlayer
@@ -108,6 +142,64 @@ function EmbedPlayer({
       className="video-frame"
       style={{ border: 0 }}
     />
+  );
+}
+
+/**
+ * Fallback para fontes Blogger: quando o backend não consegue resolver o token
+ * para .mp4 via Chromium, o player iframe sandboxed não funciona (CSP bloqueia
+ * requests ao googlevideo). Mostra mensagem explicativa + botão de retry que
+ * dispara re-extração.
+ */
+function BloggerFallback({
+  onRetry,
+  animeTitle,
+  episodeNumber,
+}: {
+  onRetry: () => void;
+  animeTitle?: string;
+  episodeNumber?: number;
+}) {
+  const [retrying, setRetrying] = useState(false);
+
+  const handleRetry = useCallback(() => {
+    setRetrying(true);
+    onRetry();
+  }, [onRetry]);
+
+  return (
+    <div className="video-frame flex flex-col items-center justify-center gap-4 text-center">
+      <svg
+        width="48"
+        height="48"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className="text-mist"
+      >
+        <circle cx="12" cy="12" r="10" />
+        <polygon points="10 8 16 12 10 16 10 8" />
+      </svg>
+      <div>
+        <p className="text-body-sm text-snow font-medium">
+          Vídeo indisponível no momento
+        </p>
+        <p className="mt-1 text-caption text-mist">
+          A fonte está sendo re-extraída. Tente novamente em alguns segundos.
+        </p>
+      </div>
+      <button
+        type="button"
+        onClick={handleRetry}
+        disabled={retrying}
+        className="btn-ghost"
+      >
+        {retrying ? "Re-extraindo..." : "Tentar novamente"}
+      </button>
+    </div>
   );
 }
 
