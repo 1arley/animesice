@@ -1072,6 +1072,7 @@
   filter: blur(0) brightness(1);
   will-change: filter, transform, opacity;
   background: transparent;
+  mix-blend-mode: screen;
 }
 
 /* Fallback mobile: quando o <video> não toca, o componente troca por <img>
@@ -1090,11 +1091,8 @@
   animation-delay: var(--d, 0s);
 }
 
-/* A animação vem em vídeo sobre fundo preto: o screen blend faz o preto sumir
-   sobre os fundos escuros da identidade (splash, transition, loaders). */
-.crystal-motion .crystal-video {
-  mix-blend-mode: screen;
-}
+/* O <video> e o <img> fallback herdam mix-blend-mode: screen de .crystal-logo,
+   que torna o fundo preto da animação transparente sobre fundos escuros. */
 
 .crystal-motion .crystal-motes {
   position: absolute;
