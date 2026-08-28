@@ -1072,6 +1072,7 @@
   filter: blur(0) brightness(1);
   will-change: filter, transform, opacity;
   background: transparent;
+  mix-blend-mode: screen;
 }
 
 /* Fallback mobile: quando o <video> não toca, o componente troca por <img>
