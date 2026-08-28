@@ -404,6 +404,69 @@ export const api = {
       `/stream/source?anime=${encodeURIComponent(animeSlug)}&episode=${episodeNumber}&jobId=${encodeURIComponent(jobId)}`,
     ),
 
+  /**
+   * SSE para stream source em tempo real.
+   * Retorna uma função de cleanup que fecha a conexão EventSource.
+   * Suporta fallback automático: se SSE não for suportado ou falhar,
+   * chama onTimeout para que o caller use polling.
+   */
+  streamSourceSSE: (
+    animeSlug: string,
+    episodeNumber: number,
+    callbacks: {
+      onSource: (source: StreamSource) => void;
+      onFailed: (error: string) => void;
+      onTimeout: () => void;
+      onError: () => void;
+    },
+  ): (() => void) => {
+    const url = `${API_URL}/stream/source/sse?anime=${encodeURIComponent(animeSlug)}&episode=${episodeNumber}`;
+    let closed = false;
+
+    try {
+      const es = new EventSource(url);
+
+      es.addEventListener("source", (e) => {
+        if (closed) return;
+        try {
+          const source = JSON.parse(e.data) as StreamSource;
+          callbacks.onSource(source);
+          es.close();
+        } catch { callbacks.onError(); es.close(); }
+      });
+
+      es.addEventListener("failed", (e) => {
+        if (closed) return;
+        try {
+          const data = JSON.parse(e.data) as { error?: string };
+          callbacks.onFailed(data.error ?? "Extração falhou");
+          es.close();
+        } catch { callbacks.onError(); es.close(); }
+      });
+
+      es.addEventListener("timeout", () => {
+        if (closed) return;
+        callbacks.onTimeout();
+        es.close();
+      });
+
+      es.addEventListener("error", () => {
+        if (closed) return;
+        es.close();
+        callbacks.onError();
+      });
+
+      return () => {
+        closed = true;
+        es.close();
+      };
+    } catch {
+      // EventSource não suportado ou erro de construção
+      callbacks.onError();
+      return () => {};
+    }
+  },
+
   // --- Embed / Scrape (animefire proxy backend) ---
   embedProxyUrl: (targetUrl: string): string =>
     `${API_URL}/embed/proxy?url=${encodeURIComponent(targetUrl)}`,

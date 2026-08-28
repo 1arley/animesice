@@ -66,6 +66,19 @@ export function ContinueWatchingRail() {
     return () => ac.abort();
   }, [user, pathname, fetchContinue]);
 
+  // Prefetch dos 3 primeiros itens — aquece o cache do backend para
+  // que a próxima navegação já tenha o vídeo pronto.
+  useEffect(() => {
+    if (items.length === 0) return;
+    const top3 = items.slice(0, 3);
+    for (const item of top3) {
+      const cached = api._sourceCache.get(item.anime.slug, item.episode.number);
+      if (!cached) {
+        api.streamSourceAsync(item.anime.slug, item.episode.number).catch(() => {});
+      }
+    }
+  }, [items]);
+
   if (!user || loading || items.length === 0) return null;
 
   return (

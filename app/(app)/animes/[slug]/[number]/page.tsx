@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { cache } from "react";
-import { serverFetchJson } from "@/lib/api-server";
+import { serverFetchJson, serverStreamSourceAsync } from "@/lib/api-server";
 import type { Episode, Anime } from "@/types";
 
 import { WatchClient } from "@/components/common/WatchClient";
@@ -100,7 +100,12 @@ export default async function WatchPage({
   const number = Number(numberParam);
   if (Number.isNaN(number)) notFound();
 
-  const episode = await getEpisode(slug, numberParam);
+  // Busca episódio e stream source em paralelo — se o vídeo já existir no
+  // cache do backend, o WatchClient renderiza instantaneamente sem round-trip.
+  const [episode, streamSource] = await Promise.all([
+    getEpisode(slug, numberParam),
+    serverStreamSourceAsync(slug, number).catch(() => null),
+  ]);
   if (!episode) notFound();
 
   const jsonLd = {
@@ -157,7 +162,12 @@ export default async function WatchPage({
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: escapeJsonLd(jsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: escapeJsonLd(videoJsonLd) }} />
 
-      <WatchClient slug={slug} number={number} initialEpisode={episode} />
+      <WatchClient
+        slug={slug}
+        number={number}
+        initialEpisode={episode}
+        initialSource={streamSource}
+      />
     </div>
   );
 }

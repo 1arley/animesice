@@ -6,6 +6,7 @@ import { useAuth } from "@/lib/auth-context";
 import type { Episode, Anime } from "@/types";
 import { SyncedVideoPlayer } from "@/components/common/SyncedVideoPlayer";
 import { EpisodeLoadingState } from "@/components/common/EpisodeLoadingState";
+import { CrystalMotion } from "@/components/animesice/CrystalMotion";
 import { io, Socket } from "socket.io-client";
 
 interface Participant {
@@ -39,6 +40,7 @@ export default function RoomPage({
   const [source, setSource] = useState<StreamSource | null>(null);
   const [sourceError, setSourceError] = useState<string | null>(null);
   const [loadingSource, setLoadingSource] = useState(false);
+  const [extracting, setExtracting] = useState(false);
   const [messages, setMessages] = useState<RoomMessageItem[]>([]);
   const [input, setInput] = useState("");
   const [connected, setConnected] = useState(false);
@@ -71,6 +73,7 @@ export default function RoomPage({
     setEpisode(null);
     setSource(null);
     setSourceError(null);
+    setExtracting(false);
     setMessages([]);
     setParticipants([]);
     setJoined(false);
@@ -78,23 +81,132 @@ export default function RoomPage({
     setError(null);
     setRealtimeError(null);
     let gotRoom = false;
+    let cancelled = false;
+
     api
       .getRoom(slug)
-      .then((r) => {
+      .then(async (r) => {
+        if (cancelled) return;
         gotRoom = true;
         setRoom(r);
         setLoadingSource(true);
-        // Parallelize episode + source — they are independent once we have the room.
-        return Promise.all([
+
+        // Busca episódio em paralelo com source async
+        const [ep, srcRes] = await Promise.all([
           api.getEpisode(r.animeSlug, r.episodeNumber),
-          api.streamSource(r.animeSlug, r.episodeNumber),
+          api.streamSourceAsync(r.animeSlug, r.episodeNumber).catch(() => null),
         ]);
-      })
-      .then(([ep, src]) => {
+
+        if (cancelled) return;
         setEpisode(ep);
-        setSource(src);
+
+        // Source direto (vídeo já existia no cache)
+        if (srcRes && "src" in srcRes) {
+          setSource(srcRes as StreamSource);
+          setLoadingSource(false);
+          return;
+        }
+
+        // Extração assíncrona em andamento — usa SSE + polling
+        if (srcRes && "jobId" in srcRes) {
+          setExtracting(true);
+          const jobId = (srcRes as { jobId: string }).jobId;
+
+          // Tenta SSE primeiro
+          let sseResolved = false;
+          const cleanupSSERef = { fn: null as (() => void) | null };
+
+          const ssePromise = new Promise<boolean>((resolve) => {
+            cleanupSSERef.fn = api.streamSourceSSE(r.animeSlug, r.episodeNumber, {
+              onSource: (source) => {
+                if (cancelled || sseResolved) return;
+                sseResolved = true;
+                setSource(source);
+                setExtracting(false);
+                setLoadingSource(false);
+                resolve(true);
+              },
+              onFailed: () => {
+                if (cancelled || sseResolved) return;
+                sseResolved = true;
+                setSourceError("Extração falhou. Tente novamente.");
+                setExtracting(false);
+                setLoadingSource(false);
+                resolve(true);
+              },
+              onTimeout: () => { if (!sseResolved) resolve(false); },
+              onError: () => { if (!sseResolved) resolve(false); },
+            });
+          });
+
+          // Espera SSE por até 2s
+          const sseHadResult = await Promise.race([
+            ssePromise,
+            new Promise<boolean>((r) => setTimeout(() => r(false), 2_000)),
+          ]);
+
+          if (sseHadResult || sseResolved) return;
+
+          // Fallback: polling
+          const MAX_POLL = 20;
+          const BASE_DELAY = 300;
+          const BACKOFF = 1.25;
+
+          for (let attempt = 0; attempt < MAX_POLL; attempt++) {
+            if (cancelled) { cleanupSSERef.fn?.(); return; }
+            const delay = Math.min(BASE_DELAY * Math.pow(BACKOFF, attempt), 5_000);
+            await new Promise((r) => setTimeout(r, delay));
+            if (cancelled) { cleanupSSERef.fn?.(); return; }
+
+            try {
+              const poll = await api.pollExtractionJob(r.animeSlug, r.episodeNumber, jobId);
+              if ("src" in poll && !cancelled) {
+                setSource(poll as StreamSource);
+                setExtracting(false);
+                setLoadingSource(false);
+                cleanupSSERef.fn?.();
+                return;
+              }
+              if ("status" in poll) {
+                const st = poll as { status: string; error?: string };
+                if (st.status === "failed") {
+                  if (!cancelled) {
+                    setSourceError(st.error ?? "Extração falhou.");
+                    setExtracting(false);
+                    setLoadingSource(false);
+                  }
+                  cleanupSSERef.fn?.();
+                  return;
+                }
+                if (st.status === "completed") {
+                  const src = await api.streamSource(r.animeSlug, r.episodeNumber);
+                  if (!cancelled) {
+                    setSource(src);
+                    setExtracting(false);
+                    setLoadingSource(false);
+                  }
+                  cleanupSSERef.fn?.();
+                  return;
+                }
+              }
+            } catch { /* continua polling */ }
+          }
+
+          cleanupSSERef.fn?.();
+          if (!cancelled) {
+            setExtracting(false);
+            // Fallback síncrono
+            try {
+              const src = await api.streamSource(r.animeSlug, r.episodeNumber);
+              if (!cancelled) setSource(src);
+            } catch {
+              if (!cancelled) setSourceError("Não foi possível obter o vídeo.");
+            }
+          }
+        }
       })
       .catch((e) => {
+        if (cancelled) return;
         const msg = e instanceof ApiError ? e.message : "Sala não encontrada ou expirada.";
         if (gotRoom) {
           setSourceError(msg);
@@ -103,9 +215,13 @@ export default function RoomPage({
         }
       })
       .finally(() => {
-        setLoading(false);
-        setLoadingSource(false);
+        if (!cancelled) {
+          setLoading(false);
+          setLoadingSource(false);
+        }
       });
+
+    return () => { cancelled = true; };
   }, [slug]);
 
   useEffect(() => {
@@ -345,6 +461,21 @@ export default function RoomPage({
               />
             ) : sourceError ? (
               <p className="text-body-sm text-signal">{sourceError}</p>
+            ) : extracting ? (
+              <div className="flex min-h-[360px] flex-col items-center justify-center gap-4 border border-hairline bg-panel px-6 py-14 text-center">
+                <CrystalMotion mode="loop" size={88} />
+                <p className="text-body font-medium text-snow">
+                  <span
+                    className="mr-2 inline-block h-2 w-2 animate-blink bg-ice align-middle"
+                    aria-hidden="true"
+                  />
+                  Preparando episódio…
+                </p>
+                <p className="max-w-md text-body-sm text-mist">
+                  Extraindo vídeo da fonte. Às vezes demora de 3 a 8 segundos —
+                  vai pegando uma pipoca que o sinal já tá chegando!
+                </p>
+              </div>
             ) : loadingSource ? (
               <EpisodeLoadingState />
             ) : source ? (
