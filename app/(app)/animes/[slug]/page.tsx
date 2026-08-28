@@ -18,6 +18,7 @@ import { RelatedSimilarSections } from "@/components/common/RelatedSimilarSectio
 import { PageTitle } from "@/components/ui/PageTitle";
 import { ShareButtons } from "@/components/common/ShareButtons";
 import { PrefetchEpisodeLink } from "@/components/common/PrefetchEpisodeLink";
+import { EpisodePrefetcher } from "@/components/common/EpisodePrefetcher";
 import Image from "next/image";
 import { SITE_URL } from "@/lib/site";
 
@@ -96,6 +97,11 @@ export default async function AnimeDetailPage({
 
   return (
     <article className="mx-auto max-w-shelf px-4 py-6">
+      {/* Prefetch em background dos episódios visíveis — aquece o cache do backend */}
+      <EpisodePrefetcher
+        episodes={episodes.slice(0, 12).map((ep) => ({ animeSlug: slug, episodeNumber: ep.number }))}
+      />
+
       <nav className="mb-4 text-caption text-mist" aria-label="Breadcrumb">
         <ol className="flex items-center gap-1">
           <li><a href="/" className="hover:text-ice">Início</a></li>
