@@ -256,9 +256,9 @@ export function WatchClient({
       if (recoveryAttempts.current >= 1 || loadingSource) return;
       recoveryAttempts.current += 1;
       resumeAt.current = currentTime;
-      void loadSource(true);
+      void loadSourceAsync();
     },
-    [loadSource, loadingSource],
+    [loadSourceAsync, loadingSource],
   );
 
   useEffect(() => {
