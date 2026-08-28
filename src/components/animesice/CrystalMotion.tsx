@@ -69,7 +69,6 @@ export function CrystalMotion({
     const tryPlay = async () => {
       try {
         await v.play();
-        // Se chegou aqui, o vídeo está tocando — nada a fazer
       } catch {
         if (!cancelled) setVideoFailed(true);
       }
@@ -77,8 +76,6 @@ export function CrystalMotion({
 
     tryPlay();
 
-    // Segurança extra: se após 800ms o vídeo não emiti um frame, assume falha.
-    // Alguns browsers aceitam play() mas travam o buffer no mobile.
     const stallTimer = setTimeout(() => {
       if (!cancelled && v.paused && !v.ended) {
         setVideoFailed(true);
@@ -117,9 +114,6 @@ export function CrystalMotion({
     el.classList.add("crystal-pulsing");
   }, [mode]);
 
-  /** Quando o vídeo não toca, o poster fica estático e o fundo preto do
-   *  <video> aparece. Ativamos a classe `crystal-fallback` que aplica um
-   *  glow pulsante via CSS, mantendo a identidade visual. */
   const showFallback = !reduce && videoFailed;
 
   if (reduce) {
@@ -132,8 +126,6 @@ export function CrystalMotion({
         aria-hidden="true"
       >
         <div className="crystal-wrap">
-          {/* Com prefers-reduced-motion: mostra só o poster como imagem
-              transparente, sem o fundo preto do <video>. */}
           <img
             className="crystal-logo"
             src={LOGO_URL}
@@ -164,9 +156,6 @@ export function CrystalMotion({
             <span key={i} className="crystal-mote" style={m as CSSProperties} />
           ))}
         </div>
-        {/* Quando o vídeo não toca (mobile), trocamos pelo poster estático
-            para evitar o fundo preto do player. A imagem mantém a
-            transparência natural do WebP RGBA. */}
         {showFallback ? (
           <img
             className="crystal-logo"
