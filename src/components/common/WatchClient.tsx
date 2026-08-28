@@ -20,8 +20,8 @@ interface WatchClientProps {
   initialEpisode: Episode & { anime: Anime };
 }
 
-/** Máximo de tentativas de polling para extração assíncrona */
-const MAX_POLL_ATTEMPTS = 30;
+/** Máximo de tentativas de polling para extração assíncrona (~90s) */
+const MAX_POLL_ATTEMPTS = 15;
 /** Intervalo base de polling (ms) — curva suave para capturar extrações rápidas */
 const POLL_INTERVAL_BASE = 800;
 /** Fator de backoff — mais agente no início, mais conservador depois */
