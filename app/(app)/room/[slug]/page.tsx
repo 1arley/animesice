@@ -6,7 +6,6 @@ import { useAuth } from "@/lib/auth-context";
 import type { Episode, Anime } from "@/types";
 import { SyncedVideoPlayer } from "@/components/common/SyncedVideoPlayer";
 import { EpisodeLoadingState } from "@/components/common/EpisodeLoadingState";
-import { CrystalMotion } from "@/components/animesice/CrystalMotion";
 import { io, Socket } from "socket.io-client";
 
 interface Participant {
@@ -461,23 +460,8 @@ export default function RoomPage({
               />
             ) : sourceError ? (
               <p className="text-body-sm text-signal">{sourceError}</p>
-            ) : extracting ? (
-              <div className="flex min-h-[360px] flex-col items-center justify-center gap-4 border border-hairline bg-panel px-6 py-14 text-center">
-                <CrystalMotion mode="loop" size={88} />
-                <p className="text-body font-medium text-snow">
-                  <span
-                    className="mr-2 inline-block h-2 w-2 animate-blink bg-ice align-middle"
-                    aria-hidden="true"
-                  />
-                  Preparando episódio…
-                </p>
-                <p className="max-w-md text-body-sm text-mist">
-                  Extraindo vídeo da fonte. Às vezes demora de 3 a 8 segundos —
-                  vai pegando uma pipoca que o sinal já tá chegando!
-                </p>
-              </div>
-            ) : loadingSource ? (
-              <EpisodeLoadingState />
+            ) : loadingSource || extracting ? (
+              <EpisodeLoadingState extracting={extracting} />
             ) : source ? (
               <SyncedVideoPlayer
                 src={source.src}
