@@ -5,7 +5,6 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import { EpisodeLoadingState } from "@/components/common/EpisodeLoadingState";
 import { api, ApiError, isProxyEmbed, type StreamSource } from "@/lib/api";
-import { CrystalMotion } from "@/components/animesice/CrystalMotion";
 import type { Episode, Anime } from "@/types";
 import { CommentSection } from "@/components/common/CommentSection";
 import { CreateRoomButton } from "@/components/common/CreateRoomButton";
@@ -43,21 +42,9 @@ export function WatchClient({
   const [sourceError, setSourceError] = useState<string | null>(null);
   const [loadingSource, setLoadingSource] = useState(false);
   const [extracting, setExtracting] = useState(false);
-  const [extractionElapsed, setExtractionElapsed] = useState(0);
-  const extractionStart = useRef(0);
   const loadSourceId = useRef(0);
   const recoveryAttempts = useRef(0);
   const resumeAt = useRef(0);
-
-  // Timer de extração — mostra segundos enquanto o backend processa
-  useEffect(() => {
-    if (!extracting) { setExtractionElapsed(0); return; }
-    extractionStart.current = Date.now();
-    const id = setInterval(() => {
-      setExtractionElapsed(Math.floor((Date.now() - extractionStart.current) / 1000));
-    }, 1000);
-    return () => clearInterval(id);
-  }, [extracting]);
 
   const loadSource = useCallback(
     async (refresh = false) => {
@@ -323,46 +310,8 @@ export function WatchClient({
           />
         ) : sourceError ? (
           <p className="text-body-sm text-signal">{sourceError}</p>
-        ) : extracting ? (
-          <div className="flex min-h-[360px] flex-col items-center justify-center gap-4 border border-hairline bg-panel px-6 py-14 text-center">
-            <CrystalMotion mode="loop" size={88} />
-            <p className="text-body font-medium text-snow">
-              <span
-                className="mr-2 inline-block h-2 w-2 animate-blink bg-ice align-middle"
-                aria-hidden="true"
-              />
-              Preparando episódio…
-            </p>
-            <p className="max-w-md text-body-sm text-mist">
-              Extraindo vídeo da fonte. Às vezes demora de 3 a 8 segundos —
-              vai pegando uma pipoca que o sinal já tá chegando!
-            </p>
-            {extractionElapsed > 3 && (
-              <p
-                aria-hidden="true"
-                className="mt-1 font-mono text-caption uppercase tracking-wider text-ice tabular-nums"
-              >
-                {extractionElapsed}s / até 8s
-              </p>
-            )}
-            {extractionElapsed > 8 && (
-              <div role="status" className="mt-2 flex flex-col items-center gap-3">
-                <p className="max-w-md text-body-sm text-signal">
-                  Hmm, tá demorando mais que o esperado. O servidor de vídeo
-                  pode estar lento — recarrega a página e tenta de novo:
-                </p>
-                <button
-                  type="button"
-                  className="btn-ice"
-                  onClick={() => window.location.reload()}
-                >
-                  ↻ Recarregar página
-                </button>
-              </div>
-            )}
-          </div>
-        ) : loadingSource ? (
-          <EpisodeLoadingState />
+        ) : loadingSource || extracting ? (
+          <EpisodeLoadingState extracting={extracting} />
         ) : source ? (
           <VideoPlayer
             src={source.src}
