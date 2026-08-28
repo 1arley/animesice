@@ -148,6 +148,8 @@
     *::after {
       animation-duration: 0.01ms !important;
       animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
     }
   }
 }
@@ -160,16 +162,15 @@
     gap: 0.6rem;
     font-family: theme("fontFamily.display");
     font-size: 1.65rem;
-    line-height: 1;
     font-weight: 700;
-  letter-spacing: -0.015em;
-  line-height: 1.1;
-  color: theme("colors.snow");
-  padding-bottom: 0.65rem;
-  margin-bottom: 1rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-  position: relative;
-}
+    letter-spacing: -0.015em;
+    line-height: 1.1;
+    color: theme("colors.snow");
+    padding-bottom: 0.65rem;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    position: relative;
+  }
 
   .shelf-label::before {
     content: "";

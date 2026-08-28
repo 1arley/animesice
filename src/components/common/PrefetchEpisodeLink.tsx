@@ -9,6 +9,8 @@ type Props = ComponentProps<typeof Link> & {
   episodeNumber: number;
 };
 
+const prefetched = new Set<string>();
+
 /**
  * Link que dispara extração assíncrona do episódio no hover,
  * aquecendo o pipeline de vídeo antes do usuário navegar.
@@ -23,10 +25,13 @@ export function PrefetchEpisodeLink({
 }: Props) {
   const handleHover = useCallback<React.MouseEventHandler<HTMLAnchorElement>>(
     (e) => {
-      // Fire-and-forget — não bloqueia a navegação
-      const cached = api._sourceCache.get(animeSlug, episodeNumber);
-      if (!cached) {
-        api.streamSourceAsync(animeSlug, episodeNumber).catch(() => {});
+      const key = `${animeSlug}:${episodeNumber}`;
+      if (!prefetched.has(key)) {
+        prefetched.add(key);
+        const cached = api._sourceCache.get(animeSlug, episodeNumber);
+        if (!cached) {
+          api.streamSourceAsync(animeSlug, episodeNumber).catch(() => {});
+        }
       }
       onMouseEnter?.(e);
     },
