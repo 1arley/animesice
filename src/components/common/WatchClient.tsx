@@ -41,7 +41,6 @@ export function WatchClient({
   const [source, setSource] = useState<StreamSource | null>(null);
   const [sourceError, setSourceError] = useState<string | null>(null);
   const [loadingSource, setLoadingSource] = useState(false);
-  const [extracting, setExtracting] = useState(false);
   const loadSourceId = useRef(0);
   const recoveryAttempts = useRef(0);
   const resumeAt = useRef(0);
@@ -52,7 +51,6 @@ export function WatchClient({
       setLoadingSource(true);
       setSourceError(null);
       setSource(null);
-      setExtracting(false);
       try {
         const res = await api.streamSource(slug, number, refresh);
         if (id === loadSourceId.current) {
@@ -118,7 +116,6 @@ export function WatchClient({
 
       // jobId = extração assíncrona em andamento
       if ("jobId" in res && id === loadSourceId.current) {
-        setExtracting(true);
         const jobId = (res as { jobId: string }).jobId;
 
         // 3. Tenta SSE — detecção instantânea de conclusão
@@ -132,7 +129,6 @@ export function WatchClient({
               sseResolved = true;
               setSource(source);
               api._sourceCache.set(slug, number, source);
-              setExtracting(false);
               setLoadingSource(false);
               resolve(true);
             },
@@ -140,7 +136,6 @@ export function WatchClient({
               if (id !== loadSourceId.current || sseResolved) return;
               sseResolved = true;
               setSourceError("Extração falhou. Tente novamente.");
-              setExtracting(false);
               setLoadingSource(false);
               resolve(true);
             },
@@ -189,7 +184,6 @@ export function WatchClient({
               const src = poll as StreamSource;
               setSource(src);
               api._sourceCache.set(slug, number, src);
-              setExtracting(false);
               setLoadingSource(false);
               cleanupSSERef.fn?.();
               return;
@@ -202,7 +196,6 @@ export function WatchClient({
                   setSourceError(
                     status.error ?? "Extração falhou. Tente novamente.",
                   );
-                  setExtracting(false);
                   setLoadingSource(false);
                 }
                 cleanupSSERef.fn?.();
@@ -216,7 +209,6 @@ export function WatchClient({
                 if (id === loadSourceId.current) {
                   setSource(source);
                   api._sourceCache.set(slug, number, source);
-                  setExtracting(false);
                   setLoadingSource(false);
                 }
                 cleanupSSERef.fn?.();
@@ -232,7 +224,6 @@ export function WatchClient({
 
         // Esgotou tentativas — fallback para modo síncrono
         if (id === loadSourceId.current) {
-          setExtracting(false);
           await loadSource();
         }
       }
@@ -310,8 +301,8 @@ export function WatchClient({
           />
         ) : sourceError ? (
           <p className="text-body-sm text-signal">{sourceError}</p>
-        ) : loadingSource || extracting ? (
-          <EpisodeLoadingState extracting={extracting} />
+        ) : loadingSource ? (
+          <EpisodeLoadingState />
         ) : source ? (
           <VideoPlayer
             src={source.src}

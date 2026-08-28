@@ -6,24 +6,13 @@ import { CrystalMotion } from "@/components/animesice/CrystalMotion";
 
 const LIMIT_SECONDS = 8;
 
-const LOADING_PHRASES = [
+const PHRASES = [
   "Sintonizando o sinal…",
   "Ajustando a antena…",
   "Buscando o melhor servidor…",
 ];
 
-const EXTRACTING_PHRASES = [
-  "Preparando episódio…",
-  "Sintonizando o sinal…",
-  "Ajustando a antena…",
-];
-
-interface EpisodeLoadingStateProps {
-  /** Quando true, a primeira frase do TextLoop muda para "Preparando episódio…". */
-  extracting?: boolean;
-}
-
-export function EpisodeLoadingState({ extracting }: EpisodeLoadingStateProps) {
+export function EpisodeLoadingState() {
   const [elapsed, setElapsed] = useState(0);
 
   useEffect(() => {
@@ -44,11 +33,7 @@ export function EpisodeLoadingState({ extracting }: EpisodeLoadingStateProps) {
           className="mr-2 inline-block h-2 w-2 animate-blink bg-ice align-middle"
           aria-hidden="true"
         />
-        <TextLoop
-          texts={extracting ? EXTRACTING_PHRASES : LOADING_PHRASES}
-          interval={3000}
-          fixedHeight
-        />
+        <TextLoop texts={PHRASES} interval={3000} fixedHeight />
       </p>
 
       {tooSlow && (

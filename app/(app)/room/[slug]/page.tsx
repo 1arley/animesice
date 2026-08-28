@@ -39,7 +39,6 @@ export default function RoomPage({
   const [source, setSource] = useState<StreamSource | null>(null);
   const [sourceError, setSourceError] = useState<string | null>(null);
   const [loadingSource, setLoadingSource] = useState(false);
-  const [extracting, setExtracting] = useState(false);
   const [messages, setMessages] = useState<RoomMessageItem[]>([]);
   const [input, setInput] = useState("");
   const [connected, setConnected] = useState(false);
@@ -72,7 +71,6 @@ export default function RoomPage({
     setEpisode(null);
     setSource(null);
     setSourceError(null);
-    setExtracting(false);
     setMessages([]);
     setParticipants([]);
     setJoined(false);
@@ -108,7 +106,6 @@ export default function RoomPage({
 
         // Extração assíncrona em andamento — usa SSE + polling
         if (srcRes && "jobId" in srcRes) {
-          setExtracting(true);
           const jobId = (srcRes as { jobId: string }).jobId;
 
           // Tenta SSE primeiro
@@ -121,7 +118,6 @@ export default function RoomPage({
                 if (cancelled || sseResolved) return;
                 sseResolved = true;
                 setSource(source);
-                setExtracting(false);
                 setLoadingSource(false);
                 resolve(true);
               },
@@ -129,7 +125,6 @@ export default function RoomPage({
                 if (cancelled || sseResolved) return;
                 sseResolved = true;
                 setSourceError("Extração falhou. Tente novamente.");
-                setExtracting(false);
                 setLoadingSource(false);
                 resolve(true);
               },
@@ -161,7 +156,6 @@ export default function RoomPage({
               const poll = await api.pollExtractionJob(r.animeSlug, r.episodeNumber, jobId);
               if ("src" in poll && !cancelled) {
                 setSource(poll as StreamSource);
-                setExtracting(false);
                 setLoadingSource(false);
                 cleanupSSERef.fn?.();
                 return;
@@ -171,7 +165,6 @@ export default function RoomPage({
                 if (st.status === "failed") {
                   if (!cancelled) {
                     setSourceError(st.error ?? "Extração falhou.");
-                    setExtracting(false);
                     setLoadingSource(false);
                   }
                   cleanupSSERef.fn?.();
@@ -181,7 +174,6 @@ export default function RoomPage({
                   const src = await api.streamSource(r.animeSlug, r.episodeNumber);
                   if (!cancelled) {
                     setSource(src);
-                    setExtracting(false);
                     setLoadingSource(false);
                   }
                   cleanupSSERef.fn?.();
@@ -193,7 +185,6 @@ export default function RoomPage({
 
           cleanupSSERef.fn?.();
           if (!cancelled) {
-            setExtracting(false);
             // Fallback síncrono
             try {
               const src = await api.streamSource(r.animeSlug, r.episodeNumber);
@@ -460,8 +451,8 @@ export default function RoomPage({
               />
             ) : sourceError ? (
               <p className="text-body-sm text-signal">{sourceError}</p>
-            ) : loadingSource || extracting ? (
-              <EpisodeLoadingState extracting={extracting} />
+            ) : loadingSource ? (
+              <EpisodeLoadingState />
             ) : source ? (
               <SyncedVideoPlayer
                 src={source.src}
