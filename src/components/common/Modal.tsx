@@ -1,6 +1,8 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+
+const FOCUSABLE = "input:not([disabled]):not([type='hidden']), textarea:not([disabled]), select:not([disabled]), button:not([disabled]), a[href], [tabindex]:not([tabindex='-1'])";
 
 export function Modal({ open, onClose, title, children, footer }: { open: boolean; onClose: () => void; title?: string; children: React.ReactNode; footer?: React.ReactNode }) {
   const [mounted, setMounted] = useState(false);
@@ -26,23 +28,45 @@ export function Modal({ open, onClose, title, children, footer }: { open: boolea
     };
   }, [open]);
 
+  const getFocusableElements = useCallback(() => {
+    if (!dialogRef.current) return [];
+    return Array.from(dialogRef.current.querySelectorAll<HTMLElement>(FOCUSABLE));
+  }, []);
+
   useEffect(() => {
     if (!open) return;
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onCloseRef.current();
+      if (event.key === "Escape") {
+        onCloseRef.current();
+        return;
+      }
+      if (event.key !== "Tab") return;
+      const focusable = getFocusableElements();
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey) {
+        if (document.activeElement === first) {
+          event.preventDefault();
+          last.focus();
+        }
+      } else {
+        if (document.activeElement === last) {
+          event.preventDefault();
+          first.focus();
+        }
+      }
     };
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [open]);
+  }, [open, getFocusableElements]);
 
   useEffect(() => {
     if (!open || !mounted) return;
     const previouslyFocused = document.activeElement as HTMLElement | null;
     const timer = window.setTimeout(() => {
       dialogRef.current
-        ?.querySelector<HTMLElement>(
-          "input, textarea, select, button, a[href], [tabindex]:not([tabindex='-1'])",
-        )
+        ?.querySelector<HTMLElement>(FOCUSABLE)
         ?.focus();
     }, 20);
     return () => {

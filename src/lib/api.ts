@@ -130,10 +130,19 @@ export function readErrorMessage(
 let isRefreshing = false;
 let refreshPromise: Promise<void> | null = null;
 
+/** Safety timeout: if the refresh takes longer than 10 s, the flags are
+ *  forcibly reset so subsequent requests can retry instead of being blocked
+ *  by a permanently-locked refresh state. */
+const REFRESH_TIMEOUT_MS = 10_000;
+
 async function ensureRefresh(): Promise<void> {
   if (isRefreshing && refreshPromise) return refreshPromise;
   isRefreshing = true;
   refreshPromise = (async () => {
+    const timer = setTimeout(() => {
+      isRefreshing = false;
+      refreshPromise = null;
+    }, REFRESH_TIMEOUT_MS);
     try {
       const res = await fetch(`${API_URL}/auth/refresh`, {
         method: "POST",
@@ -141,6 +150,7 @@ async function ensureRefresh(): Promise<void> {
       });
       if (!res.ok) throw new ApiError(res.status, "Sessão expirada.");
     } finally {
+      clearTimeout(timer);
       isRefreshing = false;
       refreshPromise = null;
     }

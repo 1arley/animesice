@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { SITE_URL } from "@/lib/site";
 
 interface ShareButtonsProps {
   title: string;
@@ -10,7 +11,7 @@ interface ShareButtonsProps {
 
 export function ShareButtons({ title, url, description }: ShareButtonsProps) {
   const [copied, setCopied] = useState(false);
-  const fullUrl = `https://animesice.app${url}`;
+  const fullUrl = `${SITE_URL}${url}`;
 
   const shareLinks = [
     {
