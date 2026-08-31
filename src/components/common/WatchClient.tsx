@@ -5,6 +5,7 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import { EpisodeLoadingState } from "@/components/common/EpisodeLoadingState";
 import { api, ApiError, isProxyEmbed, type StreamSource } from "@/lib/api";
+import { resolveAsyncSource } from "@/lib/resolve-async-source";
 import type { Episode, Anime } from "@/types";
 import { CommentSection } from "@/components/common/CommentSection";
 import { CreateRoomButton } from "@/components/common/CreateRoomButton";
@@ -22,15 +23,6 @@ interface WatchClientProps {
   initialSource?: { src: string; embedUrl?: string; thumbnailUrl?: string } | { jobId: string } | null;
 }
 
-/** Máximo de tentativas de polling para extração assíncrona (~55s) */
-const MAX_POLL_ATTEMPTS = 20;
-/** Intervalo base de polling (ms) — rápido para capturar extrações recentes */
-const POLL_INTERVAL_BASE = 300;
-/** Fator de backoff — cresce suave até cap de 5s */
-const POLL_BACKOFF = 1.25;
-/** Cap máximo de intervalo de polling (ms) */
-const POLL_MAX_INTERVAL = 5_000;
-
 export function WatchClient({
   slug,
   number,
@@ -44,6 +36,7 @@ export function WatchClient({
   const loadSourceId = useRef(0);
   const recoveryAttempts = useRef(0);
   const resumeAt = useRef(0);
+  const asyncAbortRef = useRef<AbortController | null>(null);
 
   const loadSource = useCallback(
     async (refresh = false) => {
@@ -78,11 +71,13 @@ export function WatchClient({
    * Prioridade de resolução:
    * 1. initialSource (SSR pre-fetch) — se já é StreamSource, renderiza direto
    * 2. sessionStorage cache — hit = instantâneo
-   * 3. SSE — detecção instantânea de conclusão
-   * 4. Polling — fallback quando SSE falha ou não suportado
+   * 3. SSE + polling via resolveAsyncSource (src compartilhado com RoomPage)
    */
   const loadSourceAsync = useCallback(async () => {
     const id = ++loadSourceId.current;
+    asyncAbortRef.current?.abort();
+    const ac = new AbortController();
+    asyncAbortRef.current = ac;
     setLoadingSource(true);
     setSourceError(null);
     setSource(null);
@@ -105,9 +100,10 @@ export function WatchClient({
       }
 
       const res = await api.streamSourceAsync(slug, number);
+      if (id !== loadSourceId.current) return;
 
-      // Se já tem o source direto (vídeo existia), retorna
-      if ("src" in res && id === loadSourceId.current) {
+      // Source direto (vídeo já existia no cache)
+      if ("src" in res) {
         setSource(res as StreamSource);
         api._sourceCache.set(slug, number, res as StreamSource);
         setLoadingSource(false);
@@ -115,135 +111,38 @@ export function WatchClient({
       }
 
       // jobId = extração assíncrona em andamento
-      if ("jobId" in res && id === loadSourceId.current) {
+      if ("jobId" in res) {
         const jobId = (res as { jobId: string }).jobId;
+        const result = await resolveAsyncSource(slug, number, jobId, ac.signal);
 
-        // 3. Tenta SSE — detecção instantânea de conclusão
-        let sseResolved = false;
-        const cleanupSSERef = { fn: null as (() => void) | null };
+        if (id !== loadSourceId.current) return;
 
-        const ssePromise = new Promise<boolean>((resolve) => {
-          cleanupSSERef.fn = api.streamSourceSSE(slug, number, {
-            onSource: (source) => {
-              if (id !== loadSourceId.current || sseResolved) return;
-              sseResolved = true;
-              setSource(source);
-              api._sourceCache.set(slug, number, source);
-              setLoadingSource(false);
-              resolve(true);
-            },
-            onFailed: () => {
-              if (id !== loadSourceId.current || sseResolved) return;
-              sseResolved = true;
-              setSourceError("Extração falhou. Tente novamente.");
-              setLoadingSource(false);
-              resolve(true);
-            },
-            onTimeout: () => {
-              if (sseResolved) return;
-              resolve(false);
-            },
-            onError: () => {
-              if (sseResolved) return;
-              resolve(false);
-            },
-          });
-        });
-
-        // Espera SSE por até 2s — se não resolveu, começa polling em paralelo
-        const sseFastResolve = Promise.race([
-          ssePromise,
-          new Promise<boolean>((r) => setTimeout(() => r(false), 2_000)),
-        ]);
-
-        const sseHadResult = await sseFastResolve;
-        if (sseHadResult || sseResolved) return; // SSE resolveu, não precisa de polling
-
-        // 4. SSE não resolveu rápido — fallback para polling com backoff
-        for (let attempt = 0; attempt < MAX_POLL_ATTEMPTS; attempt++) {
-          if (id !== loadSourceId.current) {
-            cleanupSSERef.fn?.();
-            return;
-          }
-
-          const delay = Math.min(
-            POLL_INTERVAL_BASE * Math.pow(POLL_BACKOFF, attempt),
-            POLL_MAX_INTERVAL,
-          );
-          await new Promise((r) => setTimeout(r, delay));
-
-          if (id !== loadSourceId.current) {
-            cleanupSSERef.fn?.();
-            return;
-          }
-
-          try {
-            const poll = await api.pollExtractionJob(slug, number, jobId);
-
-            if ("src" in poll && id === loadSourceId.current) {
-              const src = poll as StreamSource;
-              setSource(src);
-              api._sourceCache.set(slug, number, src);
-              setLoadingSource(false);
-              cleanupSSERef.fn?.();
-              return;
-            }
-
-            if ("status" in poll) {
-              const status = poll as { status: string; error?: string };
-              if (status.status === "failed") {
-                if (id === loadSourceId.current) {
-                  setSourceError(
-                    status.error ?? "Extração falhou. Tente novamente.",
-                  );
-                  setLoadingSource(false);
-                }
-                cleanupSSERef.fn?.();
-                return;
-              }
-              // completed — o backend já retorna o source no poll (sem round-trip)
-              if (status.status === "completed") {
-                // poll pode conter src diretamente ou ser status {completed, result:null}
-                // Em ambos os casos, tenta getSource síncrono como fallback
-                const source = await api.streamSource(slug, number);
-                if (id === loadSourceId.current) {
-                  setSource(source);
-                  api._sourceCache.set(slug, number, source);
-                  setLoadingSource(false);
-                }
-                cleanupSSERef.fn?.();
-                return;
-              }
-            }
-          } catch {
-            // Continua polling em caso de erro de rede
-          }
-        }
-
-        cleanupSSERef.fn?.();
-
-        // Esgotou tentativas — fallback para modo síncrono
-        if (id === loadSourceId.current) {
+        if (result.type === "source") {
+          setSource(result.source);
+          api._sourceCache.set(slug, number, result.source);
+        } else if (result.type === "failed") {
+          setSourceError(result.error);
+        } else {
+          // Esgotou tentativas — fallback para modo síncrono
           await loadSource();
         }
       }
     } catch (e) {
-      if (id === loadSourceId.current) {
-        // Fallback: tenta o modo síncrono normal
-        try {
-          const res = await api.streamSource(slug, number);
-          if (id === loadSourceId.current) {
-            setSource(res);
-            api._sourceCache.set(slug, number, res);
-          }
-        } catch {
-          if (id === loadSourceId.current) {
-            setSourceError(
-              e instanceof ApiError
-                ? e.message
-                : "Não foi possível obter o vídeo deste episódio.",
-            );
-          }
+      if (id !== loadSourceId.current) return;
+      // Fallback: tenta o modo síncrono normal
+      try {
+        const res = await api.streamSource(slug, number);
+        if (id === loadSourceId.current) {
+          setSource(res);
+          api._sourceCache.set(slug, number, res);
+        }
+      } catch {
+        if (id === loadSourceId.current) {
+          setSourceError(
+            e instanceof ApiError
+              ? e.message
+              : "Não foi possível obter o vídeo deste episódio.",
+          );
         }
       }
     } finally {
@@ -265,6 +164,7 @@ export function WatchClient({
     recoveryAttempts.current = 0;
     resumeAt.current = 0;
     void loadSourceAsync();
+    return () => { asyncAbortRef.current?.abort(); };
   }, [loadSourceAsync]);
 
   if (!episode) {
