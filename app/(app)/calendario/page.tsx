@@ -38,7 +38,6 @@ export default async function CalendarioPage({
   );
 
   const byDay = data?.byDay ?? [];
-  const unscheduled = data?.unscheduled ?? [];
 
   return (
     <div className="mx-auto max-w-shelf px-4 py-6">
@@ -113,25 +112,7 @@ export default async function CalendarioPage({
         ))}
       </div>
 
-      {unscheduled.length > 0 && (
-        <section className="mt-8">
-          <h2 className="shelf-label">
-            Sem horário fixo{" "}
-            <span className="shelf-label-data">{unscheduled.length}</span>
-          </h2>
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
-            {unscheduled.map((anime) => (
-              <Link
-                key={anime.id}
-                href={`/animes/${anime.slug}`}
-                className="line-clamp-1 border border-hairline bg-panel px-2 py-1 font-sans text-body-sm text-mist transition-colors hover:text-ice"
-              >
-                {anime.title}
-              </Link>
-            ))}
-          </div>
-        </section>
-      )}
+
     </div>
   );
 }
