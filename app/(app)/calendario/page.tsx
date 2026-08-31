@@ -111,8 +111,6 @@ export default async function CalendarioPage({
           </section>
         ))}
       </div>
-
-
     </div>
   );
 }

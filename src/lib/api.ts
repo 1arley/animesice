@@ -130,25 +130,27 @@ export function readErrorMessage(
 let isRefreshing = false;
 let refreshPromise: Promise<void> | null = null;
 
-/** Safety timeout: if the refresh takes longer than 10 s, the flags are
- *  forcibly reset so subsequent requests can retry instead of being blocked
- *  by a permanently-locked refresh state. */
+/** Safety timeout: if the refresh takes longer than 10 s, abort the fetch
+ *  so the promise rejects cleanly and the next caller can retry. Without
+ *  this, a stalled refresh permanently blocks all 401-retry paths. */
 const REFRESH_TIMEOUT_MS = 10_000;
 
 async function ensureRefresh(): Promise<void> {
   if (isRefreshing && refreshPromise) return refreshPromise;
   isRefreshing = true;
+  const ac = new AbortController();
   refreshPromise = (async () => {
-    const timer = setTimeout(() => {
-      isRefreshing = false;
-      refreshPromise = null;
-    }, REFRESH_TIMEOUT_MS);
+    const timer = setTimeout(() => ac.abort(), REFRESH_TIMEOUT_MS);
     try {
       const res = await fetch(`${API_URL}/auth/refresh`, {
         method: "POST",
         credentials: "include",
+        signal: ac.signal,
       });
-      if (!res.ok) throw new ApiError(res.status, "Sessão expirada.");
+      if (!res.ok) throw new ApiError(res.status, "Sessao expirada.");
+    } catch (e) {
+      if (ac.signal.aborted) throw new ApiError(401, "Refresh timeout.");
+      throw e;
     } finally {
       clearTimeout(timer);
       isRefreshing = false;
