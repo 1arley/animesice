@@ -1070,6 +1070,11 @@
   object-fit: contain;
   display: block;
   background: transparent;
+}
+
+/* A animação vem em vídeo sobre fundo preto: o screen blend faz o preto sumir
+   sobre os fundos escuros da identidade (splash, transition, loaders). */
+.crystal-motion .crystal-video {
   mix-blend-mode: screen;
 }
 
