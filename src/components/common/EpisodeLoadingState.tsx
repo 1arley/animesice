@@ -24,6 +24,7 @@ export function EpisodeLoadingState() {
   }, []);
 
   const tooSlow = elapsed > LIMIT_SECONDS;
+  const progress = Math.min((elapsed / LIMIT_SECONDS) * 100, 100);
 
   return (
     <div className="reveal flex min-h-[320px] flex-col items-center justify-center gap-4 px-6 py-12 text-center">
@@ -35,6 +36,20 @@ export function EpisodeLoadingState() {
         />
         <TextLoop texts={PHRASES} interval={3000} fixedHeight />
       </p>
+
+      {!tooSlow && (
+        <div className="mt-2 flex w-full max-w-xs flex-col items-center gap-2">
+          <div className="h-1 w-full overflow-hidden rounded-full bg-hairline">
+            <div
+              className="h-full rounded-full bg-ice transition-all duration-1000 ease-linear"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+          <span className="font-mono text-caption tabular-nums text-mist">
+            {elapsed}s / {LIMIT_SECONDS}s
+          </span>
+        </div>
+      )}
 
       {tooSlow && (
         <div role="status" className="mt-2 flex flex-col items-center gap-3">

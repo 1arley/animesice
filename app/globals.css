@@ -1094,8 +1094,9 @@
   animation-delay: var(--d, 0s);
 }
 
-/* O <video> e o <img> fallback herdam mix-blend-mode: screen de .crystal-logo,
-   que torna o fundo preto da animação transparente sobre fundos escuros. */
+/* O <video> herda mix-blend-mode: screen de .crystal-video, que torna o
+   fundo preto da animação transparente sobre fundos escuros. O <img> fallback
+   mantém transparência natural do WebP RGBA sem blend. */
 
 .crystal-motion .crystal-motes {
   position: absolute;
