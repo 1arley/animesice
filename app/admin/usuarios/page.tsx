@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
 import { api, ApiError } from "@/lib/api";
 import { isPrivileged } from "@/lib/role";
+import { formatDateTime } from "@/lib/time";
 import { Modal as SharedModal } from "@/components/common/Modal";
 import type { AdminUserListItem } from "@/lib/api";
 import type { Paginated } from "@/types";
@@ -138,6 +139,7 @@ export default function AdminUsersPage() {
         <input
           type="search"
           placeholder="Buscar por email, nome ou apelido..."
+          aria-label="Buscar por email, nome ou apelido"
           value={search}
           onChange={(e) => handleSearchChange(e.target.value)}
           className="field max-w-xs"
@@ -403,7 +405,7 @@ function ModerateUserModal({
             <p className="mt-2">
               <span className="badge badge-signal">
                 <span className="badge-dot bg-signal" />
-                Já suspenso até {new Date(target.suspendedUntil!).toLocaleString("pt-BR")}
+                Já suspenso até {formatDateTime(target.suspendedUntil!)}
               </span>
             </p>
           )}
@@ -446,6 +448,7 @@ function ModerateUserModal({
             value={reason}
             onChange={(e) => setReason(e.target.value)}
             placeholder="Motivo da ação..."
+            aria-label="Motivo"
             className="field"
           />
         </div>
@@ -460,6 +463,7 @@ function ModerateUserModal({
               value={hours}
               onChange={(e) => setHours(e.target.value)}
               placeholder="ex: 24, 168..."
+              aria-label="Duração em horas"
               className="field"
             />
             <div className="mt-1.5 flex gap-2">
