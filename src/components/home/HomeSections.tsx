@@ -23,7 +23,13 @@ export async function TrendingHeroSection() {
 
 export async function CatalogSections() {
   const animes = (await getAnimes())?.data ?? [];
-  const onAir = [...new Map(animes.filter((anime) => isOnAir(anime.status)).map((anime) => [anime.slug, anime])).values()];
+  const onAirMap = new Map<string, Anime>();
+  for (const anime of animes) {
+    if (isOnAir(anime.status)) {
+      onAirMap.set(anime.slug, anime);
+    }
+  }
+  const onAir = [...onAirMap.values()];
   return (
     <>
       {onAir.length > 0 && <Reveal className="mb-10"><section aria-labelledby="rail-onair"><SectionLabel id="rail-onair">No ar agora <span className="shelf-label-data">{onAir.length} séries</span></SectionLabel><div className="scrollbar-none -mx-4 overflow-x-auto px-4 pb-2"><div className="flex snap-x gap-3">{onAir.map((anime) => <div key={anime.id} className="w-[148px] shrink-0 snap-start sm:w-[164px]"><AnimeCard anime={anime} variant="poster" /></div>)}</div></div></section></Reveal>}

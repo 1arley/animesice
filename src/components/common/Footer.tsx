@@ -8,6 +8,10 @@ import { KoFiLink } from "@/components/common/KoFiLink";
 
 interface FooterLink { href: string; title: string; external?: boolean; }
 
+const REFERENCIA_LINKS: FooterLink[] = [
+  { href: "https://myanimelist.net", title: "MyAnimeList", external: true },
+];
+
 export function Footer() {
   const { user } = useAuth();
   const isAdmin = isPrivileged(user);
@@ -29,9 +33,7 @@ export function Footer() {
         { href: "/login", title: "Entrar" },
         { href: "/register", title: "Registrar" },
       ];
-  const referencia: FooterLink[] = [
-    { href: "https://myanimelist.net", title: "MyAnimeList", external: true },
-  ];
+  const referencia: FooterLink[] = REFERENCIA_LINKS;
 
   return (
     <footer className="mt-12 border-t border-hairline bg-ink">
