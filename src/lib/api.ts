@@ -625,13 +625,12 @@ export const api = {
       },
     );
 
-    const data = await res.json().catch(() => null);
-
     if (!res.ok) {
+      const data = await res.json().catch(() => null);
       throw new ApiError(res.status, readErrorMessage(data));
     }
 
-    return data as Episode;
+    return (await res.json()) as Episode;
   },
 
   // --- Comments ---
@@ -751,13 +750,12 @@ export const api = {
       body: formData,
     });
 
-    const data = await res.json().catch(() => null);
-
     if (!res.ok) {
+      const data = await res.json().catch(() => null);
       throw new ApiError(res.status, readErrorMessage(data));
     }
 
-    return data as User;
+    return (await res.json()) as User;
   },
 
   deleteAvatar: () =>

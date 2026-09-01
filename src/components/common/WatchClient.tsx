@@ -59,7 +59,7 @@ export function WatchClient({
           );
         }
       } finally {
-        if (id === loadSourceId.current) setLoadingSource(false);
+        setLoadingSource(false);
       }
     },
     [slug, number],
@@ -146,7 +146,7 @@ export function WatchClient({
         }
       }
     } finally {
-      if (id === loadSourceId.current) setLoadingSource(false);
+      setLoadingSource(false);
     }
   }, [slug, number, loadSource, initialSourceProp]);
 
@@ -293,7 +293,7 @@ function EpisodeNavigation({ slug, number }: { slug: string; number: number }) {
           <Link
             href={`/animes/${slug}/${adjacent.previous}`}
             onMouseEnter={() => prefetchEpisode(adjacent.previous!)}
-            className="group flex items-center gap-3 rounded-md border border-hairline bg-panel p-3 transition-all duration-200 hover:border-ice/40 hover:bg-ice/5"
+            className="group flex items-center gap-3 rounded-md border border-hairline bg-panel p-3 transition-[border-color,background-color] duration-200 hover:border-ice/40 hover:bg-ice/5"
           >
             <svg
               width="20"
@@ -333,7 +333,7 @@ function EpisodeNavigation({ slug, number }: { slug: string; number: number }) {
           <Link
             href={`/animes/${slug}/${adjacent.next}`}
             onMouseEnter={() => prefetchEpisode(adjacent.next!)}
-            className="group flex items-center justify-end gap-3 rounded-md border border-hairline bg-panel p-3 transition-all duration-200 hover:border-ice/40 hover:bg-ice/5"
+            className="group flex items-center justify-end gap-3 rounded-md border border-hairline bg-panel p-3 transition-[border-color,background-color] duration-200 hover:border-ice/40 hover:bg-ice/5"
           >
             <div className="min-w-0 text-right">
               <p className="font-mono text-caption text-mist">
