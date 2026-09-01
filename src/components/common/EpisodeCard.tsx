@@ -26,7 +26,7 @@ export function EpisodeCard({ episode, priority = false }: EpisodeCardProps) {
     <Link
       href={href}
       title={`${anime.title} — Episódio ${episode.number}`}
-      className="group block bg-panel transition-all duration-300 hover:bg-hairline hover:shadow-lg hover:shadow-black/20"
+      className="group block bg-panel transition-[background-color,box-shadow] duration-300 hover:bg-hairline hover:shadow-lg hover:shadow-black/20"
     >
       <div className="card-scan relative" style={{ aspectRatio: "16 / 9" }}>
         {thumb ? (

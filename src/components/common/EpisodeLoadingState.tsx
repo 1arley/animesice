@@ -41,7 +41,7 @@ export function EpisodeLoadingState() {
         <div className="mt-2 flex w-full max-w-xs flex-col items-center gap-2">
           <div className="h-1 w-full overflow-hidden rounded-full bg-hairline">
             <div
-              className="h-full rounded-full bg-ice transition-all duration-1000 ease-linear"
+              className="h-full rounded-full bg-ice transition-[width] duration-1000 ease-linear"
               style={{ width: `${progress}%` }}
             />
           </div>
