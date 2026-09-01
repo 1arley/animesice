@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
 import { api } from "@/lib/api";
 import { StarIcon, HeartIcon } from "@/components/ui/icons";
@@ -175,7 +176,7 @@ export function RatingStars({ slug }: RatingStarsProps) {
         )}
         {!user && (
           <span className="font-mono text-caption text-mist">
-            <a href="/login" className="text-ice underline">Entre</a> para avaliar
+            <Link href="/login" className="text-ice underline">Entre</Link> para avaliar
           </span>
         )}
       </div>

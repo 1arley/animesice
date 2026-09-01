@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { api, ApiError, type RoomInfo } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 
@@ -42,9 +43,9 @@ export function CreateRoomButton({
   if (!user) {
     return (
       <p className="mt-4 text-body-sm text-mist">
-        <a href="/login" className="text-ice underline">
+        <Link href="/login" className="text-ice underline">
           Entre
-        </a>{" "}
+        </Link>{" "}
         para criar uma sala de watch party.
       </p>
     );
@@ -65,6 +66,7 @@ export function CreateRoomButton({
             type="text"
             value={link}
             readOnly
+            aria-label="Link da sala"
             className="field flex-1"
             onClick={(e) => (e.target as HTMLInputElement).select()}
           />

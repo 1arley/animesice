@@ -113,10 +113,11 @@ export default function AdminGenerosPage() {
         <h2 className="shelf-label">Novo gênero</h2>
         <form onSubmit={handleCreate} className="grid gap-3 sm:grid-cols-3">
           <div>
-            <label className="mb-1.5 block font-mono text-caption uppercase tracking-wider text-mist">
+            <label htmlFor="genero-nome" className="mb-1.5 block font-mono text-caption uppercase tracking-wider text-mist">
               Nome
             </label>
             <input
+              id="genero-nome"
               type="text"
               value={name}
               onChange={(e) => handleNameChange(e.target.value)}
@@ -125,10 +126,11 @@ export default function AdminGenerosPage() {
             />
           </div>
           <div>
-            <label className="mb-1.5 block font-mono text-caption uppercase tracking-wider text-mist">
+            <label htmlFor="genero-slug" className="mb-1.5 block font-mono text-caption uppercase tracking-wider text-mist">
               Slug
             </label>
             <input
+              id="genero-slug"
               type="text"
               value={slug}
               onChange={(e) => setSlug(e.target.value)}
@@ -150,6 +152,7 @@ export default function AdminGenerosPage() {
           <input
             type="search"
             placeholder="Filtrar..."
+            aria-label="Filtrar gêneros"
             value={search}
             onChange={(e) => {
               const value = e.target.value;

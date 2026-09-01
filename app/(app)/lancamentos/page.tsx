@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { AnimeCard } from "@/components/common/AnimeCard";
 import { Pagination } from "@/components/ui/Pagination";
 import type { Metadata } from "next";
@@ -50,7 +51,7 @@ export default async function LancamentosPage({
     <div className="mx-auto max-w-shelf px-4 py-6">
       <nav className="mb-4 text-caption text-mist" aria-label="Breadcrumb">
         <ol className="flex items-center gap-1">
-          <li><a href="/" className="hover:text-ice">Início</a></li>
+          <li><Link href="/" className="hover:text-ice">Início</Link></li>
           <li aria-hidden="true">/</li>
           <li aria-current="page" className="text-ice">Lançamentos</li>
         </ol>

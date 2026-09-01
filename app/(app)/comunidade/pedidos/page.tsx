@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
 import { api, ApiError } from "@/lib/api";
 import { PageTitle } from "@/components/ui/PageTitle";
@@ -39,10 +40,11 @@ export default function PedidosPage() {
       {user ? (
         <form onSubmit={handleSubmit} className="mb-8 max-w-lg space-y-3 border border-hairline bg-panel p-4">
           <div>
-            <label className="mb-1 block font-mono text-caption uppercase tracking-wider text-mist">
+            <label htmlFor="pedido-titulo" className="mb-1 block font-mono text-caption uppercase tracking-wider text-mist">
               Título do anime
             </label>
             <input
+              id="pedido-titulo"
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
@@ -53,10 +55,11 @@ export default function PedidosPage() {
             />
           </div>
           <div>
-            <label className="mb-1 block font-mono text-caption uppercase tracking-wider text-mist">
+            <label htmlFor="pedido-notas" className="mb-1 block font-mono text-caption uppercase tracking-wider text-mist">
               Notas (opcional)
             </label>
             <textarea
+              id="pedido-notas"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               maxLength={1000}
@@ -73,7 +76,7 @@ export default function PedidosPage() {
         </form>
       ) : (
         <p className="mb-8 text-body-sm text-mist">
-          <a href="/login" className="text-ice underline">Entre</a> para criar e votar em pedidos.
+          <Link href="/login" className="text-ice underline">Entre</Link> para criar e votar em pedidos.
         </p>
       )}
 
