@@ -17,7 +17,8 @@ export function BlogAdminActions({ post, detail = false }: { post: BlogPost; det
     if (!window.confirm(`Excluir “${post.title}”? Esta ação não pode ser desfeita.`)) return;
     setDeleting(true);
     try { await api.adminDeleteBlogPost(post.id); toast("Artigo excluído.", "success"); detail ? router.replace("/blog") : router.refresh(); }
-    catch (cause) { toast(cause instanceof ApiError ? cause.message : "Não foi possível excluir o artigo."); setDeleting(false); }
+    catch (cause) { toast(cause instanceof ApiError ? cause.message : "Não foi possível excluir o artigo."); }
+    finally { setDeleting(false); }
   }
   return <div className={`flex items-center gap-2 ${detail ? "" : "absolute bottom-3 right-3 z-10"}`} aria-label="Ações administrativas"><Link href={`/admin/blog/${post.id}`} className="admin-tab min-h-11 bg-panel" aria-label={`Editar ${post.title}`}>Editar</Link><button type="button" onClick={remove} disabled={deleting} className="admin-tab min-h-11 bg-panel text-signal" aria-label={`Excluir ${post.title}`}>{deleting ? "Excluindo…" : "Excluir"}</button></div>;
 }

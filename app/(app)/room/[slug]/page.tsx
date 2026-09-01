@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState, useRef, use } from "react";
+import Link from "next/link";
 import { api, ApiError, isProxyEmbed, type RoomInfo, type RoomMessageItem, type StreamSource } from "@/lib/api";
 import { resolveAsyncSource } from "@/lib/resolve-async-source";
 import { useAuth } from "@/lib/auth-context";
@@ -104,7 +105,6 @@ export default function RoomPage({
           const src = srcRes as StreamSource;
           setSource(src);
           api._sourceCache.set(r.animeSlug, r.episodeNumber, src);
-          setLoadingSource(false);
           return;
         }
 
@@ -134,7 +134,6 @@ export default function RoomPage({
               if (!cancelled) setSourceError("Não foi possível obter o vídeo.");
             }
           }
-          setLoadingSource(false);
         }
       })
       .catch((e) => {
@@ -297,9 +296,9 @@ export default function RoomPage({
     return (
       <div className="mx-auto max-w-shelf px-4 py-6">
         <p className="text-body-sm text-mist">
-          <a href="/login" className="text-ice underline">
+          <Link href="/login" className="text-ice underline">
             Entre
-          </a>{" "}
+          </Link>{" "}
           para participar da watch party.
         </p>
       </div>
@@ -320,9 +319,9 @@ export default function RoomPage({
         <p className="mb-3 text-body-sm text-signal">
           {error ?? "Sala não encontrada."}
         </p>
-        <a href="/" className="btn-ghost">
+        <Link href="/" className="btn-ghost">
           Voltar ao inicio
-        </a>
+        </Link>
       </div>
     );
   }
@@ -330,12 +329,12 @@ export default function RoomPage({
   return (
     <div className="mx-auto max-w-shelf px-4 py-6">
       <div className="mb-3 flex items-center justify-between">
-        <a
+        <Link
           href={`/animes/${room.animeSlug}/${room.episodeNumber}`}
           className="text-body-sm text-mist transition-colors hover:text-ice"
         >
           ← Voltar ao episódio
-        </a>
+        </Link>
         {isHost && (confirmDelete ? (
           <div className="flex gap-2">
             <button
@@ -499,6 +498,7 @@ export default function RoomPage({
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 placeholder="Mensagem..."
+                aria-label="Mensagem"
                 maxLength={500}
                 className="field flex-1"
               />

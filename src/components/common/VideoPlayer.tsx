@@ -230,7 +230,9 @@ function NativeVideoPlayer({
   const isM3u8 = safeSrc.toLowerCase().endsWith(".m3u8");
 
   const onPlaybackErrorRef = useRef(onPlaybackError);
-  onPlaybackErrorRef.current = onPlaybackError;
+  useEffect(() => {
+    onPlaybackErrorRef.current = onPlaybackError;
+  }, [onPlaybackError]);
 
   useEffect(() => {
     const video = videoRef.current;

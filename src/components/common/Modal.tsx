@@ -8,7 +8,9 @@ export function Modal({ open, onClose, title, children, footer }: { open: boolea
   const [mounted, setMounted] = useState(false);
   const dialogRef = useRef<HTMLDivElement | null>(null);
   const onCloseRef = useRef(onClose);
-  onCloseRef.current = onClose;
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
 
   useEffect(() => {
     if (open) {
@@ -79,10 +81,23 @@ export function Modal({ open, onClose, title, children, footer }: { open: boolea
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
+      <div
+        className="absolute inset-0 bg-black/50"
+        role="button"
+        aria-label="Fechar"
+        tabIndex={-1}
+        onClick={onClose}
+        onKeyDown={(e) => {
+          if (e.key === "Escape" || e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            onClose();
+          }
+        }}
+      />
       <div
         role="dialog"
         aria-modal="true"
+        aria-label={title ?? "Diálogo"}
         ref={dialogRef}
         className="relative z-10 w-full max-w-md bg-panel border border-hairline p-6 rounded transition-opacity duration-200"
         style={{ animation: open ? "fadeIn 160ms" : "fadeOut 120ms" }}
