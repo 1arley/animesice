@@ -1,7 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import { motion, useTransform, type MotionValue } from "motion/react";
+import { useTransform, type MotionValue } from "motion/react";
+import * as m from "motion/react-m";
 import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
 import { blur } from "@/lib/blur";
 
@@ -32,7 +33,7 @@ export function HeroCharacter({
   );
 
   return (
-    <motion.div
+    <m.div
       className="absolute inset-0 overflow-hidden"
       style={{
         x: reduceMotion || isMobile ? undefined : charX,
@@ -56,6 +57,6 @@ export function HeroCharacter({
         className="object-cover"
         style={{ transform: scale }}
       />
-    </motion.div>
+    </m.div>
   );
 }

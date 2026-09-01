@@ -147,7 +147,9 @@ export function Aurora({
   // Props sempre frescas para o loop de render, sem recriar o contexto
   // WebGL quando arrays (colorStops) mudam de identidade a cada render.
   const propsRef = useRef({ amplitude, blend, colorStops, speed });
-  propsRef.current = { amplitude, blend, colorStops, speed };
+  useEffect(() => {
+    propsRef.current = { amplitude, blend, colorStops, speed };
+  }, [amplitude, blend, colorStops, speed]);
 
   useEffect(() => {
     const ctn = containerRef.current;
