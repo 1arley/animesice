@@ -25,6 +25,7 @@ playwright/.cache/
 .codex/
 .impeccable/
 .opencode/
+.volibear/
 .github/agents/
 .github/hooks/
 .github/skills/
