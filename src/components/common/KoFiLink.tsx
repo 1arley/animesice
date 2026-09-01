@@ -51,7 +51,7 @@ export function KoFiLink({ variant = "footer" }: KoFiLinkProps) {
         rel="noopener noreferrer"
         aria-label="Apoie no Ko-fi"
         title="Apoie no Ko-fi"
-        className="inline-flex h-11 w-11 items-center justify-center rounded-sm text-mist opacity-80 transition-all duration-200 hover:text-ice hover:opacity-100"
+        className="inline-flex h-11 w-11 items-center justify-center rounded-sm text-mist opacity-80 transition-[color,opacity] duration-200 hover:text-ice hover:opacity-100"
       >
         <KoFiIcon size={16} />
       </a>

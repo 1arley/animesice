@@ -107,6 +107,7 @@ export function PrivacySection() {
                 type="button"
                 role="switch"
                 aria-checked={value}
+                aria-label={f.label}
                 disabled={busy}
                 onClick={() => toggle(f.key, !value)}
                 className={`relative h-7 w-11 shrink-0 rounded-full transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${
@@ -114,7 +115,7 @@ export function PrivacySection() {
                 }`}
               >
                 <span
-                  className={`absolute top-0.5 h-6 w-6 rounded-full bg-ink transition-all ${
+                  className={`absolute top-0.5 h-6 w-6 rounded-full bg-ink transition-[left] ${
                     value ? "left-[calc(100%-1.5rem)]" : "left-0.5"
                   }`}
                 />
