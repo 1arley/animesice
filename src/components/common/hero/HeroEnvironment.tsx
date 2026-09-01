@@ -1,7 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import { motion, useTransform, type MotionValue } from "motion/react";
+import { useTransform, type MotionValue } from "motion/react";
+import * as m from "motion/react-m";
 import { blur } from "@/lib/blur";
 
 interface HeroEnvironmentProps {
@@ -44,7 +45,7 @@ export function HeroEnvironment({
   }
 
   return (
-    <motion.div
+    <m.div
       className="absolute inset-0 overflow-hidden"
       style={{
         x: isMobile ? undefined : translateX,
@@ -64,6 +65,6 @@ export function HeroEnvironment({
         className="object-cover scale-[1.2]"
         aria-hidden="true"
       />
-    </motion.div>
+    </m.div>
   );
 }

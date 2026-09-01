@@ -1,6 +1,7 @@
 "use client";
 
-import { motion, type Transition } from "motion/react";
+import { LazyMotion, domAnimation, type Transition } from "motion/react";
+import * as m from "motion/react-m";
 import {
   createElement,
   useEffect,
@@ -116,35 +117,38 @@ export function BlurText({
     stepCount === 1 ? 0 : i / (stepCount - 1),
   );
 
-  return createElement(
-    as,
-    { id, ref, className: `flex flex-wrap ${className}` },
-    ...elements.map((segment, index) => {
-      const spanTransition: Transition = {
-        duration: totalDuration,
-        times,
-        delay: (index * delay) / 1000,
-        ease: easing ?? [0.2, 0.65, 0.25, 1],
-      };
-      return (
-        <motion.span
-          key={index}
-          initial={defaultFrom}
-          animate={inView ? keyframes : defaultFrom}
-          transition={spanTransition}
-          onAnimationComplete={
-            index === elements.length - 1 ? onAnimationComplete : undefined
-          }
-          style={{
-            display: "inline-block",
-            willChange: "transform, filter, opacity",
-          }}
-        >
-          {segment === " " ? "\u00A0" : segment}
-          {animateBy === "words" && index < elements.length - 1 && "\u00A0"}
-        </motion.span>
-      );
-    }),
-    children,
+  return (
+    <LazyMotion features={domAnimation}>
+      {createElement(
+        as,
+        { id, ref, className: `flex flex-wrap ${className}` },
+        ...elements.map((segment, index) => {
+          const spanTransition: Transition = {
+            duration: totalDuration,
+            times,
+            delay: (index * delay) / 1000,
+            ease: easing ?? [0.2, 0.65, 0.25, 1],
+          };
+          return (
+            <m.span
+              key={index}
+              initial={defaultFrom}
+              animate={inView ? keyframes : defaultFrom}
+              transition={spanTransition}
+              onAnimationComplete={
+                index === elements.length - 1 ? onAnimationComplete : undefined
+              }
+              style={{
+                display: "inline-block",
+              }}
+            >
+              {segment === " " ? "\u00A0" : segment}
+              {animateBy === "words" && index < elements.length - 1 && "\u00A0"}
+            </m.span>
+          );
+        }),
+        children,
+      )}
+    </LazyMotion>
   );
 }

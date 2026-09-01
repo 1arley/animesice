@@ -1,6 +1,7 @@
 "use client";
 
-import { motion, useTransform, type MotionValue } from "motion/react";
+import { useTransform, type MotionValue } from "motion/react";
+import * as m from "motion/react-m";
 import dynamic from "next/dynamic";
 import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
 
@@ -34,7 +35,7 @@ export function HeroAtmosphere({
   return (
     <div className="absolute inset-0 overflow-hidden">
       {/* Base gradient: deep atmospheric wash */}
-      <motion.div
+      <m.div
         className="absolute inset-0"
         style={{
           translateX: reduceMotion || isMobile ? undefined : bgX,

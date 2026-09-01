@@ -1,6 +1,7 @@
 "use client";
 
-import { motion, useMotionValue, useSpring } from "motion/react";
+import { LazyMotion, domAnimation, useMotionValue, useSpring } from "motion/react";
+import * as m from "motion/react-m";
 import { useRef, type CSSProperties, type MouseEvent, type ReactNode } from "react";
 import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
 
@@ -83,50 +84,52 @@ export function TiltedCard({
   }
 
   return (
-    <figure
-      ref={ref}
-      className={`relative flex w-full items-center justify-center [perspective:800px] ${containerClassName}`}
-      onMouseMove={handleMouse}
-      onMouseEnter={() => {
-        scale.set(scaleOnHover);
-        opacity.set(1);
-      }}
-      onMouseLeave={() => {
-        scale.set(1);
-        opacity.set(0);
-        rotateX.set(0);
-        rotateY.set(0);
-      }}
-    >
-      <motion.div
-        className="relative [transform-style:preserve-3d]"
-        style={{ rotateX, rotateY, scale, width: "100%" }}
+    <LazyMotion features={domAnimation}>
+      <figure
+        ref={ref}
+        className={`relative flex w-full items-center justify-center [perspective:800px] ${containerClassName}`}
+        onMouseMove={handleMouse}
+        onMouseEnter={() => {
+          scale.set(scaleOnHover);
+          opacity.set(1);
+        }}
+        onMouseLeave={() => {
+          scale.set(1);
+          opacity.set(0);
+          rotateX.set(0);
+          rotateY.set(0);
+        }}
       >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <motion.img
-          src={imageSrc}
-          alt={altText}
-          loading="lazy"
-          decoding="async"
-          className={`h-auto w-full object-cover will-change-transform ${imageClassName}`}
-        />
-        {displayOverlayContent && overlayContent && (
-          <motion.div className="absolute left-0 top-0 z-[2] will-change-transform [transform:translateZ(30px)]">
-            {overlayContent}
-          </motion.div>
-        )}
-      </motion.div>
-
-      {captionText && (
-        <motion.figcaption
-          role="tooltip"
-          aria-hidden
-          className="pointer-events-none absolute left-0 top-0 z-[3] hidden border border-hairline bg-panel/95 px-2.5 py-1 font-mono text-caption text-ice opacity-0 shadow-lg shadow-ink/60 backdrop-blur-sm sm:block"
-          style={{ x, y, opacity, translateX: "-50%", translateY: "-50%" }}
+        <m.div
+          className="relative [transform-style:preserve-3d]"
+          style={{ rotateX, rotateY, scale, width: "100%" }}
         >
-          {captionText}
-        </motion.figcaption>
-      )}
-    </figure>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <m.img
+            src={imageSrc}
+            alt={altText}
+            loading="lazy"
+            decoding="async"
+            className={`h-auto w-full object-cover ${imageClassName}`}
+          />
+          {displayOverlayContent && overlayContent && (
+            <m.div className="absolute left-0 top-0 z-[2] [transform:translateZ(30px)]">
+              {overlayContent}
+            </m.div>
+          )}
+        </m.div>
+
+        {captionText && (
+          <m.figcaption
+            role="tooltip"
+            aria-hidden
+            className="pointer-events-none absolute left-0 top-0 z-[3] hidden border border-hairline bg-panel/95 px-2.5 py-1 font-mono text-caption text-ice opacity-0 shadow-lg shadow-ink/60 backdrop-blur-sm sm:block"
+            style={{ x, y, opacity, translateX: "-50%", translateY: "-50%" }}
+          >
+            {captionText}
+          </m.figcaption>
+        )}
+      </figure>
+    </LazyMotion>
   );
 }
