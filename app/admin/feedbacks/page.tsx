@@ -227,6 +227,7 @@ export default function AdminFeedbacksPage() {
               <select
                 value={newStatus}
                 onChange={(e) => setNewStatus(e.target.value as FeedbackStatus)}
+                aria-label="Status"
                 className="field"
               >
                 <option value="OPEN">Em aberto</option>
@@ -245,6 +246,7 @@ export default function AdminFeedbacksPage() {
                 value={adminNote}
                 onChange={(e) => setAdminNote(e.target.value)}
                 placeholder="Nota interna..."
+                aria-label="Nota do admin"
                 rows={3}
                 className="field"
               />

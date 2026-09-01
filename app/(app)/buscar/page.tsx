@@ -70,6 +70,9 @@ export default async function SearchPage({
   const season = first(sp.season);
   const sort = first(sp.sort);
 
+  // Hoisted outside the genre map — evita re-fatiar a string por item.
+  const selectedGenres = new Set(genresParam?.split(",") ?? []);
+
   const params = new URLSearchParams();
   params.set("page", String(page));
   params.set("limit", String(limit));
@@ -137,8 +140,8 @@ export default async function SearchPage({
       {/* Active filter chips */}
       {activeFilters.length > 0 && (
         <div className="mb-4 flex flex-wrap gap-2">
-          {activeFilters.map((filter, i) => (
-            <span key={i} className="border border-ice/40 bg-ice/10 px-2 py-0.5 font-sans text-caption text-ice">
+          {activeFilters.map((filter) => (
+            <span key={filter} className="border border-ice/40 bg-ice/10 px-2 py-0.5 font-sans text-caption text-ice">
               {filter}
             </span>
           ))}
@@ -165,6 +168,7 @@ export default async function SearchPage({
                 name="q"
                 defaultValue={q}
                 placeholder="Título..."
+                aria-label="Buscar por título"
                 className="field"
               />
             </fieldset>
@@ -181,7 +185,7 @@ export default async function SearchPage({
                         type="checkbox"
                         name="genres"
                         value={g.slug}
-                        defaultChecked={genresParam?.split(",").includes(g.slug) ?? false}
+                        defaultChecked={selectedGenres.has(g.slug)}
                         className="accent-ice"
                       />
                       {g.name}
@@ -200,7 +204,7 @@ export default async function SearchPage({
               <legend className="mb-2 font-mono text-caption uppercase tracking-wider text-mist">
                 Áudio
               </legend>
-              <select name="audio" defaultValue={audio ?? ""} className="field">
+              <select name="audio" defaultValue={audio ?? ""} aria-label="Áudio" className="field">
                 <option value="">Todos</option>
                 <option value="LEGENDADO">Legendado</option>
                 <option value="DUBLADO">Dublado</option>
@@ -211,7 +215,7 @@ export default async function SearchPage({
               <legend className="mb-2 font-mono text-caption uppercase tracking-wider text-mist">
                 Formato
               </legend>
-              <select name="format" defaultValue={format ?? ""} className="field">
+              <select name="format" defaultValue={format ?? ""} aria-label="Formato" className="field">
                 <option value="">Todos</option>
                 <option value="TV">TV</option>
                 <option value="MOVIE">Filme</option>
@@ -226,7 +230,7 @@ export default async function SearchPage({
               <legend className="mb-2 font-mono text-caption uppercase tracking-wider text-mist">
                 Status
               </legend>
-              <select name="status" defaultValue={status ?? ""} className="field">
+              <select name="status" defaultValue={status ?? ""} aria-label="Status" className="field">
                 <option value="">Todos</option>
                 <option value="LANCAMENTO">Em lançamento</option>
                 <option value="FINALIZADO">Finalizado</option>
@@ -239,7 +243,7 @@ export default async function SearchPage({
               <legend className="mb-2 font-mono text-caption uppercase tracking-wider text-mist">
                 Ano
               </legend>
-              <select name="year" defaultValue={year ?? ""} className="field">
+              <select name="year" defaultValue={year ?? ""} aria-label="Ano" className="field">
                 <option value="">Todos</option>
                 {YEARS.map((y) => (
                   <option key={y} value={y}>{y}</option>
@@ -251,7 +255,7 @@ export default async function SearchPage({
               <legend className="mb-2 font-mono text-caption uppercase tracking-wider text-mist">
                 Temporada
               </legend>
-              <select name="season" defaultValue={season ?? ""} className="field">
+              <select name="season" defaultValue={season ?? ""} aria-label="Temporada" className="field">
                 <option value="">Todas</option>
                 <option value="WINTER">Inverno</option>
                 <option value="SPRING">Primavera</option>
@@ -264,7 +268,7 @@ export default async function SearchPage({
               <legend className="mb-2 font-mono text-caption uppercase tracking-wider text-mist">
                 Ordenar por
               </legend>
-              <select name="sort" defaultValue={sort ?? "rating"} className="field">
+              <select name="sort" defaultValue={sort ?? "rating"} aria-label="Ordenar por" className="field">
                 <option value="rating">Nota</option>
                 <option value="recentlyAdded">Recentes</option>
                 <option value="year">Ano</option>

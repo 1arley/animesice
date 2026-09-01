@@ -1,6 +1,7 @@
 "use client";
 
 import { type ReactNode } from "react";
+import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
 import { isPrivileged } from "@/lib/role";
 import { Header } from "@/components/common/Header";
@@ -25,9 +26,9 @@ export function AdminGate({ children }: { children: ReactNode }) {
           ) : (
             <>
               Acesso negado. Apenas administradores.{" "}
-              <a href="/login" className="text-ice">
+              <Link href="/login" className="text-ice">
                 Entrar
-              </a>
+              </Link>
               .
             </>
           )}

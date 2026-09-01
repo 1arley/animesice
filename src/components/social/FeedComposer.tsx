@@ -100,6 +100,7 @@ export function FeedComposer({
             rows={3}
             className="field w-full resize-none"
             placeholder="O que você está assistindo?"
+            aria-label="O que você está assistindo"
           />
 
           <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -126,6 +127,7 @@ export function FeedComposer({
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     placeholder="Mencionar anime…"
+                    aria-label="Mencionar anime"
                     className="w-44 bg-transparent px-1 py-1.5 font-mono text-caption text-mist placeholder:text-mist-soft focus:text-ice focus:outline-none"
                   />
                   {open && (

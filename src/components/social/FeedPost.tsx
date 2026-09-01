@@ -313,6 +313,7 @@ export function FeedPost({
                 onChange={(e) => setCommentText(e.target.value)}
                 maxLength={1000}
                 placeholder="Escreva um comentário…"
+                aria-label="Escrever comentário"
                 className="field flex-1"
               />
               <button

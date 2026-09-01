@@ -104,9 +104,9 @@ export default async function AnimeDetailPage({
 
       <nav className="mb-4 text-caption text-mist" aria-label="Breadcrumb">
         <ol className="flex items-center gap-1">
-          <li><a href="/" className="hover:text-ice">Início</a></li>
+          <li><Link href="/" className="hover:text-ice">Início</Link></li>
           <li aria-hidden="true">/</li>
-          <li><a href="/animes" className="hover:text-ice">Animes</a></li>
+          <li><Link href="/animes" className="hover:text-ice">Animes</Link></li>
           <li aria-hidden="true">/</li>
           <li aria-current="page" className="text-ice">{anime.title}</li>
         </ol>
