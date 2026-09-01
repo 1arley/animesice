@@ -30,6 +30,8 @@ const TAB_STATUS: Record<Exclude<Tab, "favorites" | "history">, WatchStatus> = {
   dropped: "DROPPED",
 };
 
+const TABS: Tab[] = ["watching", "planning", "completed", "on_hold", "dropped", "favorites", "history"];
+
 export default function LibraryPage() {
   const { user, loading } = useAuth();
   const [tab, setTab] = useState<Tab>("watching");
@@ -101,7 +103,7 @@ export default function LibraryPage() {
     );
   }
 
-  const tabs: Tab[] = ["watching", "planning", "completed", "on_hold", "dropped", "favorites", "history"];
+  const tabs: Tab[] = TABS;
 
   return (
     <div className="mx-auto max-w-shelf px-4 py-8">

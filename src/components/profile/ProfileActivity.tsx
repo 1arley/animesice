@@ -71,9 +71,9 @@ export function ProfileActivity({
         <span className="shelf-label-data">{total ?? events.length}</span>
       </SectionLabel>
       <ol className="divide-y divide-hairline border-y border-hairline">
-        {events.map((ev, i) => (
+        {events.map((ev) => (
           <ActivityRow
-            key={`${ev.type}-${i}`}
+            key={`${ev.type}-${ev.createdAt}`}
             event={ev}
             userName={userName}
           />
