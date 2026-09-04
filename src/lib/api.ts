@@ -402,6 +402,22 @@ export const api = {
     ),
 
   /**
+   * Entrada da watch page. O endpoint same-origin valida os identificadores e
+   * permite cache CDN curto somente quando a fonte já está resolvida.
+   */
+  episodeStreamSourceAsync: async (animeSlug: string, episodeNumber: number) => {
+    const response = await fetch(
+      `/api/stream-source?anime=${encodeURIComponent(animeSlug)}&episode=${episodeNumber}`,
+      { credentials: "include" },
+    );
+    const data = await response.json().catch(() => null);
+    if (!response.ok && response.status !== 202) {
+      throw new ApiError(response.status, readErrorMessage(data));
+    }
+    return data as StreamSource | { jobId: string; status: string; message?: string };
+  },
+
+  /**
    * Poll status de um job de extração assíncrona.
    * Retorna StreamSource quando completo, ou status while processing.
    */

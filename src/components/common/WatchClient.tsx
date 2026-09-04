@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import dynamic from "next/dynamic";
 import { EpisodeLoadingState } from "@/components/common/EpisodeLoadingState";
 import { api, ApiError, isProxyEmbed, type StreamSource } from "@/lib/api";
@@ -32,7 +33,8 @@ export function WatchClient({
   const episode = initialEpisode;
   const [source, setSource] = useState<StreamSource | null>(null);
   const [sourceError, setSourceError] = useState<string | null>(null);
-  const [loadingSource, setLoadingSource] = useState(false);
+  // `true` faz o shell 16:9 fazer parte do HTML inicial, antes da hidratação.
+  const [loadingSource, setLoadingSource] = useState(true);
   const loadSourceId = useRef(0);
   const recoveryAttempts = useRef(0);
   const resumeAt = useRef(0);
@@ -99,7 +101,7 @@ export function WatchClient({
         return;
       }
 
-      const res = await api.streamSourceAsync(slug, number);
+      const res = await api.episodeStreamSourceAsync(slug, number);
       if (id !== loadSourceId.current) return;
 
       // Source direto (vídeo já existia no cache)
@@ -167,6 +169,25 @@ export function WatchClient({
     return () => { asyncAbortRef.current?.abort(); };
   }, [loadSourceAsync]);
 
+  useEffect(() => {
+    const navigation = performance.getEntriesByType("navigation")[0] as
+      | PerformanceNavigationTiming
+      | undefined;
+    if (navigation) {
+      performance.measure("episode:ttfb", {
+        start: navigation.startTime,
+        end: navigation.responseStart,
+      });
+    }
+    requestAnimationFrame(() => performance.mark("episode:poster-visible"));
+  }, []);
+
+  useEffect(() => {
+    if (!source) return;
+    performance.mark("episode:source-ready");
+    requestAnimationFrame(() => performance.mark("episode:player-mounted"));
+  }, [source]);
+
   if (!episode) {
     return <p className="text-body-sm text-mist">Carregando...</p>;
   }
@@ -200,9 +221,24 @@ export function WatchClient({
             animeTitle={episode.anime.title}
           />
         ) : sourceError ? (
-          <p className="text-body-sm text-signal">{sourceError}</p>
+          <div
+            className="flex aspect-video flex-col items-center justify-center gap-3 rounded-md border border-signal/30 bg-panel px-6 text-center"
+            data-testid="episode-player-error"
+          >
+            <p className="text-body-sm text-signal">{sourceError}</p>
+            <button
+              type="button"
+              className="rounded-md border border-ice/40 px-4 py-2 font-mono text-caption text-ice transition-colors hover:bg-ice/10"
+              onClick={() => void loadSourceAsync()}
+            >
+              Tentar novamente
+            </button>
+          </div>
         ) : loadingSource ? (
-          <EpisodeLoadingState />
+          <EpisodePlayerShell
+            posterUrl={episode.thumbnailUrl ?? episode.anime.coverImage ?? undefined}
+            title={episode.anime.title}
+          />
         ) : source ? (
           <VideoPlayer
             src={source.src}
@@ -228,6 +264,40 @@ export function WatchClient({
       {/* Navegação de episódios — Peak-End Rule: melhor experiência no fim */}
       <EpisodeNavigation slug={slug} number={number} />
     </>
+  );
+}
+
+function EpisodePlayerShell({
+  posterUrl,
+  title,
+}: {
+  posterUrl?: string;
+  title: string;
+}) {
+  return (
+    <div
+      className="relative flex aspect-video w-full items-center justify-center overflow-hidden rounded-md border border-hairline bg-panel"
+      data-testid="episode-player-shell"
+      aria-label={`Preparando vídeo de ${title}`}
+    >
+      {posterUrl ? (
+        <>
+          <Image
+            src={posterUrl}
+            alt=""
+            fill
+            priority
+            sizes="(max-width: 1024px) 100vw, 1152px"
+            className="object-cover opacity-50 blur-[1px]"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-ink/80 via-ink/20 to-transparent" />
+        </>
+      ) : null}
+      <div className="relative flex items-center gap-3 rounded-full bg-ink/70 px-4 py-2 backdrop-blur-sm">
+        <span className="h-4 w-4 animate-spin rounded-full border-2 border-ice border-t-transparent" />
+        <span className="font-mono text-caption text-snow">Preparando vídeo…</span>
+      </div>
+    </div>
   );
 }
 
