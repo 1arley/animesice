@@ -362,7 +362,7 @@ export const api = {
 
   // --- Streaming ---
 
-  // --- Source cache (sessionStorage, 1h TTL) ---
+  // --- Source cache (sessionStorage, aligned with the 5m CDN TTL) ---
   _sourceCache: {
     get(slug: string, episode: number): StreamSource | null {
       try {
@@ -370,7 +370,10 @@ export const api = {
         const raw = sessionStorage.getItem(key);
         if (!raw) return null;
         const { source, ts } = JSON.parse(raw) as { source: StreamSource; ts: number };
-        if (Date.now() - ts > 3_600_000) {
+        // A signed stream URL must not outlive the server/CDN cache window.
+        // The backend contract should still provide a URL valid for at least
+        // this interval (with operational safety margin).
+        if (Date.now() - ts > 300_000) {
           sessionStorage.removeItem(key);
           return null;
         }
