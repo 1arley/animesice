@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
+import Link from "next/link";
 import { api, ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { Modal as SharedModal } from "@/components/common/Modal";
@@ -127,9 +128,9 @@ export function AnimeListButton({ slug, className }: AnimeListButtonProps) {
 
   if (!user) {
     return (
-      <a href="/login" className={className ?? "btn-ghost"}>
+      <Link href="/login" className={className ?? "btn-ghost"}>
         + Lista
-      </a>
+      </Link>
     );
   }
 
@@ -159,10 +160,11 @@ export function AnimeListButton({ slug, className }: AnimeListButtonProps) {
         <SharedModal open={open} onClose={() => setOpen(false)} title={inList ? "Editar na lista" : "Adicionar à lista"}>
           <form onSubmit={handleSave} className="space-y-4">
             <div>
-              <label className="mb-1.5 block font-mono text-caption uppercase tracking-wider text-mist">
+              <label htmlFor="anime-list-status" className="mb-1.5 block font-mono text-caption uppercase tracking-wider text-mist">
                 Status
               </label>
               <select
+                id="anime-list-status"
                 value={status}
                 onChange={(e) => {
                   userTouchedRef.current = true;
@@ -180,10 +182,11 @@ export function AnimeListButton({ slug, className }: AnimeListButtonProps) {
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="mb-1.5 block font-mono text-caption uppercase tracking-wider text-mist">
+                <label htmlFor="anime-list-score" className="mb-1.5 block font-mono text-caption uppercase tracking-wider text-mist">
                   Nota (0-10)
                 </label>
                 <input
+                  id="anime-list-score"
                   type="number"
                   step="0.5"
                   min="0"
@@ -198,10 +201,11 @@ export function AnimeListButton({ slug, className }: AnimeListButtonProps) {
                 />
               </div>
               <div>
-                <label className="mb-1.5 block font-mono text-caption uppercase tracking-wider text-mist">
+                <label htmlFor="anime-list-episodes" className="mb-1.5 block font-mono text-caption uppercase tracking-wider text-mist">
                   Episódios assistidos
                 </label>
                 <input
+                  id="anime-list-episodes"
                   type="number"
                   min="0"
                   value={episodesWatched}
@@ -216,10 +220,11 @@ export function AnimeListButton({ slug, className }: AnimeListButtonProps) {
             </div>
 
             <div>
-              <label className="mb-1.5 block font-mono text-caption uppercase tracking-wider text-mist">
+              <label htmlFor="anime-list-notes" className="mb-1.5 block font-mono text-caption uppercase tracking-wider text-mist">
                 Notas (privadas)
               </label>
               <textarea
+                id="anime-list-notes"
                 value={notes}
                 onChange={(e) => {
                   userTouchedRef.current = true;

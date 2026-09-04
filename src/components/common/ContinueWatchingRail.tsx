@@ -66,6 +66,19 @@ export function ContinueWatchingRail() {
     return () => ac.abort();
   }, [user, pathname, fetchContinue]);
 
+  // Prefetch dos 3 primeiros itens — aquece o cache do backend para
+  // que a próxima navegação já tenha o vídeo pronto.
+  useEffect(() => {
+    if (items.length === 0) return;
+    const top3 = items.slice(0, 3);
+    for (const item of top3) {
+      const cached = api._sourceCache.get(item.anime.slug, item.episode.number);
+      if (!cached) {
+        api.streamSourceAsync(item.anime.slug, item.episode.number).catch(() => {});
+      }
+    }
+  }, [items]);
+
   if (!user || loading || items.length === 0) return null;
 
   return (
@@ -84,7 +97,7 @@ export function ContinueWatchingRail() {
             return (
               <SpotlightCard
                 key={item.episodeId}
-                className="group/card h-full min-w-[200px] shrink-0 snap-start"
+                className="group/card h-full w-[80vw] shrink-0 snap-start sm:w-[200px]"
               >
               <Link
                 href={`/animes/${item.anime.slug}/${item.episode.number}`}
@@ -96,7 +109,7 @@ export function ContinueWatchingRail() {
                       src={thumb}
                       alt={item.anime.title}
                       fill
-                      sizes="(max-width: 480px) 50vw, 200px"
+                      sizes="(max-width: 480px) 80vw, 200px"
                       priority={i < 2}
                       placeholder="blur"
                       blurDataURL={blur.landscape}
@@ -138,7 +151,7 @@ export function ContinueWatchingRail() {
                 <button
                   type="button"
                   onClick={() => setPendingDelete(item)}
-                  className="flex h-11 w-11 items-center justify-center rounded-sm border border-hairline/60 bg-ink/70 text-mist/70 backdrop-blur-sm transition-colors duration-200 hover:border-ice/60 hover:bg-ink hover:text-ice"
+                  className="flex h-11 w-11 items-center justify-center rounded-sm border border-hairline/60 bg-ink/70 text-mist-soft backdrop-blur-sm transition-colors duration-200 hover:border-ice/60 hover:bg-ink hover:text-ice"
                   aria-label={`Remover “${item.anime.title}”`}
                 >
                   <svg

@@ -43,6 +43,7 @@ export function VideoUploadPanel({ slug, number, onUploaded }: VideoUploadPanelP
       <input
         type="file"
         accept="video/*,.m3u8,.ts"
+        aria-label="Arquivo de vídeo"
         className="field"
         onChange={(e) => {
           setUploadFile(e.target.files?.[0] ?? null);

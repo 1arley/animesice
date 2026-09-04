@@ -19,7 +19,7 @@ import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
  */
 
 // "Sinal da madrugada": quase-vácuo → gelo → azul de prateleira.
-const DEFAULT_COLOR_STOPS = ["#0E141D", "#45F0E0", "#1C2534"];
+const DEFAULT_COLOR_STOPS = ["#0E141D", "#38E8DA", "#1C2534"];
 
 const VERT = `#version 300 es
 in vec2 position;
@@ -147,7 +147,9 @@ export function Aurora({
   // Props sempre frescas para o loop de render, sem recriar o contexto
   // WebGL quando arrays (colorStops) mudam de identidade a cada render.
   const propsRef = useRef({ amplitude, blend, colorStops, speed });
-  propsRef.current = { amplitude, blend, colorStops, speed };
+  useEffect(() => {
+    propsRef.current = { amplitude, blend, colorStops, speed };
+  }, [amplitude, blend, colorStops, speed]);
 
   useEffect(() => {
     const ctn = containerRef.current;

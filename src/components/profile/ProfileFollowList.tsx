@@ -88,7 +88,7 @@ function FollowRow({ user }: { user: UserSearchResult }) {
             @{user.userName ?? user.id}
           </p>
           {user.bio && (
-            <p className="mt-0.5 line-clamp-1 text-body-sm text-mist/80">
+            <p className="mt-0.5 line-clamp-1 text-body-sm text-mist-soft">
               {user.bio}
             </p>
           )}
@@ -101,7 +101,7 @@ function FollowRow({ user }: { user: UserSearchResult }) {
           initialFollowing={user.isFollowing}
           compact
         />
-        <span className="font-mono text-caption text-mist/70">
+        <span className="font-mono text-caption text-mist-soft">
           desde {formatDate(user.createdAt)}
         </span>
       </div>

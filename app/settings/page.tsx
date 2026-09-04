@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
@@ -10,6 +10,7 @@ import { Footer } from "@/components/common/Footer";
 import { NotificationPreferencesSection } from "@/components/common/NotificationPreferencesSection";
 import { ProfileDashboard } from "@/components/common/ProfileDashboard";
 import { PrivacySection } from "@/components/common/PrivacySection";
+import { formatDate } from "@/lib/time";
 import { passwordError } from "@/lib/password";
 import { displayName } from "@/lib/displayName";
 import { Avatar } from "@/components/common/Avatar";
@@ -33,6 +34,19 @@ export default function SettingsPage() {
   const [avatarErr, setAvatarErr] = useState("");
   const [avatarLoading, setAvatarLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    return () => {
+      if (avatarPreview?.startsWith("blob:")) URL.revokeObjectURL(avatarPreview);
+    };
+  }, [avatarPreview]);
+
+  const clearAvatarPreview = useCallback(() => {
+    setAvatarPreview((prev) => {
+      if (prev?.startsWith("blob:")) URL.revokeObjectURL(prev);
+      return null;
+    });
+  }, []);
 
   const [bio, setBio] = useState(user?.bio ?? "");
   const [bioMsg, setBioMsg] = useState("");
@@ -128,7 +142,7 @@ export default function SettingsPage() {
       await api.uploadAvatar(avatarFile);
       await refreshUser();
       setAvatarFile(null);
-      setAvatarPreview(null);
+      clearAvatarPreview();
       if (fileInputRef.current) fileInputRef.current.value = "";
       setAvatarMsg("Avatar atualizado com sucesso.");
     } catch (err) {
@@ -142,7 +156,7 @@ export default function SettingsPage() {
 
   function cancelAvatarPreview() {
     setAvatarFile(null);
-    setAvatarPreview(null);
+    clearAvatarPreview();
     if (fileInputRef.current) fileInputRef.current.value = "";
   }
 
@@ -278,7 +292,7 @@ export default function SettingsPage() {
                 <label className="block">
                   <span className="mb-1.5 block font-sans text-caption uppercase tracking-wider text-mist">
                     Apelido{" "}
-                    <span className="normal-case text-mist/70">(opcional)</span>
+                    <span className="normal-case text-mist-soft">(opcional)</span>
                   </span>
                   <input
                     type="text"
@@ -292,7 +306,7 @@ export default function SettingsPage() {
                     autoComplete="username"
                     className="field"
                   />
-                  <span className="mt-1 block font-mono text-caption text-mist/70">
+                  <span className="mt-1 block font-mono text-caption text-mist-soft">
                     3-20 caracteres: minúsculas, números, _ ou -.
                   </span>
                 </label>
@@ -410,10 +424,11 @@ export default function SettingsPage() {
                   maxLength={500}
                   rows={4}
                   placeholder="Fale um pouco sobre você..."
+                  aria-label="Biografia"
                   className="field resize-none"
                 />
                 <div className="flex items-center justify-between gap-4">
-                  <span className="font-mono text-caption text-mist/70">
+                  <span className="font-mono text-caption text-mist-soft">
                     {bio.length}/500
                   </span>
                   <button
@@ -594,7 +609,7 @@ export default function SettingsPage() {
                     Criado em
                   </dt>
                   <dd className="text-mist">
-                    {new Date(user.createdAt).toLocaleDateString("pt-BR")}
+                    {formatDate(user.createdAt)}
                   </dd>
                 </div>
                 <div>
@@ -602,7 +617,7 @@ export default function SettingsPage() {
                     Atualizado em
                   </dt>
                   <dd className="text-mist">
-                    {new Date(user.updatedAt).toLocaleDateString("pt-BR")}
+                    {formatDate(user.updatedAt)}
                   </dd>
                 </div>
               </dl>

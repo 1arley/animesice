@@ -37,8 +37,8 @@ export function ServiceNotice() {
           aria-hidden="true"
           className="mt-1.5 h-1.5 w-1.5 shrink-0 rotate-45 bg-ice shadow-[0_0_10px_rgba(125,211,252,0.8)] sm:mt-0"
         />
-        <p className="min-w-0 flex-1 font-sans text-xs leading-relaxed text-mist sm:text-sm">
-          <strong className="mr-2 font-mono text-label uppercase tracking-[0.14em] text-ice sm:text-xs">
+        <p className="min-w-0 flex-1 font-sans text-caption leading-relaxed text-mist sm:text-body-sm">
+          <strong className="mr-2 font-mono text-caption uppercase tracking-[0.14em] text-ice">
             Aviso de serviço
           </strong>
           Pedimos desculpas pela instabilidade temporária. O sinal foi

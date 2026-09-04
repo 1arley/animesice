@@ -100,6 +100,7 @@ export function FeedComposer({
             rows={3}
             className="field w-full resize-none"
             placeholder="O que você está assistindo?"
+            aria-label="O que você está assistindo"
           />
 
           <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -126,7 +127,8 @@ export function FeedComposer({
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     placeholder="Mencionar anime…"
-                    className="w-44 bg-transparent px-1 py-1.5 font-mono text-caption text-mist placeholder:text-mist/50 focus:text-ice focus:outline-none"
+                    aria-label="Mencionar anime"
+                    className="w-44 bg-transparent px-1 py-1.5 font-mono text-caption text-mist placeholder:text-mist-soft focus:text-ice focus:outline-none"
                   />
                   {open && (
                     <div className="absolute left-0 top-full z-30 mt-1 w-64 border border-hairline bg-panel shadow-lg shadow-black/40">
@@ -135,7 +137,7 @@ export function FeedComposer({
                           Buscando…
                         </p>
                       ) : results.length === 0 ? (
-                        <p className="px-3 py-2 font-mono text-caption text-mist/60">
+                        <p className="px-3 py-2 font-mono text-caption text-mist-soft">
                           Nada encontrado
                         </p>
                       ) : (
@@ -160,7 +162,7 @@ export function FeedComposer({
               )}
             </div>
 
-            <span className="ml-auto font-mono text-caption text-mist/60">
+            <span className="ml-auto font-mono text-caption text-mist-soft">
               {content.length}/2000
             </span>
           </div>

@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
-import { notFound, permanentRedirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import { cache } from "react";
-import { serverFetchJson } from "@/lib/api-server";
+import { serverFetchJson, serverStreamSourceAsync } from "@/lib/api-server";
 import type { Episode, Anime } from "@/types";
-import { findHentaisMigration, isHentaiAnime, hentaisPath } from "@/lib/hentai";
+
 import { WatchClient } from "@/components/common/WatchClient";
 import { SITE_URL } from "@/lib/site";
 import { escapeJsonLd } from "@/lib/url";
@@ -100,14 +100,17 @@ export default async function WatchPage({
   const number = Number(numberParam);
   if (Number.isNaN(number)) notFound();
 
-  const episode = await getEpisode(slug, numberParam);
-  if (!episode) {
-    const migratedTo = await findHentaisMigration(slug, number);
-    if (migratedTo) permanentRedirect(migratedTo);
-    notFound();
-  }
-
-  if (isHentaiAnime(episode.anime)) permanentRedirect(hentaisPath(slug, number));
+  // O stream é deliberadamente resolvido depois do primeiro paint. Extração,
+  // retries ou indisponibilidade do vídeo não podem bloquear o HTML do episódio.
+  // A flag server-side oferece rollback operacional sem alterar o bundle.
+  const fastShellEnabled = process.env.EPISODE_FAST_SHELL_ENABLED !== "false";
+  const [episode, initialSource] = fastShellEnabled
+    ? [await getEpisode(slug, numberParam), null]
+    : await Promise.all([
+        getEpisode(slug, numberParam),
+        serverStreamSourceAsync(slug, number).catch(() => null),
+      ]);
+  if (!episode) notFound();
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -162,7 +165,13 @@ export default async function WatchPage({
     <div className="mx-auto max-w-shelf px-4 py-6">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: escapeJsonLd(jsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: escapeJsonLd(videoJsonLd) }} />
-      <WatchClient slug={slug} number={number} initialEpisode={episode} />
+
+      <WatchClient
+        slug={slug}
+        number={number}
+        initialEpisode={episode}
+        initialSource={initialSource}
+      />
     </div>
   );
 }

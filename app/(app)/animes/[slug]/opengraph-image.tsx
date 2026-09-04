@@ -29,8 +29,8 @@ export default async function OpengraphImage({
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            background: "linear-gradient(135deg, #070B12, #0E141D)",
-            color: "#45F0E0",
+            background: "linear-gradient(135deg, #080C12, #0E141D)",
+            color: "#38E8DA",
             fontFamily: "sans-serif",
             fontSize: 48,
             fontWeight: 700,
@@ -70,7 +70,7 @@ export default async function OpengraphImage({
           width: "100%",
           height: "100%",
           display: "flex",
-          background: "#070B12",
+          background: "#080C12",
           fontFamily: "sans-serif",
           position: "relative",
           overflow: "hidden",
@@ -113,7 +113,7 @@ export default async function OpengraphImage({
         >
           <div
             style={{
-            color: "#45F0E0",
+            color: "#38E8DA",
               fontSize: 14,
               fontWeight: 600,
               textTransform: "uppercase",
@@ -126,7 +126,7 @@ export default async function OpengraphImage({
 
           <div
             style={{
-              color: "#E9EFF5",
+              color: "#F1F5F9",
               fontSize: 64,
               fontWeight: 700,
               lineHeight: 1.1,
@@ -140,7 +140,7 @@ export default async function OpengraphImage({
           {meta && (
             <div
               style={{
-                color: "#9FB0C1",
+                color: "#94A3B8",
                 fontSize: 22,
                 marginTop: 20,
                 letterSpacing: 0.5,

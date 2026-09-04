@@ -6,7 +6,7 @@
  * Um canonical apontando para um domínio que redireciona gera duplicatas
  * ("Cópia sem página canônica selecionada pelo usuário" no GSC).
  */
-const WWW_CANONICAL_HOSTS = new Set(["animesice.app", "hentaisice.com"]);
+const WWW_CANONICAL_HOSTS = new Set(["animesice.app"]);
 
 /**
  * Mantém todos os sinais SEO na mesma origem mesmo quando uma variável da

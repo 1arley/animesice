@@ -92,3 +92,27 @@ export async function serverGetBlogPost(slug: string): Promise<BlogPost | null> 
     { cache: "force-cache", next: { revalidate: 900, tags: ["blog-posts", `blog-post:${slug}`] } },
   );
 }
+
+/**
+ * Busca stream source de um episódio (async = 202 + jobId, sync = src direto).
+ * Usado no SSR pre-fetch da watch page — se o vídeo já existir no cache do
+ * backend, retorna o src; se precisar de extração, retorna o jobId para o
+ * WatchClient fazer polling/SSE no client.
+ */
+export async function serverStreamSourceAsync(
+  animeSlug: string,
+  episodeNumber: number,
+  refresh = false,
+): Promise<
+  | { src: string; embedUrl?: string; thumbnailUrl?: string }
+  | { jobId: string; status: string; message?: string }
+  | null
+> {
+  return serverFetchJson<
+    | { src: string; embedUrl?: string; thumbnailUrl?: string }
+    | { jobId: string; status: string; message?: string }
+  >(
+    `/stream/source/async?anime=${encodeURIComponent(animeSlug)}&episode=${episodeNumber}${refresh ? "&refresh=1" : ""}`,
+    { cache: "no-store" },
+  );
+}

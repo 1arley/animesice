@@ -37,7 +37,7 @@ export function PosterTile({
     <a
       href={`/animes/${slug}`}
       title={title}
-      className="group block overflow-hidden bg-panel transition-all duration-200 hover:ring-1 hover:ring-ice/50"
+      className="group block overflow-hidden bg-panel transition-[box-shadow] duration-200 hover:ring-1 hover:ring-ice/50"
     >
       <div className="card-scan relative" style={{ aspectRatio: "2 / 3" }}>
         {cover ? (

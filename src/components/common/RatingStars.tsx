@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
 import { api } from "@/lib/api";
 import { StarIcon, HeartIcon } from "@/components/ui/icons";
@@ -11,12 +12,16 @@ interface RatingStarsProps {
   slug: string;
 }
 
+const TOTAL_STARS = 10;
+
 export function RatingStars({ slug }: RatingStarsProps) {
   const { user } = useAuth();
   const [userScore, setUserScore] = useState<number | null>(null);
   const [stats, setStats] = useState<RatingStats | null>(null);
   const [hoverScore, setHoverScore] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
+  const [focusIndex, setFocusIndex] = useState(0);
+  const groupRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -76,38 +81,70 @@ export function RatingStars({ slug }: RatingStarsProps) {
 
   const displayScore = hoverScore ?? userScore;
 
+  function moveFocus(nextIndex: number) {
+    const clamped = Math.max(0, Math.min(TOTAL_STARS - 1, nextIndex));
+    setFocusIndex(clamped);
+    const buttons = groupRef.current?.querySelectorAll<HTMLElement>("button[role='radio']");
+    buttons?.[clamped]?.focus();
+  }
+
+  function handleKeyDown(e: React.KeyboardEvent, n: number) {
+    switch (e.key) {
+      case "ArrowRight":
+      case "ArrowUp":
+        e.preventDefault();
+        moveFocus(n);
+        break;
+      case "ArrowLeft":
+      case "ArrowDown":
+        e.preventDefault();
+        moveFocus(n - 2);
+        break;
+      case "Home":
+        e.preventDefault();
+        moveFocus(0);
+        break;
+      case "End":
+        e.preventDefault();
+        moveFocus(TOTAL_STARS - 1);
+        break;
+      case " ":
+      case "Enter":
+        e.preventDefault();
+        if (user && !loading) handleRate(n);
+        break;
+      case "Delete":
+      case "Backspace":
+        e.preventDefault();
+        if (user && !loading) handleRemove();
+        break;
+    }
+  }
+
   return (
     <div className="flex flex-col gap-2">
       {/* Um ClickSpark para a fileira inteira: a faísca sai no ponto exato
           da estrela clicada — 10 canvases por página seria desperdício. */}
       <ClickSpark className="w-fit" sparkCount={10} sparkRadius={16} sparkSize={7}>
       <div
+        ref={groupRef}
         className="flex items-center gap-0.5"
         role="radiogroup"
         aria-label="Avaliação de 1 a 10 estrelas"
       >
-        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
+        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n, idx) => (
           <button
             key={n}
             disabled={!user || loading}
             onMouseEnter={() => setHoverScore(n)}
             onMouseLeave={() => setHoverScore(null)}
             onClick={() => handleRate(n)}
+            onFocus={() => setFocusIndex(idx)}
             role="radio"
+            tabIndex={focusIndex === idx ? 0 : -1}
             aria-checked={userScore === n}
             aria-label={`${n} de 10`}
-            onKeyDown={(e) => {
-              if (e.key === "ArrowRight" || e.key === "ArrowUp") {
-                e.preventDefault();
-                if (user && !loading) handleRate(Math.min(10, n + 1));
-              } else if (e.key === "ArrowLeft" || e.key === "ArrowDown") {
-                e.preventDefault();
-                if (user && !loading) handleRate(Math.max(1, n - 1));
-              } else if (e.key === "0") {
-                e.preventDefault();
-                if (user && !loading) handleRemove();
-              }
-            }}
+            onKeyDown={(e) => handleKeyDown(e, n)}
             className={`p-1.5 transition-colors ${
               displayScore != null && n <= displayScore
                 ? "text-ice"
@@ -139,7 +176,7 @@ export function RatingStars({ slug }: RatingStarsProps) {
         )}
         {!user && (
           <span className="font-mono text-caption text-mist">
-            <a href="/login" className="text-ice underline">Entre</a> para avaliar
+            <Link href="/login" className="text-ice underline">Entre</Link> para avaliar
           </span>
         )}
       </div>

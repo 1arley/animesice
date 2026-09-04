@@ -46,27 +46,31 @@ export function SmoothScrollProvider({
 
     // gsap + ScrollTrigger (e Lenis) só para desktop: import() dinâmico tira
     // os ~112 KiB do gsap do bundle inicial e o celular nunca os executa.
-    Promise.all([import("lenis"), import("@/lib/gsap")]).then(([lenisMod, gsapMod]) => {
-      if (cancelled) return;
-      const { gsap, ScrollTrigger } = gsapMod;
-      scrollTriggerRef.current = { refresh: () => ScrollTrigger.refresh() };
-      lenis = new lenisMod.default({
-        duration: 1.15,
-        easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
-        smoothWheel: true,
-        wheelMultiplier: 0.95,
-        syncTouch: false,
-        allowNestedScroll: true,
-      });
-      lenisRef.current = lenis;
+    Promise.all([import("lenis"), import("@/lib/gsap")])
+      .then(([lenisMod, gsapMod]) => {
+        if (cancelled) return;
+        const { gsap, ScrollTrigger } = gsapMod;
+        scrollTriggerRef.current = { refresh: () => ScrollTrigger.refresh() };
+        lenis = new lenisMod.default({
+          duration: 1.15,
+          easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+          smoothWheel: true,
+          wheelMultiplier: 0.95,
+          syncTouch: false,
+          allowNestedScroll: true,
+        });
+        lenisRef.current = lenis;
 
-      lenis.on("scroll", ScrollTrigger.update);
-      tickerRaf = (time: number) => {
-        lenis?.raf(time * 1000);
-      };
-      gsap.ticker.add(tickerRaf);
-      gsap.ticker.lagSmoothing(0);
-    });
+        lenis.on("scroll", ScrollTrigger.update);
+        tickerRaf = (time: number) => {
+          lenis?.raf(time * 1000);
+        };
+        gsap.ticker.add(tickerRaf);
+        gsap.ticker.lagSmoothing(0);
+      })
+      .catch(() => {
+        // Import dinâmico falhou (ex.: rede/offline): scroll continua nativo.
+      });
 
     return () => {
       cancelled = true;

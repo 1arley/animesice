@@ -32,22 +32,21 @@ export default function AdminAuditPage() {
         days,
         controller.signal,
       );
-      setLogs(data);
+      if (abortRef.current === controller) {
+        setLogs(data);
+      }
     } catch (e) {
-      // Request substituído por um novo load ou abortado no unmount — o estado
-      // já é/reunido pelo dono atual; não sobrescreve nada.
-      if (abortRef.current !== controller) return;
-      if (controller.signal.aborted) {
-        setError("Tempo esgotado ao carregar logs.");
-      } else {
-        setError(e instanceof ApiError ? e.message : "Erro ao carregar logs.");
+      if (abortRef.current === controller) {
+        if (controller.signal.aborted) {
+          setError("Tempo esgotado ao carregar logs.");
+        } else {
+          setError(e instanceof ApiError ? e.message : "Erro ao carregar logs.");
+        }
       }
     } finally {
       clearTimeout(timer);
-      if (abortRef.current === controller) {
-        abortRef.current = null;
-        setLoading(false);
-      }
+      abortRef.current = null;
+      setLoading(false);
     }
   }, [resourceType, days]);
 
@@ -96,10 +95,11 @@ export default function AdminAuditPage() {
 
       <div className="mt-4 flex flex-wrap gap-3">
         <div>
-          <label className="mb-1.5 block font-mono text-caption uppercase tracking-wider text-mist">
+          <label htmlFor="audit-recurso" className="mb-1.5 block font-mono text-caption uppercase tracking-wider text-mist">
             Recurso
           </label>
           <select
+            id="audit-recurso"
             value={resourceType}
             onChange={(e) => setResourceType(e.target.value)}
             className="field"
@@ -112,10 +112,11 @@ export default function AdminAuditPage() {
           </select>
         </div>
         <div>
-          <label className="mb-1.5 block font-mono text-caption uppercase tracking-wider text-mist">
+          <label htmlFor="audit-dias" className="mb-1.5 block font-mono text-caption uppercase tracking-wider text-mist">
             Período (dias)
           </label>
           <select
+            id="audit-dias"
             value={days}
             onChange={(e) => setDays(parseInt(e.target.value, 10))}
             className="field"

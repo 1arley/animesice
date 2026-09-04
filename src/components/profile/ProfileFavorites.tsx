@@ -17,7 +17,7 @@ export function ProfileFavorites({
     return (
       <section>
         <SectionLabel level={2}>Favoritos</SectionLabel>
-        <p className="text-body-sm text-mist/70">
+        <p className="text-body-sm text-mist-soft">
           Nenhum favorito ainda.
         </p>
       </section>

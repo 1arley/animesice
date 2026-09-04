@@ -28,22 +28,21 @@ export default function AdminWatchtowerPage() {
     setError(null);
     try {
       const data = await api.watchtowerStatus(controller.signal);
-      setStatus(data);
+      if (abortRef.current === controller) {
+        setStatus(data);
+      }
     } catch (e) {
-      // Request substituído por um novo load ou abortado no unmount — o estado
-      // já é/reunido pelo dono atual; não sobrescreve nada.
-      if (abortRef.current !== controller) return;
-      if (controller.signal.aborted) {
-        setError("Tempo esgotado ao carregar status.");
-      } else {
-        setError(e instanceof ApiError ? e.message : "Erro ao carregar status.");
+      if (abortRef.current === controller) {
+        if (controller.signal.aborted) {
+          setError("Tempo esgotado ao carregar status.");
+        } else {
+          setError(e instanceof ApiError ? e.message : "Erro ao carregar status.");
+        }
       }
     } finally {
       clearTimeout(timer);
-      if (abortRef.current === controller) {
-        abortRef.current = null;
-        setLoading(false);
-      }
+      abortRef.current = null;
+      setLoading(false);
     }
   }, []);
 
@@ -291,6 +290,7 @@ export default function AdminWatchtowerPage() {
                   value={checkSlug}
                   onChange={(e) => setCheckSlug(e.target.value)}
                   placeholder="slug do anime..."
+                  aria-label="Slug do anime"
                   className="field flex-1"
                 />
                 <button

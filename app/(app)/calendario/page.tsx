@@ -43,7 +43,7 @@ export default async function CalendarioPage({
     <div className="mx-auto max-w-shelf px-4 py-6">
       <nav className="mb-4 text-caption text-mist" aria-label="Breadcrumb">
         <ol className="flex items-center gap-1">
-          <li><a href="/" className="hover:text-ice">Início</a></li>
+          <li><Link href="/" className="hover:text-ice">Início</Link></li>
           <li aria-hidden="true">/</li>
           <li aria-current="page" className="text-ice">Calendário</li>
         </ol>
@@ -67,12 +67,12 @@ export default async function CalendarioPage({
           </Link>
         ))}
 
-        <label className="ml-auto flex items-center gap-2">
+        <span className="ml-auto flex items-center gap-2">
           <span className="font-mono text-caption uppercase tracking-wider text-mist">
             Ano
           </span>
           <YearFilter season={season} year={year} />
-        </label>
+        </span>
       </div>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -86,7 +86,9 @@ export default async function CalendarioPage({
               <p className="px-3 py-2 text-body-sm text-mist">—</p>
             ) : (
               <ul className="divide-y divide-hairline">
-                {day.animes.map((anime) => (
+                {day.animes.map((anime) => {
+                  const schedule = anime.animeSchedules?.find((s) => s.dayOfWeek === day.day);
+                  return (
                   <li key={anime.id}>
                     <Link
                       href={`/animes/${anime.slug}`}
@@ -97,22 +99,20 @@ export default async function CalendarioPage({
                         <p className="line-clamp-1 font-sans text-body-sm font-medium text-mist transition-colors hover:text-ice">
                           {anime.title}
                         </p>
-                        {(anime.animeSchedules?.find((s) => s.dayOfWeek === day.day)?.time) && (
+                        {schedule?.time && (
                           <p className="font-mono text-caption text-mist tabular-nums">
-                            {anime.animeSchedules!.find((s) => s.dayOfWeek === day.day)!.time}
+                            {schedule.time}
                           </p>
                         )}
                       </div>
                     </Link>
                   </li>
-                ))}
+                )})}
               </ul>
             )}
           </section>
         ))}
       </div>
-
-
     </div>
   );
 }

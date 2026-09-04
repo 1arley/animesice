@@ -728,6 +728,7 @@ document.getElementById('downloadCss').addEventListener('click', ()=>{
   a.href = URL.createObjectURL(blob);
   a.download = 'animesice-motion.css';
   a.click();
+  URL.revokeObjectURL(a.href);
 });
 
 document.getElementById('downloadTokens').addEventListener('click', ()=>{
@@ -742,6 +743,7 @@ document.getElementById('downloadTokens').addEventListener('click', ()=>{
   a.href = URL.createObjectURL(blob);
   a.download = 'animesice-motion-tokens.json';
   a.click();
+  URL.revokeObjectURL(a.href);
 });
 
 // ---------- Higgsfield MCP generation ----------

@@ -56,6 +56,7 @@ export function SiteNav() {
   const [closing, setClosing] = useState(false);
   const navRef = useRef<HTMLDivElement | null>(null);
   const openingAt = useRef(0);
+  const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pathname = usePathname();
 
   const contaLinks: NavLink[] = user
@@ -108,9 +109,11 @@ export function SiteNav() {
     // troca de rota nunca são ghost clicks).
     if (!opts?.force && Date.now() - openingAt.current < GHOST_WINDOW_MS) return;
     setClosing(true);
-    setTimeout(() => {
+    if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
+    closeTimerRef.current = setTimeout(() => {
       setMobileOpen(false);
       setClosing(false);
+      closeTimerRef.current = null;
     }, 200);
   }, []);
 
@@ -132,6 +135,12 @@ export function SiteNav() {
     }
     return () => { document.body.style.overflow = ""; };
   }, [mobileOpen]);
+
+  useEffect(() => {
+    return () => {
+      if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
+    };
+  }, []);
 
   useEffect(() => {
     function onClick(e: MouseEvent) {
@@ -198,6 +207,24 @@ export function SiteNav() {
                 <div
                   role="menu"
                   className="absolute left-0 top-full z-50 min-w-40 border border-hairline bg-panel py-1 shadow-lg shadow-black/40"
+                  onKeyDown={(e) => {
+                    const menu = e.currentTarget;
+                    const items = Array.from(menu.querySelectorAll<HTMLElement>('[role="menuitem"]'));
+                    const idx = items.indexOf(document.activeElement as HTMLElement);
+                    if (e.key === "ArrowDown") {
+                      e.preventDefault();
+                      items[(idx + 1) % items.length]?.focus();
+                    } else if (e.key === "ArrowUp") {
+                      e.preventDefault();
+                      items[(idx - 1 + items.length) % items.length]?.focus();
+                    } else if (e.key === "Home") {
+                      e.preventDefault();
+                      items[0]?.focus();
+                    } else if (e.key === "End") {
+                      e.preventDefault();
+                      items[items.length - 1]?.focus();
+                    }
+                  }}
                 >
                   {item.links.map((link) => (
                     <a
@@ -206,7 +233,7 @@ export function SiteNav() {
                       target={link.target || "_self"}
                       rel={link.target === "_blank" ? "noopener noreferrer" : undefined}
                       role="menuitem"
-                      className="block border-l-2 border-transparent px-4 py-2 font-mono text-body-sm text-mist transition-all duration-200 hover:border-ice hover:bg-slate hover:text-ice hover:translate-x-1"
+                      className="block border-l-2 border-transparent px-4 py-2 font-mono text-body-sm text-mist transition-[border-color,background-color,color,transform] duration-200 hover:border-ice hover:bg-slate hover:text-ice hover:translate-x-1"
                     >
                       {link.title}
                     </a>
@@ -217,7 +244,7 @@ export function SiteNav() {
           );
         })}
         {user && (
-          <a
+          <Link
             href="/settings"
             className="ml-auto flex items-center gap-2 px-3 py-3 font-mono text-body-sm uppercase tracking-wider text-mist transition-colors hover:text-ice"
           >
@@ -225,7 +252,7 @@ export function SiteNav() {
             <span className="max-w-40 truncate normal-case">
               {displayName(user)}
             </span>
-          </a>
+          </Link>
         )}
       </div>
 
@@ -303,14 +330,14 @@ export function SiteNav() {
                           key={link.href + link.title}
                           href={link.href}
                           onClick={handleClose}
-                          className={`flex flex-col items-center gap-1.5 rounded-md border p-3 transition-all duration-200 ${
+                          className={`flex flex-col items-center gap-1.5 rounded-md border p-3 transition-[border-color,background-color,color] duration-200 ${
                             isActive
                               ? "border-ice/40 bg-ice/5 text-ice"
                               : "border-hairline text-mist hover:border-ice/30 hover:text-ice hover:bg-ice/5"
                           }`}
                         >
                           <NavIcon d={ICONS[link.icon] || ""} />
-                          <span className="font-mono text-label uppercase tracking-wider text-center leading-tight">
+                          <span className="font-mono text-caption uppercase tracking-wider text-center leading-tight">
                             {link.title}
                           </span>
                         </Link>

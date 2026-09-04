@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { motion } from "motion/react";
+import * as m from "motion/react-m";
 import { isOnAir } from "@/lib/status";
 import type { Anime } from "@/types";
 
@@ -18,7 +18,7 @@ interface HeroUIProps {
  */
 function RevealLabel({ text }: { text: string }) {
   return (
-    <motion.span
+    <m.span
       initial="hidden"
       animate="visible"
       variants={{ visible: { transition: { staggerChildren: 0.045, delayChildren: 0.2 } } }}
@@ -26,7 +26,7 @@ function RevealLabel({ text }: { text: string }) {
       className="inline-block"
     >
       {text.split("").map((ch, i) => (
-        <motion.span
+        <m.span
           key={i}
           aria-hidden="true"
           variants={{
@@ -41,9 +41,9 @@ function RevealLabel({ text }: { text: string }) {
           className="inline-block whitespace-pre"
         >
           {ch}
-        </motion.span>
-      ))}
-    </motion.span>
+</m.span>
+        ))}
+      </m.span>
   );
 }
 

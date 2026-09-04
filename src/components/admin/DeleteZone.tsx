@@ -47,7 +47,7 @@ export function DeleteZone({ slug, number, animeTitle, onDeleted }: DeleteZonePr
             onClick={deleteEpisode}
             disabled={deleting}
             className="btn-ice"
-            style={{ background: "#FF7847", borderColor: "#FF7847", color: "#0B0E14" }}
+            style={{ background: "#FF6B4A", borderColor: "#FF6B4A", color: "#080C12" }}
           >
             {deleting ? "Excluindo..." : "Excluir definitivamente"}
           </button>

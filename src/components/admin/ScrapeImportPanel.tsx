@@ -111,8 +111,8 @@ export function ScrapeImportPanel({ onUseVideo, onUseIframe }: ScrapeImportPanel
             Vídeos .mp4 encontrados
           </span>
           <ul className="mt-1.5 space-y-1">
-            {scrapeVideos.map((v, i) => (
-              <li key={i} className="break-all">
+            {scrapeVideos.map((v) => (
+              <li key={v} className="break-all">
                 <a
                   href="#"
                   className="text-ice transition-colors hover:text-snow hover:underline"
@@ -139,8 +139,8 @@ export function ScrapeImportPanel({ onUseVideo, onUseIframe }: ScrapeImportPanel
             Iframes encontrados
           </span>
           <ul className="mt-1.5 space-y-1">
-            {scrapeIframes.map((v, i) => (
-              <li key={i} className="break-all">
+            {scrapeIframes.map((v) => (
+              <li key={v} className="break-all">
                 <a
                   href="#"
                   className="text-ice transition-colors hover:text-snow hover:underline"

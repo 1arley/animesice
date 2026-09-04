@@ -11,6 +11,14 @@ export function formatDate(iso: string | null | undefined): string {
   return d.toLocaleDateString("pt-BR");
 }
 
+/** Formata data+hora curta (dd/mm/aaaa HH:mm) */
+export function formatDateTime(iso: string | null | undefined): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return "";
+  return d.toLocaleString("pt-BR");
+}
+
 const MIN = 60_000;
 const HOUR = 60 * MIN;
 const DAY = 24 * HOUR;

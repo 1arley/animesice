@@ -1,7 +1,8 @@
 "use client";
 
 import { useRef } from "react";
-import { motion } from "motion/react";
+import { LazyMotion, domAnimation } from "motion/react";
+import * as m from "motion/react-m";
 import Image from "next/image";
 import { upgradeImageUrl } from "@/lib/url";
 import type { Anime } from "@/types";
@@ -76,54 +77,56 @@ export function HeroSlide({ anime, label, priority, isMobile }: HeroSlideProps) 
   const isFirst = priority;
 
   return (
-    <motion.section
-      ref={containerRef}
-      variants={isMobile ? slideVariantsMobile : slideVariants}
-      initial={isFirst ? false : "enter"}
-      animate="center"
-      exit="exit"
-      className="absolute inset-0 overflow-hidden"
-      aria-roledescription="slide"
-    >
-      {/* z-0: Atmosphere */}
-      <HeroAtmosphere
-        ambientColor="#1C2534"
-        mouseX={parallax.mouseX}
-        mouseY={parallax.mouseY}
-        isMobile={isMobile}
-      />
+    <LazyMotion features={domAnimation}>
+      <m.section
+        ref={containerRef}
+        variants={isMobile ? slideVariantsMobile : slideVariants}
+        initial={isFirst ? false : "enter"}
+        animate="center"
+        exit="exit"
+        className="absolute inset-0 overflow-hidden"
+        aria-roledescription="slide"
+      >
+        {/* z-0: Atmosphere */}
+        <HeroAtmosphere
+          ambientColor="#1C2534"
+          mouseX={parallax.mouseX}
+          mouseY={parallax.mouseY}
+          isMobile={isMobile}
+        />
 
-      {/* z-1: Environment (blurred midground). No mobile a camada afiada do
-          HeroCharacter já cobre o box inteiro — a duplicata borrada só somaria
-          um download do mesmo arte e paint caro; usa o degradê estático. */}
-      <HeroEnvironment
-        src={isMobile ? undefined : art}
-        scrollY={parallax.scrollY}
-        envX={parallax.envX}
-        envY={parallax.envY}
-        isMobile={isMobile}
-      />
+        {/* z-1: Environment (blurred midground). No mobile a camada afiada do
+            HeroCharacter já cobre o box inteiro — a duplicata borrada só somaria
+            um download do mesmo arte e paint caro; usa o degradê estático. */}
+        <HeroEnvironment
+          src={isMobile ? undefined : art}
+          scrollY={parallax.scrollY}
+          envX={parallax.envX}
+          envY={parallax.envY}
+          isMobile={isMobile}
+        />
 
-      {/* z-2: Character (sharp foreground poster) */}
-      <HeroCharacter
-        src={art ?? ""}
-        priority={priority}
-        scrollY={parallax.scrollY}
-        charX={parallax.charX}
-        charY={parallax.charY}
-        isMobile={isMobile}
-      />
+        {/* z-2: Character (sharp foreground poster) */}
+        <HeroCharacter
+          src={art ?? ""}
+          priority={priority}
+          scrollY={parallax.scrollY}
+          charX={parallax.charX}
+          charY={parallax.charY}
+          isMobile={isMobile}
+        />
 
-      {/* Fallback if no art */}
-      {!art && (
-        <div className="absolute inset-0 bg-gradient-to-br from-panel to-ink" />
-      )}
+        {/* Fallback if no art */}
+        {!art && (
+          <div className="absolute inset-0 bg-gradient-to-br from-panel to-ink" />
+        )}
 
-      {/* z-3: Particles (CSS dust) */}
-      <HeroParticles partX={parallax.partX} isMobile={isMobile} />
+        {/* z-3: Particles (CSS dust) */}
+        <HeroParticles partX={parallax.partX} isMobile={isMobile} />
 
-      {/* z-4: UI overlay */}
-      <HeroUI anime={anime} label={label} isMobile={isMobile} />
-    </motion.section>
+        {/* z-4: UI overlay */}
+        <HeroUI anime={anime} label={label} isMobile={isMobile} />
+      </m.section>
+    </LazyMotion>
   );
 }

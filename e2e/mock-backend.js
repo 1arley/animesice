@@ -6,7 +6,7 @@ const url = require('url');
 // ao servidor sem page.route — requests interceptados por route.fulfill
 // do Playwright passam direto, então specs com override não dependem disso.
 const CORS_HEADERS = {
-  'Access-Control-Allow-Origin': 'http://localhost:3000',
+  'Access-Control-Allow-Origin': `http://localhost:${process.env.E2E_APP_PORT || 3000}`,
   'Access-Control-Allow-Credentials': 'true',
   'Access-Control-Allow-Methods': 'GET,POST,PATCH,DELETE,OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type, Authorization',
@@ -66,6 +66,58 @@ const server = http.createServer((req, res) => {
   if (req.method === 'GET' && (p === '/api/episode/latest' || p === '/episode/latest')) return json(res, []);
   if (req.method === 'GET' && (p === '/api/anime/trending' || p === '/anime/trending')) return json(res, []);
   if (req.method === 'GET' && (p === '/api/recently-added' || p === '/anime/recently-added')) return json(res, []);
+
+  const episodeMatch = p && (p.match(/^\/api\/episode\/([^/]+)\/(\d+)$/) || p.match(/^\/episode\/([^/]+)\/(\d+)$/));
+  if (req.method === 'GET' && episodeMatch) {
+    const slug = episodeMatch[1];
+    const number = Number(episodeMatch[2]);
+    return json(res, {
+      id: `episode-${slug}-${number}`,
+      number,
+      title: `Episódio ${number}`,
+      thumbnailUrl: null,
+      videoUrl: null,
+      embedUrl: null,
+      duration: '24 min',
+      views: 10,
+      dateModified: '2026-01-01T00:00:00.000Z',
+      createdAt: '2026-01-01T00:00:00.000Z',
+      updatedAt: '2026-01-01T00:00:00.000Z',
+      anime: {
+        id: `anime-${slug}`,
+        slug,
+        title: slug === 'slow-stream' ? 'Anime com stream lento' : 'Anime E2E',
+        synopsis: 'Sinopse de teste.',
+        coverImage: null,
+        bannerImage: null,
+        rating: 8,
+        ageRating: null,
+        status: 'EM_EXIBICAO',
+        audio: 'LEGENDADO',
+        format: 'TV',
+        year: 2026,
+        season: 'WINTER',
+        studios: [],
+        themes: [],
+        genres: [],
+        createdAt: '2026-01-01T00:00:00.000Z',
+        updatedAt: '2026-01-01T00:00:00.000Z',
+      },
+    });
+  }
+
+  if (req.method === 'GET' && (p === '/api/stream/source/async' || p === '/stream/source/async')) {
+    if (parsed.query.anime === 'cached-stream') {
+      return json(res, {
+        animeSlug: 'cached-stream', episodeNumber: 1,
+        src: 'https://video.example/episode.m3u8', rawVideoUrl: null,
+        embedUrl: null, reextracted: false, thumbnailUrl: null,
+      });
+    }
+    const response = () => json(res, { jobId: 'slow-job', status: 'pending' }, 202);
+    if (parsed.query.anime === 'slow-stream') return setTimeout(response, 5_000);
+    return response();
+  }
 
   // Perfil público — o frontend usa /users/:identifier (userName ou id).
   const userProfileMatch = p && (p.match(/^\/api\/users\/([^/]+)$/) || p.match(/^\/users\/([^/]+)$/));

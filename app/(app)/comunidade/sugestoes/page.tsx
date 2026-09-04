@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
 import { api, ApiError } from "@/lib/api";
 import { PageTitle } from "@/components/ui/PageTitle";
@@ -39,10 +40,11 @@ export default function SugestoesPage() {
       {user ? (
         <form onSubmit={handleSubmit} className="mb-8 max-w-lg space-y-3 border border-hairline bg-panel p-4">
           <div>
-            <label className="mb-1 block font-mono text-caption uppercase tracking-wider text-mist">
+            <label htmlFor="sugestao-tipo" className="mb-1 block font-mono text-caption uppercase tracking-wider text-mist">
               Tipo
             </label>
             <select
+              id="sugestao-tipo"
               value={type}
               onChange={(e) => setType(e.target.value as "SUGGESTION" | "BUG")}
               className="field"
@@ -52,10 +54,11 @@ export default function SugestoesPage() {
             </select>
           </div>
           <div>
-            <label className="mb-1 block font-mono text-caption uppercase tracking-wider text-mist">
+            <label htmlFor="sugestao-titulo" className="mb-1 block font-mono text-caption uppercase tracking-wider text-mist">
               Título
             </label>
             <input
+              id="sugestao-titulo"
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
@@ -66,10 +69,11 @@ export default function SugestoesPage() {
             />
           </div>
           <div>
-            <label className="mb-1 block font-mono text-caption uppercase tracking-wider text-mist">
+            <label htmlFor="sugestao-descricao" className="mb-1 block font-mono text-caption uppercase tracking-wider text-mist">
               Descrição
             </label>
             <textarea
+              id="sugestao-descricao"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               maxLength={2000}
@@ -87,7 +91,7 @@ export default function SugestoesPage() {
         </form>
       ) : (
         <p className="mb-8 text-body-sm text-mist">
-          <a href="/login" className="text-ice underline">Entre</a> para enviar feedback.
+          <Link href="/login" className="text-ice underline">Entre</Link> para enviar feedback.
         </p>
       )}
     </div>

@@ -32,8 +32,9 @@ module.exports = {
 
         // Tipografia
         snow: "#F1F5F9", // texto primário: branco gelo cristalino
-        mist: "#94A3B8", // texto secundário: titânio suave
-        "mist-dim": "#64748B", // legendas, metadados discretos
+        mist: "#94A3B8", // texto secundário: titânio suave (7.5:1 on ink)
+        "mist-soft": "#728296", // texto terciário: metadata discreta (5.1:1 on ink, AA)
+        "mist-dim": "#64748B", // decorative only — below AA contrast
 
         // Sinal / Nota quente — único acento cromático (status "no ar")
         signal: "#FF6B4A", // indicador de status no ar / badge quente
