@@ -102,6 +102,7 @@ export async function serverGetBlogPost(slug: string): Promise<BlogPost | null> 
 export async function serverStreamSourceAsync(
   animeSlug: string,
   episodeNumber: number,
+  refresh = false,
 ): Promise<
   | { src: string; embedUrl?: string; thumbnailUrl?: string }
   | { jobId: string; status: string; message?: string }
@@ -111,7 +112,7 @@ export async function serverStreamSourceAsync(
     | { src: string; embedUrl?: string; thumbnailUrl?: string }
     | { jobId: string; status: string; message?: string }
   >(
-    `/stream/source/async?anime=${encodeURIComponent(animeSlug)}&episode=${episodeNumber}`,
+    `/stream/source/async?anime=${encodeURIComponent(animeSlug)}&episode=${episodeNumber}${refresh ? "&refresh=1" : ""}`,
     { cache: "no-store" },
   );
 }

@@ -100,12 +100,16 @@ export default async function WatchPage({
   const number = Number(numberParam);
   if (Number.isNaN(number)) notFound();
 
-  // Busca episódio e stream source em paralelo — se o vídeo já existir no
-  // cache do backend, o WatchClient renderiza instantaneamente sem round-trip.
-  const [episode, streamSource] = await Promise.all([
-    getEpisode(slug, numberParam),
-    serverStreamSourceAsync(slug, number).catch(() => null),
-  ]);
+  // O stream é deliberadamente resolvido depois do primeiro paint. Extração,
+  // retries ou indisponibilidade do vídeo não podem bloquear o HTML do episódio.
+  // A flag server-side oferece rollback operacional sem alterar o bundle.
+  const fastShellEnabled = process.env.EPISODE_FAST_SHELL_ENABLED !== "false";
+  const [episode, initialSource] = fastShellEnabled
+    ? [await getEpisode(slug, numberParam), null]
+    : await Promise.all([
+        getEpisode(slug, numberParam),
+        serverStreamSourceAsync(slug, number).catch(() => null),
+      ]);
   if (!episode) notFound();
 
   const jsonLd = {
@@ -166,7 +170,7 @@ export default async function WatchPage({
         slug={slug}
         number={number}
         initialEpisode={episode}
-        initialSource={streamSource}
+        initialSource={initialSource}
       />
     </div>
   );
