@@ -39,6 +39,9 @@ export async function generateMetadata({
       description,
       type: "website",
     },
+    ...(slug === "hentai"
+      ? { robots: { index: false, follow: true } }
+      : {}),
   };
 }
 
