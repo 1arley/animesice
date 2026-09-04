@@ -1,4 +1,4 @@
-import { notFound, permanentRedirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { cache } from "react";
@@ -7,7 +7,7 @@ import { safeImageSrc, upgradeImageUrl, escapeJsonLd } from "@/lib/url";
 import { AdaptiveImage } from "@/components/common/AdaptiveImage";
 import { blur } from "@/lib/blur";
 import { serverFetchJson } from "@/lib/api-server";
-import { findHentaisMigration, isHentaiAnime, hentaisPath } from "@/lib/hentai";
+
 import { isOnAir } from "@/lib/status";
 import { CommentSection } from "@/components/common/CommentSection";
 import { FavoriteButton } from "@/components/common/FavoriteButton";
@@ -17,6 +17,8 @@ import { SpotlightCard } from "@/components/core/SpotlightCard";
 import { RelatedSimilarSections } from "@/components/common/RelatedSimilarSections";
 import { PageTitle } from "@/components/ui/PageTitle";
 import { ShareButtons } from "@/components/common/ShareButtons";
+import { PrefetchEpisodeLink } from "@/components/common/PrefetchEpisodeLink";
+import { EpisodePrefetcher } from "@/components/common/EpisodePrefetcher";
 import Image from "next/image";
 import { SITE_URL } from "@/lib/site";
 
@@ -81,13 +83,7 @@ export default async function AnimeDetailPage({
 }) {
   const { slug } = await params;
   const anime = await getAnime(slug);
-  if (!anime) {
-    const migratedTo = await findHentaisMigration(slug);
-    if (migratedTo) permanentRedirect(migratedTo);
-    notFound();
-  }
-
-  if (isHentaiAnime(anime)) permanentRedirect(hentaisPath(slug));
+  if (!anime) notFound();
 
   const episodes = (anime.episodes ?? []).slice().sort((a, b) => a.number - b.number);
   const ongoing = isOnAir(anime.status);
@@ -101,11 +97,16 @@ export default async function AnimeDetailPage({
 
   return (
     <article className="mx-auto max-w-shelf px-4 py-6">
+      {/* Prefetch em background dos episódios visíveis — aquece o cache do backend */}
+      <EpisodePrefetcher
+        episodes={episodes.slice(0, 12).map((ep) => ({ animeSlug: slug, episodeNumber: ep.number }))}
+      />
+
       <nav className="mb-4 text-caption text-mist" aria-label="Breadcrumb">
         <ol className="flex items-center gap-1">
-          <li><a href="/" className="hover:text-ice">Início</a></li>
+          <li><Link href="/" className="hover:text-ice">Início</Link></li>
           <li aria-hidden="true">/</li>
-          <li><a href="/animes" className="hover:text-ice">Animes</a></li>
+          <li><Link href="/animes" className="hover:text-ice">Animes</Link></li>
           <li aria-hidden="true">/</li>
           <li aria-current="page" className="text-ice">{anime.title}</li>
         </ol>
@@ -291,8 +292,10 @@ export default async function AnimeDetailPage({
 
           <div className="mt-5 grid grid-cols-2 gap-3 sm:flex sm:flex-wrap sm:items-center sm:gap-4">
             {episodes.length > 0 && (
-              <Link
+              <PrefetchEpisodeLink
                 href={`/animes/${slug}/${episodes[0].number}`}
+                animeSlug={slug}
+                episodeNumber={episodes[0].number}
                 prefetch
                 className="btn-primary col-span-2 justify-center sm:col-span-1 sm:justify-start"
               >
@@ -300,7 +303,7 @@ export default async function AnimeDetailPage({
                   <path d="M3 2l9 5-9 5z" />
                 </svg>
                 Assistir ep. 1
-              </Link>
+              </PrefetchEpisodeLink>
             )}
             <FavoriteButton slug={slug} />
             <AnimeListButton slug={slug} />
@@ -334,8 +337,10 @@ export default async function AnimeDetailPage({
               {anime.editorialWhereToWatch || "Assista no AnimesIce"}
             </p>
             {episodes.length > 0 && (
-                <Link
+                <PrefetchEpisodeLink
                   href={`/animes/${slug}/${episodes[0].number}`}
+                  animeSlug={slug}
+                  episodeNumber={episodes[0].number}
                   prefetch
                   className="btn-primary mt-3 inline-flex"
                 >
@@ -343,7 +348,7 @@ export default async function AnimeDetailPage({
                   <path d="M3 2l9 5-9 5z" />
                 </svg>
                 Assistir agora
-              </Link>
+              </PrefetchEpisodeLink>
             )}
           </section>
 

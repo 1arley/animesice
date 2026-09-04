@@ -1,7 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useState, useRef } from "react";
+import { useCallback, useEffect, useState, useRef, use } from "react";
+import Link from "next/link";
 import { api, ApiError, isProxyEmbed, type RoomInfo, type RoomMessageItem, type StreamSource } from "@/lib/api";
+import { resolveAsyncSource } from "@/lib/resolve-async-source";
 import { useAuth } from "@/lib/auth-context";
 import type { Episode, Anime } from "@/types";
 import { SyncedVideoPlayer } from "@/components/common/SyncedVideoPlayer";
@@ -32,8 +34,8 @@ export default function RoomPage({
 }: {
   params: Promise<{ slug: string }>;
 }) {
-  const { user } = useAuth();
-  const [slug, setSlug] = useState("");
+  const { slug } = use(params);
+  const { user, loading: authLoading } = useAuth();
   const [room, setRoom] = useState<RoomInfo | null>(null);
   const [episode, setEpisode] = useState<(Episode & { anime: Anime }) | null>(null);
   const [source, setSource] = useState<StreamSource | null>(null);
@@ -64,10 +66,6 @@ export default function RoomPage({
   }, []);
 
   useEffect(() => {
-    params.then((p) => setSlug(p.slug));
-  }, [params]);
-
-  useEffect(() => {
     if (!slug) return;
     // Reset de estado da sala anterior (navegação client-side entre salas).
     setLoading(true);
@@ -82,21 +80,64 @@ export default function RoomPage({
     setError(null);
     setRealtimeError(null);
     let gotRoom = false;
+    let cancelled = false;
+    const ac = new AbortController();
+
     api
       .getRoom(slug)
-      .then((r) => {
+      .then(async (r) => {
+        if (cancelled) return;
         gotRoom = true;
         setRoom(r);
         setLoadingSource(true);
-        return api.getEpisode(r.animeSlug, r.episodeNumber).then((ep) => {
-          setEpisode(ep);
-          return api.streamSource(r.animeSlug, r.episodeNumber);
-        });
-      })
-      .then((src) => {
-        setSource(src);
+
+        // Busca episódio em paralelo com source async
+        const [ep, srcRes] = await Promise.all([
+          api.getEpisode(r.animeSlug, r.episodeNumber),
+          api.streamSourceAsync(r.animeSlug, r.episodeNumber).catch(() => null),
+        ]);
+
+        if (cancelled) return;
+        setEpisode(ep);
+
+        // Source direto (vídeo já existia no cache)
+        if (srcRes && "src" in srcRes) {
+          const src = srcRes as StreamSource;
+          setSource(src);
+          api._sourceCache.set(r.animeSlug, r.episodeNumber, src);
+          return;
+        }
+
+        // Extração assíncrona em andamento — SSE + polling (src compartilhado com WatchClient)
+        if (srcRes && "jobId" in srcRes) {
+          const jobId = (srcRes as { jobId: string }).jobId;
+          const result = await resolveAsyncSource(
+            r.animeSlug, r.episodeNumber, jobId, ac.signal,
+          );
+
+          if (cancelled) return;
+
+          if (result.type === "source") {
+            setSource(result.source);
+            api._sourceCache.set(r.animeSlug, r.episodeNumber, result.source);
+          } else if (result.type === "failed") {
+            setSourceError(result.error);
+          } else {
+            // Esgotou tentativas — fallback síncrono
+            try {
+              const src = await api.streamSource(r.animeSlug, r.episodeNumber);
+              if (!cancelled) {
+                setSource(src);
+                api._sourceCache.set(r.animeSlug, r.episodeNumber, src);
+              }
+            } catch {
+              if (!cancelled) setSourceError("Não foi possível obter o vídeo.");
+            }
+          }
+        }
       })
       .catch((e) => {
+        if (cancelled) return;
         const msg = e instanceof ApiError ? e.message : "Sala não encontrada ou expirada.";
         if (gotRoom) {
           setSourceError(msg);
@@ -105,9 +146,16 @@ export default function RoomPage({
         }
       })
       .finally(() => {
-        setLoading(false);
-        setLoadingSource(false);
+        if (!cancelled) {
+          setLoading(false);
+          setLoadingSource(false);
+        }
       });
+
+    return () => {
+      cancelled = true;
+      ac.abort();
+    };
   }, [slug]);
 
   useEffect(() => {
@@ -236,13 +284,21 @@ export default function RoomPage({
     }
   }
 
+  if (authLoading) {
+    return (
+      <div className="mx-auto max-w-shelf px-4 py-6">
+        <p className="text-body-sm text-mist">Carregando...</p>
+      </div>
+    );
+  }
+
   if (!user) {
     return (
       <div className="mx-auto max-w-shelf px-4 py-6">
         <p className="text-body-sm text-mist">
-          <a href="/login" className="text-ice underline">
+          <Link href="/login" className="text-ice underline">
             Entre
-          </a>{" "}
+          </Link>{" "}
           para participar da watch party.
         </p>
       </div>
@@ -263,9 +319,9 @@ export default function RoomPage({
         <p className="mb-3 text-body-sm text-signal">
           {error ?? "Sala não encontrada."}
         </p>
-        <a href="/" className="btn-ghost">
+        <Link href="/" className="btn-ghost">
           Voltar ao inicio
-        </a>
+        </Link>
       </div>
     );
   }
@@ -273,12 +329,12 @@ export default function RoomPage({
   return (
     <div className="mx-auto max-w-shelf px-4 py-6">
       <div className="mb-3 flex items-center justify-between">
-        <a
+        <Link
           href={`/animes/${room.animeSlug}/${room.episodeNumber}`}
           className="text-body-sm text-mist transition-colors hover:text-ice"
         >
           ← Voltar ao episódio
-        </a>
+        </Link>
         {isHost && (confirmDelete ? (
           <div className="flex gap-2">
             <button
@@ -442,6 +498,7 @@ export default function RoomPage({
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 placeholder="Mensagem..."
+                aria-label="Mensagem"
                 maxLength={500}
                 className="field flex-1"
               />

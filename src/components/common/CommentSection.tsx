@@ -6,6 +6,7 @@ import { useAuth } from "@/lib/auth-context";
 import { api, ApiError } from "@/lib/api";
 import { HeartIcon } from "@/components/ui/icons";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { formatDate } from "@/lib/time";
 import type { CommentItem } from "@/types";
 import { Avatar } from "@/components/common/Avatar";
 
@@ -134,6 +135,7 @@ export function CommentSection({ animeId, episodeId, title = "Comentários" }: C
               value={newComment}
               onChange={(e) => setNewComment(e.target.value)}
               placeholder="Escreva um comentário..."
+              aria-label="Escrever comentário"
               maxLength={1000}
               rows={3}
               className="field w-full resize-none"
@@ -205,7 +207,7 @@ export function CommentSection({ animeId, episodeId, title = "Comentários" }: C
   );
 }
 
-export function CommentRow({
+function CommentRow({
   comment,
   currentUserId,
   onDelete,
@@ -282,7 +284,7 @@ export function CommentRow({
               {comment.user.userName || comment.user.name || "Anônimo"}
             </span>
             <span className="font-mono text-caption text-mist">
-              {new Date(comment.createdAt).toLocaleDateString("pt-BR")}
+              {formatDate(comment.createdAt)}
             </span>
             {comment.edited && (
               <span className="text-caption text-mist">(editado)</span>
@@ -356,6 +358,7 @@ export function CommentRow({
                 value={reply}
                 onChange={(e) => setReply(e.target.value)}
                 placeholder="Responda..."
+                aria-label="Responder comentário"
                 maxLength={1000}
                 rows={2}
                 className="field w-full resize-none"
@@ -380,7 +383,7 @@ export function CommentRow({
                       {r.user.userName || r.user.name || "Anônimo"}
                     </span>
                     <span className="font-mono text-caption text-mist">
-                      {new Date(r.createdAt).toLocaleDateString("pt-BR")}
+                      {formatDate(r.createdAt)}
                     </span>
                   </div>
                   <p className="mt-0.5 whitespace-pre-line text-body-sm text-mist">

@@ -2,9 +2,11 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import dynamic from "next/dynamic";
 import { EpisodeLoadingState } from "@/components/common/EpisodeLoadingState";
 import { api, ApiError, isProxyEmbed, type StreamSource } from "@/lib/api";
+import { resolveAsyncSource } from "@/lib/resolve-async-source";
 import type { Episode, Anime } from "@/types";
 import { CommentSection } from "@/components/common/CommentSection";
 import { CreateRoomButton } from "@/components/common/CreateRoomButton";
@@ -18,42 +20,25 @@ interface WatchClientProps {
   slug: string;
   number: number;
   initialEpisode: Episode & { anime: Anime };
+  /** Source já resolvido via SSR pre-fetch — renderiza instantaneamente. */
+  initialSource?: { src: string; embedUrl?: string; thumbnailUrl?: string } | { jobId: string } | null;
 }
 
 export function WatchClient({
   slug,
   number,
   initialEpisode,
+  initialSource: initialSourceProp,
 }: WatchClientProps) {
-  const [episode, setEpisode] = useState<(Episode & { anime: Anime }) | null>(
-    initialEpisode,
-  );
-  const [error, setError] = useState<string | null>(null);
+  const episode = initialEpisode;
   const [source, setSource] = useState<StreamSource | null>(null);
   const [sourceError, setSourceError] = useState<string | null>(null);
-  const [loadingSource, setLoadingSource] = useState(false);
+  // `true` faz o shell 16:9 fazer parte do HTML inicial, antes da hidratação.
+  const [loadingSource, setLoadingSource] = useState(true);
   const loadSourceId = useRef(0);
   const recoveryAttempts = useRef(0);
   const resumeAt = useRef(0);
-
-  useEffect(() => {
-    let cancelled = false;
-    setError(null);
-    api
-      .getEpisode(slug, number)
-      .then((ep) => {
-        if (!cancelled) setEpisode(ep);
-      })
-      .catch((e) => {
-        if (!cancelled)
-          setError(
-            e instanceof ApiError ? e.message : "Erro ao carregar episódio.",
-          );
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [slug, number]);
+  const asyncAbortRef = useRef<AbortController | null>(null);
 
   const loadSource = useCallback(
     async (refresh = false) => {
@@ -63,7 +48,10 @@ export function WatchClient({
       setSource(null);
       try {
         const res = await api.streamSource(slug, number, refresh);
-        if (id === loadSourceId.current) setSource(res);
+        if (id === loadSourceId.current) {
+          setSource(res);
+          api._sourceCache.set(slug, number, res);
+        }
       } catch (e) {
         if (id === loadSourceId.current) {
           setSourceError(
@@ -73,38 +61,132 @@ export function WatchClient({
           );
         }
       } finally {
-        if (id === loadSourceId.current) setLoadingSource(false);
+        setLoadingSource(false);
       }
     },
     [slug, number],
   );
+
+  /**
+   * Tenta extração assíncrona com SSE (primário) e fallback para polling.
+   *
+   * Prioridade de resolução:
+   * 1. initialSource (SSR pre-fetch) — se já é StreamSource, renderiza direto
+   * 2. sessionStorage cache — hit = instantâneo
+   * 3. SSE + polling via resolveAsyncSource (src compartilhado com RoomPage)
+   */
+  const loadSourceAsync = useCallback(async () => {
+    const id = ++loadSourceId.current;
+    asyncAbortRef.current?.abort();
+    const ac = new AbortController();
+    asyncAbortRef.current = ac;
+    setLoadingSource(true);
+    setSourceError(null);
+    setSource(null);
+
+    // 1. Source vindo de SSR pre-fetch — renderiza imediatamente
+    if (initialSourceProp && "src" in initialSourceProp && id === loadSourceId.current) {
+      setSource(initialSourceProp as StreamSource);
+      api._sourceCache.set(slug, number, initialSourceProp as StreamSource);
+      setLoadingSource(false);
+      return;
+    }
+
+    try {
+      // 2. Check client-side cache (sessionStorage, 1h TTL)
+      const cached = api._sourceCache.get(slug, number);
+      if (cached && id === loadSourceId.current) {
+        setSource(cached);
+        setLoadingSource(false);
+        return;
+      }
+
+      const res = await api.episodeStreamSourceAsync(slug, number);
+      if (id !== loadSourceId.current) return;
+
+      // Source direto (vídeo já existia no cache)
+      if ("src" in res) {
+        setSource(res as StreamSource);
+        api._sourceCache.set(slug, number, res as StreamSource);
+        setLoadingSource(false);
+        return;
+      }
+
+      // jobId = extração assíncrona em andamento
+      if ("jobId" in res) {
+        const jobId = (res as { jobId: string }).jobId;
+        const result = await resolveAsyncSource(slug, number, jobId, ac.signal);
+
+        if (id !== loadSourceId.current) return;
+
+        if (result.type === "source") {
+          setSource(result.source);
+          api._sourceCache.set(slug, number, result.source);
+        } else if (result.type === "failed") {
+          setSourceError(result.error);
+        } else {
+          // Esgotou tentativas — fallback para modo síncrono
+          await loadSource();
+        }
+      }
+    } catch (e) {
+      if (id !== loadSourceId.current) return;
+      // Fallback: tenta o modo síncrono normal
+      try {
+        const res = await api.streamSource(slug, number);
+        if (id === loadSourceId.current) {
+          setSource(res);
+          api._sourceCache.set(slug, number, res);
+        }
+      } catch {
+        if (id === loadSourceId.current) {
+          setSourceError(
+            e instanceof ApiError
+              ? e.message
+              : "Não foi possível obter o vídeo deste episódio.",
+          );
+        }
+      }
+    } finally {
+      setLoadingSource(false);
+    }
+  }, [slug, number, loadSource, initialSourceProp]);
 
   const recoverPlayback = useCallback(
     (currentTime: number) => {
       if (recoveryAttempts.current >= 1 || loadingSource) return;
       recoveryAttempts.current += 1;
       resumeAt.current = currentTime;
-      void loadSource(true);
+      void loadSourceAsync();
     },
-    [loadSource, loadingSource],
+    [loadSourceAsync, loadingSource],
   );
 
   useEffect(() => {
     recoveryAttempts.current = 0;
     resumeAt.current = 0;
-    void loadSource();
-  }, [loadSource]);
+    void loadSourceAsync();
+    return () => { asyncAbortRef.current?.abort(); };
+  }, [loadSourceAsync]);
 
-  if (error) {
-    return (
-      <div>
-        <p className="mb-3 text-body-sm text-signal">{error}</p>
-        <Link href={`/animes/${slug}`} className="btn-ghost">
-          Voltar ao anime
-        </Link>
-      </div>
-    );
-  }
+  useEffect(() => {
+    const navigation = performance.getEntriesByType("navigation")[0] as
+      | PerformanceNavigationTiming
+      | undefined;
+    if (navigation) {
+      performance.measure("episode:ttfb", {
+        start: navigation.startTime,
+        end: navigation.responseStart,
+      });
+    }
+    requestAnimationFrame(() => performance.mark("episode:poster-visible"));
+  }, []);
+
+  useEffect(() => {
+    if (!source) return;
+    performance.mark("episode:source-ready");
+    requestAnimationFrame(() => performance.mark("episode:player-mounted"));
+  }, [source]);
 
   if (!episode) {
     return <p className="text-body-sm text-mist">Carregando...</p>;
@@ -139,9 +221,24 @@ export function WatchClient({
             animeTitle={episode.anime.title}
           />
         ) : sourceError ? (
-          <p className="text-body-sm text-signal">{sourceError}</p>
+          <div
+            className="flex aspect-video flex-col items-center justify-center gap-3 rounded-md border border-signal/30 bg-panel px-6 text-center"
+            data-testid="episode-player-error"
+          >
+            <p className="text-body-sm text-signal">{sourceError}</p>
+            <button
+              type="button"
+              className="rounded-md border border-ice/40 px-4 py-2 font-mono text-caption text-ice transition-colors hover:bg-ice/10"
+              onClick={() => void loadSourceAsync()}
+            >
+              Tentar novamente
+            </button>
+          </div>
         ) : loadingSource ? (
-          <EpisodeLoadingState />
+          <EpisodePlayerShell
+            posterUrl={episode.thumbnailUrl ?? episode.anime.coverImage ?? undefined}
+            title={episode.anime.title}
+          />
         ) : source ? (
           <VideoPlayer
             src={source.src}
@@ -170,6 +267,40 @@ export function WatchClient({
   );
 }
 
+function EpisodePlayerShell({
+  posterUrl,
+  title,
+}: {
+  posterUrl?: string;
+  title: string;
+}) {
+  return (
+    <div
+      className="relative flex aspect-video w-full items-center justify-center overflow-hidden rounded-md border border-hairline bg-panel"
+      data-testid="episode-player-shell"
+      aria-label={`Preparando vídeo de ${title}`}
+    >
+      {posterUrl ? (
+        <>
+          <Image
+            src={posterUrl}
+            alt=""
+            fill
+            priority
+            sizes="(max-width: 1024px) 100vw, 1152px"
+            className="object-cover opacity-50 blur-[1px]"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-ink/80 via-ink/20 to-transparent" />
+        </>
+      ) : null}
+      <div className="relative flex items-center gap-3 rounded-full bg-ink/70 px-4 py-2 backdrop-blur-sm">
+        <span className="h-4 w-4 animate-spin rounded-full border-2 border-ice border-t-transparent" />
+        <span className="font-mono text-caption text-snow">Preparando vídeo…</span>
+      </div>
+    </div>
+  );
+}
+
 /**
  * EpisodeNavigation — navegação entre episódios com visual atraente.
  * Peak-End Rule: usuários lembram do fim da experiência.
@@ -180,6 +311,7 @@ function EpisodeNavigation({ slug, number }: { slug: string; number: number }) {
     previous: number | null;
     next: number | null;
   } | null>(null);
+  const prefetched = useRef(new Set<number>());
 
   useEffect(() => {
     let cancelled = false;
@@ -203,6 +335,20 @@ function EpisodeNavigation({ slug, number }: { slug: string; number: number }) {
     };
   }, [slug, number]);
 
+  /**
+   * Prefetch de stream source ao hover: aquece o cache do backend
+   * para que a próxima navegação já tenha o vídeo pronto.
+   */
+  const prefetchEpisode = useCallback(
+    (episodeNumber: number) => {
+      if (prefetched.current.has(episodeNumber)) return;
+      prefetched.current.add(episodeNumber);
+      // Fire-and-forget: não bloqueia o UI, só aquece o cache do backend
+      api.streamSourceAsync(slug, episodeNumber).catch(() => undefined);
+    },
+    [slug],
+  );
+
   if (adjacent && adjacent.previous === null && adjacent.next === null)
     return null;
 
@@ -216,7 +362,8 @@ function EpisodeNavigation({ slug, number }: { slug: string; number: number }) {
         {adjacent?.previous != null ? (
           <Link
             href={`/animes/${slug}/${adjacent.previous}`}
-            className="group flex items-center gap-3 rounded-md border border-hairline bg-panel p-3 transition-all duration-200 hover:border-ice/40 hover:bg-ice/5"
+            onMouseEnter={() => prefetchEpisode(adjacent.previous!)}
+            className="group flex items-center gap-3 rounded-md border border-hairline bg-panel p-3 transition-[border-color,background-color] duration-200 hover:border-ice/40 hover:bg-ice/5"
           >
             <svg
               width="20"
@@ -255,7 +402,8 @@ function EpisodeNavigation({ slug, number }: { slug: string; number: number }) {
         ) : adjacent.next != null ? (
           <Link
             href={`/animes/${slug}/${adjacent.next}`}
-            className="group flex items-center justify-end gap-3 rounded-md border border-hairline bg-panel p-3 transition-all duration-200 hover:border-ice/40 hover:bg-ice/5"
+            onMouseEnter={() => prefetchEpisode(adjacent.next!)}
+            className="group flex items-center justify-end gap-3 rounded-md border border-hairline bg-panel p-3 transition-[border-color,background-color] duration-200 hover:border-ice/40 hover:bg-ice/5"
           >
             <div className="min-w-0 text-right">
               <p className="font-mono text-caption text-mist">

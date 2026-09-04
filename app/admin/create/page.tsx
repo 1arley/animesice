@@ -37,6 +37,7 @@ export default function AdminCreateAnimePage() {
   }, [user]);
 
   const computedSlug = slugTouched ? slug : slugify(title);
+  const genreSlugSet = new Set(genreSlugs);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -225,17 +226,18 @@ export default function AdminCreateAnimePage() {
               </span>
               <div className="flex flex-wrap gap-2">
                 {genres.map((g) => {
-                  const active = genreSlugs.includes(g.slug);
+                  const active = genreSlugSet.has(g.slug);
                   return (
                     <button
                       key={g.slug}
                       type="button"
                       onClick={() => {
-                        setGenreSlugs((prev) =>
-                          prev.includes(g.slug)
-                            ? prev.filter((s) => s !== g.slug)
-                            : [...prev, g.slug],
-                        );
+                        setGenreSlugs((prev) => {
+                          const next = new Set(prev);
+                          if (next.has(g.slug)) next.delete(g.slug);
+                          else next.add(g.slug);
+                          return [...next];
+                        });
                       }}
                       className={
                         active

@@ -130,17 +130,29 @@ export function readErrorMessage(
 let isRefreshing = false;
 let refreshPromise: Promise<void> | null = null;
 
+/** Safety timeout: if the refresh takes longer than 10 s, abort the fetch
+ *  so the promise rejects cleanly and the next caller can retry. Without
+ *  this, a stalled refresh permanently blocks all 401-retry paths. */
+const REFRESH_TIMEOUT_MS = 10_000;
+
 async function ensureRefresh(): Promise<void> {
   if (isRefreshing && refreshPromise) return refreshPromise;
   isRefreshing = true;
+  const ac = new AbortController();
   refreshPromise = (async () => {
+    const timer = setTimeout(() => ac.abort(), REFRESH_TIMEOUT_MS);
     try {
       const res = await fetch(`${API_URL}/auth/refresh`, {
         method: "POST",
         credentials: "include",
+        signal: ac.signal,
       });
-      if (!res.ok) throw new ApiError(res.status, "Sessão expirada.");
+      if (!res.ok) throw new ApiError(res.status, "Sessao expirada.");
+    } catch (e) {
+      if (ac.signal.aborted) throw new ApiError(401, "Refresh timeout.");
+      throw e;
     } finally {
+      clearTimeout(timer);
       isRefreshing = false;
       refreshPromise = null;
     }
@@ -349,10 +361,139 @@ export const api = {
     ),
 
   // --- Streaming ---
+
+  // --- Source cache (sessionStorage, 1h TTL) ---
+  _sourceCache: {
+    get(slug: string, episode: number): StreamSource | null {
+      try {
+        const key = `src:${slug}:${episode}`;
+        const raw = sessionStorage.getItem(key);
+        if (!raw) return null;
+        const { source, ts } = JSON.parse(raw) as { source: StreamSource; ts: number };
+        if (Date.now() - ts > 3_600_000) {
+          sessionStorage.removeItem(key);
+          return null;
+        }
+        return source;
+      } catch { return null; }
+    },
+    set(slug: string, episode: number, source: StreamSource) {
+      try {
+        sessionStorage.setItem(`src:${slug}:${episode}`, JSON.stringify({ source, ts: Date.now() }));
+      } catch { /* quota exceeded — ignore */ }
+    },
+  },
+
   streamSource: (animeSlug: string, episodeNumber: number, refresh = false) =>
     request<StreamSource>(
       `/stream/source?anime=${encodeURIComponent(animeSlug)}&episode=${episodeNumber}${refresh ? "&refresh=1" : ""}`,
     ),
+
+  /**
+   * Solicita extração assíncrona de um episódio. Retorna 202 com jobId
+   * quando extração é necessária, ou o StreamSource diretamente se o vídeo
+   * já está disponível.
+   */
+  streamSourceAsync: (animeSlug: string, episodeNumber: number) =>
+    request<
+      StreamSource | { jobId: string; status: string; message: string }
+    >(
+      `/stream/source?anime=${encodeURIComponent(animeSlug)}&episode=${episodeNumber}&async=1`,
+    ),
+
+  /**
+   * Entrada da watch page. O endpoint same-origin valida os identificadores e
+   * permite cache CDN curto somente quando a fonte já está resolvida.
+   */
+  episodeStreamSourceAsync: async (animeSlug: string, episodeNumber: number) => {
+    const response = await fetch(
+      `/api/stream-source?anime=${encodeURIComponent(animeSlug)}&episode=${episodeNumber}`,
+      { credentials: "include" },
+    );
+    const data = await response.json().catch(() => null);
+    if (!response.ok && response.status !== 202) {
+      throw new ApiError(response.status, readErrorMessage(data));
+    }
+    return data as StreamSource | { jobId: string; status: string; message?: string };
+  },
+
+  /**
+   * Poll status de um job de extração assíncrona.
+   * Retorna StreamSource quando completo, ou status while processing.
+   */
+  pollExtractionJob: (
+    animeSlug: string,
+    episodeNumber: number,
+    jobId: string,
+  ) =>
+    request<
+      StreamSource | { jobId: string; status: string; message?: string; error?: string }
+    >(
+      `/stream/source?anime=${encodeURIComponent(animeSlug)}&episode=${episodeNumber}&jobId=${encodeURIComponent(jobId)}`,
+    ),
+
+  /**
+   * SSE para stream source em tempo real.
+   * Retorna uma função de cleanup que fecha a conexão EventSource.
+   * Suporta fallback automático: se SSE não for suportado ou falhar,
+   * chama onTimeout para que o caller use polling.
+   */
+  streamSourceSSE: (
+    animeSlug: string,
+    episodeNumber: number,
+    callbacks: {
+      onSource: (source: StreamSource) => void;
+      onFailed: (error: string) => void;
+      onTimeout: () => void;
+      onError: () => void;
+    },
+  ): (() => void) => {
+    const url = `${API_URL}/stream/source/sse?anime=${encodeURIComponent(animeSlug)}&episode=${episodeNumber}`;
+    let closed = false;
+
+    try {
+      const es = new EventSource(url);
+
+      es.addEventListener("source", (e) => {
+        if (closed) return;
+        try {
+          const source = JSON.parse(e.data) as StreamSource;
+          callbacks.onSource(source);
+          es.close();
+        } catch { callbacks.onError(); es.close(); }
+      });
+
+      es.addEventListener("failed", (e) => {
+        if (closed) return;
+        try {
+          const data = JSON.parse(e.data) as { error?: string };
+          callbacks.onFailed(data.error ?? "Extração falhou");
+          es.close();
+        } catch { callbacks.onError(); es.close(); }
+      });
+
+      es.addEventListener("timeout", () => {
+        if (closed) return;
+        callbacks.onTimeout();
+        es.close();
+      });
+
+      es.addEventListener("error", () => {
+        if (closed) return;
+        es.close();
+        callbacks.onError();
+      });
+
+      return () => {
+        closed = true;
+        es.close();
+      };
+    } catch {
+      // EventSource não suportado ou erro de construção
+      callbacks.onError();
+      return () => {};
+    }
+  },
 
   // --- Embed / Scrape (animefire proxy backend) ---
   embedProxyUrl: (targetUrl: string): string =>
@@ -500,13 +641,12 @@ export const api = {
       },
     );
 
-    const data = await res.json().catch(() => null);
-
     if (!res.ok) {
+      const data = await res.json().catch(() => null);
       throw new ApiError(res.status, readErrorMessage(data));
     }
 
-    return data as Episode;
+    return (await res.json()) as Episode;
   },
 
   // --- Comments ---
@@ -626,13 +766,12 @@ export const api = {
       body: formData,
     });
 
-    const data = await res.json().catch(() => null);
-
     if (!res.ok) {
+      const data = await res.json().catch(() => null);
       throw new ApiError(res.status, readErrorMessage(data));
     }
 
-    return data as User;
+    return (await res.json()) as User;
   },
 
   deleteAvatar: () =>

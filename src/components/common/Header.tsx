@@ -113,7 +113,16 @@ export function Header() {
           {/* Backdrop */}
           <div
             className="fixed inset-0 z-[89] bg-black/40 opacity-50 transition-opacity duration-200"
+            role="button"
+            aria-label="Fechar busca"
+            tabIndex={-1}
             onClick={() => setMobileSearchOpen(false)}
+            onKeyDown={(e) => {
+              if (e.key === "Escape" || e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                setMobileSearchOpen(false);
+              }
+            }}
           />
           <form
             onSubmit={onMobileSubmit}

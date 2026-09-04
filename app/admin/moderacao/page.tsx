@@ -283,6 +283,7 @@ export default function ModerationPage() {
             value={noteText}
             onChange={(e) => setNoteText(e.target.value)}
             placeholder="Nota do moderador..."
+            aria-label="Nota do moderador"
             rows={3}
             className="field mt-4"
           />
@@ -369,6 +370,7 @@ function ModerateUserInline({
             value={reason}
             onChange={(e) => setReason(e.target.value)}
             placeholder="Motivo da ação..."
+            aria-label="Motivo"
             className="field"
           />
         </div>
@@ -383,6 +385,7 @@ function ModerateUserInline({
               value={hours}
               onChange={(e) => setHours(e.target.value)}
               placeholder="ex: 24"
+              aria-label="Duração em horas"
               className="field"
             />
             <div className="mt-1.5 flex gap-2">

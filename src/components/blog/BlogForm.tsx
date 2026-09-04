@@ -96,7 +96,7 @@ export function BlogForm({ post }: { post?: BlogPost }) {
 
       <section className="admin-card p-5">
         <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2"><h2 className="shelf-label mb-0">Conteúdo HTML *</h2><span className="font-mono text-caption text-mist">{content.length.toLocaleString("pt-BR")} caracteres</span></div>
-        <textarea className="field min-h-[420px] resize-y font-mono text-body-sm leading-relaxed" value={content} onChange={(e) => setContent(e.target.value)} spellCheck={false} required />
+        <textarea className="field min-h-[420px] resize-y font-mono text-body-sm leading-relaxed" value={content} onChange={(e) => setContent(e.target.value)} spellCheck={false} aria-label="Conteúdo HTML" required />
         <p className="mt-2 text-caption text-mist">Use HTML sem scripts, iframes, formulários ou eventos inline. Esses elementos são removidos na página pública.</p>
       </section>
 

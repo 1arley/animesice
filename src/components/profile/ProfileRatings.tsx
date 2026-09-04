@@ -22,7 +22,7 @@ export function ProfileRatings({
     return (
       <section>
         <SectionLabel level={2}>Notas</SectionLabel>
-        <p className="text-body-sm text-mist/70">
+        <p className="text-body-sm text-mist-soft">
           Nenhuma avaliação ainda.
         </p>
       </section>
@@ -75,7 +75,7 @@ export function ProfileRatings({
                   </span>
                 </div>
               </div>
-              <span className="hidden shrink-0 font-mono text-caption text-mist/60 sm:block">
+              <span className="hidden shrink-0 font-mono text-caption text-mist-soft sm:block">
                 {timeAgo(r.createdAt)}
               </span>
             </Link>

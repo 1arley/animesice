@@ -83,7 +83,7 @@ export function HomeHero({ animes }: { animes: Anime[] }) {
               >
                 <span
                   aria-hidden="true"
-                  className={`block h-1.5 transition-all duration-300 ${
+                  className={`block h-1.5 transition-[width,background-color] duration-300 ${
                     i === index ? "w-6 bg-ice" : "w-1.5 bg-mist/50 hover:bg-mist"
                   }`}
                 />

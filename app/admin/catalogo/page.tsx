@@ -88,6 +88,7 @@ export default function AdminCatalogoPage() {
         <input
           type="search"
           placeholder="Buscar por título ou slug…"
+          aria-label="Buscar por título ou slug"
           value={search}
           onChange={(e) => handleSearchChange(e.target.value)}
           className="ml-auto w-full max-w-xs border border-hairline bg-panel px-3 py-1.5 text-body-sm text-snow placeholder:text-mist focus:border-ice focus:outline-none"

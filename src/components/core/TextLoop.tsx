@@ -1,6 +1,7 @@
 "use client";
 
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, LazyMotion, domAnimation } from "motion/react";
+import * as m from "motion/react-m";
 import { useEffect, useState } from "react";
 import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
 
@@ -46,22 +47,24 @@ export function TextLoop({
   }
 
   return (
-    <span
-      className={`relative inline-grid overflow-hidden align-bottom ${className}`}
-      aria-live="off"
-    >
-      <AnimatePresence mode="popLayout" initial={false}>
-        <motion.span
-          key={current}
-          initial={{ y: 14, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          exit={{ y: -14, opacity: 0 }}
-          transition={{ duration: 0.28, ease: [0.2, 0.65, 0.25, 1] }}
-          className={fixedHeight ? "col-start-1 row-start-1" : "block"}
-        >
-          {current}
-        </motion.span>
-      </AnimatePresence>
-    </span>
+    <LazyMotion features={domAnimation}>
+      <span
+        className={`relative inline-grid overflow-hidden align-bottom ${className}`}
+        aria-live="off"
+      >
+        <AnimatePresence mode="popLayout" initial={false}>
+          <m.span
+            key={current}
+            initial={{ y: 14, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: -14, opacity: 0 }}
+            transition={{ duration: 0.28, ease: [0.2, 0.65, 0.25, 1] }}
+            className={fixedHeight ? "col-start-1 row-start-1" : "block"}
+          >
+            {current}
+          </m.span>
+        </AnimatePresence>
+      </span>
+    </LazyMotion>
   );
 }

@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
 import { api } from "@/lib/api";
+import { formatDateTime } from "@/lib/time";
 import type { NotificationItem } from "@/types";
 
 export default function NotificationsPage() {
@@ -35,7 +37,7 @@ export default function NotificationsPage() {
   }
 
   if (loading) return <div className="mx-auto max-w-shelf px-4 py-8 text-mist">Carregando...</div>;
-  if (!user) return <div className="mx-auto max-w-shelf px-4 py-8 text-mist"><a href="/login" className="text-ice underline">Entre</a> para ver notificações.</div>;
+  if (!user) return <div className="mx-auto max-w-shelf px-4 py-8 text-mist"><Link href="/login" className="text-ice underline">Entre</Link> para ver notificações.</div>;
 
   return (
     <div className="mx-auto max-w-shelf px-4 py-8">
@@ -49,7 +51,7 @@ export default function NotificationsPage() {
             <a key={n.id} href={n.linkUrl ?? "#"} onClick={() => !n.read && markRead(n.id)} className={`block border border-hairline p-4 hover:border-ice ${n.read ? "bg-panel" : "border-ice/50 bg-ice/5"}`}>
               <p className="font-sans text-body font-medium text-ice">{n.title}</p>
               {n.body && <p className="mt-1 text-body-sm text-mist">{n.body}</p>}
-              <p className="mt-2 font-mono text-caption text-mist">{new Date(n.createdAt).toLocaleString("pt-BR")}</p>
+              <p className="mt-2 font-mono text-caption text-mist">{formatDateTime(n.createdAt)}</p>
             </a>
           ))}
         </div>

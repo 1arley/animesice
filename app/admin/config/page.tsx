@@ -80,10 +80,11 @@ export default function AdminConfigPage() {
 
       <div className="mt-6 max-w-lg space-y-5">
         <div>
-          <label className="mb-1.5 block font-sans text-caption uppercase tracking-wider text-mist">
+          <label htmlFor="config-site-name" className="mb-1.5 block font-sans text-caption uppercase tracking-wider text-mist">
             Nome do site
           </label>
           <input
+            id="config-site-name"
             type="text"
             value={settings.siteName}
             onChange={(e) => setSettings({ ...settings, siteName: e.target.value })}
@@ -92,10 +93,11 @@ export default function AdminConfigPage() {
         </div>
 
         <div>
-          <label className="mb-1.5 block font-sans text-caption uppercase tracking-wider text-mist">
+          <label htmlFor="config-site-description" className="mb-1.5 block font-sans text-caption uppercase tracking-wider text-mist">
             Descrição do site
           </label>
           <textarea
+            id="config-site-description"
             value={settings.siteDescription}
             onChange={(e) => setSettings({ ...settings, siteDescription: e.target.value })}
             rows={3}

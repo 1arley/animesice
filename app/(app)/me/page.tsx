@@ -10,6 +10,7 @@ import Image from "next/image";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { blur } from "@/lib/blur";
+import { formatDate, formatDateTime } from "@/lib/time";
 import type { WatchHistoryItem } from "@/types";
 
 export default function MyProfilePage() {
@@ -51,7 +52,7 @@ export default function MyProfilePage() {
               <div>
                 <h2 className="font-display text-display-lg text-ice">{user.userName ?? user.name ?? "Usuário"}</h2>
                 {user.userName && user.name && <p className="text-body-sm text-mist">{user.name}</p>}
-                <p className="text-body-sm text-mist">Membro desde {new Date(user.createdAt).toLocaleDateString("pt-BR")}</p>
+                <p className="text-body-sm text-mist">Membro desde {formatDate(user.createdAt)}</p>
               </div>
             </div>
 
@@ -85,7 +86,7 @@ export default function MyProfilePage() {
                       <div className="flex items-center justify-between">
                         <div>
                           <Link href={`/animes/${h.anime.slug}`} className="font-semibold text-ice">{h.anime.title}</Link>
-                          <div className="text-mist text-sm">Episódio {h.episode.number} • {new Date(h.watchedAt).toLocaleString("pt-BR")}</div>
+                          <div className="text-mist text-sm">Episódio {h.episode.number} • {formatDateTime(h.watchedAt)}</div>
                         </div>
                       </div>
                     </div>

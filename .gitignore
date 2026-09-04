@@ -20,6 +20,12 @@ playwright/.cache/
 .vercel
 
 # opencode skill artifacts (not project code)
+.agents/
+.claude/
+.codex/
+.impeccable/
+.opencode/
+.volibear/
 .github/agents/
 .github/hooks/
 .github/skills/

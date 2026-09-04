@@ -218,7 +218,7 @@ export function ProfileDashboard({ user }: { user: User }) {
             )}
           </div>
         </label>
-        <p className="mt-2 text-caption text-mist/70">
+        <p className="mt-2 text-caption text-mist-soft">
           Aparece no seu perfil público como link externo.
         </p>
         {malMsg && (

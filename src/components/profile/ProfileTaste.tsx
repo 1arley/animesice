@@ -29,7 +29,7 @@ export function ProfileTaste({ genres }: { genres: TasteGenre[] }) {
                 style={{ transform: `scaleX(${max ? g.count / max : 0})` }}
               />
             </div>
-            <span className="w-6 shrink-0 text-right font-mono text-caption tabular-nums text-mist/70">
+            <span className="w-6 shrink-0 text-right font-mono text-caption tabular-nums text-mist-soft">
               {g.count}
             </span>
           </div>
