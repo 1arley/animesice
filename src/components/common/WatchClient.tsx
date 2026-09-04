@@ -61,7 +61,7 @@ export function WatchClient({
           );
         }
       } finally {
-        setLoadingSource(false);
+        if (id === loadSourceId.current) setLoadingSource(false);
       }
     },
     [slug, number],
@@ -93,7 +93,7 @@ export function WatchClient({
     }
 
     try {
-      // 2. Check client-side cache (sessionStorage, 1h TTL)
+      // 2. Check client-side cache (sessionStorage, 5m TTL)
       const cached = api._sourceCache.get(slug, number);
       if (cached && id === loadSourceId.current) {
         setSource(cached);
@@ -101,7 +101,12 @@ export function WatchClient({
         return;
       }
 
-      const res = await api.episodeStreamSourceAsync(slug, number);
+      // Preserve a job started by the SSR fallback. Re-requesting the
+      // endpoint here can enqueue a duplicate extraction when the backend
+      // has not yet deduplicated the original job.
+      const res = initialSourceProp && "jobId" in initialSourceProp
+        ? initialSourceProp
+        : await api.episodeStreamSourceAsync(slug, number);
       if (id !== loadSourceId.current) return;
 
       // Source direto (vídeo já existia no cache)
@@ -148,7 +153,7 @@ export function WatchClient({
         }
       }
     } finally {
-      setLoadingSource(false);
+      if (id === loadSourceId.current) setLoadingSource(false);
     }
   }, [slug, number, loadSource, initialSourceProp]);
 
