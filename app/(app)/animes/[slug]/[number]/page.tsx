@@ -115,6 +115,12 @@ export default async function WatchPage({
       ]);
   if (!episode) notFound();
 
+  // Números dos episódios já vem do backend (evita fetch extra no client)
+  const episodeNumbers = (episode.anime.episodes ?? [])
+    .map((ep: { number: number }) => ep.number)
+    .filter((v: number, i: number, a: number[]) => a.indexOf(v) === i)
+    .sort((a: number, b: number) => a - b);
+
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "TVEpisode",
@@ -174,6 +180,7 @@ export default async function WatchPage({
         number={number}
         initialEpisode={episode}
         initialSource={initialSource}
+        episodeNumbers={episodeNumbers}
       />
     </div>
   );
