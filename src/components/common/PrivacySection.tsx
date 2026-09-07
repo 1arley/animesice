@@ -29,6 +29,11 @@ const FIELDS: Array<{
     label: "Mostrar avaliações",
     hint: "Notas que você deu para os animes.",
   },
+  {
+    key: "showGacha",
+    label: "Mostrar cartas do gacha",
+    hint: "Sua coleção e seus pulls Épicos no feed. Desligado = coleção privada.",
+  },
 ];
 
 export function PrivacySection() {

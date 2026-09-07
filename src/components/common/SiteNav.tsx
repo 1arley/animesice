@@ -39,6 +39,7 @@ const ICONS: Record<string, string> = {
   filmes: "M3 5h18v14H3zM3 9h4v2H3zM3 12h4v2H3zM17 9h4v2h-4zM17 12h4v2h-4zM3 14h18M3 7h18",
   admin: "M12 3 4 7v6c0 4 3 7 8 8 5-1 8-4 8-8V7l-8-4ZM9 12l2 2 4-4",
   feed: "M4 6h16M4 12h16M4 18h10M16 18h4M18 16v4",
+  gacha: "M12 3l7 9-7 9-7-9zM12 3v18M5 12h14",
   usuarios: "M9 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM2 20c1-3 3.5-4.5 7-4.5s6 1.5 7 4.5M16 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5ZM15 14c2.5.5 4.5 2.5 5 6",
   pedidos: "M4 6h12v12H4zM16 10h3l1 2v6h-4M7 10h6M7 14h4",
   sugestoes: "M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 16.8 5.8 21.3l2.4-7.4L2 9.4h7.6L12 2z",
@@ -88,6 +89,7 @@ export function SiteNav() {
       title: "Comunidade",
       links: [
         { href: "/comunidade/feed", title: "Feed", icon: "feed" },
+        { href: "/gacha", title: "Gacha", icon: "gacha" },
         { href: "/blog", title: "Blog", icon: "feed" },
         { href: "/comunidade/usuarios", title: "Usuários", icon: "usuarios" },
         { href: "/comunidade/sugestoes", title: "Sugestões", icon: "sugestoes" },
