@@ -316,6 +316,7 @@ export const api = {
     if (filters.minScore) params.set("minScore", String(filters.minScore));
     if (filters.maxScore) params.set("maxScore", String(filters.maxScore));
     if (filters.sort) params.set("sort", filters.sort);
+    if (filters.includeHentai) params.set("includeHentai", "1");
     return request<Paginated<Anime>>(`/anime?${params.toString()}`);
   },
 
@@ -346,8 +347,8 @@ export const api = {
   getBlogPost: (slug: string) =>
     request<BlogPost>(`/blog-posts/slug/${encodeURIComponent(slug)}`),
 
-  getGenreAnimes: (slug: string, page = 1, limit = 24) =>
-    request<GenreAnimesResponse>(`/genre/${slug}/animes?page=${page}&limit=${limit}`),
+  getGenreAnimes: (slug: string, page = 1, limit = 24, includeHentai = false) =>
+    request<GenreAnimesResponse>(`/genre/${slug}/animes?page=${page}&limit=${limit}${includeHentai ? "&includeHentai=1" : ""}`),
 
   getEpisodes: (slug: string) =>
     request<Episode[]>(`/anime/${slug}/episodes`),

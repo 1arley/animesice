@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import type { Anime } from "@/types";
 import { serverFetchJson } from "@/lib/api-server";
+import { isHentai } from "@/lib/adult";
 
 export const dynamic = "force-dynamic";
 
@@ -15,6 +16,8 @@ export default async function AleatorioPage() {
       </div>
     );
   }
+
+  if (isHentai(anime)) redirect("/aleatorio");
 
   redirect(`/animes/${anime.slug}`);
 }

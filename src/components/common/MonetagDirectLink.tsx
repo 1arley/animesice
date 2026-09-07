@@ -61,6 +61,14 @@ export function MonetagDirectLink() {
         return;
       }
 
+      if (
+        typeof document !== "undefined" &&
+        document.querySelector("[data-adult]") &&
+        !document.body.hasAttribute("data-adult-confirmed")
+      ) {
+        return;
+      }
+
       const session = readSession();
       const now = Date.now();
 

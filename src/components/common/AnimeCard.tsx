@@ -3,11 +3,12 @@ import type { Anime } from "@/types";
 import { safeImageSrc, upgradeImageUrl } from "@/lib/url";
 import { blur } from "@/lib/blur";
 import { statusLabel, isOnAir } from "@/lib/status";
+import { isHentai } from "@/lib/adult";
 import { SpotlightCard } from "@/components/core/SpotlightCard";
 import { AdaptiveImage } from "@/components/common/AdaptiveImage";
 
 export interface AnimeCardProps {
-  anime: Pick<Anime, "slug" | "title" | "coverImage" | "rating" | "ageRating" | "status" | "audio">;
+  anime: Pick<Anime, "slug" | "title" | "coverImage" | "rating" | "ageRating" | "status" | "audio"> & { genres?: Array<{ slug: string }> };
   /**
    * Posição na prateleira. Imagens above-the-fold (0..3) recebem `priority`
    * para acelerar o LCP; o resto usa lazy nativo.
@@ -86,6 +87,12 @@ export function AnimeCard({ anime, priority = false, spotlight = true, variant =
         {rank === undefined && age && (age.includes("A16") || age.includes("A18")) && (
           <span className="absolute left-1.5 top-1.5 bg-signal px-1.5 py-0.5 font-mono text-caption font-medium text-ink">
             {age}
+          </span>
+        )}
+
+        {isHentai(anime) && (
+          <span className="absolute bottom-1.5 left-1.5 bg-ink/85 px-1.5 py-0.5 font-mono text-caption font-medium uppercase tracking-wider text-signal backdrop-blur-sm">
+            Hentai
           </span>
         )}
       </div>

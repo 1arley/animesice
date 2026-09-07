@@ -5,6 +5,7 @@ import type { Metadata } from "next";
 import type { Anime } from "@/types";
 import { safeImageSrc } from "@/lib/url";
 import { serverFetchJson } from "@/lib/api-server";
+import { withoutAdult } from "@/lib/adult";
 
 export const revalidate = 300;
 
@@ -26,7 +27,7 @@ export default async function TopPage({
   const sp = await searchParams;
   const limit = Math.min(Math.max(parseInt(sp.limit ?? "30", 10) || 30, 1), 100);
 
-  const animes = await serverFetchJson<Anime[]>(`/anime/top?limit=${limit}`, { cache: "force-cache", next: { revalidate: 300, tags: ["top"] } }) ?? [];
+  const animes = withoutAdult(await serverFetchJson<Anime[]>(`/anime/top?limit=${limit}`, { cache: "force-cache", next: { revalidate: 300, tags: ["top"] } }) ?? []);
 
   const [first, ...rest] = animes;
   const firstCover = first ? safeImageSrc(first.coverImage) : null;

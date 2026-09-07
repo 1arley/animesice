@@ -11,18 +11,33 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import type { Anime, Genre, Paginated, SortMode } from "@/types";
 import { serverFetchJson } from "@/lib/api-server";
+import { withoutAdult } from "@/lib/adult";
 
 export const revalidate = 60;
 
-export const metadata: Metadata = {
-  title: "Buscar animes — Encontre por título, gênero, ano e mais",
-  description: "Busque animes por título, gênero, ano, formato, status e mais. Encontre exatamente o que procura no AnimesIce.",
-  alternates: { canonical: "/buscar" },
-  openGraph: {
-    title: "Buscar animes | AnimesIce",
-    description: "Busque animes por título, gênero, ano, formato e mais.",
-  },
-};
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<{ includeHentai?: SearchParam }>;
+}): Promise<Metadata> {
+  const sp = await searchParams;
+  const includeHentai = Array.isArray(sp.includeHentai)
+    ? sp.includeHentai[0]
+    : sp.includeHentai;
+  return {
+    title: "Buscar animes — Encontre por título, gênero, ano e mais",
+    description:
+      "Busque animes por título, gênero, ano, formato, status e mais. Encontre exatamente o que procura no AnimesIce.",
+    alternates: { canonical: "/buscar" },
+    openGraph: {
+      title: "Buscar animes | AnimesIce",
+      description: "Busque animes por título, gênero, ano, formato e mais.",
+    },
+    ...(includeHentai === "1"
+      ? { robots: { index: false, follow: true } }
+      : {}),
+  };
+}
 
 const YEARS = [2026, 2025, 2024, 2023, 2022, 2021, 2020, 2019, 2018, 2017, 2016, 2015, 2014, 2013, 2012, 2011, 2010, 2009, 2008, 2007, 2006, 2005, 2004, 2003, 2002, 2001, 2000];
 
@@ -50,6 +65,7 @@ export default async function SearchPage({
     year?: SearchParam;
     season?: SearchParam;
     sort?: SearchParam;
+    includeHentai?: SearchParam;
   }>;
 }) {
   const sp = await searchParams;
@@ -69,6 +85,7 @@ export default async function SearchPage({
   const year = first(sp.year);
   const season = first(sp.season);
   const sort = first(sp.sort);
+  const includeHentai = first(sp.includeHentai) === "1";
 
   // Hoisted outside the genre map — evita re-fatiar a string por item.
   const selectedGenres = new Set(genresParam?.split(",") ?? []);
@@ -84,6 +101,7 @@ export default async function SearchPage({
   if (year) params.set("year", year);
   if (season) params.set("season", season);
   if (sort) params.set("sort", sort);
+  if (includeHentai) params.set("includeHentai", "1");
 
   /** Monta URL de paginação com os nomes públicos (q, não o search da API).
    *  Antes usava `params` (search=...) e a página lê q= — a busca se perdia
@@ -99,21 +117,24 @@ export default async function SearchPage({
     if (year) p.set("year", year);
     if (season) p.set("season", season);
     if (sort) p.set("sort", sort);
+    if (includeHentai) p.set("includeHentai", "1");
     return `/buscar?${p.toString()}`;
   };
 
   const [data, genreList] = await Promise.all([
-    q || genresParam || status || audio || format || year || season || sort
+    q || genresParam || status || audio || format || year || season || sort || includeHentai
       ? serverFetchJson<Paginated<Anime>>(`/anime?${params.toString()}`)
       : Promise.resolve(null),
     serverFetchJson<Genre[]>(`/genre`),
   ]);
 
-  const results = data?.data ?? [];
+  const results = includeHentai
+    ? (data?.data ?? [])
+    : withoutAdult(data?.data ?? []);
   const total = data?.meta?.total ?? 0;
   const totalPages = data?.meta?.totalPages ?? 1;
 
-  const hasQuery = Boolean(q || genresParam || status || audio || format || year || season || sort || searchFromUrl);
+  const hasQuery = Boolean(q || genresParam || status || audio || format || year || season || sort || searchFromUrl || includeHentai);
 
   // Collect active filters for display
   const activeFilters: string[] = [];
@@ -123,6 +144,7 @@ export default async function SearchPage({
   if (status) activeFilters.push(animeStatusLabel(status));
   if (year) activeFilters.push(year);
   if (season) activeFilters.push(animeSeasonLabel(season));
+  if (includeHentai) activeFilters.push("Inclui +18");
 
   return (
     <div className="mx-auto max-w-shelf px-4 py-6">
@@ -277,6 +299,17 @@ export default async function SearchPage({
             </fieldset>
 
             <button type="submit" className="btn-ice w-full">Filtrar</button>
+
+            <label className="flex cursor-pointer items-center gap-2 text-body-sm text-mist transition-colors hover:text-ice">
+              <input
+                type="checkbox"
+                name="includeHentai"
+                value="1"
+                defaultChecked={includeHentai}
+                className="accent-ice"
+              />
+              Incluir hentai (+18)
+            </label>
           </form>
         </aside>
 

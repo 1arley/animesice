@@ -381,6 +381,7 @@ export interface AnimeFilters {
   minScore?: number;
   maxScore?: number;
   sort?: SortMode;
+  includeHentai?: boolean;
 }
 
 /** Watchlist item (UserAnimeList). */

@@ -17,6 +17,8 @@ import { SpotlightCard } from "@/components/core/SpotlightCard";
 import { RelatedSimilarSections } from "@/components/common/RelatedSimilarSections";
 import { PageTitle } from "@/components/ui/PageTitle";
 import { ShareButtons } from "@/components/common/ShareButtons";
+import { AdultGate } from "@/components/common/AdultGate";
+import { isHentai } from "@/lib/adult";
 import { PrefetchEpisodeLink } from "@/components/common/PrefetchEpisodeLink";
 import { EpisodePrefetcher } from "@/components/common/EpisodePrefetcher";
 import Image from "next/image";
@@ -56,6 +58,7 @@ export async function generateMetadata({
   ].filter(Boolean);
   const description = metaParts.join(" · ").slice(0, 160);
   const ogImage = upgradeImageUrl(anime.bannerImage) ?? upgradeImageUrl(anime.coverImage);
+  const adult = isHentai(anime);
 
   return {
     title: anime.title,
@@ -73,9 +76,7 @@ export async function generateMetadata({
       description,
       ...(ogImage ? { images: [ogImage] } : {}),
     },
-    ...(anime.genres?.some((genre) => genre.slug === "hentai")
-      ? { robots: { index: false, follow: true } }
-      : {}),
+    ...(adult ? { other: { rating: "adult" } } : {}),
   };
 }
 
@@ -99,7 +100,8 @@ export default async function AnimeDetailPage({
   const desktopCover = upgradeImageUrl(anime.coverImage);
 
   return (
-    <article className="mx-auto max-w-shelf px-4 py-6">
+    <article className="mx-auto max-w-shelf px-4 py-6" data-adult={isHentai(anime) ? "1" : undefined}>
+      {isHentai(anime) && <AdultGate />}
       {/* Prefetch em background dos episódios visíveis — aquece o cache do backend */}
       <EpisodePrefetcher
         episodes={episodes.slice(0, 12).map((ep) => ({ animeSlug: slug, episodeNumber: ep.number }))}

@@ -4,6 +4,7 @@ import { Pagination } from "@/components/ui/Pagination";
 import type { Metadata } from "next";
 import type { Anime } from "@/types";
 import { serverFetchJson } from "@/lib/api-server";
+import { withoutAdult } from "@/lib/adult";
 import type { AnimeFilters } from "@/types";
 
 export const revalidate = 300;
@@ -43,7 +44,7 @@ export default async function LancamentosPage({
     { cache: "force-cache", next: { revalidate: 300, tags: ["lancamentos"] } },
   );
 
-  const animes = data?.data ?? [];
+  const animes = withoutAdult(data?.data ?? []);
   const totalPages = data?.meta.totalPages ?? 1;
   const total = data?.meta.total ?? 0;
 

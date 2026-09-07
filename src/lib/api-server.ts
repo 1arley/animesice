@@ -112,7 +112,7 @@ export async function serverStreamSourceAsync(
     | { src: string; embedUrl?: string; thumbnailUrl?: string }
     | { jobId: string; status: string; message?: string }
   >(
-    `/stream/source/async?anime=${encodeURIComponent(animeSlug)}&episode=${episodeNumber}${refresh ? "&refresh=1" : ""}`,
+    `/stream/source?anime=${encodeURIComponent(animeSlug)}&episode=${episodeNumber}&async=1${refresh ? "&refresh=1" : ""}`,
     { cache: "no-store" },
   );
 }

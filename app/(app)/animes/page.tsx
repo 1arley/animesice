@@ -4,6 +4,7 @@ import { Pagination } from "@/components/ui/Pagination";
 import type { Metadata } from "next";
 import type { Anime } from "@/types";
 import { serverFetchJson } from "@/lib/api-server";
+import { withoutAdult } from "@/lib/adult";
 import { SITE_URL } from "@/lib/site";
 import { escapeJsonLd } from "@/lib/url";
 
@@ -51,7 +52,7 @@ export default async function AnimesPage({
     next: { revalidate: 300, tags: ["animes"] },
   });
 
-  const animes = data?.data ?? [];
+  const animes = withoutAdult(data?.data ?? []);
   const totalPages = data?.meta.totalPages ?? 1;
   const total = data?.meta.total ?? 0;
 

@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { serverFetchJson } from "@/lib/api-server";
+import { withoutAdult } from "@/lib/adult";
 import type { Anime } from "@/types";
 import { AnimeCard } from "@/components/common/AnimeCard";
 
@@ -15,8 +16,8 @@ async function RelatedSimilar({ slug }: { slug: string }) {
     }),
   ]);
 
-  const relatedAnimes = related ?? [];
-  const similarAnimes = (similar ?? [])
+  const relatedAnimes = withoutAdult(related ?? []);
+  const similarAnimes = withoutAdult(similar ?? [])
     .filter((s) => !relatedAnimes.some((r) => r.id === s.id))
     .slice(0, 6);
 

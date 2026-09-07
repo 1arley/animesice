@@ -5,6 +5,8 @@ import { serverFetchJson, serverStreamSourceAsync } from "@/lib/api-server";
 import type { Episode, Anime } from "@/types";
 
 import { WatchClient } from "@/components/common/WatchClient";
+import { AdultGate } from "@/components/common/AdultGate";
+import { isHentai } from "@/lib/adult";
 import { SITE_URL } from "@/lib/site";
 import { escapeJsonLd } from "@/lib/url";
 
@@ -88,9 +90,7 @@ export async function generateMetadata({
       description: description.slice(0, 160),
       ...(ep.thumbnailUrl ? { images: [ep.thumbnailUrl] } : {}),
     },
-    ...(ep.anime.genres?.some((genre) => genre.slug === "hentai")
-      ? { robots: { index: false, follow: true } }
-      : {}),
+    ...(isHentai(ep.anime) ? { other: { rating: "adult" } } : {}),
   };
 }
 
@@ -165,7 +165,8 @@ export default async function WatchPage({
   };
 
   return (
-    <div className="mx-auto max-w-shelf px-4 py-6">
+    <div className="mx-auto max-w-shelf px-4 py-6" data-adult={isHentai(episode.anime) ? "1" : undefined}>
+      {isHentai(episode.anime) && <AdultGate />}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: escapeJsonLd(jsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: escapeJsonLd(videoJsonLd) }} />
 

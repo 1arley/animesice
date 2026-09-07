@@ -4,6 +4,7 @@ import Link from "next/link";
 import { AnimeCard } from "@/components/common/AnimeCard";
 import type { GenreAnimesResponse } from "@/types";
 import { serverFetchJson } from "@/lib/api-server";
+import { withoutAdult } from "@/lib/adult";
 import { SITE_URL } from "@/lib/site";
 import { escapeJsonLd } from "@/lib/url";
 
@@ -39,9 +40,6 @@ export async function generateMetadata({
       description,
       type: "website",
     },
-    ...(slug === "hentai"
-      ? { robots: { index: false, follow: true } }
-      : {}),
   };
 }
 
@@ -50,15 +48,16 @@ export default async function GenrePage({
   searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ page?: string }>;
+  searchParams: Promise<{ page?: string; includeHentai?: string }>;
 }) {
   const { slug } = await params;
   const sp = await searchParams;
   const page = Math.max(1, Number(sp.page ?? "1") || 1);
   const limit = 24;
+  const includeHentai = sp.includeHentai === "1";
 
   const data = await serverFetchJson<GenreAnimesResponse>(
-    `/genre/${slug}/animes?page=${page}&limit=${limit}`,
+    `/genre/${slug}/animes?page=${page}&limit=${limit}${includeHentai ? "&includeHentai=1" : ""}`,
   );
 
   // Gênero inexistente: gera 404 real. Um 200 com texto "não encontrado"
@@ -66,7 +65,8 @@ export default async function GenrePage({
   // as páginas não indexadas do Search Console mostravam.
   if (!data || !data.genre) notFound();
 
-  const { genre, data: animes, meta } = data;
+  const { genre, meta } = data;
+  const animes = includeHentai ? data.data : withoutAdult(data.data);
   const genreName = genre.name;
 
   const jsonLd = {

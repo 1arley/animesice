@@ -7,22 +7,23 @@ import { EpisodeCard } from "@/components/common/EpisodeCard";
 import { SectionLabel } from "@/components/common/SectionLabel";
 import { Reveal, RevealStagger } from "@/components/core/Reveal";
 import { serverFetchJson } from "@/lib/api-server";
+import { isHentai, withoutAdult } from "@/lib/adult";
 import { isOnAir } from "@/lib/status";
 import type { Anime, Episode, Paginated } from "@/types";
 
 const options = { cache: "force-cache" as const, next: { revalidate: 60 } };
-const getAnimes = cache(() => serverFetchJson<Paginated<Anime>>("/anime?page=1&limit=12", options));
-const getLatest = cache(() => serverFetchJson<(Episode & { anime: Anime })[]>("/episode/latest?limit=12", options));
-const getTrending = cache(() => serverFetchJson<Anime[]>("/anime/trending?limit=12", options));
-const getRecent = cache(() => serverFetchJson<Anime[]>("/anime/recently-added?limit=12", options));
+const getAnimes = cache(async () => withoutAdult((await serverFetchJson<Paginated<Anime>>("/anime?page=1&limit=12", options))?.data ?? []));
+const getLatest = cache(async () => (await serverFetchJson<(Episode & { anime: Anime })[]>("/episode/latest?limit=12", options) ?? []).filter((ep) => !isHentai(ep.anime)));
+const getTrending = cache(async () => withoutAdult(await serverFetchJson<Anime[]>("/anime/trending?limit=12", options) ?? []));
+const getRecent = cache(async () => withoutAdult(await serverFetchJson<Anime[]>("/anime/recently-added?limit=12", options) ?? []));
 
 export async function TrendingHeroSection() {
-  const trending = (await getTrending()) ?? [];
+  const trending = await getTrending();
   return trending.length ? <DeferredHomeHero animes={trending.slice(0, 6)} /> : null;
 }
 
 export async function CatalogSections() {
-  const animes = (await getAnimes())?.data ?? [];
+  const animes = await getAnimes();
   const onAirMap = new Map<string, Anime>();
   for (const anime of animes) {
     if (isOnAir(anime.status)) {
@@ -40,17 +41,17 @@ export async function CatalogSections() {
 }
 
 export async function LatestSection() {
-  const latest = (await getLatest()) ?? [];
+  const latest = await getLatest();
   return <Reveal className="mb-8"><section aria-labelledby="shelf-latest"><SectionLabel id="shelf-latest">Últimos episódios <span className="shelf-label-data">{latest.length} novos</span></SectionLabel>{latest.length ? <RevealStagger className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">{latest.map((ep) => <EpisodeCard key={ep.id} episode={ep} />)}</RevealStagger> : <p className="text-body-sm text-mist">Sem episódios recentes.</p>}</section></Reveal>;
 }
 
 export async function TrendingSection() {
-  const trending = (await getTrending()) ?? [];
+  const trending = await getTrending();
   return trending.length ? <RankedShelf label="Em alta agora" id="shelf-trending" animes={trending} /> : null;
 }
 
 export async function RecentSection() {
-  const recent = (await getRecent()) ?? [];
+  const recent = await getRecent();
   return recent.length ? <Shelf label="Acabaram de chegar" id="shelf-recent" count={recent.length} animes={recent} moreHref="/buscar?sort=recentlyAdded" /> : null;
 }
 
