@@ -433,6 +433,7 @@ export interface PrivacySettings {
   showActivity: boolean;
   showFavorites: boolean;
   showRatings: boolean;
+  showGacha: boolean;
   privateAnimeLists: number;
 }
 
@@ -502,6 +503,8 @@ export interface PostAnime {
 export interface SocialPost {
   id: string;
   content: string;
+  kind: string;
+  meta: GachaPullMeta | null;
   animeId: string | null;
   anime: PostAnime | null;
   user: SocialUser;
@@ -519,6 +522,67 @@ export interface PostCommentItem {
   content: string;
   user: SocialUser;
   createdAt: string;
+}
+
+/** Meta de um post GACHA_PULL (pull Épico+ publicado no feed). */
+export interface GachaPullMeta {
+  userWaifuId: string;
+  waifuId: string;
+  name: string;
+  image: string | null;
+  rarity: string;
+  foil: string;
+  condition: number;
+  edition: number;
+  value: number;
+}
+
+/** Carta do gacha (personagem cacheado do AniList). */
+export interface GachaWaifu {
+  id: string;
+  name: string;
+  image: string | null;
+  rarity: string;
+  favourites: number;
+  animeId: string | null;
+  animeTitle: string | null;
+  anime: PostAnime | null;
+}
+
+/** Cópia de carta de um usuário. */
+export interface GachaPull {
+  id: string;
+  condition: number;
+  conditionLabel?: string;
+  foil: string;
+  edition: number;
+  value: number;
+  obtainedAt: string;
+  user: SocialUser;
+  waifu: GachaWaifu;
+}
+
+/** Status do roll diário. */
+export interface GachaStatus {
+  canRoll: boolean;
+  rollsLeft: number;
+  nextRollAt: string | null;
+  pityDaysLeft: number;
+  pityDue: boolean;
+}
+
+/** Coleção de cartas com stats. */
+export interface GachaCollectionResponse {
+  data: GachaPull[];
+  stats: { total: number; totalValue: number };
+  meta: { total: number; page: number; limit: number; totalPages: number };
+}
+
+/** Linha do ranking de colecionadores. */
+export interface GachaRankingEntry {
+  user: SocialUser;
+  totalValue: number;
+  pulls: number;
 }
 
 /**

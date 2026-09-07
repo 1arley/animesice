@@ -283,6 +283,32 @@ const server = http.createServer((req, res) => {
   const follow = p && (p.match(/^\/api\/social\/follow\/[^/]+$/) || p.match(/^\/social\/follow\/[^/]+$/));
   if (req.method === 'POST' && follow) return json(res, { following: true });
 
+  // --- Gacha: respostas default vazias/liberadas; specs sobrescrevem p/ dados controlados ---
+  if (req.method === 'GET' && (p === '/api/gacha/status' || p === '/gacha/status')) {
+    return json(res, { canRoll: true, rollsLeft: 1, nextRollAt: null, pityDaysLeft: 30, pityDue: false });
+  }
+  if (req.method === 'GET' && (p === '/api/gacha/recent' || p === '/gacha/recent')) return json(res, []);
+  if (req.method === 'GET' && (p === '/api/gacha/ranking' || p === '/gacha/ranking')) return json(res, []);
+  const gachaCollectionMatch = p && (p === '/api/gacha/collection' || p === '/gacha/collection');
+  if (req.method === 'GET' && gachaCollectionMatch) {
+    return json(res, { data: [], stats: { total: 0, totalValue: 0 }, meta: { total: 0, page: 1, limit: 24, totalPages: 0 } });
+  }
+  if (req.method === 'POST' && (p === '/api/gacha/roll' || p === '/gacha/roll')) {
+    return json(res, {
+      id: 'pull-e2e',
+      condition: 0.04,
+      foil: 'GOLD',
+      edition: 1,
+      value: 9500,
+      obtainedAt: new Date().toISOString(),
+      user: { id: 'viewer-1', name: 'Viewer', userName: 'viewer', avatar: null },
+      waifu: {
+        id: 'w-e2e', name: 'Waifu E2E', image: null, rarity: 'EPICA',
+        favourites: 5000, animeId: null, animeTitle: 'Anime E2E', anime: null,
+      },
+    });
+  }
+
   // fallback
   res.writeHead(200, { 'Content-Type': 'application/json' });
   res.end('[]');
