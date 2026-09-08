@@ -7,6 +7,7 @@ import { api, ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { Avatar } from "@/components/common/Avatar";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { GachaCard } from "@/components/gacha/GachaCard";
 import { timeAgo } from "@/lib/time";
 import { safeImageSrc } from "@/lib/url";
 import { blur } from "@/lib/blur";
@@ -177,6 +178,32 @@ export function FeedPost({
       <p className="mt-3 whitespace-pre-line text-body text-snow">
         {post.content}
       </p>
+
+      {post.kind === "GACHA_PULL" && post.meta && (
+        <div className="mt-3 w-44 max-w-full">
+          <GachaCard
+            pull={{
+              id: post.meta.userWaifuId,
+              condition: post.meta.condition,
+              foil: post.meta.foil,
+              edition: post.meta.edition,
+              value: post.meta.value,
+              obtainedAt: post.createdAt,
+              user: post.user,
+              waifu: {
+                id: post.meta.waifuId,
+                name: post.meta.name,
+                image: post.meta.image,
+                rarity: post.meta.rarity,
+                favourites: 0,
+                animeId: post.animeId,
+                animeTitle: post.anime?.title ?? null,
+                anime: post.anime,
+              },
+            }}
+          />
+        </div>
+      )}
 
       {post.anime && (
         <Link
