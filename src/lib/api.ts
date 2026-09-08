@@ -36,6 +36,10 @@ import type {
   SocialPost,
   PostCommentItem,
   FeedItem,
+  GachaPull,
+  GachaStatus,
+  GachaCollectionResponse,
+  GachaRankingEntry,
   UserSearchResult,
   FeedbackStatus,
   BlogPost,
@@ -1105,6 +1109,26 @@ export const api = {
   // --- Admin: create genre ---
   adminCreateGenre: (body: { slug: string; name: string }) =>
     request<Genre>(`/admin/genre`, { method: "POST", body: JSON.stringify(body) }),
+
+  // --- Gacha waifu ---
+  rollGacha: (turnstileToken?: string) =>
+    request<GachaPull>(`/gacha/roll`, {
+      method: "POST",
+      body: JSON.stringify({ turnstileToken }),
+    }),
+
+  gachaStatus: () => request<GachaStatus>(`/gacha/status`),
+
+  gachaCollection: (userId: string, page = 1, limit = 24) =>
+    request<GachaCollectionResponse>(
+      `/gacha/collection?userId=${encodeURIComponent(userId)}&page=${page}&limit=${limit}`,
+    ),
+
+  gachaRecent: (limit = 20) =>
+    request<GachaPull[]>(`/gacha/recent?limit=${limit}`),
+
+  gachaRanking: (limit = 20) =>
+    request<GachaRankingEntry[]>(`/gacha/ranking?limit=${limit}`),
 };
 
 export interface RoomInfo {
