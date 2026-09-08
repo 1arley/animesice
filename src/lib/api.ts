@@ -366,7 +366,7 @@ export const api = {
   _sourceCache: {
     get(slug: string, episode: number): StreamSource | null {
       try {
-        const key = `src:${slug}:${episode}`;
+        const key = `src:v2:${slug}:${episode}`;
         const raw = sessionStorage.getItem(key);
         if (!raw) return null;
         const { source, ts } = JSON.parse(raw) as { source: StreamSource; ts: number };
@@ -382,7 +382,7 @@ export const api = {
     },
     set(slug: string, episode: number, source: StreamSource) {
       try {
-        sessionStorage.setItem(`src:${slug}:${episode}`, JSON.stringify({ source, ts: Date.now() }));
+        sessionStorage.setItem(`src:v2:${slug}:${episode}`, JSON.stringify({ source, ts: Date.now() }));
       } catch { /* quota exceeded — ignore */ }
     },
   },
