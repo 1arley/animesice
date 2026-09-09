@@ -166,10 +166,7 @@ async function ensureRefresh(): Promise<void> {
   return refreshPromise;
 }
 
-async function request<T>(
-  path: string,
-  options: RequestInit = {},
-): Promise<T> {
+async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     ...((options.headers as Record<string, string>) || {}),
@@ -178,7 +175,8 @@ async function request<T>(
   // Só métodos idempotentes entram no retry de 429 (rate-limit no Cloudflare/
   // backend compartilha IP — um pico no SSR pode estourar o throttler).
   const method = (options.method ?? "GET").toUpperCase();
-  const retryable = method === "GET" || method === "HEAD" || method === "OPTIONS";
+  const retryable =
+    method === "GET" || method === "HEAD" || method === "OPTIONS";
   const maxAttempts = retryable ? 3 : 1;
 
   const exec = () =>
@@ -189,7 +187,11 @@ async function request<T>(
     });
 
   let res = await exec();
-  for (let attempt = 1; res.status === 429 && attempt < maxAttempts; attempt++) {
+  for (
+    let attempt = 1;
+    res.status === 429 && attempt < maxAttempts;
+    attempt++
+  ) {
     await new Promise((r) => setTimeout(r, 400 * attempt));
     res = await exec();
   }
@@ -331,8 +333,7 @@ export const api = {
 
   getRandomAnime: () => request<Anime | null>(`/anime/random`),
 
-  getTopAnimes: (limit = 20) =>
-    request<Anime[]>(`/anime/top?limit=${limit}`),
+  getTopAnimes: (limit = 20) => request<Anime[]>(`/anime/top?limit=${limit}`),
 
   getTrendingAnimes: (limit = 20, sinceDays = 7) =>
     request<Anime[]>(`/anime/trending?limit=${limit}&sinceDays=${sinceDays}`),
@@ -355,18 +356,17 @@ export const api = {
     request<BlogPost>(`/blog-posts/slug/${encodeURIComponent(slug)}`),
 
   getGenreAnimes: (slug: string, page = 1, limit = 24) =>
-    request<GenreAnimesResponse>(`/genre/${slug}/animes?page=${page}&limit=${limit}`),
+    request<GenreAnimesResponse>(
+      `/genre/${slug}/animes?page=${page}&limit=${limit}`,
+    ),
 
-  getEpisodes: (slug: string) =>
-    request<Episode[]>(`/anime/${slug}/episodes`),
+  getEpisodes: (slug: string) => request<Episode[]>(`/anime/${slug}/episodes`),
 
   getEpisode: (slug: string, number: number) =>
     request<Episode & { anime: Anime }>(`/episode/${slug}/${number}`),
 
   latestEpisodes: (limit = 12) =>
-    request<(Episode & { anime: Anime })[]>(
-      `/episode/latest?limit=${limit}`,
-    ),
+    request<(Episode & { anime: Anime })[]>(`/episode/latest?limit=${limit}`),
 
   // --- Streaming ---
 
@@ -377,7 +377,10 @@ export const api = {
         const key = `src:${slug}:${episode}`;
         const raw = sessionStorage.getItem(key);
         if (!raw) return null;
-        const { source, ts } = JSON.parse(raw) as { source: StreamSource; ts: number };
+        const { source, ts } = JSON.parse(raw) as {
+          source: StreamSource;
+          ts: number;
+        };
         // A signed stream URL must not outlive the server/CDN cache window.
         // The backend contract should still provide a URL valid for at least
         // this interval (with operational safety margin).
@@ -386,12 +389,19 @@ export const api = {
           return null;
         }
         return source;
-      } catch { return null; }
+      } catch {
+        return null;
+      }
     },
     set(slug: string, episode: number, source: StreamSource) {
       try {
-        sessionStorage.setItem(`src:${slug}:${episode}`, JSON.stringify({ source, ts: Date.now() }));
-      } catch { /* quota exceeded — ignore */ }
+        sessionStorage.setItem(
+          `src:${slug}:${episode}`,
+          JSON.stringify({ source, ts: Date.now() }),
+        );
+      } catch {
+        /* quota exceeded — ignore */
+      }
     },
   },
 
@@ -406,9 +416,7 @@ export const api = {
    * já está disponível.
    */
   streamSourceAsync: (animeSlug: string, episodeNumber: number) =>
-    request<
-      StreamSource | { jobId: string; status: string; message: string }
-    >(
+    request<StreamSource | { jobId: string; status: string; message: string }>(
       `/stream/source?anime=${encodeURIComponent(animeSlug)}&episode=${episodeNumber}&async=1`,
     ),
 
@@ -416,7 +424,10 @@ export const api = {
    * Entrada da watch page. O endpoint same-origin valida os identificadores e
    * permite cache CDN curto somente quando a fonte já está resolvida.
    */
-  episodeStreamSourceAsync: async (animeSlug: string, episodeNumber: number) => {
+  episodeStreamSourceAsync: async (
+    animeSlug: string,
+    episodeNumber: number,
+  ) => {
     const response = await fetch(
       `/api/stream-source?anime=${encodeURIComponent(animeSlug)}&episode=${episodeNumber}`,
       { credentials: "include" },
@@ -425,7 +436,8 @@ export const api = {
     if (!response.ok && response.status !== 202) {
       throw new ApiError(response.status, readErrorMessage(data));
     }
-    return data as StreamSource | { jobId: string; status: string; message?: string };
+    return data as
+      StreamSource | { jobId: string; status: string; message?: string };
   },
 
   /**
@@ -438,7 +450,8 @@ export const api = {
     jobId: string,
   ) =>
     request<
-      StreamSource | { jobId: string; status: string; message?: string; error?: string }
+      | StreamSource
+      | { jobId: string; status: string; message?: string; error?: string }
     >(
       `/stream/source?anime=${encodeURIComponent(animeSlug)}&episode=${episodeNumber}&jobId=${encodeURIComponent(jobId)}`,
     ),
@@ -471,7 +484,10 @@ export const api = {
           const source = JSON.parse(e.data) as StreamSource;
           callbacks.onSource(source);
           es.close();
-        } catch { callbacks.onError(); es.close(); }
+        } catch {
+          callbacks.onError();
+          es.close();
+        }
       });
 
       es.addEventListener("failed", (e) => {
@@ -480,7 +496,10 @@ export const api = {
           const data = JSON.parse(e.data) as { error?: string };
           callbacks.onFailed(data.error ?? "Extração falhou");
           es.close();
-        } catch { callbacks.onError(); es.close(); }
+        } catch {
+          callbacks.onError();
+          es.close();
+        }
       });
 
       es.addEventListener("timeout", () => {
@@ -538,18 +557,24 @@ export const api = {
   },
 
   adminUpdateBlogPost: async (id: string, dto: Partial<BlogPostInput>) => {
-    const post = await request<BlogPost>(`/blog-posts/${encodeURIComponent(id)}`, {
-      method: "PATCH",
-      body: JSON.stringify(dto),
-    });
+    const post = await request<BlogPost>(
+      `/blog-posts/${encodeURIComponent(id)}`,
+      {
+        method: "PATCH",
+        body: JSON.stringify(dto),
+      },
+    );
     await revalidateBlogCache();
     return post;
   },
 
   adminDeleteBlogPost: async (id: string) => {
-    const result = await request<{ message: string }>(`/blog-posts/${encodeURIComponent(id)}`, {
-      method: "DELETE",
-    });
+    const result = await request<{ message: string }>(
+      `/blog-posts/${encodeURIComponent(id)}`,
+      {
+        method: "DELETE",
+      },
+    );
     await revalidateBlogCache();
     return result;
   },
@@ -579,7 +604,22 @@ export const api = {
 
   adminUpdateAnime: (
     slug: string,
-    dto: Partial<Pick<Anime, "title" | "synopsis" | "coverImage" | "bannerImage" | "rating" | "status" | "ageRating" | "editorialSynopsis" | "editorialWhereToWatch" | "editorialDubbingInfo" | "editorialSeasonsInfo">>,
+    dto: Partial<
+      Pick<
+        Anime,
+        | "title"
+        | "synopsis"
+        | "coverImage"
+        | "bannerImage"
+        | "rating"
+        | "status"
+        | "ageRating"
+        | "editorialSynopsis"
+        | "editorialWhereToWatch"
+        | "editorialDubbingInfo"
+        | "editorialSeasonsInfo"
+      >
+    >,
   ) =>
     request<Anime>(`/admin/anime/${slug}`, {
       method: "PATCH",
@@ -617,7 +657,12 @@ export const api = {
   adminUpdateEpisode: (
     slug: string,
     number: number,
-    dto: Partial<Pick<Episode, "title" | "videoUrl" | "thumbnailUrl" | "duration" | "embedUrl">>,
+    dto: Partial<
+      Pick<
+        Episode,
+        "title" | "videoUrl" | "thumbnailUrl" | "duration" | "embedUrl"
+      >
+    >,
   ) =>
     request<Episode>(`/admin/episode/${slug}/${number}`, {
       method: "PATCH",
@@ -662,10 +707,14 @@ export const api = {
 
   // --- Comments ---
   listAnimeComments: (animeId: string, page = 1, limit = 50) =>
-    request<CommentItem[]>(`/comment/anime/${animeId}?page=${page}&limit=${limit}`),
+    request<CommentItem[]>(
+      `/comment/anime/${animeId}?page=${page}&limit=${limit}`,
+    ),
 
   listEpisodeComments: (episodeId: string, page = 1, limit = 50) =>
-    request<CommentItem[]>(`/comment/episode/${episodeId}?page=${page}&limit=${limit}`),
+    request<CommentItem[]>(
+      `/comment/episode/${episodeId}?page=${page}&limit=${limit}`,
+    ),
 
   createComment: (body: {
     content: string;
@@ -673,10 +722,16 @@ export const api = {
     episodeId?: string;
     parentId?: string;
   }) =>
-    request<CommentItem>(`/comment`, { method: "POST", body: JSON.stringify(body) }),
+    request<CommentItem>(`/comment`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
 
   editComment: (id: string, content: string) =>
-    request<CommentItem>(`/comment/${id}`, { method: "PATCH", body: JSON.stringify({ content }) }),
+    request<CommentItem>(`/comment/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify({ content }),
+    }),
 
   deleteComment: (id: string) =>
     request<CommentItem>(`/comment/${id}`, { method: "DELETE" }),
@@ -685,23 +740,29 @@ export const api = {
     request<ToggleLikeResponse>(`/comment/${id}/like`, { method: "POST" }),
 
   getCommentReplies: (id: string, page = 1, limit = 50) =>
-    request<CommentRepliesResponse>(`/comment/${id}/replies?page=${page}&limit=${limit}`),
+    request<CommentRepliesResponse>(
+      `/comment/${id}/replies?page=${page}&limit=${limit}`,
+    ),
 
   // --- Rating ---
   rateAnime: (slug: string, score: number) =>
-    request<Rating>(`/rating/${slug}`, { method: "POST", body: JSON.stringify({ score }) }),
+    request<Rating>(`/rating/${slug}`, {
+      method: "POST",
+      body: JSON.stringify({ score }),
+    }),
 
   removeRating: (slug: string) =>
     request<{ message: string }>(`/rating/${slug}`, { method: "DELETE" }),
 
-  getUserRating: (slug: string) =>
-    request<Rating | null>(`/rating/me/${slug}`),
+  getUserRating: (slug: string) => request<Rating | null>(`/rating/me/${slug}`),
 
   getRatingStats: (slug: string) =>
     request<RatingStats>(`/rating/stats/${slug}`),
 
   toggleFavorite: (slug: string) =>
-    request<ToggleFavoriteResponse>(`/favorite/${slug}/toggle`, { method: "POST" }),
+    request<ToggleFavoriteResponse>(`/favorite/${slug}/toggle`, {
+      method: "POST",
+    }),
 
   listFavorites: (page = 1, limit = 24) =>
     request<Paginated<Anime>>(`/favorite?page=${page}&limit=${limit}`),
@@ -709,26 +770,49 @@ export const api = {
   checkFavorite: (slug: string) =>
     request<CheckFavoriteResponse>(`/favorite/${slug}/check`),
 
-  updateProgress: (slug: string, episodeNumber: number, progress: number, duration?: number, completed?: boolean) =>
+  updateProgress: (
+    slug: string,
+    episodeNumber: number,
+    progress: number,
+    duration?: number,
+    completed?: boolean,
+  ) =>
     request(`/watch-history/${slug}/${episodeNumber}`, {
       method: "POST",
       body: JSON.stringify({ progress, duration, completed }),
     }),
 
   getContinueWatching: (limit = 12, signal?: AbortSignal) =>
-    request<ContinueWatchingItem[]>(`/watch-history/continue?limit=${limit}`, signal ? { signal } : undefined),
+    request<ContinueWatchingItem[]>(
+      `/watch-history/continue?limit=${limit}`,
+      signal ? { signal } : undefined,
+    ),
 
   getWatchHistory: (page = 1, limit = 24) =>
-    request<Paginated<WatchHistoryItem>>(`/watch-history?page=${page}&limit=${limit}`),
+    request<Paginated<WatchHistoryItem>>(
+      `/watch-history?page=${page}&limit=${limit}`,
+    ),
 
   deleteWatchHistory: (slug: string, episodeNumber: number) =>
-    request<{ message: string }>(`/watch-history/${slug}/${episodeNumber}`, { method: "DELETE" }),
+    request<{ message: string }>(`/watch-history/${slug}/${episodeNumber}`, {
+      method: "DELETE",
+    }),
 
   incrementViews: (slug: string, episodeNumber: number) =>
-    request<{ message: string }>(`/episode/${slug}/${episodeNumber}/views`, { method: "POST" }),
+    request<{ message: string }>(`/episode/${slug}/${episodeNumber}/views`, {
+      method: "POST",
+    }),
 
-  listNotifications: (page = 1, limit = 20, unread = false, signal?: AbortSignal) =>
-    request<NotificationListResponse>(`/notification?page=${page}&limit=${limit}${unread ? "&unread=true" : ""}`, signal ? { signal } : undefined),
+  listNotifications: (
+    page = 1,
+    limit = 20,
+    unread = false,
+    signal?: AbortSignal,
+  ) =>
+    request<NotificationListResponse>(
+      `/notification?page=${page}&limit=${limit}${unread ? "&unread=true" : ""}`,
+      signal ? { signal } : undefined,
+    ),
 
   markNotificationRead: (id: string) =>
     request<NotificationItem>(`/notification/${id}/read`, { method: "PATCH" }),
@@ -744,17 +828,26 @@ export const api = {
   // Rotas públicas ficam em /users/:id/* no backend (UsersController);
   // /user/* é o controller autenticado (me, avatar, profile-meta).
   getUserComments: (userId: string, page = 1, limit = 20) =>
-    request<Paginated<CommentItem>>(`/users/${userId}/comments?page=${page}&limit=${limit}`),
+    request<Paginated<CommentItem>>(
+      `/users/${userId}/comments?page=${page}&limit=${limit}`,
+    ),
 
   getUserRatings: (userId: string, page = 1, limit = 20) =>
-    request<Paginated<UserRating>>(`/users/${userId}/ratings?page=${page}&limit=${limit}`),
+    request<Paginated<UserRating>>(
+      `/users/${userId}/ratings?page=${page}&limit=${limit}`,
+    ),
 
   getUserFavorites: (userId: string, page = 1, limit = 24) =>
     request<Paginated<PublicFavoriteItem>>(
       `/users/${userId}/favorites?page=${page}&limit=${limit}`,
     ),
 
-  getUserAnimeList: (identifier: string, page = 1, limit = 24, status?: string) =>
+  getUserAnimeList: (
+    identifier: string,
+    page = 1,
+    limit = 24,
+    status?: string,
+  ) =>
     request<Paginated<PublicAnimeListItem>>(
       `/users/${identifier}/anime-list?page=${page}&limit=${limit}${status ? `&status=${status}` : ""}`,
     ),
@@ -764,8 +857,16 @@ export const api = {
       `/users/${identifier}/activity?page=${page}&limit=${limit}`,
     ),
 
-  updateProfileMeta: (data: { avatar?: string; bio?: string; userName?: string; myAnimeList?: string }) =>
-    request<User>(`/user/me/profile-meta`, { method: "POST", body: JSON.stringify(data) }),
+  updateProfileMeta: (data: {
+    avatar?: string;
+    bio?: string;
+    userName?: string;
+    myAnimeList?: string;
+  }) =>
+    request<User>(`/user/me/profile-meta`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
 
   uploadAvatar: async (file: File): Promise<User> => {
     const formData = new FormData();
@@ -785,33 +886,42 @@ export const api = {
     return (await res.json()) as User;
   },
 
-  deleteAvatar: () =>
-    request<User>(`/user/me/avatar`, { method: "DELETE" }),
+  deleteAvatar: () => request<User>(`/user/me/avatar`, { method: "DELETE" }),
 
-  getRelatedAnime: (slug: string) =>
-    request<Anime[]>(`/anime/${slug}/related`),
+  getRelatedAnime: (slug: string) => request<Anime[]>(`/anime/${slug}/related`),
 
-  getAnimeStats: (slug: string) =>
-    request<AnimeStats>(`/anime/${slug}/stats`),
+  getAnimeStats: (slug: string) => request<AnimeStats>(`/anime/${slug}/stats`),
 
   // --- User Anime List (Watchlist) ---
-  upsertAnimeList: (slug: string, body: {
-    status?: 'PLANNING' | 'WATCHING' | 'COMPLETED' | 'ON_HOLD' | 'DROPPED';
-    episodesWatched?: number;
-    score?: number;
-    notes?: string;
-    private?: boolean;
-  }) =>
-    request(`/user-anime-list/${slug}`, { method: "POST", body: JSON.stringify(body) }),
+  upsertAnimeList: (
+    slug: string,
+    body: {
+      status?: "PLANNING" | "WATCHING" | "COMPLETED" | "ON_HOLD" | "DROPPED";
+      episodesWatched?: number;
+      score?: number;
+      notes?: string;
+      private?: boolean;
+    },
+  ) =>
+    request(`/user-anime-list/${slug}`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
 
   removeAnimeList: (slug: string) =>
-    request<{ message: string }>(`/user-anime-list/${slug}`, { method: "DELETE" }),
+    request<{ message: string }>(`/user-anime-list/${slug}`, {
+      method: "DELETE",
+    }),
 
   listAnimeList: (page = 1, limit = 24, status?: string) =>
-    request<Paginated<UserAnimeListItem>>(`/user-anime-list?page=${page}&limit=${limit}${status ? `&status=${status}` : ""}`),
+    request<Paginated<UserAnimeListItem>>(
+      `/user-anime-list?page=${page}&limit=${limit}${status ? `&status=${status}` : ""}`,
+    ),
 
   checkAnimeList: (slug: string) =>
-    request<{ inList: boolean; status?: string }>(`/user-anime-list/${slug}/check`),
+    request<{ inList: boolean; status?: string }>(
+      `/user-anime-list/${slug}/check`,
+    ),
 
   // --- Notification preferences ---
   getNotificationPreferences: () =>
@@ -822,14 +932,21 @@ export const api = {
     channel: string;
     enabled: boolean;
   }) =>
-    request<NotificationPreference>(`/notification/preferences`, { method: "PATCH", body: JSON.stringify(body) }),
+    request<NotificationPreference>(`/notification/preferences`, {
+      method: "PATCH",
+      body: JSON.stringify(body),
+    }),
 
   // --- Privacy settings ---
-  getPrivacySettings: () =>
-    request<PrivacySettings>(`/settings/privacy`),
+  getPrivacySettings: () => request<PrivacySettings>(`/settings/privacy`),
 
-  updatePrivacySettings: (body: Partial<Omit<PrivacySettings, "privateAnimeLists">>) =>
-    request<PrivacySettings>(`/settings/privacy`, { method: "PATCH", body: JSON.stringify(body) }),
+  updatePrivacySettings: (
+    body: Partial<Omit<PrivacySettings, "privateAnimeLists">>,
+  ) =>
+    request<PrivacySettings>(`/settings/privacy`, {
+      method: "PATCH",
+      body: JSON.stringify(body),
+    }),
 
   // --- Recommendations ---
   getRecommendations: (limit = 20) =>
@@ -847,11 +964,21 @@ export const api = {
       `/anime-requests?page=${page}&limit=${limit}${status ? `&status=${status}` : ""}`,
     ),
 
-  createAnimeRequest: (body: { title: string; alternativeTitle?: string; notes?: string }) =>
-    request<AnimeRequestItem>(`/anime-requests`, { method: "POST", body: JSON.stringify(body) }),
+  createAnimeRequest: (body: {
+    title: string;
+    alternativeTitle?: string;
+    notes?: string;
+  }) =>
+    request<AnimeRequestItem>(`/anime-requests`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
 
   voteAnimeRequest: (id: string) =>
-    request<{ voted: boolean; voteCount: number }>(`/anime-requests/${id}/vote`, { method: "POST" }),
+    request<{ voted: boolean; voteCount: number }>(
+      `/anime-requests/${id}/vote`,
+      { method: "POST" },
+    ),
 
   // --- Community: Site feedback ---
   listFeedback: (page = 1, limit = 20, type?: string, status?: string) =>
@@ -859,8 +986,11 @@ export const api = {
       `/feedback?page=${page}&limit=${limit}${type ? `&type=${type}` : ""}${status ? `&status=${status}` : ""}`,
     ),
 
-  createFeedback: (body: { type: 'SUGGESTION' | 'BUG' | 'REQUEST'; title: string; description: string }) =>
-    request(`/feedback`, { method: "POST", body: JSON.stringify(body) }),
+  createFeedback: (body: {
+    type: "SUGGESTION" | "BUG" | "REQUEST";
+    title: string;
+    description: string;
+  }) => request(`/feedback`, { method: "POST", body: JSON.stringify(body) }),
 
   upvoteFeedback: (id: string) =>
     request(`/feedback/${id}/upvote`, { method: "POST" }),
@@ -949,29 +1079,42 @@ export const api = {
 
   // --- Moderation ---
   createReport: (body: {
-    targetType: 'COMMENT' | 'ROOM_MESSAGE' | 'USER' | 'ANIME';
+    targetType: "COMMENT" | "ROOM_MESSAGE" | "USER" | "ANIME";
     targetId: string;
-    reason: 'SPAM' | 'HARASSMENT' | 'NSFW' | 'SPOILER' | 'ILLEGAL' | 'OTHER';
+    reason: "SPAM" | "HARASSMENT" | "NSFW" | "SPOILER" | "ILLEGAL" | "OTHER";
     notes?: string;
-  }) =>
-    request(`/report`, { method: "POST", body: JSON.stringify(body) }),
+  }) => request(`/report`, { method: "POST", body: JSON.stringify(body) }),
 
   // --- Admin moderation ---
   adminListReports: (page = 1, limit = 20, status?: string) =>
-    request<ReportListResponse>(`/admin/reports?page=${page}&limit=${limit}${status ? `&status=${status}` : ""}`),
+    request<ReportListResponse>(
+      `/admin/reports?page=${page}&limit=${limit}${status ? `&status=${status}` : ""}`,
+    ),
 
   adminResolveReport: (id: string, moderationNote?: string) =>
-    request<ReportItem>(`/admin/reports/${id}/resolve`, { method: "PATCH", body: JSON.stringify({ moderationNote }) }),
+    request<ReportItem>(`/admin/reports/${id}/resolve`, {
+      method: "PATCH",
+      body: JSON.stringify({ moderationNote }),
+    }),
 
   adminDismissReport: (id: string, moderationNote?: string) =>
-    request<ReportItem>(`/admin/reports/${id}/dismiss`, { method: "PATCH", body: JSON.stringify({ moderationNote }) }),
+    request<ReportItem>(`/admin/reports/${id}/dismiss`, {
+      method: "PATCH",
+      body: JSON.stringify({ moderationNote }),
+    }),
 
-  adminModerateUser: (userId: string, body: {
-    actionType: 'WARN' | 'MUTE' | 'BAN' | 'DELETE_CONTENT';
-    reason?: string;
-    hours?: number;
-  }) =>
-    request<ModerationActionItem>(`/admin/users/${userId}/moderate`, { method: "POST", body: JSON.stringify(body) }),
+  adminModerateUser: (
+    userId: string,
+    body: {
+      actionType: "WARN" | "MUTE" | "BAN" | "DELETE_CONTENT";
+      reason?: string;
+      hours?: number;
+    },
+  ) =>
+    request<ModerationActionItem>(`/admin/users/${userId}/moderate`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
 
   adminDeleteComment: (id: string) =>
     request<{ message: string }>(`/admin/comments/${id}`, { method: "DELETE" }),
@@ -1017,22 +1160,29 @@ export const api = {
     }),
 
   // --- Admin: anime requests ---
-  adminUpdateAnimeRequest: (id: string, status: FeedbackStatus, adminNote?: string) =>
+  adminUpdateAnimeRequest: (
+    id: string,
+    status: FeedbackStatus,
+    adminNote?: string,
+  ) =>
     request<AnimeRequestItem>(`/admin/anime-requests/${id}`, {
       method: "PATCH",
       body: JSON.stringify({ status, adminNote }),
     }),
 
   // --- Admin: site feedback ---
-  adminUpdateFeedback: (id: string, status: FeedbackStatus, adminNote?: string) =>
+  adminUpdateFeedback: (
+    id: string,
+    status: FeedbackStatus,
+    adminNote?: string,
+  ) =>
     request<SiteFeedbackItem>(`/admin/feedback/${id}`, {
       method: "PATCH",
       body: JSON.stringify({ status, adminNote }),
     }),
 
   // --- Admin: site settings ---
-  adminGetSiteSettings: () =>
-    request<SiteSettings>(`/settings/site`),
+  adminGetSiteSettings: () => request<SiteSettings>(`/settings/site`),
 
   adminUpdateSiteSettings: (body: Partial<SiteSettings>) =>
     request<SiteSettings>(`/settings/site`, {
@@ -1041,11 +1191,14 @@ export const api = {
     }),
 
   // --- Rooms (watch party) ---
-  createRoom: (body: { animeSlug: string; episodeNumber: number; maxParticipants?: number }) =>
+  createRoom: (body: {
+    animeSlug: string;
+    episodeNumber: number;
+    maxParticipants?: number;
+  }) =>
     request<RoomInfo>(`/room`, { method: "POST", body: JSON.stringify(body) }),
 
-  getRoom: (slug: string) =>
-    request<RoomInfo>(`/room/${slug}`),
+  getRoom: (slug: string) => request<RoomInfo>(`/room/${slug}`),
 
   getRoomMessages: (slug: string) =>
     request<RoomMessageItem[]>(`/room/${slug}/messages`),
@@ -1054,7 +1207,11 @@ export const api = {
     request<{ message: string }>(`/room/${slug}`, { method: "DELETE" }),
 
   // --- Admin: audit (SUPERADMIN) ---
-  adminGetSensitiveAccess: (resourceType = "User", days = 7, signal?: AbortSignal) =>
+  adminGetSensitiveAccess: (
+    resourceType = "User",
+    days = 7,
+    signal?: AbortSignal,
+  ) =>
     request<AuditLogItem[]>(
       `/admin/audit/sensitive-access?resourceType=${encodeURIComponent(resourceType)}&days=${days}`,
       signal ? { signal } : undefined,
@@ -1112,26 +1269,54 @@ export const api = {
 
   // --- Admin: create genre ---
   adminCreateGenre: (body: { slug: string; name: string }) =>
-    request<Genre>(`/admin/genre`, { method: "POST", body: JSON.stringify(body) }),
+    request<Genre>(`/admin/genre`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
 
-  
-  adminListGachaCards: (page = 1, limit = 48, search?: string, rarity?: string) =>
+  adminListGachaCards: (
+    page = 1,
+    limit = 48,
+    search?: string,
+    rarity?: string,
+  ) =>
     request<Paginated<AdminGachaCard>>(
       `/gacha/admin/cards?page=${page}&limit=${limit}${search ? `&search=${encodeURIComponent(search)}` : ""}${rarity ? `&rarity=${rarity}` : ""}`,
     ),
-  adminCreateGachaCard: (body: { name: string; image?: string; rarity: string }) =>
-    request<AdminGachaCard>(`/gacha/admin/cards`, { method: "POST", body: JSON.stringify(body) }),
-  adminUpdateGachaCard: (id: string, body: { name?: string; image?: string; rarity?: string }) =>
-    request<AdminGachaCard>(`/gacha/admin/cards/${id}`, { method: "PATCH", body: JSON.stringify(body) }),
+  adminCreateGachaCard: (body: {
+    name: string;
+    image?: string;
+    rarity: string;
+  }) =>
+    request<AdminGachaCard>(`/gacha/admin/cards`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  adminUpdateGachaCard: (
+    id: string,
+    body: { name?: string; image?: string; rarity?: string },
+  ) =>
+    request<AdminGachaCard>(`/gacha/admin/cards/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(body),
+    }),
   adminListUserCards: (userId: string, page = 1, limit = 50) =>
-    request<Paginated<GachaPull>>(`/gacha/admin/users/${userId}/cards?page=${page}&limit=${limit}`),
+    request<Paginated<GachaPull>>(
+      `/gacha/admin/users/${userId}/cards?page=${page}&limit=${limit}`,
+    ),
   adminGrantUserCard: (userId: string, cardId: string) =>
     request<GachaPull>(`/gacha/admin/users/${userId}/cards`, {
       method: "POST",
       body: JSON.stringify({ cardId }),
     }),
-  adminDeleteUserCard: (id: string) => request<AdminGachaCard>(`/gacha/admin/user-cards/${id}`, { method: "DELETE" }),
-  adminResetGachaRoll: (userId: string) => request<{ count: number }>(`/gacha/admin/users/${userId}/reset-roll`, { method: "POST" }),
+  adminDeleteUserCard: (id: string) =>
+    request<AdminGachaCard>(`/gacha/admin/user-cards/${id}`, {
+      method: "DELETE",
+    }),
+  adminResetGachaRoll: (userId: string) =>
+    request<{ count: number }>(`/gacha/admin/users/${userId}/reset-roll`, {
+      method: "POST",
+    }),
 
   // --- Gacha ---
   rollGacha: (turnstileToken?: string) =>
@@ -1142,10 +1327,34 @@ export const api = {
 
   gachaStatus: () => request<GachaStatus>(`/gacha/status`),
 
-  gachaCollection: (userId: string, page = 1, limit = 24) =>
-    request<Omit<GachaCollectionResponse, "data"> & { data: GachaPullResponse[] }>(
-      `/gacha/collection?userId=${encodeURIComponent(userId)}&page=${page}&limit=${limit}`,
+  gachaCollection: (
+    userId: string,
+    page = 1,
+    limit = 24,
+    sort = "value",
+    rarity = "",
+    foil = "",
+  ) =>
+    request<
+      Omit<GachaCollectionResponse, "data"> & { data: GachaPullResponse[] }
+    >(
+      `/gacha/collection?userId=${encodeURIComponent(userId)}&page=${page}&limit=${limit}&sort=${sort}&rarity=${rarity}&foil=${foil}`,
     ),
+
+  gachaFeatured: () => request<GachaPull | null>(`/gacha/featured`),
+  setGachaFeatured: (userCardId: string) =>
+    request<GachaPull>(`/gacha/featured`, {
+      method: "PATCH",
+      body: JSON.stringify({ userCardId }),
+    }),
+  removeGachaFeatured: () =>
+    request<{ featuredUserCardId: null }>(`/gacha/featured`, {
+      method: "DELETE",
+    }),
+  gachaPublicCard: (id: string) =>
+    request<GachaPull>(`/gacha/cards/${encodeURIComponent(id)}`),
+  gachaPublicFeatured: (userId: string) =>
+    request<GachaPull | null>(`/gacha/featured/${encodeURIComponent(userId)}`),
 
   gachaRecent: (limit = 20) =>
     request<GachaPullResponse[]>(`/gacha/recent?limit=${limit}`),
