@@ -37,6 +37,8 @@ import type {
   PostCommentItem,
   FeedItem,
   GachaPull,
+  GachaCardInfo,
+  AdminGachaCard,
   GachaStatus,
   GachaCollectionResponse,
   GachaRankingEntry,
@@ -225,11 +227,7 @@ async function revalidateBlogCache(): Promise<void> {
   }).catch(() => undefined);
 }
 
-type GachaPullResponse = Omit<GachaPull, "card"> & { waifu: GachaPull["card"] };
-
-function normalizeGachaPull({ waifu, ...pull }: GachaPullResponse): GachaPull {
-  return { ...pull, card: waifu };
-}
+type GachaPullResponse = GachaPull;
 
 export const api = {
   register: (body: {
@@ -1116,22 +1114,38 @@ export const api = {
   adminCreateGenre: (body: { slug: string; name: string }) =>
     request<Genre>(`/admin/genre`, { method: "POST", body: JSON.stringify(body) }),
 
-  // --- Gacha waifu ---
+  
+  adminListGachaCards: (page = 1, limit = 24, search?: string) =>
+    request<Paginated<AdminGachaCard>>(`/gacha/admin/cards?page=${page}&limit=${limit}${search ? `&search=${encodeURIComponent(search)}` : ""}`),
+  adminCreateGachaCard: (body: { name: string; image?: string; rarity: string }) =>
+    request<AdminGachaCard>(`/gacha/admin/cards`, { method: "POST", body: JSON.stringify(body) }),
+  adminUpdateGachaCard: (id: string, body: { name?: string; image?: string; rarity?: string }) =>
+    request<AdminGachaCard>(`/gacha/admin/cards/${id}`, { method: "PATCH", body: JSON.stringify(body) }),
+  adminListUserCards: (userId: string) => request<GachaPull[]>(`/gacha/admin/users/${userId}/cards`),
+  adminGrantUserCard: (userId: string, cardId: string) =>
+    request<GachaPull>(`/gacha/admin/users/${userId}/cards`, {
+      method: "POST",
+      body: JSON.stringify({ cardId }),
+    }),
+  adminDeleteUserCard: (id: string) => request<AdminGachaCard>(`/gacha/admin/user-cards/${id}`, { method: "DELETE" }),
+  adminResetGachaRoll: (userId: string) => request<{ count: number }>(`/gacha/admin/users/${userId}/reset-roll`, { method: "POST" }),
+
+  // --- Gacha ---
   rollGacha: (turnstileToken?: string) =>
     request<GachaPullResponse>(`/gacha/roll`, {
       method: "POST",
       body: JSON.stringify({ turnstileToken }),
-    }).then(normalizeGachaPull),
+    }),
 
   gachaStatus: () => request<GachaStatus>(`/gacha/status`),
 
   gachaCollection: (userId: string, page = 1, limit = 24) =>
     request<Omit<GachaCollectionResponse, "data"> & { data: GachaPullResponse[] }>(
       `/gacha/collection?userId=${encodeURIComponent(userId)}&page=${page}&limit=${limit}`,
-    ).then(result => ({ ...result, data: result.data.map(normalizeGachaPull) })),
+    ),
 
   gachaRecent: (limit = 20) =>
-    request<GachaPullResponse[]>(`/gacha/recent?limit=${limit}`).then(pulls => pulls.map(normalizeGachaPull)),
+    request<GachaPullResponse[]>(`/gacha/recent?limit=${limit}`),
 
   gachaRanking: (limit = 20) =>
     request<GachaRankingEntry[]>(`/gacha/ranking?limit=${limit}`),

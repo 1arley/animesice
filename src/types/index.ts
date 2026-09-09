@@ -538,6 +538,18 @@ export interface GachaPullMeta {
 }
 
 /** Carta do gacha (personagem cacheado do AniList). */
+export interface AdminGachaCard {
+  id: string;
+  name: string;
+  image: string | null;
+  rarity: string;
+  favourites: number;
+  animeId: string | null;
+  animeTitle: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface GachaCardInfo {
   id: string;
   name: string;
