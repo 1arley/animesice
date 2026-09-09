@@ -5,6 +5,8 @@ import Link from "next/link";
 import { api, ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { TURNSTILE_SITEKEY, loadTurnstile } from "@/lib/turnstile";
+import { RollStage } from "@/components/gacha/RollStage";
+import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
 import { GachaCard } from "@/components/gacha/GachaCard";
 import { SectionLabel } from "@/components/common/SectionLabel";
 import { Avatar } from "@/components/common/Avatar";
@@ -13,6 +15,8 @@ import type { GachaPull, GachaRankingEntry, GachaStatus } from "@/types";
 
 export default function GachaPage() {
   const { user } = useAuth();
+  const reduceMotion = usePrefersReducedMotion();
+  const [stageOpen, setStageOpen] = useState(false);
   const [status, setStatus] = useState<GachaStatus | null>(null);
   const [statusError, setStatusError] = useState(false);
   const [recent, setRecent] = useState<GachaPull[]>([]);
@@ -89,6 +93,8 @@ export default function GachaPage() {
       return;
     }
     setRolling(true);
+    setResult(null);
+    setStageOpen(true);
     try {
       const pull = await api.rollGacha(token);
       setResult(pull);
@@ -98,6 +104,7 @@ export default function GachaPage() {
       }
       await refresh();
     } catch (err) {
+      setStageOpen(false);
       setError(err instanceof ApiError ? err.message : "Erro ao rolar.");
       if (widgetIdRef.current && window.turnstile) {
         window.turnstile.reset(widgetIdRef.current);
@@ -110,6 +117,7 @@ export default function GachaPage() {
 
   return (
     <div className="mx-auto max-w-shelf px-4 pb-16 pt-8">
+      {stageOpen && (!reduceMotion || result) && <RollStage pull={result} reduceMotion={reduceMotion} onClose={() => setStageOpen(false)} />}
       <h1 className="font-display text-display-lg text-snow">Gacha</h1>
       <p className="mt-1 text-body-sm text-mist">
         1 roll por dia. Mesma waifu, cópias únicas: condition, foil e edição
@@ -154,14 +162,14 @@ export default function GachaPage() {
               <button
                 type="submit"
                 disabled={!status?.canRoll || rolling || !token}
-                className="btn-ice w-fit px-6 py-3 disabled:cursor-not-allowed disabled:opacity-50"
+                className="btn-ice w-fit px-6 py-3 transition-transform duration-150 active:scale-95 motion-reduce:transform-none disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {rolling ? "Rolando…" : "Rolar carta"}
               </button>
             </form>
           )}
 
-          {result && (
+          {result && !stageOpen && (
             <div className="mt-6">
               <SectionLabel level={2}>Sua carta</SectionLabel>
               <div className="w-44 max-w-full">

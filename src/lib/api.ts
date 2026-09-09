@@ -225,6 +225,12 @@ async function revalidateBlogCache(): Promise<void> {
   }).catch(() => undefined);
 }
 
+type GachaPullResponse = Omit<GachaPull, "card"> & { waifu: GachaPull["card"] };
+
+function normalizeGachaPull({ waifu, ...pull }: GachaPullResponse): GachaPull {
+  return { ...pull, card: waifu };
+}
+
 export const api = {
   register: (body: {
     name: string;
@@ -1112,20 +1118,20 @@ export const api = {
 
   // --- Gacha waifu ---
   rollGacha: (turnstileToken?: string) =>
-    request<GachaPull>(`/gacha/roll`, {
+    request<GachaPullResponse>(`/gacha/roll`, {
       method: "POST",
       body: JSON.stringify({ turnstileToken }),
-    }),
+    }).then(normalizeGachaPull),
 
   gachaStatus: () => request<GachaStatus>(`/gacha/status`),
 
   gachaCollection: (userId: string, page = 1, limit = 24) =>
-    request<GachaCollectionResponse>(
+    request<Omit<GachaCollectionResponse, "data"> & { data: GachaPullResponse[] }>(
       `/gacha/collection?userId=${encodeURIComponent(userId)}&page=${page}&limit=${limit}`,
-    ),
+    ).then(result => ({ ...result, data: result.data.map(normalizeGachaPull) })),
 
   gachaRecent: (limit = 20) =>
-    request<GachaPull[]>(`/gacha/recent?limit=${limit}`),
+    request<GachaPullResponse[]>(`/gacha/recent?limit=${limit}`).then(pulls => pulls.map(normalizeGachaPull)),
 
   gachaRanking: (limit = 20) =>
     request<GachaRankingEntry[]>(`/gacha/ranking?limit=${limit}`),
