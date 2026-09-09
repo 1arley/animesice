@@ -1115,13 +1115,16 @@ export const api = {
     request<Genre>(`/admin/genre`, { method: "POST", body: JSON.stringify(body) }),
 
   
-  adminListGachaCards: (page = 1, limit = 24, search?: string) =>
-    request<Paginated<AdminGachaCard>>(`/gacha/admin/cards?page=${page}&limit=${limit}${search ? `&search=${encodeURIComponent(search)}` : ""}`),
+  adminListGachaCards: (page = 1, limit = 48, search?: string, rarity?: string) =>
+    request<Paginated<AdminGachaCard>>(
+      `/gacha/admin/cards?page=${page}&limit=${limit}${search ? `&search=${encodeURIComponent(search)}` : ""}${rarity ? `&rarity=${rarity}` : ""}`,
+    ),
   adminCreateGachaCard: (body: { name: string; image?: string; rarity: string }) =>
     request<AdminGachaCard>(`/gacha/admin/cards`, { method: "POST", body: JSON.stringify(body) }),
   adminUpdateGachaCard: (id: string, body: { name?: string; image?: string; rarity?: string }) =>
     request<AdminGachaCard>(`/gacha/admin/cards/${id}`, { method: "PATCH", body: JSON.stringify(body) }),
-  adminListUserCards: (userId: string) => request<GachaPull[]>(`/gacha/admin/users/${userId}/cards`),
+  adminListUserCards: (userId: string, page = 1, limit = 50) =>
+    request<Paginated<GachaPull>>(`/gacha/admin/users/${userId}/cards?page=${page}&limit=${limit}`),
   adminGrantUserCard: (userId: string, cardId: string) =>
     request<GachaPull>(`/gacha/admin/users/${userId}/cards`, {
       method: "POST",
