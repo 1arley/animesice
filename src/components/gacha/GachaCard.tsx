@@ -30,10 +30,10 @@ function foilRing(foil: string): string {
  * valor. Usado no /gacha, na coleção do perfil e nos posts GACHA_PULL.
  */
 export function GachaCard({ pull }: { pull: GachaPull }) {
-  const { waifu } = pull;
-  const art = safeImageSrc(waifu.image);
+  const { card } = pull;
+  const art = safeImageSrc(card.image);
   const label = pull.conditionLabel ?? gachaConditionLabel(pull.condition);
-  const animeSlug = waifu.anime?.slug ?? null;
+  const animeSlug = card.anime?.slug ?? null;
 
   return (
     <div className={`overflow-hidden bg-panel ${foilRing(pull.foil)}`}>
@@ -41,7 +41,7 @@ export function GachaCard({ pull }: { pull: GachaPull }) {
         {art ? (
           <Image
             src={art}
-            alt={waifu.name}
+            alt={card.name}
             fill
             sizes="(max-width: 480px) 50vw, (max-width: 1024px) 25vw, 16vw"
             placeholder="blur"
@@ -57,9 +57,9 @@ export function GachaCard({ pull }: { pull: GachaPull }) {
           </div>
         )}
         <span
-          className={`absolute left-1.5 top-1.5 bg-ink/85 px-1.5 py-0.5 font-mono text-caption font-medium backdrop-blur-sm ${RARITY_TEXT[waifu.rarity] ?? "text-mist"}`}
+          className={`absolute left-1.5 top-1.5 bg-ink/85 px-1.5 py-0.5 font-mono text-caption font-medium backdrop-blur-sm ${RARITY_TEXT[card.rarity] ?? "text-mist"}`}
         >
-          {waifu.rarity}
+          {card.rarity}
         </span>
         {pull.foil !== "NORMAL" && (
           <span className="absolute right-1.5 top-1.5 bg-ink/85 px-1.5 py-0.5 font-mono text-caption font-medium text-amber-300 backdrop-blur-sm">
@@ -69,17 +69,17 @@ export function GachaCard({ pull }: { pull: GachaPull }) {
       </div>
       <div className="p-2">
         <p className="truncate font-sans text-body-sm font-medium text-snow">
-          {waifu.name}
+          {card.name}
         </p>
         <p className="truncate font-mono text-caption text-mist-soft">
           {label} · #{pull.edition} · {pull.value} pts
         </p>
-        {waifu.animeTitle && animeSlug && (
+        {card.animeTitle && animeSlug && (
           <Link
             href={`/animes/${animeSlug}`}
             className="mt-0.5 block truncate font-mono text-caption text-ice hover:text-snow"
           >
-            {waifu.animeTitle}
+            {card.animeTitle}
           </Link>
         )}
       </div>

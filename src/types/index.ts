@@ -526,8 +526,8 @@ export interface PostCommentItem {
 
 /** Meta de um post GACHA_PULL (pull Épico+ publicado no feed). */
 export interface GachaPullMeta {
-  userWaifuId: string;
-  waifuId: string;
+  userCardId: string;
+  cardId: string;
   name: string;
   image: string | null;
   rarity: string;
@@ -538,7 +538,7 @@ export interface GachaPullMeta {
 }
 
 /** Carta do gacha (personagem cacheado do AniList). */
-export interface GachaWaifu {
+export interface GachaCardInfo {
   id: string;
   name: string;
   image: string | null;
@@ -559,7 +559,7 @@ export interface GachaPull {
   value: number;
   obtainedAt: string;
   user: SocialUser;
-  waifu: GachaWaifu;
+  card: GachaCardInfo;
 }
 
 /** Status do roll diário. */
