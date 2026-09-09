@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { gsap, useGSAP } from "@/lib/gsap";
-import { GachaCard } from "./GachaCard";
+import { GachaCard, GACHA_TIERS, GALAXY_TEXT, RARITY_TEXT } from "./GachaCard";
 import { CountUp } from "@/components/core/CountUp";
 import type { GachaPull } from "@/types";
 
@@ -20,8 +20,14 @@ export function RollStage({ pull, reduceMotion, onClose }: {
   const [revealed, setRevealed] = useState(reduceMotion);
   const [canSkip, setCanSkip] = useState(false);
   const ready = !!pull && (reduceMotion || revealed);
-  const legendary = pull?.card.rarity === "LENDARIA";
-  const burst = legendary || pull?.card.rarity === "EPICA";
+  const tierIndex = pull ? GACHA_TIERS.indexOf(pull.card.rarity as (typeof GACHA_TIERS)[number]) : -1;
+  const burst = tierIndex >= 3;
+  const big = tierIndex >= 4;
+  const tierText = pull
+    ? pull.card.rarity === "GALACTICA"
+      ? "text-violet-400"
+      : RARITY_TEXT[pull.card.rarity] ?? "text-ice"
+    : "";
 
   useEffect(() => {
     const el = dialog.current!;
@@ -53,7 +59,12 @@ export function RollStage({ pull, reduceMotion, onClose }: {
       .call(() => {
         waiting.current = true;
         if (!latestPull.current) tl.pause();
-        else tl.timeScale(latestPull.current.card.rarity === "LENDARIA" ? 0.85 : latestPull.current.card.rarity === "EPICA" ? 1 : 1.8);
+        else {
+          const idx = latestPull.current
+            ? GACHA_TIERS.indexOf(latestPull.current.card.rarity as (typeof GACHA_TIERS)[number])
+            : -1;
+          tl.timeScale(idx >= 4 ? 0.85 : idx === 3 ? 1 : 1.8);
+        }
       }, [], 1.8)
       .addLabel("reveal", 1.8)
       .fromTo("[data-ring]", { scale: 0.4, opacity: 0.8 }, { scale: 2, opacity: 0, duration: 0.55, immediateRender: false }, "reveal")
@@ -79,8 +90,8 @@ export function RollStage({ pull, reduceMotion, onClose }: {
     } else if (waiting.current) {
       tl?.play("reveal");
     }
-    if (tl && waiting.current) tl.timeScale(pull.card.rarity === "LENDARIA" ? 0.85 : burst ? 1 : 1.3);
-  }, [pull, reduceMotion, burst]);
+    if (tl && waiting.current) tl.timeScale(tierIndex >= 4 ? 0.85 : burst ? 1 : 1.3);
+  }, [pull, reduceMotion, burst, tierIndex]);
 
   function skipOrClose() {
     if (ready) return onClose();
@@ -100,7 +111,7 @@ export function RollStage({ pull, reduceMotion, onClose }: {
         <h2 id="roll-title" className="font-display text-display-lg" aria-live="polite">
           {ready ? "Sua carta" : "Invocando sua carta…"}
         </h2>
-        <div data-stage className={`pointer-events-auto relative w-56 max-w-[65vw] ${legendary ? "text-amber-300" : "text-ice"}`} style={{ perspective: 1000 }}>
+        <div data-stage className={`pointer-events-auto relative w-56 max-w-[65vw] ${tierText || "text-ice"}`} style={{ perspective: 1000 }}>
           {!reduceMotion && <>
             <div data-flash aria-hidden="true" className="pointer-events-none absolute -inset-8 bg-current opacity-0 blur-2xl" />
             <div data-glow aria-hidden="true" className="absolute inset-0 animate-pulseGlow rounded-full bg-current opacity-20 blur-3xl" />
@@ -120,7 +131,7 @@ export function RollStage({ pull, reduceMotion, onClose }: {
           </div>
         </div>
         <div data-badge className="text-center" style={{ opacity: reduceMotion ? 1 : 0 }} aria-hidden={!ready}>
-          <p className={`font-mono ${legendary ? "text-amber-300" : "text-ice"}`}>{pull?.card.rarity}</p>
+          <p className={`font-mono ${pull?.card.rarity === "GALACTICA" ? GALAXY_TEXT : tierText || "text-ice"}`}>{pull?.card.rarity}</p>
           {pull && <p>{reduceMotion ? pull.value : <CountUp to={pull.value} startWhen={ready} />} pts</p>}
         </div>
         <button autoFocus type="button" onClick={() => { if (ready || canSkip || reduceMotion) skipOrClose(); }}

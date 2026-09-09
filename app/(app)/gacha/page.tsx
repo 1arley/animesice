@@ -202,6 +202,50 @@ export default function GachaPage() {
       </section>
 
       <section className="mt-10">
+        <SectionLabel level={2}>Como funciona</SectionLabel>
+        <div className="grid gap-3 md:grid-cols-2">
+          <div className="border border-hairline bg-panel p-4 text-body-sm text-mist">
+            <p className="font-medium text-snow">Raridade</p>
+            <ul className="mt-2 space-y-1 font-mono text-caption">
+              <li className="text-mist">COMUM — 55%</li>
+              <li className="text-emerald-400">INCOMUM — 25%</li>
+              <li className="text-sky-400">RARA — 12%</li>
+              <li className="text-violet-400">ÉPICA — 5,5%</li>
+              <li className="text-amber-300">LENDÁRIA — 2%</li>
+              <li className="text-rose-400">MÍTICA — 0,4%</li>
+              <li className="bg-gradient-to-r from-violet-400 via-pink-400 to-sky-400 bg-clip-text text-transparent">
+                GALÁCTICA — 0,1%
+              </li>
+            </ul>
+            <p className="mt-3">
+              30 dias sem ÉPICA+ ativa o pity: próximo roll garante ÉPICA ou
+              melhor — com 2% de chance de GALÁCTICA.
+            </p>
+          </div>
+          <div className="border border-hairline bg-panel p-4 text-body-sm text-mist">
+            <p className="font-medium text-snow">Sua cópia é única</p>
+            <ul className="mt-2 space-y-1 font-mono text-caption">
+              <li>
+                Foil: NORMAL 85% · <span className="text-ice">HOLO 12%</span> ·{" "}
+                <span className="text-amber-300">GOLD 3%</span>
+              </li>
+              <li>
+                Condition: <span className="text-ice">MINT</span> &gt; NM &gt; EX
+                &gt; PLAYED &gt; POOR
+              </li>
+              <li>
+                Edição: #1 a #10 valem bônus alto — quanto menor, mais rara
+              </li>
+            </ul>
+            <p className="mt-3">
+              Value = base da raridade × condition × foil + bônus de edição
+              baixa. Sua coleção vale a soma.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section className="mt-10">
         <SectionLabel level={2}>Ranking</SectionLabel>
         {ranking.length === 0 ? (
           <EmptyState text="Ranking vazio por enquanto." variant="compact" />
