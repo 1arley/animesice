@@ -183,15 +183,15 @@ export function FeedPost({
         <div className="mt-3 w-44 max-w-full">
           <GachaCard
             pull={{
-              id: post.meta.userWaifuId,
+              id: post.meta.userCardId,
               condition: post.meta.condition,
               foil: post.meta.foil,
               edition: post.meta.edition,
               value: post.meta.value,
               obtainedAt: post.createdAt,
               user: post.user,
-              waifu: {
-                id: post.meta.waifuId,
+              card: {
+                id: post.meta.cardId,
                 name: post.meta.name,
                 image: post.meta.image,
                 rarity: post.meta.rarity,
