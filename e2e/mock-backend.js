@@ -293,6 +293,13 @@ const server = http.createServer((req, res) => {
   if (req.method === 'GET' && gachaCollectionMatch) {
     return json(res, { data: [], stats: { total: 0, totalValue: 0 }, meta: { total: 0, page: 1, limit: 24, totalPages: 0 } });
   }
+  if (req.method === 'GET' && (p === '/api/gacha/featured' || p === '/gacha/featured')) return json(res, null);
+  if (req.method === 'GET' && p && /^\/(api\/)?gacha\/featured\/.+/.test(p)) return json(res, null);
+  if (req.method === 'GET' && p && /^\/(api\/)?gacha\/cards\/.+/.test(p)) return json(res, {
+    id: p.split('/').pop(), condition: 0.04, foil: 'GOLD', edition: 1, value: 9500,
+    obtainedAt: new Date().toISOString(), user: { id: 'viewer-1', name: 'Viewer', userName: 'viewer', avatar: null },
+    card: { id: 'w-e2e', name: 'Waifu E2E', image: null, rarity: 'EPICA', favourites: 5000, animeId: null, animeTitle: 'Anime E2E', anime: null },
+  });
   if (req.method === 'POST' && (p === '/api/gacha/roll' || p === '/gacha/roll')) {
     return json(res, {
       id: 'pull-e2e',
@@ -302,7 +309,7 @@ const server = http.createServer((req, res) => {
       value: 9500,
       obtainedAt: new Date().toISOString(),
       user: { id: 'viewer-1', name: 'Viewer', userName: 'viewer', avatar: null },
-      waifu: {
+      card: {
         id: 'w-e2e', name: 'Waifu E2E', image: null, rarity: 'EPICA',
         favourites: 5000, animeId: null, animeTitle: 'Anime E2E', anime: null,
       },

@@ -13,9 +13,7 @@ test.describe("Gacha", () => {
     await expect(
       page.getByText("Nenhum pull ainda. Seja o primeiro."),
     ).toBeVisible();
-    await expect(
-      page.getByText("Ranking vazio por enquanto."),
-    ).toBeVisible();
+    await expect(page.getByText("Ranking vazio por enquanto.")).toBeVisible();
   });
 
   test("logado: status libera o roll, mostra pity e rola a carta", async ({
@@ -53,25 +51,35 @@ test.describe("Gacha", () => {
     await expect(page.getByRole("dialog").getByText("Waifu E2E")).toBeVisible();
     await page.getByRole("button", { name: "Continuar" }).click();
     await expect(page.getByRole("dialog")).toHaveCount(0);
-    await expect(page.getByRole("heading", { name: "Sua carta" })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Sua carta" }),
+    ).toBeVisible();
   });
 
   for (const rarity of ["COMUM", "EPICA", "LENDARIA"]) {
-    test(`reveal animado ${rarity}: espera API, Esc pula e backdrop fecha`, async ({ page }) => {
+    test(`reveal animado ${rarity}: espera API, Esc pula e backdrop fecha`, async ({
+      page,
+    }) => {
       await page.emulateMedia({ reducedMotion: "no-preference" });
       await blockAds(page);
       await mockGeneric(page);
       await loginAs(page);
-      await page.route("**/challenges.cloudflare.com/turnstile/v0/api.js*", route => route.fulfill({
-        contentType: "application/javascript",
-        body: `window.turnstile = { ready: cb => cb(), render: (el, opts) => { setTimeout(() => opts.callback("e2e-token"), 50); return "w1"; }, reset: () => {} }; window.onTurnstileLoad?.();`,
-      }));
+      await page.route(
+        "**/challenges.cloudflare.com/turnstile/v0/api.js*",
+        (route) =>
+          route.fulfill({
+            contentType: "application/javascript",
+            body: `window.turnstile = { ready: cb => cb(), render: (el, opts) => { setTimeout(() => opts.callback("e2e-token"), 50); return "w1"; }, reset: () => {} }; window.onTurnstileLoad?.();`,
+          }),
+      );
       let release!: () => void;
-      const responseReady = new Promise<void>(resolve => { release = resolve; });
-      await page.route("**/gacha/roll", async route => {
+      const responseReady = new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      await page.route("**/gacha/roll", async (route) => {
         const response = await route.fetch();
         const pull = await response.json();
-        pull.waifu.rarity = rarity;
+        pull.card.rarity = rarity;
         pull.foil = rarity === "LENDARIA" ? "GOLD" : "NORMAL";
         await responseReady;
         await route.fulfill({ response, json: pull });
@@ -84,14 +92,20 @@ test.describe("Gacha", () => {
       await expect(dialog).toBeVisible();
       if (rarity !== "EPICA") await page.keyboard.press("Escape");
       else await page.waitForTimeout(2100); // Exercita a pausa da timeline com API lenta.
-      await expect(dialog.getByRole("heading")).toHaveText("Invocando sua carta…");
+      await expect(dialog.getByRole("heading")).toHaveText(
+        "Invocando sua carta…",
+      );
       release();
-      await expect(dialog.getByRole("button", { name: "Continuar" })).toBeVisible();
+      await expect(
+        dialog.getByRole("button", { name: "Continuar" }),
+      ).toBeVisible();
       await expect(dialog.getByText("Waifu E2E")).toBeVisible();
       if (rarity === "COMUM") await page.keyboard.press("Escape");
       else await dialog.click({ position: { x: 5, y: 5 } });
       await expect(dialog).toHaveCount(0);
-      await expect(page.getByRole("heading", { name: "Sua carta" })).toBeVisible();
+      await expect(
+        page.getByRole("heading", { name: "Sua carta" }),
+      ).toBeVisible();
     });
   }
 
@@ -101,5 +115,81 @@ test.describe("Gacha", () => {
     await page.goto("/users/mock");
     await page.getByRole("button", { name: "Cartas" }).click();
     await expect(page.getByText("Nenhuma carta ainda.")).toBeVisible();
+  });
+
+  test("preview por deep-link fecha com Escape e backdrop", async ({
+    page,
+  }) => {
+    await blockAds(page);
+    await mockGeneric(page);
+    await page.goto("/gacha?card=pull-e2e");
+    const dialog = page.getByRole("dialog");
+    await expect(
+      dialog.getByRole("heading", { name: "Waifu E2E" }),
+    ).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(dialog).toHaveCount(0);
+    await expect(page).toHaveURL(/\/gacha$/);
+    await page.goto("/gacha?card=pull-e2e");
+    await page.getByRole("dialog").click({ position: { x: 5, y: 5 } });
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+  });
+
+  test("coleção própria permite destacar carta", async ({ page }) => {
+    await blockAds(page);
+    await mockGeneric(page);
+    await loginAs(page);
+    await page.route("**/gacha/collection?**", (route) =>
+      route.fulfill({
+        json: {
+          data: [
+            {
+              id: "mine",
+              condition: 0.04,
+              foil: "NORMAL",
+              edition: 2,
+              value: 100,
+              obtainedAt: new Date().toISOString(),
+              user: {
+                id: "viewer-1",
+                name: "Viewer",
+                userName: "viewer",
+                avatar: null,
+              },
+              card: {
+                id: "c1",
+                name: "Minha carta",
+                image: null,
+                rarity: "RARA",
+                favourites: 1,
+                animeId: null,
+                animeTitle: null,
+                anime: null,
+              },
+            },
+          ],
+          stats: { total: 1, totalValue: 100 },
+          meta: { total: 1, page: 1, limit: 24, totalPages: 1 },
+        },
+      }),
+    );
+    await page.goto("/gacha/collection");
+    await expect(
+      page.getByRole("button", { name: "Destacar no perfil" }),
+    ).toBeVisible();
+  });
+
+  test("carta privada não abre preview", async ({ page }) => {
+    await blockAds(page);
+    await mockGeneric(page);
+    await page.route("**/gacha/cards/private", (route) =>
+      route.fulfill({
+        status: 404,
+        json: { message: "Carta não encontrada." },
+      }),
+    );
+    await page.goto("/gacha?card=private");
+    await expect(page.getByText("Carta indisponível ou privada.")).toBeVisible();
+    await expect(page.getByRole("dialog")).toHaveCount(0);
   });
 });

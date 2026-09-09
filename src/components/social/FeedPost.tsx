@@ -180,7 +180,10 @@ export function FeedPost({
       </p>
 
       {post.kind === "GACHA_PULL" && post.meta && (
-        <div className="mt-3 w-44 max-w-full">
+        <Link
+          href={`/gacha?card=${post.meta.userCardId}`}
+          className="mt-3 block w-44 max-w-full"
+        >
           <GachaCard
             pull={{
               id: post.meta.userCardId,
@@ -202,7 +205,7 @@ export function FeedPost({
               },
             }}
           />
-        </div>
+        </Link>
       )}
 
       {post.anime && (
@@ -270,7 +273,11 @@ export function FeedPost({
           className="ml-auto inline-flex min-h-11 items-center gap-1.5 py-2 text-mist-soft transition-colors hover:text-ice disabled:cursor-default"
         >
           <ShareGlyph />
-          {shared ? "Copiado!" : shareCount > 0 ? `Compartilhar · ${shareCount}` : "Compartilhar"}
+          {shared
+            ? "Copiado!"
+            : shareCount > 0
+              ? `Compartilhar · ${shareCount}`
+              : "Compartilhar"}
         </button>
       </footer>
 
@@ -278,15 +285,17 @@ export function FeedPost({
       {commentsOpen && (
         <div className="mt-3 space-y-2 border-t border-hairline pt-3">
           {commentsLoading ? (
-            <div className="flex items-center justify-center py-4" aria-busy="true">
+            <div
+              className="flex items-center justify-center py-4"
+              aria-busy="true"
+            >
               <div className="h-3 w-3 animate-spin rounded-full border-2 border-ice border-t-transparent" />
-              <span className="ml-2 font-mono text-caption text-mist-soft">Carregando...</span>
+              <span className="ml-2 font-mono text-caption text-mist-soft">
+                Carregando...
+              </span>
             </div>
           ) : comments.length === 0 ? (
-            <EmptyState
-              text="Nenhum comentário ainda."
-              variant="compact"
-            />
+            <EmptyState text="Nenhum comentário ainda." variant="compact" />
           ) : (
             comments.map((c) => (
               <div key={c.id} className="flex items-start gap-2.5">

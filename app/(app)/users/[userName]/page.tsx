@@ -25,6 +25,8 @@ import { ProfileRatings } from "@/components/profile/ProfileRatings";
 import { ProfileCollection } from "@/components/profile/ProfileCollection";
 import { ProfileGacha } from "@/components/profile/ProfileGacha";
 import { ProfileFollowList } from "@/components/profile/ProfileFollowList";
+import { GachaCard } from "@/components/gacha/GachaCard";
+import Link from "next/link";
 
 const LIMIT = 24;
 
@@ -82,7 +84,9 @@ export default function PublicProfilePage({
   const [tabFollowersTotal, setTabFollowersTotal] = useState(0);
   const [tabFollowersPage, setTabFollowersPage] = useState(1);
   const [tabFollowersHasMore, setTabFollowersHasMore] = useState(false);
-  const [collectionStatus, setCollectionStatus] = useState<WatchStatus | "ALL">("ALL");
+  const [collectionStatus, setCollectionStatus] = useState<WatchStatus | "ALL">(
+    "ALL",
+  );
   const [tabList, setTabList] = useState<PublicAnimeListItem[]>([]);
   const [tabListTotal, setTabListTotal] = useState(0);
   const [tabListPage, setTabListPage] = useState(1);
@@ -93,6 +97,7 @@ export default function PublicProfilePage({
   const [tabGachaPage, setTabGachaPage] = useState(1);
   const [tabGachaHasMore, setTabGachaHasMore] = useState(false);
   const [tabGachaPrivate, setTabGachaPrivate] = useState(false);
+  const [featuredCard, setFeaturedCard] = useState<GachaPull | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -110,6 +115,10 @@ export default function PublicProfilePage({
 
         // Visão geral em paralelo — sem cascata de requests.
         const uid = prof.id;
+        api
+          .gachaPublicFeatured(uid)
+          .then(setFeaturedCard)
+          .catch(() => setFeaturedCard(null));
         const [l, a, r, f] = await Promise.all([
           api.getUserAnimeList(uid, 1, 100),
           api.getUserActivity(uid, 1, 8),
@@ -351,11 +360,17 @@ export default function PublicProfilePage({
   return (
     <>
       <ProfileHero profile={profile} />
+      {featuredCard && (
+        <Link
+          href={`/gacha?card=${featuredCard.id}`}
+          className="mt-4 block w-36"
+          aria-label={`Ver carta destacada ${featuredCard.card.name}`}
+        >
+          <GachaCard pull={featuredCard} />
+        </Link>
+      )}
 
-      <div
-        id="profile-content"
-        className="mx-auto max-w-shelf px-4 pb-16 pt-4"
-      >
+      <div id="profile-content" className="mx-auto max-w-shelf px-4 pb-16 pt-4">
         <ProfileStats counts={profile._count} onNavigate={handleNavigate} />
 
         <div className="mt-6">
@@ -378,12 +393,12 @@ export default function PublicProfilePage({
                 ) : (
                   <>
                     <ProfileCurrentlyWatching items={watching} />
-                    <ProfileActivity
-                      events={activity}
-                      userName={displayName}
-                    />
+                    <ProfileActivity events={activity} userName={displayName} />
                     <ProfileRatings items={ratings} total={ratingsTotal} />
-                    <ProfileFavorites items={favorites} total={favoritesTotal} />
+                    <ProfileFavorites
+                      items={favorites}
+                      total={favoritesTotal}
+                    />
                   </>
                 )}
               </div>
@@ -419,7 +434,10 @@ export default function PublicProfilePage({
 
           {activeTab === "favorites" && (
             <>
-              <ProfileFavorites items={tabFavorites} total={tabFavorites.length} />
+              <ProfileFavorites
+                items={tabFavorites}
+                total={tabFavorites.length}
+              />
               {tabFavoritesHasMore && (
                 <button onClick={loadMoreFavorites} className="btn-ghost mt-4">
                   Carregar mais

@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { api, ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { TURNSTILE_SITEKEY, loadTurnstile } from "@/lib/turnstile";
@@ -11,10 +12,12 @@ import { GachaCard } from "@/components/gacha/GachaCard";
 import { SectionLabel } from "@/components/common/SectionLabel";
 import { Avatar } from "@/components/common/Avatar";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { CardPreview } from "@/components/gacha/CardPreview";
 import type { GachaPull, GachaRankingEntry, GachaStatus } from "@/types";
 
-export default function GachaPage() {
+function GachaPageContent() {
   const { user } = useAuth();
+  const searchParams = useSearchParams();
   const reduceMotion = usePrefersReducedMotion();
   const [stageOpen, setStageOpen] = useState(false);
   const [status, setStatus] = useState<GachaStatus | null>(null);
@@ -26,8 +29,40 @@ export default function GachaPage() {
   const [token, setToken] = useState("");
   const [result, setResult] = useState<GachaPull | null>(null);
   const [error, setError] = useState("");
+  const [preview, setPreview] = useState<GachaPull | null>(null);
   const widgetRef = useRef<HTMLDivElement>(null);
   const widgetIdRef = useRef<string>("");
+
+  useEffect(() => {
+    const id = searchParams.get("card");
+    if (!id) {
+      setPreview(null);
+      return;
+    }
+    let cancelled = false;
+    api
+      .gachaPublicCard(id)
+      .then((pull) => {
+        if (!cancelled) setPreview(pull);
+      })
+      .catch(() => {
+        if (!cancelled) setError("Carta indisponível ou privada.");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [searchParams]);
+
+  function closePreview() {
+    setPreview(null);
+    const url = new URL(window.location.href);
+    url.searchParams.delete("card");
+    window.history.replaceState(
+      null,
+      "",
+      `${url.pathname}${url.search}${url.hash}`,
+    );
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -117,12 +152,35 @@ export default function GachaPage() {
 
   return (
     <div className="mx-auto max-w-shelf px-4 pb-16 pt-8">
-      {stageOpen && (!reduceMotion || result) && <RollStage pull={result} reduceMotion={reduceMotion} onClose={() => setStageOpen(false)} />}
+      {stageOpen && (!reduceMotion || result) && (
+        <RollStage
+          pull={result}
+          reduceMotion={reduceMotion}
+          onClose={() => setStageOpen(false)}
+        />
+      )}
+      {preview && <CardPreview pull={preview} onClose={closePreview} />}
       <h1 className="font-display text-display-lg text-snow">Gacha</h1>
       <p className="mt-1 text-body-sm text-mist">
         1 roll por dia. Mesma waifu, cópias únicas: condition, foil e edição
         definem o valor da sua carta.
       </p>
+      {user && (
+        <Link
+          href="/gacha/collection"
+          className="btn-ghost mt-4 inline-block px-4 py-2"
+        >
+          Minha coleção
+        </Link>
+      )}
+      {error && !user && (
+        <div
+          role="alert"
+          className="mt-4 border border-signal/40 bg-signal/10 p-3 text-body-sm text-signal"
+        >
+          {error}
+        </div>
+      )}
 
       {!user ? (
         <div className="mt-6 border border-hairline bg-panel p-6 text-body-sm text-mist">
@@ -134,7 +192,10 @@ export default function GachaPage() {
       ) : (
         <section className="mt-6 border border-hairline bg-panel p-6">
           {error && (
-            <div role="alert" className="mb-4 border border-signal/40 bg-signal/10 p-3 text-body-sm text-signal">
+            <div
+              role="alert"
+              className="mb-4 border border-signal/40 bg-signal/10 p-3 text-body-sm text-signal"
+            >
               {error}
             </div>
           )}
@@ -183,12 +244,17 @@ export default function GachaPage() {
       <section className="mt-10">
         <SectionLabel level={2}>Últimos pulls</SectionLabel>
         {recent.length === 0 ? (
-          <EmptyState text="Nenhum pull ainda. Seja o primeiro." variant="compact" />
+          <EmptyState
+            text="Nenhum pull ainda. Seja o primeiro."
+            variant="compact"
+          />
         ) : (
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
             {recent.map((pull) => (
               <div key={pull.id}>
-                <GachaCard pull={pull} />
+                <Link href={`/gacha?card=${pull.id}`}>
+                  <GachaCard pull={pull} />
+                </Link>
                 <Link
                   href={`/users/${pull.user.userName ?? pull.user.id}`}
                   className="mt-1 block truncate font-mono text-caption text-mist-soft hover:text-ice"
@@ -230,8 +296,8 @@ export default function GachaPage() {
                 <span className="text-amber-300">GOLD 3%</span>
               </li>
               <li>
-                Condition: <span className="text-ice">MINT</span> &gt; NM &gt; EX
-                &gt; PLAYED &gt; POOR
+                Condition: <span className="text-ice">MINT</span> &gt; NM &gt;
+                EX &gt; PLAYED &gt; POOR
               </li>
               <li>
                 Edição: #1 a #10 valem bônus alto — quanto menor, mais rara
@@ -276,5 +342,13 @@ export default function GachaPage() {
         )}
       </section>
     </div>
+  );
+}
+
+export default function GachaPage() {
+  return (
+    <Suspense>
+      <GachaPageContent />
+    </Suspense>
   );
 }
