@@ -20,6 +20,7 @@ type NavItem = {
 const NAV_ITEMS: NavItem[] = [
   { href: "/admin", label: "Dashboard", icon: "M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6", exact: true },
   { href: "/admin/catalogo", label: "Catálogo", icon: "M4 6a2 2 0 012-2h2v12H6a2 2 0 01-2-2V6zM10 4h4v12h-4zM16 4h2a2 2 0 012 2v8a2 2 0 01-2 2h-2V4z" },
+  { href: "/admin/gacha", label: "Gacha", icon: "M12 2l2.09 6.26L20 10l-5.91 1.74L12 18l-2.09-6.26L4 10l5.91-1.74L12 2z" },
   { href: "/admin/generos", label: "Gêneros", icon: "M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" },
   { href: "/admin/usuarios", label: "Usuários", icon: "M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-1.13a4 4 0 10-4-4 4 4 0 004 4zm6 0a3 3 0 10-3-3 3 3 0 003 3z" },
   { href: "/admin/moderacao", label: "Moderação", icon: "M9 12l2 2 4-4m5.618 4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.016L2 12l1.382 6.04A11.955 11.955 0 0012 21.056a11.955 11.955 0 008.618-3.016L22 12l-1.382-5.984z" },
