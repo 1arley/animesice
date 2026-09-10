@@ -18,6 +18,7 @@ export const metadata: Metadata = {
   title: "Buscar animes — Encontre por título, gênero, ano e mais",
   description: "Busque animes por título, gênero, ano, formato, status e mais. Encontre exatamente o que procura no AnimesIce.",
   alternates: { canonical: "/buscar" },
+  robots: { index: false, follow: true },
   openGraph: {
     title: "Buscar animes | AnimesIce",
     description: "Busque animes por título, gênero, ano, formato e mais.",
