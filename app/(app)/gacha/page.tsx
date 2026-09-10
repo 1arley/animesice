@@ -199,6 +199,7 @@ function GachaPageContent() {
               {error}
             </div>
           )}
+          <div ref={widgetRef} />
           {loading ? (
             <div className="skeleton h-24" aria-busy="true" />
           ) : statusError ? (
@@ -219,7 +220,6 @@ function GachaPageContent() {
                     : `Pity ÉPICA+ em ${status?.pityDaysLeft ?? 30}d`}
                 </span>
               </div>
-              <div ref={widgetRef} />
               <button
                 type="submit"
                 disabled={!status?.canRoll || rolling || !token}
