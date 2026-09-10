@@ -88,9 +88,6 @@ export async function generateMetadata({
       description: description.slice(0, 160),
       ...(ep.thumbnailUrl ? { images: [ep.thumbnailUrl] } : {}),
     },
-    ...(ep.anime.genres?.some((genre) => genre.slug === "hentai")
-      ? { robots: { index: false, follow: true } }
-      : {}),
   };
 }
 

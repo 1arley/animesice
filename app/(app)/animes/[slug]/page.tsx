@@ -73,9 +73,6 @@ export async function generateMetadata({
       description,
       ...(ogImage ? { images: [ogImage] } : {}),
     },
-    ...(anime.genres?.some((genre) => genre.slug === "hentai")
-      ? { robots: { index: false, follow: true } }
-      : {}),
   };
 }
 
