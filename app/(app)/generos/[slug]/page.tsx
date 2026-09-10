@@ -39,9 +39,6 @@ export async function generateMetadata({
       description,
       type: "website",
     },
-    ...(slug === "hentai"
-      ? { robots: { index: false, follow: true } }
-      : {}),
   };
 }
 
@@ -58,7 +55,7 @@ export default async function GenrePage({
   const limit = 24;
 
   const data = await serverFetchJson<GenreAnimesResponse>(
-    `/genre/${slug}/animes?page=${page}&limit=${limit}`,
+    `/genre/${slug}/animes?page=${page}&limit=${limit}${slug === "hentai" ? "&includeHentai=1" : ""}`,
   );
 
   // Gênero inexistente: gera 404 real. Um 200 com texto "não encontrado"
