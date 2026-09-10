@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { api, ApiError } from "@/lib/api";
@@ -59,7 +59,6 @@ function GachaPageContent() {
   const [recent, setRecent] = useState<GachaPull[]>([]);
   const [ranking, setRanking] = useState<GachaRankingEntry[]>([]);
   const [loading, setLoading] = useState(true);
-  const [rolling, setRolling] = useState(false);
   const [token, setToken] = useState("");
   const [result, setResult] = useState<GachaPull | null>(null);
   const [error, setError] = useState("");
@@ -279,47 +278,21 @@ function GachaPageContent() {
     }
   }
 
-  async function handleRoll(e: React.FormEvent) {
-    e.preventDefault();
-    setError("");
-    if (!status?.canRoll || rolling) return;
-    if (!token) {
-      setError("Marque a caixa do captcha para rolar.");
-      return;
-    }
-    setRolling(true);
-    setResult(null);
-    setStageOpen(true);
-    try {
-      const pull = await api.rollGacha(token);
-      setResult(pull);
-      setToken("");
-      if (widgetIdRef.current && window.turnstile) {
-        window.turnstile.reset(widgetIdRef.current);
-      }
-      await refresh();
-    } catch (err) {
-      setStageOpen(false);
-      setError(err instanceof ApiError ? err.message : "Erro ao rolar.");
-      if (widgetIdRef.current && window.turnstile) {
-        window.turnstile.reset(widgetIdRef.current);
-      }
-      setToken("");
-    } finally {
-      setRolling(false);
-    }
-  }
 
   const selectedSpin = spins.find((s) => s.id === selectedSpinId) ?? null;
   const spinCountdown = formatCountdown(status?.nextSpinAt ?? null, now);
   const claimCountdown = formatCountdown(status?.nextClaimAt ?? null, now);
   const canSpinNow = (status?.canSpin ?? status == null) && !spinning;
   const locked = status != null && status.canClaim === false;
-  const stagePull = stagePreview
-    ? spinResult
-      ? spinToStagePull(spinResult)
-      : null
-    : (claimResult ?? result);
+  const stagePull = useMemo(
+    () =>
+      stagePreview
+        ? spinResult
+          ? spinToStagePull(spinResult)
+          : null
+        : (claimResult ?? result),
+    [stagePreview, spinResult, claimResult, result],
+  );
 
   return (
     <div className="mx-auto max-w-shelf px-4 pb-16 pt-8">
@@ -482,25 +455,6 @@ function GachaPageContent() {
                 </div>
               )}
 
-              <div className="border-t border-hairline pt-4 text-body-sm text-mist">
-                <p className="mb-3 font-mono text-caption uppercase tracking-wider">
-                  Roll diário (1/dia, entrega direta)
-                </p>
-                <form onSubmit={handleRoll} className="flex flex-col gap-3">
-                  <p className="font-mono text-caption">
-                    {status?.canRoll
-                      ? "Roll de hoje disponível"
-                      : `Volte ${status?.nextRollAt ? new Date(status.nextRollAt).toLocaleString("pt-BR") : "amanhã"}`}
-                  </p>
-                  <button
-                    type="submit"
-                    disabled={!status?.canRoll || rolling || !token}
-                    className="btn-ice w-fit px-6 py-3 transition-transform duration-150 active:scale-95 motion-reduce:transform-none disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    {rolling ? "Rolando…" : "Rolar carta"}
-                  </button>
-                </form>
-              </div>
             </div>
           )}
 
