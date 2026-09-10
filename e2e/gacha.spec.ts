@@ -192,4 +192,106 @@ test.describe("Gacha", () => {
     await expect(page.getByText("Carta indisponível ou privada.")).toBeVisible();
     await expect(page.getByRole("dialog")).toHaveCount(0);
   });
+
+  test("logado: gira preview e guarda a carta", async ({ page }) => {
+    await blockAds(page);
+    await mockGeneric(page);
+    await loginAs(page);
+    await page.route(
+      "**/challenges.cloudflare.com/turnstile/v0/api.js*",
+      (route) =>
+        route.fulfill({
+          status: 200,
+          contentType: "application/javascript",
+          body: `window.turnstile = {
+            ready: (cb) => cb(),
+            render: (el, opts) => { setTimeout(() => opts.callback("e2e-token"), 50); return "w1"; },
+            reset: () => {},
+          };
+          window.onTurnstileLoad && window.onTurnstileLoad();`,
+        }),
+    );
+    await page.goto("/gacha");
+    await expect(page.getByText("5/5 giros nesta hora")).toBeVisible();
+    const spinPreview = {
+      id: "spin-e2e-1",
+      hour: new Date().toISOString(),
+      slot: 0,
+      condition: 0.04,
+      conditionLabel: "MINT",
+      foil: "GOLD",
+      value: 9500,
+      claimedAt: null,
+      expiresAt: new Date(Date.now() + 3600000).toISOString(),
+      createdAt: new Date().toISOString(),
+      pityDue: false,
+      card: {
+        id: "w-e2e",
+        name: "Waifu E2E",
+        image: null,
+        rarity: "EPICA",
+        favourites: 5000,
+        animeId: null,
+        animeTitle: "Anime E2E",
+        anime: null,
+      },
+    };
+    // O mock default de GET /spins retorna []; o spec reflete o giro feito.
+    await page.route("**/gacha/spins", (route) =>
+      route.fulfill({ json: [spinPreview] }),
+    );
+    await page.route("**/gacha/spin", (route) =>
+      route.fulfill({ json: spinPreview }),
+    );
+    await page.getByRole("button", { name: /Girar/ }).click();
+    const dialog = page.getByRole("dialog");
+    await expect(dialog.getByText("Prévia revelada")).toBeVisible();
+    await expect(dialog.getByText("Waifu E2E")).toBeVisible();
+    await dialog.getByRole("button", { name: "Continuar" }).click();
+    await expect(dialog).toHaveCount(0);
+    await expect(page.getByText("Previews desta hora (1/5)")).toBeVisible();
+    await page.getByRole("button", { name: "Pegar carta" }).click();
+    await expect(page.getByRole("dialog").getByText("Sua carta")).toBeVisible();
+  });
+
+  test("em lock: aviso anti-frustração e botão de desbloqueio", async ({
+    page,
+  }) => {
+    await blockAds(page);
+    await mockGeneric(page);
+    await loginAs(page);
+    const lockedAt = new Date(Date.now() + 6 * 3600_000).toISOString();
+    await page.route("**/gacha/status", (route) =>
+      route.fulfill({
+        json: {
+          canRoll: false,
+          rollsLeft: 0,
+          nextRollAt: null,
+          pityDaysLeft: 30,
+          pityDue: false,
+          spinsLeft: 5,
+          canSpin: true,
+          nextSpinAt: null,
+          canClaim: false,
+          nextClaimAt: lockedAt,
+          claimWarning:
+            "Você já guardou uma carta. Girar continua liberado.",
+          bypassPriceCents: 299,
+        },
+      }),
+    );
+    await page.goto("/gacha");
+    await expect(
+      page.getByText("Você já guardou uma carta. Girar continua liberado."),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: /Girar/ }),
+    ).toBeEnabled();
+    await expect(
+      page.getByRole("button", { name: /Desbloquear agora/ }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Pegar carta" }),
+    ).toBeDisabled();
+  });
 });

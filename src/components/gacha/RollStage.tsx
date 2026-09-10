@@ -6,10 +6,12 @@ import { GachaCard, GACHA_TIERS, GALAXY_TEXT, RARITY_TEXT } from "./GachaCard";
 import { CountUp } from "@/components/core/CountUp";
 import type { GachaPull } from "@/types";
 
-export function RollStage({ pull, reduceMotion, onClose }: {
+export function RollStage({ pull, reduceMotion, onClose, preview = false }: {
   pull: GachaPull | null;
   reduceMotion: boolean;
   onClose: () => void;
+  /** Preview de giro: carta revelada, ainda sem dono. */
+  preview?: boolean;
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const timeline = useRef<gsap.core.Timeline | null>(null);
@@ -109,7 +111,7 @@ export function RollStage({ pull, reduceMotion, onClose }: {
       onClick={(event) => { if (event.target === event.currentTarget && ready) onClose(); }}>
       <div className="pointer-events-none flex min-h-full flex-col items-center justify-center gap-5">
         <h2 id="roll-title" className="font-display text-display-lg" aria-live="polite">
-          {ready ? "Sua carta" : "Invocando sua carta…"}
+          {ready ? (preview ? "Prévia revelada" : "Sua carta") : "Invocando sua carta…"}
         </h2>
         <div data-stage className={`pointer-events-auto relative w-56 max-w-[65vw] ${tierText || "text-ice"}`} style={{ perspective: 1000 }}>
           {!reduceMotion && <>
@@ -125,7 +127,7 @@ export function RollStage({ pull, reduceMotion, onClose }: {
               <div className="absolute inset-0 animate-rollShine bg-gradient-to-r from-transparent via-snow/15 to-transparent" />
             </div>
             <div inert={!ready} aria-hidden={!ready} className="relative min-h-80" style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg)" }}>
-              {pull && <GachaCard pull={pull} />}
+              {pull && <GachaCard pull={pull} preview={preview} />}
               {pull?.foil !== "NORMAL" && pull && <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden"><div className="h-full w-full animate-rollShine bg-gradient-to-r from-transparent via-snow/30 to-transparent motion-reduce:animate-none" /></div>}
             </div>
           </div>

@@ -40,6 +40,9 @@ import type {
   GachaCardInfo,
   AdminGachaCard,
   GachaStatus,
+  GachaSpinPreview,
+  GachaBypassCheckout,
+  GachaBypassStatus,
   GachaCollectionResponse,
   GachaRankingEntry,
   UserSearchResult,
@@ -1326,6 +1329,27 @@ export const api = {
     }),
 
   gachaStatus: () => request<GachaStatus>(`/gacha/status`),
+
+  gachaSpins: () => request<GachaSpinPreview[]>(`/gacha/spins`),
+
+  gachaSpin: () =>
+    request<GachaSpinPreview>(`/gacha/spin`, { method: "POST" }),
+
+  gachaClaim: (body: { spinId: string; turnstileToken?: string }) =>
+    request<GachaPullResponse>(`/gacha/claim`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+
+  gachaBypass: () =>
+    request<GachaBypassCheckout | { alreadyUnlocked: true }>(`/gacha/bypass`, {
+      method: "POST",
+    }),
+
+  gachaBypassStatus: (reference: string) =>
+    request<{ status: GachaBypassStatus }>(
+      `/gacha/bypass/${encodeURIComponent(reference)}`,
+    ),
 
   gachaCollection: (
     userId: string,
