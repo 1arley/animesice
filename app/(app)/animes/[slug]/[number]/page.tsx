@@ -75,7 +75,7 @@ export async function generateMetadata({
   return {
     title,
     description: description.slice(0, 160),
-    alternates: { canonical: `/animes/${slug}/${number}` },
+    alternates: { canonical: `/animes/${slug}` },
     openGraph: {
       title,
       description: description.slice(0, 160),
