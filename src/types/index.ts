@@ -574,14 +574,45 @@ export interface GachaPull {
   card: GachaCardInfo;
 }
 
-/** Status do roll diário. */
+/** Status do roll diário + giros/claim (campos novos opcionais p/ compat). */
 export interface GachaStatus {
   canRoll: boolean;
   rollsLeft: number;
   nextRollAt: string | null;
   pityDaysLeft: number;
   pityDue: boolean;
+  spinsLeft?: number;
+  canSpin?: boolean;
+  nextSpinAt?: string | null;
+  canClaim?: boolean;
+  nextClaimAt?: string | null;
+  claimWarning?: string | null;
+  bypassPriceCents?: number | null;
 }
+
+/** Preview de giro — sorteio sem ownership (sem edition, sem dono). */
+export interface GachaSpinPreview {
+  id: string;
+  hour: string;
+  slot: number;
+  condition: number;
+  conditionLabel?: string;
+  foil: string;
+  value: number;
+  claimedAt: string | null;
+  expiresAt: string;
+  createdAt: string;
+  pityDue?: boolean;
+  card: GachaCardInfo;
+}
+
+export interface GachaBypassCheckout {
+  reference: string;
+  checkoutUrl: string;
+  amountCents: number;
+}
+
+export type GachaBypassStatus = 'PENDING' | 'PAID' | 'EXPIRED';
 
 /** Coleção de cartas com stats. */
 export interface GachaCollectionResponse {

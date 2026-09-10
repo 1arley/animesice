@@ -7,13 +7,47 @@ import { api, ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { TURNSTILE_SITEKEY, loadTurnstile } from "@/lib/turnstile";
 import { RollStage } from "@/components/gacha/RollStage";
+import { SpinPreviewCard } from "@/components/gacha/SpinPreviewCard";
 import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
 import { GachaCard } from "@/components/gacha/GachaCard";
 import { SectionLabel } from "@/components/common/SectionLabel";
 import { Avatar } from "@/components/common/Avatar";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { CardPreview } from "@/components/gacha/CardPreview";
-import type { GachaPull, GachaRankingEntry, GachaStatus } from "@/types";
+import type {
+  GachaPull,
+  GachaRankingEntry,
+  GachaSpinPreview,
+  GachaStatus,
+} from "@/types";
+
+function formatCountdown(target: string | null, now: number): string | null {
+  if (!target) return null;
+  const ms = new Date(target).getTime() - now;
+  if (ms <= 0) return null;
+  const h = Math.floor(ms / 3_600_000);
+  const m = Math.floor((ms % 3_600_000) / 60_000);
+  if (h > 0) return `${h}h ${m}m`;
+  return `${m}m ${Math.floor((ms % 60_000) / 1000)}s`;
+}
+
+const BYPASS_POLL_MS = 3000;
+const BYPASS_POLL_MAX_MS = 10 * 60_000;
+
+/** Adapta um preview de giro para o RollStage (sem edição, sem dono). */
+function spinToStagePull(spin: GachaSpinPreview): GachaPull {
+  return {
+    id: spin.id,
+    condition: spin.condition,
+    conditionLabel: spin.conditionLabel,
+    foil: spin.foil,
+    edition: 0,
+    value: spin.value,
+    obtainedAt: spin.createdAt,
+    user: { id: "", name: null, userName: null, avatar: null },
+    card: spin.card,
+  };
+}
 
 function GachaPageContent() {
   const { user } = useAuth();
@@ -30,6 +64,15 @@ function GachaPageContent() {
   const [result, setResult] = useState<GachaPull | null>(null);
   const [error, setError] = useState("");
   const [preview, setPreview] = useState<GachaPull | null>(null);
+  const [spins, setSpins] = useState<GachaSpinPreview[]>([]);
+  const [selectedSpinId, setSelectedSpinId] = useState<string | null>(null);
+  const [spinning, setSpinning] = useState(false);
+  const [spinResult, setSpinResult] = useState<GachaSpinPreview | null>(null);
+  const [claimResult, setClaimResult] = useState<GachaPull | null>(null);
+  const [stagePreview, setStagePreview] = useState(false);
+  const [claiming, setClaiming] = useState(false);
+  const [bypassPending, setBypassPending] = useState(false);
+  const [now, setNow] = useState(() => Date.now());
   const widgetRef = useRef<HTMLDivElement>(null);
   const widgetIdRef = useRef<string>("");
 
@@ -73,11 +116,14 @@ function GachaPageContent() {
           api.gachaRecent(12).catch(() => []),
           api.gachaRanking(10).catch(() => []),
         ]);
+        const sp = user ? await api.gachaSpins().catch(() => []) : [];
         if (cancelled) return;
         setStatus(s);
         setStatusError(!!user && s === null);
         setRecent(r);
         setRanking(k);
+        setSpins(sp);
+        if (sp.length > 0) setSelectedSpinId(sp[sp.length - 1]?.id ?? null);
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -86,6 +132,26 @@ function GachaPageContent() {
       cancelled = true;
     };
   }, [user]);
+
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, []);
+
+  // Auto-refresh na virada da hora / fim do lock.
+  useEffect(() => {
+    if (!user || !status) return;
+    const targets = [status.nextSpinAt, status.nextClaimAt].filter(
+      (t): t is string => t != null,
+    );
+    if (targets.length === 0) return;
+    const ms = Math.min(
+      ...targets.map((t) => new Date(t).getTime() - Date.now()),
+    );
+    if (ms <= 0 || ms > 3_600_000) return;
+    const timer = setTimeout(() => void refresh(), ms + 2000);
+    return () => clearTimeout(timer);
+  }, [user, status]);
 
   useEffect(() => {
     if (!user) return;
@@ -113,10 +179,104 @@ function GachaPageContent() {
         api.gachaStatus().catch(() => null),
         api.gachaRecent(12).catch(() => []),
       ]);
+      const sp = await api.gachaSpins().catch(() => []);
       setStatus(s);
       setStatusError(s === null);
       setRecent(r);
+      setSpins(sp);
     } catch {}
+  }
+
+  async function handleSpin() {
+    setError("");
+    if (spinning) return;
+    setSpinning(true);
+    setSpinResult(null);
+    setClaimResult(null);
+    setStagePreview(true);
+    setStageOpen(true);
+    try {
+      const previewSpin = await api.gachaSpin();
+      setSpins((prev) => [...prev, previewSpin]);
+      setSelectedSpinId(previewSpin.id);
+      setSpinResult(previewSpin);
+      await refresh().catch(() => undefined);
+    } catch (err) {
+      setStageOpen(false);
+      setSpinResult(null);
+      setError(err instanceof ApiError ? err.message : "Erro ao girar.");
+    } finally {
+      setSpinning(false);
+    }
+  }
+
+  async function handleClaim() {
+    if (!selectedSpinId || claiming) return;
+    if (!token) {
+      setError("Marque a caixa do captcha para guardar a carta.");
+      return;
+    }
+    setError("");
+    setClaiming(true);
+    try {
+      const pull = await api.gachaClaim({
+        spinId: selectedSpinId,
+        turnstileToken: token,
+      });
+      setClaimResult(pull);
+      setResult(pull);
+      setStagePreview(false);
+      setStageOpen(true);
+      setToken("");
+      if (widgetIdRef.current && window.turnstile) {
+        window.turnstile.reset(widgetIdRef.current);
+      }
+      await refresh();
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Erro ao guardar.");
+      if (widgetIdRef.current && window.turnstile) {
+        window.turnstile.reset(widgetIdRef.current);
+      }
+      setToken("");
+    } finally {
+      setClaiming(false);
+    }
+  }
+
+  async function handleBypass() {
+    setError("");
+    try {
+      const res = await api.gachaBypass();
+      if ("alreadyUnlocked" in res) {
+        await refresh();
+        return;
+      }
+      window.open(res.checkoutUrl, "_blank", "noopener,noreferrer");
+      setBypassPending(true);
+      const started = Date.now();
+      for (;;) {
+        await new Promise((r) => setTimeout(r, BYPASS_POLL_MS));
+        if (Date.now() - started > BYPASS_POLL_MAX_MS) break;
+        try {
+          const poll = await api.gachaBypassStatus(res.reference);
+          if (poll.status === "PAID") {
+            setBypassPending(false);
+            await refresh();
+            return;
+          }
+          if (poll.status === "EXPIRED") {
+            setBypassPending(false);
+            setError("O Pix expirou. Gere uma nova intenção.");
+            return;
+          }
+        } catch {
+          break;
+        }
+      }
+      setBypassPending(false);
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : "Erro ao gerar Pix.");
+    }
   }
 
   async function handleRoll(e: React.FormEvent) {
@@ -150,20 +310,36 @@ function GachaPageContent() {
     }
   }
 
+  const selectedSpin = spins.find((s) => s.id === selectedSpinId) ?? null;
+  const spinCountdown = formatCountdown(status?.nextSpinAt ?? null, now);
+  const claimCountdown = formatCountdown(status?.nextClaimAt ?? null, now);
+  const canSpinNow = (status?.canSpin ?? status == null) && !spinning;
+  const locked = status != null && status.canClaim === false;
+  const stagePull = stagePreview
+    ? spinResult
+      ? spinToStagePull(spinResult)
+      : null
+    : (claimResult ?? result);
+
   return (
     <div className="mx-auto max-w-shelf px-4 pb-16 pt-8">
-      {stageOpen && (!reduceMotion || result) && (
+      {stageOpen && (!reduceMotion || stagePull) && (
         <RollStage
-          pull={result}
+          pull={stagePull}
+          preview={stagePreview}
           reduceMotion={reduceMotion}
-          onClose={() => setStageOpen(false)}
+          onClose={() => {
+            setStageOpen(false);
+            setSpinResult(null);
+          }}
         />
       )}
       {preview && <CardPreview pull={preview} onClose={closePreview} />}
       <h1 className="font-display text-display-lg text-snow">Gacha</h1>
       <p className="mt-1 text-body-sm text-mist">
-        1 roll por dia. Mesma waifu, cópias únicas: condition, foil e edição
-        definem o valor da sua carta.
+        5 giros por hora para revelar cartas. Guarde 1 a cada 12h — girar
+        continua liberado durante o bloqueio. Mesma carta, cópias únicas:
+        condition, foil e edição definem o valor.
       </p>
       {user && (
         <Link
@@ -204,33 +380,131 @@ function GachaPageContent() {
             <div className="skeleton h-24" aria-busy="true" />
           ) : statusError ? (
             <p className="text-body-sm text-mist">
-              Não foi possível carregar o status do roll. Tente novamente.
+              Não foi possível carregar o status do gacha. Tente novamente.
             </p>
           ) : (
-            <form onSubmit={handleRoll} className="flex flex-col gap-4">
+            <div className="flex flex-col gap-4">
               <div className="flex flex-wrap items-center gap-x-6 gap-y-2 font-mono text-caption text-mist">
                 <span>
-                  {status?.canRoll
-                    ? "Roll de hoje disponível"
-                    : `Volte ${status?.nextRollAt ? new Date(status.nextRollAt).toLocaleString("pt-BR") : "amanhã"}`}
+                  {status?.spinsLeft != null
+                    ? `${status.spinsLeft}/5 giros nesta hora${spinCountdown && status.spinsLeft === 0 ? ` · volta em ${spinCountdown}` : ""}`
+                    : status?.canRoll
+                      ? "Roll de hoje disponível"
+                      : `Volte ${status?.nextRollAt ? new Date(status.nextRollAt).toLocaleString("pt-BR") : "amanhã"}`}
                 </span>
                 <span>
                   {status?.pityDue
-                    ? "ÉPICA+ garantida neste roll"
+                    ? "ÉPICA+ garantida neste giro"
                     : `Pity ÉPICA+ em ${status?.pityDaysLeft ?? 30}d`}
                 </span>
+                {locked && (
+                  <span>
+                    Próxima carta guardável em {claimCountdown ?? "…"}
+                  </span>
+                )}
               </div>
-              <button
-                type="submit"
-                disabled={!status?.canRoll || rolling || !token}
-                className="btn-ice w-fit px-6 py-3 transition-transform duration-150 active:scale-95 motion-reduce:transform-none disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {rolling ? "Rolando…" : "Rolar carta"}
-              </button>
-            </form>
+              <div className="flex flex-wrap gap-3">
+                <button
+                  type="button"
+                  onClick={() => void handleSpin()}
+                  disabled={!canSpinNow}
+                  className="btn-ice w-fit px-6 py-3 transition-transform duration-150 active:scale-95 motion-reduce:transform-none disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {spinning ? "Girando…" : `Girar (${status?.spinsLeft ?? 5})`}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void handleClaim()}
+                  disabled={claiming || !selectedSpin || locked}
+                  title={
+                    locked
+                      ? "Você já guardou uma carta. Aguarde o fim do bloqueio ou desbloqueie via Pix."
+                      : "Guardar a carta selecionada na sua coleção"
+                  }
+                  className="btn-ghost w-fit px-6 py-3 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {claiming ? "Guardando…" : "Pegar carta"}
+                </button>
+              </div>
+
+              {status?.claimWarning && (
+                <div className="border border-hairline bg-ink/60 p-3">
+                  <p className="text-body-sm text-mist">
+                    {status.claimWarning}
+                  </p>
+                  {status.bypassPriceCents != null && (
+                    <button
+                      type="button"
+                      onClick={() => void handleBypass()}
+                      disabled={bypassPending}
+                      className="mt-3 min-h-11 border border-amber-400/60 px-4 font-display text-body-sm text-amber-200 disabled:opacity-40"
+                    >
+                      {bypassPending
+                        ? "Aguardando Pix…"
+                        : `Desbloquear agora · R$ ${(status.bypassPriceCents / 100).toFixed(2).replace(".", ",")}`}
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {spins.length > 0 && (
+                <div>
+                  <p className="mb-2 font-mono text-caption uppercase tracking-wider text-mist">
+                    Previews desta hora ({spins.length}/5)
+                  </p>
+                  <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
+                    {spins.map((spin) => {
+                      const active = spin.id === selectedSpinId;
+                      return (
+                        <button
+                          key={spin.id}
+                          type="button"
+                          onClick={() => setSelectedSpinId(spin.id)}
+                          aria-pressed={active}
+                          className={`border p-1 text-left transition-colors ${
+                            active
+                              ? "border-ice"
+                              : "border-hairline hover:border-ice/50"
+                          }`}
+                        >
+                          <SpinPreviewCard spin={spin} />
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {selectedSpin && (
+                    <p className="mt-2 font-mono text-caption text-mist">
+                      Selecionada: {selectedSpin.card.name} ·{" "}
+                      {selectedSpin.card.rarity} · {selectedSpin.foil}
+                      {selectedSpin.claimedAt ? " · já guardada" : ""}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              <div className="border-t border-hairline pt-4 text-body-sm text-mist">
+                <p className="mb-3 font-mono text-caption uppercase tracking-wider">
+                  Roll diário (1/dia, entrega direta)
+                </p>
+                <form onSubmit={handleRoll} className="flex flex-col gap-3">
+                  <p className="font-mono text-caption">
+                    {status?.canRoll
+                      ? "Roll de hoje disponível"
+                      : `Volte ${status?.nextRollAt ? new Date(status.nextRollAt).toLocaleString("pt-BR") : "amanhã"}`}
+                  </p>
+                  <button
+                    type="submit"
+                    disabled={!status?.canRoll || rolling || !token}
+                    className="btn-ice w-fit px-6 py-3 transition-transform duration-150 active:scale-95 motion-reduce:transform-none disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {rolling ? "Rolando…" : "Rolar carta"}
+                  </button>
+                </form>
+              </div>
+            </div>
           )}
 
-          {result && !stageOpen && (
+          {result && !stageOpen && !stagePreview && (
             <div className="mt-6">
               <SectionLabel level={2}>Sua carta</SectionLabel>
               <div className="w-44 max-w-full">

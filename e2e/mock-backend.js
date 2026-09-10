@@ -285,8 +285,9 @@ const server = http.createServer((req, res) => {
 
   // --- Gacha: respostas default vazias/liberadas; specs sobrescrevem p/ dados controlados ---
   if (req.method === 'GET' && (p === '/api/gacha/status' || p === '/gacha/status')) {
-    return json(res, { canRoll: true, rollsLeft: 1, nextRollAt: null, pityDaysLeft: 30, pityDue: false });
+    return json(res, { canRoll: true, rollsLeft: 1, nextRollAt: null, pityDaysLeft: 30, pityDue: false, spinsLeft: 5, canSpin: true, nextSpinAt: null, canClaim: true, nextClaimAt: null, claimWarning: null, bypassPriceCents: null });
   }
+  if (req.method === 'GET' && (p === '/api/gacha/spins' || p === '/gacha/spins')) return json(res, []);
   if (req.method === 'GET' && (p === '/api/gacha/recent' || p === '/gacha/recent')) return json(res, []);
   if (req.method === 'GET' && (p === '/api/gacha/ranking' || p === '/gacha/ranking')) return json(res, []);
   const gachaCollectionMatch = p && (p === '/api/gacha/collection' || p === '/gacha/collection');
@@ -300,6 +301,35 @@ const server = http.createServer((req, res) => {
     obtainedAt: new Date().toISOString(), user: { id: 'viewer-1', name: 'Viewer', userName: 'viewer', avatar: null },
     card: { id: 'w-e2e', name: 'Waifu E2E', image: null, rarity: 'EPICA', favourites: 5000, animeId: null, animeTitle: 'Anime E2E', anime: null },
   });
+  if (req.method === 'POST' && (p === '/api/gacha/spin' || p === '/gacha/spin')) {
+    return json(res, {
+      id: 'spin-e2e', hour: new Date().toISOString(), slot: 0, condition: 0.04, conditionLabel: 'MINT',
+      foil: 'GOLD', value: 9500, claimedAt: null, expiresAt: new Date(Date.now() + 3600000).toISOString(),
+      createdAt: new Date().toISOString(), pityDue: false,
+      card: { id: 'w-e2e', name: 'Waifu E2E', image: null, rarity: 'EPICA', favourites: 5000, animeId: null, animeTitle: 'Anime E2E', anime: null },
+    });
+  }
+  if (req.method === 'POST' && (p === '/api/gacha/claim' || p === '/gacha/claim')) {
+    return json(res, {
+      id: 'pull-e2e',
+      condition: 0.04,
+      conditionLabel: 'MINT',
+      foil: 'GOLD',
+      edition: 1,
+      value: 9500,
+      obtainedAt: new Date().toISOString(),
+      user: { id: 'viewer-1', name: 'Viewer', userName: 'viewer', avatar: null },
+      card: {
+        id: 'w-e2e', name: 'Waifu E2E', image: null, rarity: 'EPICA',
+        favourites: 5000, animeId: null, animeTitle: 'Anime E2E', anime: null,
+      },
+    });
+  }
+  if (req.method === 'POST' && (p === '/api/gacha/bypass' || p === '/gacha/bypass')) {
+    return json(res, { reference: 'bypass-e2e', checkoutUrl: 'https://checkout.livepix.gg/bypass-e2e', amountCents: 299 });
+  }
+  const gachaBypassPoll = p && p.match(/^\/(api\/)?gacha\/bypass\/.+$/);
+  if (req.method === 'GET' && gachaBypassPoll) return json(res, { status: 'PENDING' });
   if (req.method === 'POST' && (p === '/api/gacha/roll' || p === '/gacha/roll')) {
     return json(res, {
       id: 'pull-e2e',
