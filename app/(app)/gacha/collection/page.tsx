@@ -143,7 +143,7 @@ export default function GachaCollectionPage() {
                 onClick={() => setPreview(pull)}
                 className="w-full text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-ice"
               >
-                <GachaCard pull={pull} />
+                <GachaCard pull={pull} linkAnime={false} />
               </button>
               <button
                 type="button"

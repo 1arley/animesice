@@ -16,46 +16,6 @@ test.describe("Gacha", () => {
     await expect(page.getByText("Ranking vazio por enquanto.")).toBeVisible();
   });
 
-  test("logado: status libera o roll, mostra pity e rola a carta", async ({
-    page,
-  }) => {
-    await blockAds(page);
-    await mockGeneric(page);
-    await loginAs(page);
-    // Widget real do Turnstile não completa em headless — o app só precisa
-    // de um token vindo do callback, então stubamos o script.
-    await page.route(
-      "**/challenges.cloudflare.com/turnstile/v0/api.js*",
-      (route) =>
-        route.fulfill({
-          status: 200,
-          contentType: "application/javascript",
-          body: `window.turnstile = {
-            ready: (cb) => cb(),
-            render: (el, opts) => { setTimeout(() => opts.callback("e2e-token"), 50); return "w1"; },
-            reset: () => {},
-          };
-          window.onTurnstileLoad && window.onTurnstileLoad();`,
-        }),
-    );
-    await page.goto("/gacha");
-    await expect(
-      page.getByRole("button", { name: "Rolar carta" }),
-    ).toBeEnabled();
-    await expect(page.getByText("Roll de hoje disponível")).toBeVisible();
-    await expect(page.getByText("Pity ÉPICA+ em 30d")).toBeVisible();
-    await page.getByRole("button", { name: "Rolar carta" }).click();
-    await expect(
-      page.getByRole("heading", { name: "Sua carta" }),
-    ).toBeVisible();
-    await expect(page.getByRole("dialog").getByText("Waifu E2E")).toBeVisible();
-    await page.getByRole("button", { name: "Continuar" }).click();
-    await expect(page.getByRole("dialog")).toHaveCount(0);
-    await expect(
-      page.getByRole("heading", { name: "Sua carta" }),
-    ).toBeVisible();
-  });
-
   for (const rarity of ["COMUM", "EPICA", "LENDARIA"]) {
     test(`reveal animado ${rarity}: espera API, Esc pula e backdrop fecha`, async ({
       page,
@@ -76,16 +36,19 @@ test.describe("Gacha", () => {
       const responseReady = new Promise<void>((resolve) => {
         release = resolve;
       });
-      await page.route("**/gacha/roll", async (route) => {
+      let spins: unknown[] = [];
+      await page.route("**/gacha/spins", route => route.fulfill({ json: spins }));
+      await page.route("**/gacha/spin", async (route) => {
         const response = await route.fetch();
         const pull = await response.json();
         pull.card.rarity = rarity;
         pull.foil = rarity === "LENDARIA" ? "GOLD" : "NORMAL";
         await responseReady;
+        spins = [pull];
         await route.fulfill({ response, json: pull });
       });
       await page.goto("/gacha");
-      await page.getByRole("button", { name: "Rolar carta" }).click();
+      await page.getByRole("button", { name: /^Girar/ }).click();
       const dialog = page.getByRole("dialog");
       await expect(dialog).toBeVisible();
       await dialog.click({ position: { x: 5, y: 5 } });
@@ -104,8 +67,9 @@ test.describe("Gacha", () => {
       else await dialog.click({ position: { x: 5, y: 5 } });
       await expect(dialog).toHaveCount(0);
       await expect(
-        page.getByRole("heading", { name: "Sua carta" }),
+        page.getByText("Previews desta hora (1/5)"),
       ).toBeVisible();
+      await expect(page.getByRole("button", { name: "Pegar carta" })).toBeEnabled();
     });
   }
 
@@ -213,6 +177,7 @@ test.describe("Gacha", () => {
     );
     await page.goto("/gacha");
     await expect(page.getByText("5/5 giros nesta hora")).toBeVisible();
+    await expect(page.getByText("Pity ÉPICA+ em 30d")).toBeVisible();
     const spinPreview = {
       id: "spin-e2e-1",
       hour: new Date().toISOString(),

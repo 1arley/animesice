@@ -11,6 +11,7 @@ import type { GachaSpinPreview } from "@/types";
 export function SpinPreviewCard({ spin }: { spin: GachaSpinPreview }) {
   return (
     <GachaCard
+      linkAnime={false}
       preview
       pull={{
         id: spin.id,
