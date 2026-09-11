@@ -40,7 +40,7 @@ export const RARITY_TEXT: Record<string, string> = {
   MITICA: "text-rose-400",
 };
 
-const RARITY: Record<string, RarityStyle> = {
+export const RARITY: Record<string, RarityStyle> = {
   COMUM: { text: RARITY_TEXT.COMUM!, border: "border-hairline" },
   INCOMUM: { text: RARITY_TEXT.INCOMUM!, border: "border-emerald-400/40" },
   RARA: { text: RARITY_TEXT.RARA!, border: "border-sky-400/40" },
@@ -61,13 +61,13 @@ const RARITY: Record<string, RarityStyle> = {
   },
 };
 
-const GALAXY_FRAME =
+export const GALAXY_FRAME =
   "overflow-hidden p-px bg-[linear-gradient(120deg,#8b5cf6_0%,#ec4899_35%,#38bdf8_70%,#8b5cf6_100%)] shadow-[0_0_26px_rgba(168,85,247,0.35)]";
 
 export const GALAXY_TEXT =
   "bg-gradient-to-r from-violet-400 via-pink-400 to-sky-400 bg-clip-text text-transparent";
 
-const FOIL_TEXT: Record<string, string> = {
+export const FOIL_TEXT: Record<string, string> = {
   HOLO: "text-ice",
   GOLD: "text-amber-300",
 };

@@ -25,8 +25,6 @@ import { ProfileRatings } from "@/components/profile/ProfileRatings";
 import { ProfileCollection } from "@/components/profile/ProfileCollection";
 import { ProfileGacha } from "@/components/profile/ProfileGacha";
 import { ProfileFollowList } from "@/components/profile/ProfileFollowList";
-import { GachaCard } from "@/components/gacha/GachaCard";
-import Link from "next/link";
 
 const LIMIT = 24;
 
@@ -102,6 +100,19 @@ export default function PublicProfilePage({
   useEffect(() => {
     let cancelled = false;
     const load = async () => {
+      // Navegação entre perfis reusa este componente (mesma rota, outro
+      // userName): zera a visão geral para nunca mostrar dados do perfil
+      // anterior (ex.: carta destaque de outro usuário) enquanto resolve.
+      setError(false);
+      setOverviewLoading(true);
+      setList([]);
+      setListTotal(0);
+      setActivity([]);
+      setRatings([]);
+      setRatingsTotal(0);
+      setFavorites([]);
+      setFavoritesTotal(0);
+      setFeaturedCard(null);
       try {
         const { userName } = await params;
         if (!userName) throw new Error("missing userName");
@@ -115,17 +126,15 @@ export default function PublicProfilePage({
 
         // Visão geral em paralelo — sem cascata de requests.
         const uid = prof.id;
-        api
-          .gachaPublicFeatured(uid)
-          .then(setFeaturedCard)
-          .catch(() => setFeaturedCard(null));
-        const [l, a, r, f] = await Promise.all([
+        const [l, a, r, f, featured] = await Promise.all([
           api.getUserAnimeList(uid, 1, 100),
           api.getUserActivity(uid, 1, 8),
           api.getUserRatings(uid, 1, 4),
           api.getUserFavorites(uid, 1, 12),
+          api.gachaPublicFeatured(uid).catch(() => null),
         ]);
         if (cancelled) return;
+        setFeaturedCard(featured);
         setList(l.data ?? []);
         setListTotal(l.meta?.total ?? 0);
         setActivity(a.data ?? []);
@@ -359,16 +368,11 @@ export default function PublicProfilePage({
 
   return (
     <>
-      <ProfileHero profile={profile} />
-      {featuredCard && (
-        <Link
-          href={`/gacha?card=${featuredCard.id}`}
-          className="mt-4 block w-36"
-          aria-label={`Ver carta destacada ${featuredCard.card.name}`}
-        >
-          <GachaCard pull={featuredCard} />
-        </Link>
-      )}
+      <ProfileHero
+        profile={profile}
+        featuredCard={featuredCard}
+        featuredLoading={overviewLoading}
+      />
 
       <div id="profile-content" className="mx-auto max-w-shelf px-4 pb-16 pt-4">
         <ProfileStats counts={profile._count} onNavigate={handleNavigate} />
