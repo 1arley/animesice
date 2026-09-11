@@ -185,6 +185,7 @@ export function FeedPost({
           className="mt-3 block w-44 max-w-full"
         >
           <GachaCard
+            linkAnime={false}
             pull={{
               id: post.meta.userCardId,
               condition: post.meta.condition,

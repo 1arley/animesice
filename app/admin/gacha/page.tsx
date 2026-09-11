@@ -25,6 +25,7 @@ export default function AdminGachaPage() {
   const [userCards, setUserCards] = useState<GachaPull[]>([]);
   const [userCardsMeta, setUserCardsMeta] = useState({ page: 1, totalPages: 1, total: 0 });
   const [userPage, setUserPage] = useState(1);
+  const [userCardsVersion, setUserCardsVersion] = useState(0);
   const [search, setSearch] = useState("");
   const [selectedUser, setSelectedUser] = useState("");
   const [form, setForm] = useState({ name: "", image: "", rarity: "COMUM" });
@@ -79,18 +80,33 @@ export default function AdminGachaPage() {
     } catch (e) { setError(e instanceof ApiError ? e.message : "Erro ao salvar carta."); }
   }
 
-  async function loadUserCards(id: string, page = 1) {
+  function loadUserCards(id: string, page = 1) {
+    setUserCards([]);
+    setUserCardsMeta({ page, totalPages: 1, total: 0 });
     setSelectedUser(id);
-    try {
-      const res = await api.adminListUserCards(id, page);
-      setUserCards(res.data);
-      setUserCardsMeta({ page: res.meta.page, totalPages: res.meta.totalPages, total: res.meta.total });
-    } catch (e) { setError(e instanceof ApiError ? e.message : "Erro ao carregar cartas."); }
+    setUserPage(page);
+    setUserCardsVersion(v => v + 1);
   }
+
+  useEffect(() => {
+    if (!selectedUser) return;
+    let cancelled = false;
+    setError(null);
+    api.adminListUserCards(selectedUser, userPage)
+      .then(res => {
+        if (cancelled) return;
+        setUserCards(res.data);
+        setUserCardsMeta({ page: res.meta.page, totalPages: res.meta.totalPages, total: res.meta.total });
+      })
+      .catch(e => {
+        if (!cancelled) setError(e instanceof ApiError ? e.message : "Erro ao carregar cartas.");
+      });
+    return () => { cancelled = true; };
+  }, [selectedUser, userPage, userCardsVersion]);
 
   async function removeCard(id: string) {
     if (!window.confirm("Excluir carta?")) return;
-    try { await api.adminDeleteUserCard(id); if (selectedUser) await loadUserCards(selectedUser, userCardsMeta.page); } catch (e) { setError(e instanceof ApiError ? e.message : "Erro ao excluir carta."); }
+    try { await api.adminDeleteUserCard(id); setUserCardsVersion(v => v + 1); } catch (e) { setError(e instanceof ApiError ? e.message : "Erro ao excluir carta."); }
   }
 
   async function resetRoll() {
@@ -100,7 +116,7 @@ export default function AdminGachaPage() {
 
   async function grantCard(cardId: string) {
     if (!selectedUser) return;
-    try { await api.adminGrantUserCard(selectedUser, cardId); await loadUserCards(selectedUser, 1); } catch (e) { setError(e instanceof ApiError ? e.message : "Erro ao conceder carta."); }
+    try { await api.adminGrantUserCard(selectedUser, cardId); setUserCardsVersion(v => v + 1); } catch (e) { setError(e instanceof ApiError ? e.message : "Erro ao conceder carta."); }
   }
 
   return <div>

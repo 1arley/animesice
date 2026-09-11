@@ -147,8 +147,8 @@ function GachaPageContent() {
     const ms = Math.min(
       ...targets.map((t) => new Date(t).getTime() - Date.now()),
     );
-    if (ms <= 0 || ms > 3_600_000) return;
-    const timer = setTimeout(() => void refresh(), ms + 2000);
+    if (!Number.isFinite(ms)) return;
+    const timer = setTimeout(() => void refresh(), Math.max(0, ms) + 2000);
     return () => clearTimeout(timer);
   }, [user, status]);
 
@@ -246,7 +246,7 @@ function GachaPageContent() {
     setError("");
     try {
       const res = await api.gachaBypass();
-      if ("alreadyUnlocked" in res) {
+      if ("alreadyUnlocked" in res || "unlocked" in res) {
         await refresh();
         return;
       }
@@ -481,7 +481,7 @@ function GachaPageContent() {
             {recent.map((pull) => (
               <div key={pull.id}>
                 <Link href={`/gacha?card=${pull.id}`}>
-                  <GachaCard pull={pull} />
+                  <GachaCard pull={pull} linkAnime={false} />
                 </Link>
                 <Link
                   href={`/users/${pull.user.userName ?? pull.user.id}`}

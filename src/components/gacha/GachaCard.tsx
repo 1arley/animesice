@@ -72,7 +72,7 @@ export const FOIL_TEXT: Record<string, string> = {
   GOLD: "text-amber-300",
 };
 
-export function GachaCard({ pull, preview = false }: { pull: GachaPull; /** Preview de giro: sem edição definitiva nem valor final. */ preview?: boolean }) {
+export function GachaCard({ pull, preview = false, linkAnime = true }: { pull: GachaPull; linkAnime?: boolean; /** Preview de giro: sem edição definitiva nem valor final. */ preview?: boolean }) {
   const { card } = pull;
   const art = safeImageSrc(card.image);
   const label = pull.conditionLabel ?? gachaConditionLabel(pull.condition);
@@ -130,12 +130,18 @@ export function GachaCard({ pull, preview = false }: { pull: GachaPull; /** Prev
             {preview ? `${label} · prévia · ~${pull.value} pts` : `${label} · #${pull.edition} · ${pull.value} pts`}
           </p>
           {card.animeTitle && animeSlug && (
-            <Link
-              href={`/animes/${animeSlug}`}
-              className="mt-0.5 block truncate font-mono text-caption text-ice hover:text-snow"
-            >
-              {card.animeTitle}
-            </Link>
+            linkAnime ? (
+              <Link
+                href={`/animes/${animeSlug}`}
+                className="mt-0.5 block truncate font-mono text-caption text-ice hover:text-snow"
+              >
+                {card.animeTitle}
+              </Link>
+            ) : (
+              <span className="mt-0.5 block truncate font-mono text-caption text-ice">
+                {card.animeTitle}
+              </span>
+            )
           )}
         </div>
       </div>

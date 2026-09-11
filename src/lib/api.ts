@@ -1342,7 +1342,7 @@ export const api = {
     }),
 
   gachaBypass: () =>
-    request<GachaBypassCheckout | { alreadyUnlocked: true }>(`/gacha/bypass`, {
+    request<GachaBypassCheckout | { alreadyUnlocked: true } | { unlocked: true }>(`/gacha/bypass`, {
       method: "POST",
     }),
 
