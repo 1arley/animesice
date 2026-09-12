@@ -24,14 +24,6 @@ test.describe("Gacha", () => {
       await blockAds(page);
       await mockGeneric(page);
       await loginAs(page);
-      await page.route(
-        "**/challenges.cloudflare.com/turnstile/v0/api.js*",
-        (route) =>
-          route.fulfill({
-            contentType: "application/javascript",
-            body: `window.turnstile = { ready: cb => cb(), render: (el, opts) => { setTimeout(() => opts.callback("e2e-token"), 50); return "w1"; }, reset: () => {} }; window.onTurnstileLoad?.();`,
-          }),
-      );
       let release!: () => void;
       const responseReady = new Promise<void>((resolve) => {
         release = resolve;
@@ -161,20 +153,6 @@ test.describe("Gacha", () => {
     await blockAds(page);
     await mockGeneric(page);
     await loginAs(page);
-    await page.route(
-      "**/challenges.cloudflare.com/turnstile/v0/api.js*",
-      (route) =>
-        route.fulfill({
-          status: 200,
-          contentType: "application/javascript",
-          body: `window.turnstile = {
-            ready: (cb) => cb(),
-            render: (el, opts) => { setTimeout(() => opts.callback("e2e-token"), 50); return "w1"; },
-            reset: () => {},
-          };
-          window.onTurnstileLoad && window.onTurnstileLoad();`,
-        }),
-    );
     await page.goto("/gacha");
     await expect(page.getByText("5/5 giros nesta hora")).toBeVisible();
     await expect(page.getByText("Pity ÉPICA+ em 30d")).toBeVisible();

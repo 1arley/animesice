@@ -1,11 +1,10 @@
 "use client";
 
-import { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { api, ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
-import { TURNSTILE_SITEKEY, loadTurnstile } from "@/lib/turnstile";
 import { RollStage } from "@/components/gacha/RollStage";
 import { SpinPreviewCard } from "@/components/gacha/SpinPreviewCard";
 import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
@@ -60,7 +59,6 @@ function GachaPageContent() {
   const [recent, setRecent] = useState<GachaPull[]>([]);
   const [ranking, setRanking] = useState<GachaRankingEntry[]>([]);
   const [loading, setLoading] = useState(true);
-  const [token, setToken] = useState("");
   const [result, setResult] = useState<GachaPull | null>(null);
   const [error, setError] = useState("");
   const [preview, setPreview] = useState<GachaPull | null>(null);
@@ -74,8 +72,6 @@ function GachaPageContent() {
   const [bypassPending, setBypassPending] = useState(false);
   const [checkoutUrl, setCheckoutUrl] = useState<string | null>(null);
   const [now, setNow] = useState(() => Date.now());
-  const widgetRef = useRef<HTMLDivElement>(null);
-  const widgetIdRef = useRef<string>("");
 
   useEffect(() => {
     const id = searchParams.get("card");
@@ -156,26 +152,6 @@ function GachaPageContent() {
     return () => clearTimeout(timer);
   }, [user, status]);
 
-  useEffect(() => {
-    if (!user) return;
-    loadTurnstile()
-      .then(() => {
-        const t = window.turnstile;
-        const el = widgetRef.current;
-        if (t && el && !widgetIdRef.current) {
-          t.ready(() => {
-            widgetIdRef.current = t.render(el, {
-              sitekey: TURNSTILE_SITEKEY,
-              action: "gacha-roll",
-              callback: (tk: string) => setToken(tk || ""),
-              "expired-callback": () => setToken(""),
-            });
-          });
-        }
-      })
-      .catch((e) => setError((e as Error).message));
-  }, [user]);
-
   async function refresh() {
     try {
       const [s, r] = await Promise.all([
@@ -215,32 +191,17 @@ function GachaPageContent() {
 
   async function handleClaim() {
     if (!selectedSpin || claiming || new Date(selectedSpin.expiresAt).getTime() <= Date.now()) return;
-    if (!token) {
-      setError("Marque a caixa do captcha para guardar a carta.");
-      return;
-    }
     setError("");
     setClaiming(true);
     try {
-      const pull = await api.gachaClaim({
-        spinId: selectedSpin.id,
-        turnstileToken: token,
-      });
+      const pull = await api.gachaClaim({ spinId: selectedSpin.id });
       setClaimResult(pull);
       setResult(pull);
       setStagePreview(false);
       setStageOpen(true);
-      setToken("");
-      if (widgetIdRef.current && window.turnstile) {
-        window.turnstile.reset(widgetIdRef.current);
-      }
       await refresh();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Erro ao guardar.");
-      if (widgetIdRef.current && window.turnstile) {
-        window.turnstile.reset(widgetIdRef.current);
-      }
-      setToken("");
     } finally {
       setClaiming(false);
     }
@@ -357,7 +318,6 @@ function GachaPageContent() {
               {error}
             </div>
           )}
-          <div ref={widgetRef} />
           {loading ? (
             <div className="skeleton h-24" aria-busy="true" />
           ) : statusError ? (
