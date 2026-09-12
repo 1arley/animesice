@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api, ApiError } from "@/lib/api";
 import type {
+  GachaFeatured,
   GachaPull,
   PublicUserProfile,
   PublicActivityEvent,
@@ -95,7 +96,7 @@ export default function PublicProfilePage({
   const [tabGachaPage, setTabGachaPage] = useState(1);
   const [tabGachaHasMore, setTabGachaHasMore] = useState(false);
   const [tabGachaPrivate, setTabGachaPrivate] = useState(false);
-  const [featuredCard, setFeaturedCard] = useState<GachaPull | null>(null);
+  const [featuredCard, setFeaturedCard] = useState<GachaFeatured | null>(null);
 
   useEffect(() => {
     let cancelled = false;

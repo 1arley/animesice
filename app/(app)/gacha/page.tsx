@@ -49,6 +49,37 @@ function spinToStagePull(spin: GachaSpinPreview): GachaPull {
   };
 }
 
+/** Cristal do gacha — motivo de identidade do hero da sala. */
+function CrystalIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      className={className}
+      aria-hidden="true"
+    >
+      <path
+        d="M12 2.5 3.5 8l1.6 12h13.8l1.6-12L12 2.5Z"
+        stroke="currentColor"
+        strokeWidth="1.2"
+        strokeLinejoin="round"
+      />
+      <path
+        d="m12 2.5-3.6 5.5L12 21.5 15.6 8 12 2.5Z"
+        fill="currentColor"
+        opacity="0.35"
+      />
+      <path
+        d="M3.5 8h17M8.4 8l3.6 13.5M15.6 8 12 21.5"
+        stroke="currentColor"
+        strokeWidth="1.2"
+        strokeLinejoin="round"
+        opacity="0.6"
+      />
+    </svg>
+  );
+}
+
 function GachaPageContent() {
   const { user } = useAuth();
   const searchParams = useSearchParams();
@@ -278,175 +309,199 @@ function GachaPageContent() {
         />
       )}
       {preview && <CardPreview pull={preview} onClose={closePreview} />}
-      <h1 className="font-display text-display-lg text-snow">Gacha</h1>
-      <p className="mt-1 text-body-sm text-mist">
-        5 giros por hora para revelar cartas. Guarde 1 a cada 12h — girar
-        continua liberado durante o bloqueio. Mesma carta, cópias únicas:
-        condition, foil e edição definem o valor.
-      </p>
-      {user && (
-        <Link
-          href="/gacha/collection"
-          className="btn-ghost mt-4 inline-block px-4 py-2"
-        >
-          Minha coleção
-        </Link>
-      )}
-      {error && !user && (
-        <div
-          role="alert"
-          className="mt-4 border border-signal/40 bg-signal/10 p-3 text-body-sm text-signal"
-        >
-          {error}
-        </div>
-      )}
 
-      {!user ? (
-        <div className="mt-6 border border-hairline bg-panel p-6 text-body-sm text-mist">
-          <Link href="/login" className="text-ice hover:text-snow">
-            Entre
-          </Link>{" "}
-          com uma conta verificada para rolar todo dia.
-        </div>
-      ) : (
-        <section className="mt-6 border border-hairline bg-panel p-6">
-          {error && (
-            <div
-              role="alert"
-              className="mb-4 border border-signal/40 bg-signal/10 p-3 text-body-sm text-signal"
-            >
-              {error}
+      <section className="relative mt-4 overflow-hidden border border-hairline bg-panel">
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 [background:radial-gradient(60%_90%_at_50%_0%,rgba(56,189,248,0.13),transparent_70%)]"
+        />
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-ice/50 to-transparent"
+        />
+
+        <div className="relative px-5 pb-6 pt-10 text-center sm:pb-8 sm:pt-12">
+          <p className="font-mono text-caption uppercase tracking-[0.25em] text-ice">
+            Sinal no ar · Sala do Gacha
+          </p>
+          <h1 className="mt-3 flex items-center justify-center gap-3 font-display text-display-lg text-snow">
+            <CrystalIcon className="h-7 w-7 text-ice/80" />
+            Gacha
+          </h1>
+          <p className="mx-auto mt-2 max-w-2xl text-body-sm text-mist">
+            5 giros por hora para revelar cartas. Guarde 1 a cada 12h — girar
+            continua liberado durante o bloqueio. Mesma carta, cópias únicas:
+            condition, foil e edição definem o valor.
+          </p>
+
+          {!user && (
+            <div className="mx-auto mt-6 max-w-xl text-left">
+              {error && (
+                <div
+                  role="alert"
+                  className="mb-4 border border-signal/40 bg-signal/10 p-3 text-body-sm text-signal"
+                >
+                  {error}
+                </div>
+              )}
+              <div className="border border-hairline bg-ink/60 p-5 text-center text-body-sm text-mist">
+                <Link href="/login" className="text-ice hover:text-snow">
+                  Entre
+                </Link>{" "}
+                com uma conta verificada para girar e completar sets.
+              </div>
             </div>
           )}
-          {loading ? (
-            <div className="skeleton h-24" aria-busy="true" />
+        </div>
+
+        {user &&
+          (loading ? (
+            <div className="relative px-6 pb-10 text-center">
+              <div className="skeleton mx-auto h-24 max-w-xl" aria-busy="true" />
+            </div>
           ) : statusError ? (
-            <p className="text-body-sm text-mist">
-              Não foi possível carregar o status do gacha. Tente novamente.
-            </p>
+            <div className="relative px-6 pb-10 text-center">
+              <p className="text-body-sm text-mist">
+                Não foi possível carregar o status do gacha. Tente novamente.
+              </p>
+            </div>
           ) : (
-            <div className="flex flex-col gap-4">
-              <div className="flex flex-wrap items-center gap-x-6 gap-y-2 font-mono text-caption text-mist">
-                <span>
-                  {status?.spinsLeft != null
-                    ? `${status.spinsLeft}/5 giros nesta hora${spinCountdown && status.spinsLeft === 0 ? ` · volta em ${spinCountdown}` : ""}`
-                    : status?.canRoll
-                      ? "Roll de hoje disponível"
-                      : `Volte ${status?.nextRollAt ? new Date(status.nextRollAt).toLocaleString("pt-BR") : "amanhã"}`}
-                </span>
-                <span>
-                  {status?.pityDue
-                    ? "ÉPICA+ garantida neste giro"
-                    : `Pity ÉPICA+ em ${status?.pityDaysLeft ?? 30}d`}
-                </span>
-                {locked && (
+            <>
+              <div className="relative px-5 pb-6 text-center sm:pb-8">
+                {error && (
+                  <div
+                    role="alert"
+                    className="mx-auto mb-4 max-w-2xl border border-signal/40 bg-signal/10 p-3 text-left text-body-sm text-signal"
+                  >
+                    {error}
+                  </div>
+                )}
+                <div className="mx-auto flex max-w-3xl flex-wrap items-center justify-center gap-x-6 gap-y-2 border border-hairline bg-ink/60 px-4 py-3 font-mono text-caption text-mist">
                   <span>
-                    Próxima carta guardável em {claimCountdown ?? "…"}
+                    {status?.spinsLeft != null
+                      ? `${status.spinsLeft}/5 giros nesta hora${spinCountdown && status.spinsLeft === 0 ? ` · volta em ${spinCountdown}` : ""}`
+                      : status?.canRoll
+                        ? "Roll de hoje disponível"
+                        : `Volte ${status?.nextRollAt ? new Date(status.nextRollAt).toLocaleString("pt-BR") : "amanhã"}`}
                   </span>
+                  <span>
+                    {status?.pityDue
+                      ? "ÉPICA+ garantida neste giro"
+                      : `Pity ÉPICA+ em ${status?.pityDaysLeft ?? 30}d`}
+                  </span>
+                  {locked && (
+                    <span>
+                      Próxima carta guardável em {claimCountdown ?? "…"}
+                    </span>
+                  )}
+                </div>
+
+                <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => void handleSpin()}
+                    disabled={!canSpinNow}
+                    className="btn-ice w-fit px-8 py-4 text-body transition-transform duration-150 active:scale-95 motion-reduce:transform-none disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {spinning ? "Girando…" : `Girar (${status?.spinsLeft ?? 5})`}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void handleClaim()}
+                    disabled={claiming || !selectedSpin || selectedSpinExpired || locked}
+                    title={
+                      locked
+                        ? "Você já guardou uma carta. Aguarde o fim do bloqueio ou desbloqueie via Pix."
+                        : "Guardar a carta selecionada na sua coleção"
+                    }
+                    className="btn-ghost w-fit px-6 py-4 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {claiming ? "Guardando…" : "Pegar carta"}
+                  </button>
+                  <Link href="/gacha/collection" className="btn-ghost px-4 py-4">
+                    Minha coleção
+                  </Link>
+                </div>
+
+                {status?.claimWarning && (
+                  <div className="mx-auto mt-4 max-w-2xl border border-hairline bg-ink/60 p-3 text-left">
+                    <p className="text-body-sm text-mist">
+                      {status.claimWarning}
+                    </p>
+                    {status.bypassPriceCents != null && (
+                      <button
+                        type="button"
+                        onClick={() => void handleBypass()}
+                        disabled={bypassPending}
+                        className="mt-3 min-h-11 border border-amber-400/60 px-4 font-display text-body-sm text-amber-200 disabled:opacity-40"
+                      >
+                        {bypassPending
+                          ? "Aguardando Pix…"
+                          : `Desbloquear agora · R$ ${(status.bypassPriceCents / 100).toFixed(2).replace(".", ",")}`}
+                      </button>
+                    )}
+                    {checkoutUrl && (
+                      <a
+                        href={checkoutUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="btn-ice mt-3 inline-block px-4 py-3"
+                      >
+                        Abrir checkout Pix
+                      </a>
+                    )}
+                  </div>
                 )}
               </div>
-              <div className="flex flex-wrap gap-3">
-                <button
-                  type="button"
-                  onClick={() => void handleSpin()}
-                  disabled={!canSpinNow}
-                  className="btn-ice w-fit px-6 py-3 transition-transform duration-150 active:scale-95 motion-reduce:transform-none disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {spinning ? "Girando…" : `Girar (${status?.spinsLeft ?? 5})`}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => void handleClaim()}
-                  disabled={claiming || !selectedSpin || selectedSpinExpired || locked}
-                  title={
-                    locked
-                      ? "Você já guardou uma carta. Aguarde o fim do bloqueio ou desbloqueie via Pix."
-                      : "Guardar a carta selecionada na sua coleção"
-                  }
-                  className="btn-ghost w-fit px-6 py-3 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {claiming ? "Guardando…" : "Pegar carta"}
-                </button>
-              </div>
 
-              {status?.claimWarning && (
-                <div className="border border-hairline bg-ink/60 p-3">
-                  <p className="text-body-sm text-mist">
-                    {status.claimWarning}
-                  </p>
-                  {status.bypassPriceCents != null && (
-                    <button
-                      type="button"
-                      onClick={() => void handleBypass()}
-                      disabled={bypassPending}
-                      className="mt-3 min-h-11 border border-amber-400/60 px-4 font-display text-body-sm text-amber-200 disabled:opacity-40"
-                    >
-                      {bypassPending
-                        ? "Aguardando Pix…"
-                        : `Desbloquear agora · R$ ${(status.bypassPriceCents / 100).toFixed(2).replace(".", ",")}`}
-                    </button>
-                  )}
-                  {checkoutUrl && (
-                    <a
-                      href={checkoutUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="btn-ice mt-3 inline-block px-4 py-3"
-                    >
-                      Abrir checkout Pix
-                    </a>
-                  )}
-                </div>
-              )}
-
-              {spins.length > 0 && (
-                <div>
-                  <p className="mb-2 font-mono text-caption uppercase tracking-wider text-mist">
-                    Previews desta hora ({spins.length}/5)
-                  </p>
-                  <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
-                    {spins.map((spin) => {
-                      const active = spin.id === selectedSpinId;
-                      return (
-                        <button
-                          key={spin.id}
-                          type="button"
-                          onClick={() => setSelectedSpinId(spin.id)}
-                          aria-pressed={active}
-                          className={`border p-1 text-left transition-colors ${
-                            active
-                              ? "border-ice"
-                              : "border-hairline hover:border-ice/50"
-                          }`}
-                        >
-                          <SpinPreviewCard spin={spin} />
-                        </button>
-                      );
-                    })}
-                  </div>
-                  {selectedSpin && (
-                    <p className="mt-2 font-mono text-caption text-mist">
-                      Selecionada: {selectedSpin.card.name} ·{" "}
-                      {selectedSpin.card.rarity} · {selectedSpin.foil}
-                      {selectedSpin.claimedAt ? " · já guardada" : ""}
+              <div className="relative border-t border-hairline px-5 py-6">
+                {spins.length > 0 && (
+                  <div>
+                    <p className="mb-2 font-mono text-caption uppercase tracking-wider text-mist">
+                      Previews desta hora ({spins.length}/5)
                     </p>
-                  )}
-                </div>
-              )}
+                    <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
+                      {spins.map((spin) => {
+                        const active = spin.id === selectedSpinId;
+                        return (
+                          <button
+                            key={spin.id}
+                            type="button"
+                            onClick={() => setSelectedSpinId(spin.id)}
+                            aria-pressed={active}
+                            className={`border p-1 text-left transition-colors ${
+                              active
+                                ? "border-ice"
+                                : "border-hairline hover:border-ice/50"
+                            }`}
+                          >
+                            <SpinPreviewCard spin={spin} />
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {selectedSpin && (
+                      <p className="mt-2 font-mono text-caption text-mist">
+                        Selecionada: {selectedSpin.card.name} ·{" "}
+                        {selectedSpin.card.rarity} · {selectedSpin.foil}
+                        {selectedSpin.claimedAt ? " · já guardada" : ""}
+                      </p>
+                    )}
+                  </div>
+                )}
 
-            </div>
-          )}
-
-          {result && !stageOpen && !stagePreview && (
-            <div className="mt-6">
-              <SectionLabel level={2}>Sua carta</SectionLabel>
-              <div className="w-44 max-w-full">
-                <GachaCard pull={result} />
+                {result && !stageOpen && !stagePreview && (
+                  <div className="mt-6">
+                    <SectionLabel level={2}>Sua carta</SectionLabel>
+                    <div className="w-44 max-w-full">
+                      <GachaCard pull={result} />
+                    </div>
+                  </div>
+                )}
               </div>
-            </div>
-          )}
-        </section>
-      )}
+            </>
+          ))}
+      </section>
 
       <section className="mt-10">
         <SectionLabel level={2}>Últimos pulls</SectionLabel>
