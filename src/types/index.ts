@@ -665,6 +665,23 @@ export interface GachaEncyclopedia {
 /** Carta destaque — setComplete sinaliza conjunto completo (prestígio no perfil). */
 export type GachaFeatured = GachaPull & { setComplete?: boolean };
 
+export type GachaTradeStatus = 'PENDING' | 'COMPLETED' | 'CANCELLED' | 'EXPIRED';
+
+/** Troca 1:1 entre dois usuários — escrow confirmado pelo receptor. */
+export interface GachaTrade {
+  id: string;
+  status: GachaTradeStatus;
+  expiresAt: string;
+  createdAt: string;
+  completedAt: string | null;
+  offeredUserId: string;
+  requestedUserId: string;
+  offeredUserCardId: string;
+  requestedUserCardId: string;
+  offeredUserCard: GachaPull;
+  requestedUserCard: GachaPull;
+}
+
 /**
  * Item do feed social — união discriminada por `type`:
  *  - post: texto livre de um usuário
