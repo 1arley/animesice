@@ -34,7 +34,7 @@ export default function AdminCreateEpisodePage({
   useEffect(() => {
     if (!slug || !isPrivileged(user)) return;
     api
-      .getAnime(slug)
+      .adminGetAnime(slug)
       .then(setAnime)
       .catch(() => {});
   }, [slug, user]);
