@@ -47,6 +47,7 @@ import type {
   GachaRankingEntry,
   GachaEncyclopedia,
   GachaFeatured,
+  GachaTrade,
   UserSearchResult,
   FeedbackStatus,
   BlogPost,
@@ -1383,6 +1384,34 @@ export const api = {
     ),
 
   gachaEncyclopedia: () => request<GachaEncyclopedia>(`/gacha/encyclopedia`),
+
+  gachaTradeCreate: (body: {
+    offeredUserCardId: string;
+    requestedUserCardId: string;
+  }) =>
+    request<GachaTrade>(`/gacha/trades`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+
+  gachaMyTrades: () => request<GachaTrade[]>(`/gacha/trades/mine`),
+
+  gachaTradeAccept: (id: string) =>
+    request<GachaTrade>(`/gacha/trades/${encodeURIComponent(id)}/accept`, {
+      method: "POST",
+    }),
+
+  gachaTradeCancel: (id: string) =>
+    request<{ id: string; status: string }>(
+      `/gacha/trades/${encodeURIComponent(id)}/cancel`,
+      { method: "POST" },
+    ),
+
+  gachaTradeDecline: (id: string) =>
+    request<{ id: string; status: string }>(
+      `/gacha/trades/${encodeURIComponent(id)}/decline`,
+      { method: "POST" },
+    ),
 
   gachaRecent: (limit = 20) =>
     request<GachaPullResponse[]>(`/gacha/recent?limit=${limit}`),

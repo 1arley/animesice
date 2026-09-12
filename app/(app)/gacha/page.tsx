@@ -421,6 +421,9 @@ function GachaPageContent() {
                   <Link href="/gacha/collection" className="btn-ghost px-4 py-4">
                     Minha coleção
                   </Link>
+                  <Link href="/gacha/trades" className="btn-ghost px-4 py-4">
+                    Trocas
+                  </Link>
                 </div>
 
                 {status?.claimWarning && (
