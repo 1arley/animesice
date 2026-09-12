@@ -26,6 +26,7 @@ export default function AdminEditAnimePage({
   const [bannerImage, setBannerImage] = useState("");
   const [rating, setRating] = useState("");
   const [status, setStatus] = useState("LANCAMENTO");
+  const [published, setPublished] = useState(true);
   const [ageRating, setAgeRating] = useState("A14");
   const [editorialSynopsis, setEditorialSynopsis] = useState("");
   const [editorialWhereToWatch, setEditorialWhereToWatch] = useState("");
@@ -44,7 +45,7 @@ export default function AdminEditAnimePage({
     if (!slug || !isPrivileged(user)) return;
     setLoadingAnime(true);
     api
-      .getAnime(slug)
+      .adminGetAnime(slug)
       .then((a) => {
         setAnime(a);
         setTitle(a.title ?? "");
@@ -58,6 +59,7 @@ export default function AdminEditAnimePage({
             : (a.status ?? "LANCAMENTO"),
         );
         setAgeRating(a.ageRating ?? "A14");
+        setPublished(a.published ?? true);
         setEditorialSynopsis(a.editorialSynopsis ?? "");
         setEditorialWhereToWatch(a.editorialWhereToWatch ?? "");
         setEditorialDubbingInfo(a.editorialDubbingInfo ?? "");
@@ -85,6 +87,7 @@ export default function AdminEditAnimePage({
         rating: rating ? Number(rating) : undefined,
         status,
         ageRating,
+        published,
         editorialSynopsis: editorialSynopsis || undefined,
         editorialWhereToWatch: editorialWhereToWatch || undefined,
         editorialDubbingInfo: editorialDubbingInfo || undefined,
@@ -229,6 +232,19 @@ export default function AdminEditAnimePage({
                 placeholder="ex: 8.5"
                 inputMode="decimal"
               />
+            </label>
+
+            <label className="flex items-center gap-2 text-body-sm text-snow">
+              <input
+                type="checkbox"
+                checked={published}
+                onChange={(e) => setPublished(e.target.checked)}
+                className="h-4 w-4 accent-ice"
+              />
+              Publicado
+              <span className="text-mist">
+                {published ? "(visível no site)" : "(desabilitado — oculto do site)"}
+              </span>
             </label>
 
             <fieldset className="space-y-4 border border-hairline bg-panel/30 p-4">

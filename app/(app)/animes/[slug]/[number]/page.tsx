@@ -75,7 +75,7 @@ export async function generateMetadata({
   return {
     title,
     description: description.slice(0, 160),
-    alternates: { canonical: `/animes/${slug}/${number}` },
+    alternates: { canonical: `/animes/${slug}` },
     openGraph: {
       title,
       description: description.slice(0, 160),
@@ -111,6 +111,12 @@ export default async function WatchPage({
         serverStreamSourceAsync(slug, number).catch(() => null),
       ]);
   if (!episode) notFound();
+
+  // Números dos episódios já vem do backend (evita fetch extra no client)
+  const episodeNumbers = (episode.anime.episodes ?? [])
+    .map((ep: { number: number }) => ep.number)
+    .filter((v: number, i: number, a: number[]) => a.indexOf(v) === i)
+    .sort((a: number, b: number) => a - b);
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -171,6 +177,7 @@ export default async function WatchPage({
         number={number}
         initialEpisode={episode}
         initialSource={initialSource}
+        episodeNumbers={episodeNumbers}
       />
     </div>
   );

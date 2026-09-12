@@ -6,21 +6,21 @@ import { useState } from "react";
 type AdaptiveImageProps = Omit<ImageProps, "src" | "onError"> & {
   /** URL pequena e já conhecida; também é o fallback em caso de erro. */
   src: string;
-  /** Original de maior resolução, usado como <source> (todas as telas por padrão). */
+  /** Original de maior resolução; vira o src direto quando não há breakpoint. */
   desktopSrc?: string;
-  /** A partir de qual largura o <source> de alta resolução vale (0 = sempre). */
+  /** A partir de qual largura o <source> de alta resolução vale (0 = usa direto no <img>). */
   desktopMinWidth?: number;
   onError?: ImageProps["onError"];
 };
 
 /**
- * Mantém a imagem pequena no HTML (LCP/fallback) e troca para a arte maior em
- * TODAS as telas — celular incluído, onde a qualidade também é exigida. Se a
- * origem não possuir esse arquivo, remove o <source> e remonta o <img> com a
- * URL pequena, evitando capas quebradas em produção.
- *
- * O projeto usa `images.unoptimized`, então <picture> não duplica o trabalho
- * de um otimizador do Next e permite escolher a origem sem JS de viewport.
+ * Serve a arte de maior resolução diretamente no <img> para que o preload
+ * gerado por `priority` corresponda à URL realmente exibida. Com <picture> +
+ * <source media="(min-width: 0px)"> o browser baixava o desktopSrc mas o
+ * Next fazia preload do src pequeno — warning "preloaded but not used" e
+ * download duplo. O <picture> só é usado quando há breakpoint real
+ * (desktopMinWidth > 0); nos demais casos o fallback vira troca de src no
+ * onError, que o <source> nunca disparava.
  */
 export function AdaptiveImage({
   src,
@@ -35,27 +35,39 @@ export function AdaptiveImage({
     desktopSrc && desktopSrc !== src && !desktopFailed,
   );
 
+  const handleError: ImageProps["onError"] = (event) => {
+    if (hasDesktopCandidate) {
+      setDesktopFailed(true);
+      return;
+    }
+    onError?.(event);
+  };
+
+  if (!hasDesktopCandidate || desktopMinWidth <= 0) {
+    return (
+      <Image
+        {...imageProps}
+        key={hasDesktopCandidate ? "preferred" : "fallback"}
+        src={hasDesktopCandidate ? (desktopSrc as string) : src}
+        alt={alt}
+        onError={handleError}
+      />
+    );
+  }
+
   return (
     <picture>
-      {hasDesktopCandidate && (
-        <source
-          media={`(min-width: ${desktopMinWidth}px)`}
-          srcSet={desktopSrc}
-          data-image-resolution="desktop"
-        />
-      )}
+      <source
+        media={`(min-width: ${desktopMinWidth}px)`}
+        srcSet={desktopSrc}
+        data-image-resolution="desktop"
+      />
       <Image
         {...imageProps}
         key={desktopFailed ? "fallback" : "preferred"}
         src={src}
         alt={alt}
-        onError={(event) => {
-          if (hasDesktopCandidate) {
-            setDesktopFailed(true);
-            return;
-          }
-          onError?.(event);
-        }}
+        onError={handleError}
       />
     </picture>
   );

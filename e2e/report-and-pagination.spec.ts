@@ -145,6 +145,29 @@ test.describe('Public profile - report & tabs', () => {
       });
     });
 
+    // Carta destaque: pull em destaque do usuário-alvo, exibida no hero.
+    await page.route(usersApi('gacha/featured/[^/]+'), async route => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: 'pull-destaque-e2e',
+          condition: 0.02,
+          conditionLabel: 'MINT',
+          foil: 'HOLO',
+          edition: 3,
+          value: 12000,
+          obtainedAt: new Date().toISOString(),
+          user: { id: userId, name: 'Test User', userName: canonicalUserName, avatar: null },
+          card: {
+            id: 'c-destaque', name: 'Waifu Destaque', image: null,
+            rarity: 'LENDARIA', favourites: 9000, animeId: null,
+            animeTitle: 'Anime E2E', anime: null,
+          },
+        })
+      });
+    });
+
     // Sessão simulada: o modal de denúncia exige login (useAuth checa o
     // cookie `role` e /user/me). Sem isso, o formulário não aparece.
     await page.context().addCookies([
@@ -197,6 +220,15 @@ test.describe('Public profile - report & tabs', () => {
     await expect(page.locator('text=Watching Anime')).toBeVisible();
     await expect(page.locator('text=Episódio 7 de 12')).toBeVisible();
 
+    // Carta destaque no hero: label, raridade e link profundo pra ficha.
+    await expect(page.locator('text=Carta destaque')).toBeVisible();
+    await expect(
+      page.getByRole('link', { name: 'Ver carta destacada Waifu Destaque' }),
+    ).toBeVisible();
+    await expect(page.locator('a[href="/gacha?card=pull-destaque-e2e"]')).toBeVisible();
+    await expect(page.locator('text=LENDARIA')).toBeVisible();
+    await expect(page.locator('text=HOLO')).toBeVisible();
+
     // Atividade tab: comentários com like preservado + load more
     await clickCentered(page.locator('button:has-text("Atividade")'));
     await expect(page.locator('text=hello')).toBeVisible();
@@ -232,5 +264,19 @@ test.describe('Public profile - report & tabs', () => {
     expect(reportPayload.targetId).toBe(userId);
     expect(reportPayload.reason).toBe('SPAM');
     expect(reportPayload.notes).toBe('Reason details');
+  });
+
+  test('hides the featured portrait when the user has no featured card', async ({ page }) => {
+    await blockAds(page);
+
+    // Sem page.route: o mock-backend (porta 3001) responde o perfil padrão
+    // ("mock") e `GET /gacha/featured/:userId` com null — já é o caminho
+    // "sem carta destaque" do hero.
+    await page.goto('/users/mock');
+
+    // Perfil resolvido; depois do loading, o slot some por completo ---
+    // não ficam fantasma nem CLS residual de um slot vazio.
+    await expect(page.getByRole('heading', { name: 'Mock' })).toBeVisible();
+    await expect(page.locator('text=Carta destaque')).toHaveCount(0);
   });
 });

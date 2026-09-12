@@ -7,6 +7,7 @@ import { api, ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { Avatar } from "@/components/common/Avatar";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { GachaCard } from "@/components/gacha/GachaCard";
 import { timeAgo } from "@/lib/time";
 import { safeImageSrc } from "@/lib/url";
 import { blur } from "@/lib/blur";
@@ -178,6 +179,36 @@ export function FeedPost({
         {post.content}
       </p>
 
+      {post.kind === "GACHA_PULL" && post.meta && (
+        <Link
+          href={`/gacha?card=${post.meta.userCardId}`}
+          className="mt-3 block w-44 max-w-full"
+        >
+          <GachaCard
+            linkAnime={false}
+            pull={{
+              id: post.meta.userCardId,
+              condition: post.meta.condition,
+              foil: post.meta.foil,
+              edition: post.meta.edition,
+              value: post.meta.value,
+              obtainedAt: post.createdAt,
+              user: post.user,
+              card: {
+                id: post.meta.cardId,
+                name: post.meta.name,
+                image: post.meta.image,
+                rarity: post.meta.rarity,
+                favourites: 0,
+                animeId: post.animeId,
+                animeTitle: post.anime?.title ?? null,
+                anime: post.anime,
+              },
+            }}
+          />
+        </Link>
+      )}
+
       {post.anime && (
         <Link
           href={`/animes/${post.anime.slug}`}
@@ -243,7 +274,11 @@ export function FeedPost({
           className="ml-auto inline-flex min-h-11 items-center gap-1.5 py-2 text-mist-soft transition-colors hover:text-ice disabled:cursor-default"
         >
           <ShareGlyph />
-          {shared ? "Copiado!" : shareCount > 0 ? `Compartilhar · ${shareCount}` : "Compartilhar"}
+          {shared
+            ? "Copiado!"
+            : shareCount > 0
+              ? `Compartilhar · ${shareCount}`
+              : "Compartilhar"}
         </button>
       </footer>
 
@@ -251,15 +286,17 @@ export function FeedPost({
       {commentsOpen && (
         <div className="mt-3 space-y-2 border-t border-hairline pt-3">
           {commentsLoading ? (
-            <div className="flex items-center justify-center py-4" aria-busy="true">
+            <div
+              className="flex items-center justify-center py-4"
+              aria-busy="true"
+            >
               <div className="h-3 w-3 animate-spin rounded-full border-2 border-ice border-t-transparent" />
-              <span className="ml-2 font-mono text-caption text-mist-soft">Carregando...</span>
+              <span className="ml-2 font-mono text-caption text-mist-soft">
+                Carregando...
+              </span>
             </div>
           ) : comments.length === 0 ? (
-            <EmptyState
-              text="Nenhum comentário ainda."
-              variant="compact"
-            />
+            <EmptyState text="Nenhum comentário ainda." variant="compact" />
           ) : (
             comments.map((c) => (
               <div key={c.id} className="flex items-start gap-2.5">

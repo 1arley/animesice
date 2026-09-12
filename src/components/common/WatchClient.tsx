@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import dynamic from "next/dynamic";
@@ -22,6 +22,8 @@ interface WatchClientProps {
   initialEpisode: Episode & { anime: Anime };
   /** Source já resolvido via SSR pre-fetch — renderiza instantaneamente. */
   initialSource?: { src: string; embedUrl?: string; thumbnailUrl?: string } | { jobId: string } | null;
+  /** Números dos episódios vindos de SSR — evita fetch extra no EpisodeNavigation. */
+  episodeNumbers?: number[];
 }
 
 export function WatchClient({
@@ -29,6 +31,7 @@ export function WatchClient({
   number,
   initialEpisode,
   initialSource: initialSourceProp,
+  episodeNumbers,
 }: WatchClientProps) {
   const episode = initialEpisode;
   const [source, setSource] = useState<StreamSource | null>(null);
@@ -267,7 +270,7 @@ export function WatchClient({
       <CommentSection episodeId={episode.id} title="Discussão do episódio" />
 
       {/* Navegação de episódios — Peak-End Rule: melhor experiência no fim */}
-      <EpisodeNavigation slug={slug} number={number} />
+      <EpisodeNavigation slug={slug} number={number} episodeNumbers={episodeNumbers} />
     </>
   );
 }
@@ -311,34 +314,15 @@ function EpisodePlayerShell({
  * Peak-End Rule: usuários lembram do fim da experiência.
  * Lei de Proximidade: botões agrupados por função (anterior/próximo).
  */
-function EpisodeNavigation({ slug, number }: { slug: string; number: number }) {
-  const [adjacent, setAdjacent] = useState<{
-    previous: number | null;
-    next: number | null;
-  } | null>(null);
-  const prefetched = useRef(new Set<number>());
-
-  useEffect(() => {
-    let cancelled = false;
-    api
-      .getEpisodes(slug)
-      .then((episodes) => {
-        if (cancelled) return;
-        const numbers = [...new Set(episodes.map((ep) => ep.number))].sort(
-          (a, b) => a - b,
-        );
-        setAdjacent({
-          previous: numbers.filter((value) => value < number).at(-1) ?? null,
-          next: numbers.find((value) => value > number) ?? null,
-        });
-      })
-      .catch(() => {
-        if (!cancelled) setAdjacent({ previous: null, next: null });
-      });
-    return () => {
-      cancelled = true;
+function EpisodeNavigation({ slug, number, episodeNumbers }: { slug: string; number: number; episodeNumbers?: number[] }) {
+  const adjacent = useMemo(() => {
+    const nums = episodeNumbers ?? [];
+    return {
+      previous: nums.filter((v) => v < number).at(-1) ?? null,
+      next: nums.find((v) => v > number) ?? null,
     };
-  }, [slug, number]);
+  }, [episodeNumbers, number]);
+  const prefetched = useRef(new Set<number>());
 
   /**
    * Prefetch de stream source ao hover: aquece o cache do backend
@@ -397,14 +381,7 @@ function EpisodeNavigation({ slug, number }: { slug: string; number: number }) {
         )}
 
         {/* Próximo episódio */}
-        {adjacent === null ? (
-          <div className="flex items-center justify-center rounded-md border border-hairline bg-panel p-3">
-            <div className="h-4 w-4 animate-spin rounded-full border-2 border-ice border-t-transparent" />
-            <span className="ml-2 font-mono text-caption text-mist">
-              Verificando...
-            </span>
-          </div>
-        ) : adjacent.next != null ? (
+        {adjacent.next != null ? (
           <Link
             href={`/animes/${slug}/${adjacent.next}`}
             onMouseEnter={() => prefetchEpisode(adjacent.next!)}

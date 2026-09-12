@@ -433,6 +433,7 @@ export interface PrivacySettings {
   showActivity: boolean;
   showFavorites: boolean;
   showRatings: boolean;
+  showGacha: boolean;
   privateAnimeLists: number;
 }
 
@@ -502,6 +503,8 @@ export interface PostAnime {
 export interface SocialPost {
   id: string;
   content: string;
+  kind: string;
+  meta: GachaPullMeta | null;
   animeId: string | null;
   anime: PostAnime | null;
   user: SocialUser;
@@ -519,6 +522,110 @@ export interface PostCommentItem {
   content: string;
   user: SocialUser;
   createdAt: string;
+}
+
+/** Meta de um post GACHA_PULL (pull Épico+ publicado no feed). */
+export interface GachaPullMeta {
+  userCardId: string;
+  cardId: string;
+  name: string;
+  image: string | null;
+  rarity: string;
+  foil: string;
+  condition: number;
+  edition: number;
+  value: number;
+}
+
+/** Carta do gacha (personagem cacheado do AniList). */
+export interface AdminGachaCard {
+  id: string;
+  name: string;
+  image: string | null;
+  rarity: string;
+  favourites: number;
+  animeId: string | null;
+  animeTitle: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface GachaCardInfo {
+  id: string;
+  name: string;
+  image: string | null;
+  rarity: string;
+  favourites: number;
+  animeId: string | null;
+  animeTitle: string | null;
+  anime: PostAnime | null;
+}
+
+/** Cópia de carta de um usuário. */
+export interface GachaPull {
+  id: string;
+  condition: number;
+  conditionLabel?: string;
+  foil: string;
+  edition: number;
+  value: number;
+  obtainedAt: string;
+  user: SocialUser;
+  card: GachaCardInfo;
+}
+
+/** Status do roll diário + giros/claim (campos novos opcionais p/ compat). */
+export interface GachaStatus {
+  canRoll: boolean;
+  rollsLeft: number;
+  nextRollAt: string | null;
+  pityDaysLeft: number;
+  pityDue: boolean;
+  spinsLeft?: number;
+  canSpin?: boolean;
+  nextSpinAt?: string | null;
+  canClaim?: boolean;
+  nextClaimAt?: string | null;
+  claimWarning?: string | null;
+  bypassPriceCents?: number | null;
+}
+
+/** Preview de giro — sorteio sem ownership (sem edition, sem dono). */
+export interface GachaSpinPreview {
+  id: string;
+  hour: string;
+  slot: number;
+  condition: number;
+  conditionLabel?: string;
+  foil: string;
+  value: number;
+  claimedAt: string | null;
+  expiresAt: string;
+  createdAt: string;
+  pityDue?: boolean;
+  card: GachaCardInfo;
+}
+
+export interface GachaBypassCheckout {
+  reference: string;
+  checkoutUrl: string;
+  amountCents: number;
+}
+
+export type GachaBypassStatus = 'PENDING' | 'PAID' | 'EXPIRED';
+
+/** Coleção de cartas com stats. */
+export interface GachaCollectionResponse {
+  data: GachaPull[];
+  stats: { total: number; totalValue: number };
+  meta: { total: number; page: number; limit: number; totalPages: number };
+}
+
+/** Linha do ranking de colecionadores. */
+export interface GachaRankingEntry {
+  user: SocialUser;
+  totalValue: number;
+  pulls: number;
 }
 
 /**

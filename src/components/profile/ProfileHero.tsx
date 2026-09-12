@@ -9,7 +9,11 @@ import { Avatar } from "@/components/common/Avatar";
 import { Modal } from "@/components/common/Modal";
 import { formatDate } from "@/lib/time";
 import { blur } from "@/lib/blur";
-import type { PublicUserProfile, ReportReason } from "@/types";
+import {
+  FeaturedPortrait,
+  FeaturedPortraitSkeleton,
+} from "@/components/profile/FeaturedPortrait";
+import type { GachaPull, PublicUserProfile, ReportReason } from "@/types";
 
 const REPORT_REASONS: Array<{ value: ReportReason; label: string }> = [
   { value: "SPAM", label: "SPAM" },
@@ -30,9 +34,14 @@ const REPORT_REASONS: Array<{ value: ReportReason; label: string }> = [
 export function ProfileHero({
   profile,
   coverImage,
+  featuredCard,
+  featuredLoading = false,
 }: {
   profile: PublicUserProfile;
   coverImage?: string | null;
+  featuredCard?: GachaPull | null;
+  /** Fetch da carta destaque em andamento — reserva o slot (zero CLS). */
+  featuredLoading?: boolean;
 }) {
   const { user } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -257,22 +266,31 @@ export function ProfileHero({
             </div>
           </div>
 
-          {showFollowButton && (
-            <button
-              type="button"
-              onClick={handleToggleFollow}
-              disabled={followBusy || following === null}
-              aria-pressed={following === true}
-              className={`btn-ghost shrink-0 self-start ${
-                following ? "border-ice/60 text-ice" : ""
-              }`}
-            >
-              {followBusy
-                ? "…"
-                : following
-                  ? "Seguindo ✓"
-                  : "Seguir"}
-            </button>
+          {(showFollowButton || featuredCard || featuredLoading) && (
+            <div className="flex shrink-0 flex-col items-start gap-4 md:items-end">
+              {showFollowButton && (
+                <button
+                  type="button"
+                  onClick={handleToggleFollow}
+                  disabled={followBusy || following === null}
+                  aria-pressed={following === true}
+                  className={`btn-ghost shrink-0 self-start ${
+                    following ? "border-ice/60 text-ice" : ""
+                  }`}
+                >
+                  {followBusy
+                    ? "…"
+                    : following
+                      ? "Seguindo ✓"
+                      : "Seguir"}
+                </button>
+              )}
+              {featuredCard ? (
+                <FeaturedPortrait pull={featuredCard} />
+              ) : featuredLoading ? (
+                <FeaturedPortraitSkeleton />
+              ) : null}
+            </div>
           )}
         </div>
       </div>
