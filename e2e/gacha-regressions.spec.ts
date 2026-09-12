@@ -98,3 +98,107 @@ test("admin descarta cartas e respostas da seleção anterior", async ({ page })
   await expect(page.getByText("Carta B · RARA")).toHaveCount(0);
   await expect(page.getByText("Carta A · RARA")).toBeVisible();
 });
+
+for (const staleFails of [false, true]) {
+  test(`coleção ignora resposta antiga ${staleFails ? "com erro" : "com cartas"}`, async ({ page }) => {
+    let release!: () => void;
+    let requested!: () => void;
+    const pending = new Promise<void>(resolve => { release = resolve; });
+    const started = new Promise<void>(resolve => { requested = resolve; });
+    await page.route("**/gacha/collection?**", async route => {
+      const rarity = new URL(route.request().url()).searchParams.get("rarity");
+      if (rarity === "COMUM") {
+        requested();
+        await pending;
+        if (staleFails) return route.fulfill({ status: 500, json: { message: "Erro antigo" } });
+      }
+      return route.fulfill({ json: {
+        data: [{ ...card, card: { ...card.card, name: rarity || "Inicial" } }],
+        meta: { ...meta, totalPages: rarity === "COMUM" ? 2 : 1 },
+      } });
+    });
+    await page.goto("/gacha/collection");
+    await expect(page.getByRole("button", { name: /Inicial/ })).toBeVisible();
+    await page.getByLabel("Raridade", { exact: true }).selectOption("COMUM");
+    await started;
+    await page.getByLabel("Raridade", { exact: true }).selectOption("RARA");
+    await expect(page.getByRole("button", { name: /RARA/ }).first()).toBeVisible();
+    const response = page.waitForResponse(r => new URL(r.url()).searchParams.get("rarity") === "COMUM");
+    release();
+    await (await response).finished();
+    // Let the obsolete fetch continuation commit if it has not been invalidated.
+    await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+    await expect(page.locator('p[role="alert"]')).toHaveCount(0);
+    await expect(page.getByRole("button", { name: /COMUM/ })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Próxima", exact: true })).toHaveCount(0);
+    await expect(page.getByLabel("Raridade", { exact: true })).toHaveValue("RARA");
+  });
+}
+
+test("destacar carta mostra erro e permite tentar novamente", async ({ page }) => {
+  const errors: string[] = [];
+  page.on("pageerror", error => errors.push(error.message));
+  await page.route("**/gacha/collection?**", route => route.fulfill({ json: { data: [card], meta } }));
+  let attempts = 0;
+  await page.route("**/gacha/featured", route => {
+    if (route.request().method() === "GET") return route.fulfill({ json: null });
+    return ++attempts === 1
+      ? route.fulfill({ status: 500, json: { message: "Falha no destaque" } })
+      : route.fulfill({ json: card });
+  });
+  await page.goto("/gacha/collection");
+  const feature = page.getByRole("button", { name: "Destacar no perfil" });
+  await feature.click();
+  await expect(page.locator('p[role="alert"]')).toContainText("Não foi possível destacar a carta.");
+  await feature.click();
+  await expect(page.getByRole("button", { name: "Em destaque" })).toBeDisabled();
+  await expect(page.locator('p[role="alert"]')).toHaveCount(0);
+  expect(errors).toEqual([]);
+});
+
+test("virada da hora remove previews mesmo com giros restantes", async ({ page }) => {
+  const now = new Date("2026-09-11T00:59:50Z");
+  const expiresAt = "2026-09-11T01:00:00Z";
+  await page.clock.install({ time: now });
+  let expired = false;
+  await page.route("**/gacha/status", route => route.fulfill({ json: {
+    spinsLeft: expired ? 5 : 4, canSpin: true, nextSpinAt: null,
+    canClaim: true, nextClaimAt: null, pityDaysLeft: 30,
+  } }));
+  await page.route("**/gacha/spins", route => route.fulfill({ json: expired ? [] : [{ ...spin, expiresAt }] }));
+  await page.goto("/gacha");
+  const claim = page.getByRole("button", { name: "Pegar carta" });
+  await expect(claim).toBeEnabled();
+  expired = true;
+  await page.clock.fastForward(10_000);
+  await expect(claim).toBeDisabled();
+  await page.clock.fastForward(3000);
+  await expect(page.getByRole("button", { name: "Girar (5)", exact: true })).toBeEnabled();
+  await expect(page.getByText("Previews desta hora (1/5)")).toHaveCount(0);
+});
+
+test("checkout Pix oferece link mesmo quando popups são bloqueados", async ({ page }) => {
+  await page.addInitScript(() => { window.open = () => null; });
+  await page.clock.install();
+  let paid = false;
+  await page.route("**/gacha/status", route => route.fulfill({ json: {
+    spinsLeft: 4, canSpin: true, nextSpinAt: null,
+    canClaim: paid, nextClaimAt: null,
+    claimWarning: paid ? null : "Aguarde o fim do bloqueio.",
+    bypassPriceCents: paid ? null : 299,
+  } }));
+  await page.route("**/gacha/spins", route => route.fulfill({ json: [spin] }));
+  await page.route("**/gacha/bypass", route => route.fulfill({ json: {
+    reference: "checkout-test", checkoutUrl: "https://livepix.gg/checkout-test", amountCents: 299,
+  } }));
+  await page.route("**/gacha/bypass/checkout-test", route => route.fulfill({ json: { status: paid ? "PAID" : "PENDING" } }));
+  await page.goto("/gacha");
+  await page.getByRole("button", { name: /Desbloquear agora/ }).click();
+  const checkout = page.getByRole("link", { name: "Abrir checkout Pix" });
+  await expect(checkout).toHaveAttribute("href", "https://livepix.gg/checkout-test");
+  await expect(checkout).toHaveAttribute("target", "_blank");
+  paid = true;
+  await page.clock.fastForward(3000);
+  await expect(page.getByRole("button", { name: "Pegar carta" })).toBeEnabled();
+  await expect(checkout).toHaveCount(0);
+});
