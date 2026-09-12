@@ -330,21 +330,6 @@ const server = http.createServer((req, res) => {
   }
   const gachaBypassPoll = p && p.match(/^\/(api\/)?gacha\/bypass\/.+$/);
   if (req.method === 'GET' && gachaBypassPoll) return json(res, { status: 'PENDING' });
-  if (req.method === 'POST' && (p === '/api/gacha/roll' || p === '/gacha/roll')) {
-    return json(res, {
-      id: 'pull-e2e',
-      condition: 0.04,
-      foil: 'GOLD',
-      edition: 1,
-      value: 9500,
-      obtainedAt: new Date().toISOString(),
-      user: { id: 'viewer-1', name: 'Viewer', userName: 'viewer', avatar: null },
-      card: {
-        id: 'w-e2e', name: 'Waifu E2E', image: null, rarity: 'EPICA',
-        favourites: 5000, animeId: null, animeTitle: 'Anime E2E', anime: null,
-      },
-    });
-  }
 
   // fallback
   res.writeHead(200, { 'Content-Type': 'application/json' });

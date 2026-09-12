@@ -1322,12 +1322,6 @@ export const api = {
     }),
 
   // --- Gacha ---
-  rollGacha: (turnstileToken?: string) =>
-    request<GachaPullResponse>(`/gacha/roll`, {
-      method: "POST",
-      body: JSON.stringify({ turnstileToken }),
-    }),
-
   gachaStatus: () => request<GachaStatus>(`/gacha/status`),
 
   gachaSpins: () => request<GachaSpinPreview[]>(`/gacha/spins`),
@@ -1335,7 +1329,7 @@ export const api = {
   gachaSpin: () =>
     request<GachaSpinPreview>(`/gacha/spin`, { method: "POST" }),
 
-  gachaClaim: (body: { spinId: string; turnstileToken?: string }) =>
+  gachaClaim: (body: { spinId: string }) =>
     request<GachaPullResponse>(`/gacha/claim`, {
       method: "POST",
       body: JSON.stringify(body),
