@@ -569,9 +569,12 @@ export const api = {
       body: JSON.stringify(dto),
     }),
 
+  adminGetAnime: (slug: string) =>
+    request<Anime & { _count: { episodes: number } }>(`/admin/anime/${slug}`),
+
   adminUpdateAnime: (
     slug: string,
-    dto: Partial<Pick<Anime, "title" | "synopsis" | "coverImage" | "bannerImage" | "rating" | "status" | "ageRating" | "editorialSynopsis" | "editorialWhereToWatch" | "editorialDubbingInfo" | "editorialSeasonsInfo">>,
+    dto: Partial<Pick<Anime, "title" | "synopsis" | "coverImage" | "bannerImage" | "rating" | "status" | "ageRating" | "published" | "editorialSynopsis" | "editorialWhereToWatch" | "editorialDubbingInfo" | "editorialSeasonsInfo">>,
   ) =>
     request<Anime>(`/admin/anime/${slug}`, {
       method: "PATCH",
