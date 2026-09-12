@@ -45,6 +45,8 @@ import type {
   GachaBypassStatus,
   GachaCollectionResponse,
   GachaRankingEntry,
+  GachaEncyclopedia,
+  GachaFeatured,
   UserSearchResult,
   FeedbackStatus,
   BlogPost,
@@ -1363,9 +1365,9 @@ export const api = {
       `/gacha/collection?userId=${encodeURIComponent(userId)}&page=${page}&limit=${limit}&sort=${sort}&rarity=${rarity}&foil=${foil}`,
     ),
 
-  gachaFeatured: () => request<GachaPull | null>(`/gacha/featured`),
+  gachaFeatured: () => request<GachaFeatured | null>(`/gacha/featured`),
   setGachaFeatured: (userCardId: string) =>
-    request<GachaPull>(`/gacha/featured`, {
+    request<GachaFeatured>(`/gacha/featured`, {
       method: "PATCH",
       body: JSON.stringify({ userCardId }),
     }),
@@ -1376,7 +1378,11 @@ export const api = {
   gachaPublicCard: (id: string) =>
     request<GachaPull>(`/gacha/cards/${encodeURIComponent(id)}`),
   gachaPublicFeatured: (userId: string) =>
-    request<GachaPull | null>(`/gacha/featured/${encodeURIComponent(userId)}`),
+    request<GachaFeatured | null>(
+      `/gacha/featured/${encodeURIComponent(userId)}`,
+    ),
+
+  gachaEncyclopedia: () => request<GachaEncyclopedia>(`/gacha/encyclopedia`),
 
   gachaRecent: (limit = 20) =>
     request<GachaPullResponse[]>(`/gacha/recent?limit=${limit}`),

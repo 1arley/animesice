@@ -13,7 +13,7 @@ import {
   FeaturedPortrait,
   FeaturedPortraitSkeleton,
 } from "@/components/profile/FeaturedPortrait";
-import type { GachaPull, PublicUserProfile, ReportReason } from "@/types";
+import type { GachaFeatured, PublicUserProfile, ReportReason } from "@/types";
 
 const REPORT_REASONS: Array<{ value: ReportReason; label: string }> = [
   { value: "SPAM", label: "SPAM" },
@@ -39,7 +39,7 @@ export function ProfileHero({
 }: {
   profile: PublicUserProfile;
   coverImage?: string | null;
-  featuredCard?: GachaPull | null;
+  featuredCard?: GachaFeatured | null;
   /** Fetch da carta destaque em andamento — reserva o slot (zero CLS). */
   featuredLoading?: boolean;
 }) {
