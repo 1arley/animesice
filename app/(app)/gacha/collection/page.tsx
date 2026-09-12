@@ -67,7 +67,7 @@ function WikiCard({ card }: { card: GachaEncyclopediaCard }) {
         )}
         <span
           className={`absolute left-1 top-1 bg-ink/80 px-1 py-0.5 font-mono text-caption font-medium backdrop-blur-sm ${
-            card.owned ? rarity.text : "text-mist-soft"
+            card.owned ? rarity.text : "text-mist"
           }`}
         >
           {card.rarity}
@@ -75,7 +75,7 @@ function WikiCard({ card }: { card: GachaEncyclopediaCard }) {
       </div>
       <p
         className={`mt-1 truncate font-mono text-caption ${
-          card.owned ? "text-snow" : "text-mist-soft"
+          card.owned ? "text-snow" : "text-mist"
         }`}
       >
         {card.name}
@@ -306,12 +306,14 @@ export default function GachaCollectionPage() {
               <div key={set.animeId ?? "orphan"}>
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                   {set.animeSlug ? (
-                    <Link
-                      href={`/animes/${set.animeSlug}`}
-                      className="font-display text-body-lg text-snow transition-colors hover:text-ice"
-                    >
-                      {set.animeTitle ?? "Sem anime"}
-                    </Link>
+                    <h3>
+                      <Link
+                        href={`/animes/${set.animeSlug}`}
+                        className="font-display text-body-lg text-snow transition-colors hover:text-ice"
+                      >
+                        {set.animeTitle ?? "Sem anime"}
+                      </Link>
+                    </h3>
                   ) : (
                     <h3 className="font-display text-body-lg text-snow">
                       {set.animeTitle ?? "Sem anime"}
