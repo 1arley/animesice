@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
@@ -22,30 +22,34 @@ export default function GachaCollectionPage() {
   const [pages, setPages] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-
-  const load = useCallback(async () => {
-    if (!user) return;
-    setLoading(true);
-    setError("");
-    try {
-      const [collection, current] = await Promise.all([
-        api.gachaCollection(user.id, page, 24, sort, rarity, foil),
-        api.gachaFeatured(),
-      ]);
-      setItems(collection.data);
-      setTotal(collection.meta.total);
-      setPages(collection.meta.totalPages);
-      setFeatured(current);
-    } catch {
-      setError("Não foi possível carregar sua coleção.");
-    } finally {
-      setLoading(false);
-    }
-  }, [user, page, sort, rarity, foil]);
+  const [featuredError, setFeaturedError] = useState("");
 
   useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    const load = async () => {
+      setLoading(true);
+      setError("");
+      setFeaturedError("");
+      try {
+        const [collection, current] = await Promise.all([
+          api.gachaCollection(user.id, page, 24, sort, rarity, foil),
+          api.gachaFeatured(),
+        ]);
+        if (cancelled) return;
+        setItems(collection.data);
+        setTotal(collection.meta.total);
+        setPages(collection.meta.totalPages);
+        setFeatured(current);
+      } catch {
+        if (!cancelled) setError("Não foi possível carregar sua coleção.");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
     void load();
-  }, [load]);
+    return () => { cancelled = true; };
+  }, [user, page, sort, rarity, foil]);
 
   if (!user)
     return (
@@ -121,6 +125,9 @@ export default function GachaCollectionPage() {
           </span>
         )}
       </div>
+      {featuredError && (
+        <p role="alert" className="mt-8 text-signal">{featuredError}</p>
+      )}
       {error ? (
         <p role="alert" className="mt-8 text-signal">
           {error}
@@ -148,9 +155,12 @@ export default function GachaCollectionPage() {
               <button
                 type="button"
                 disabled={featured?.id === pull.id}
-                onClick={() =>
-                  void api.setGachaFeatured(pull.id).then(setFeatured)
-                }
+                onClick={() => {
+                  setFeaturedError("");
+                  void api.setGachaFeatured(pull.id).then(setFeatured).catch(() => {
+                    setFeaturedError("Não foi possível destacar a carta.");
+                  });
+                }}
                 className="mt-2 min-h-11 w-full border border-hairline px-2 font-mono text-caption text-ice disabled:text-mist"
               >
                 {featured?.id === pull.id

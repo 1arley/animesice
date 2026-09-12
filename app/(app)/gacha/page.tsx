@@ -9,6 +9,7 @@ import { TURNSTILE_SITEKEY, loadTurnstile } from "@/lib/turnstile";
 import { RollStage } from "@/components/gacha/RollStage";
 import { SpinPreviewCard } from "@/components/gacha/SpinPreviewCard";
 import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
+import { isValidRemoteUrl } from "@/lib/url";
 import { GachaCard } from "@/components/gacha/GachaCard";
 import { SectionLabel } from "@/components/common/SectionLabel";
 import { Avatar } from "@/components/common/Avatar";
@@ -71,6 +72,7 @@ function GachaPageContent() {
   const [stagePreview, setStagePreview] = useState(false);
   const [claiming, setClaiming] = useState(false);
   const [bypassPending, setBypassPending] = useState(false);
+  const [checkoutUrl, setCheckoutUrl] = useState<string | null>(null);
   const [now, setNow] = useState(() => Date.now());
   const widgetRef = useRef<HTMLDivElement>(null);
   const widgetIdRef = useRef<string>("");
@@ -143,9 +145,11 @@ function GachaPageContent() {
     const targets = [status.nextSpinAt, status.nextClaimAt].filter(
       (t): t is string => t != null,
     );
-    if (targets.length === 0) return;
+    const currentTime = Date.now();
+    const nextHour = (Math.floor(currentTime / 3_600_000) + 1) * 3_600_000;
     const ms = Math.min(
-      ...targets.map((t) => new Date(t).getTime() - Date.now()),
+      nextHour - currentTime,
+      ...targets.map((t) => new Date(t).getTime() - currentTime),
     );
     if (!Number.isFinite(ms)) return;
     const timer = setTimeout(() => void refresh(), Math.max(0, ms) + 2000);
@@ -210,7 +214,7 @@ function GachaPageContent() {
   }
 
   async function handleClaim() {
-    if (!selectedSpinId || claiming) return;
+    if (!selectedSpin || claiming || new Date(selectedSpin.expiresAt).getTime() <= Date.now()) return;
     if (!token) {
       setError("Marque a caixa do captcha para guardar a carta.");
       return;
@@ -219,7 +223,7 @@ function GachaPageContent() {
     setClaiming(true);
     try {
       const pull = await api.gachaClaim({
-        spinId: selectedSpinId,
+        spinId: selectedSpin.id,
         turnstileToken: token,
       });
       setClaimResult(pull);
@@ -243,15 +247,18 @@ function GachaPageContent() {
   }
 
   async function handleBypass() {
+    if (bypassPending) return;
     setError("");
+    setBypassPending(true);
+    setCheckoutUrl(null);
     try {
       const res = await api.gachaBypass();
       if ("alreadyUnlocked" in res || "unlocked" in res) {
         await refresh();
         return;
       }
-      window.open(res.checkoutUrl, "_blank", "noopener,noreferrer");
-      setBypassPending(true);
+      if (!isValidRemoteUrl(res.checkoutUrl)) throw new Error("Checkout Pix inválido.");
+      setCheckoutUrl(res.checkoutUrl);
       const started = Date.now();
       for (;;) {
         await new Promise((r) => setTimeout(r, BYPASS_POLL_MS));
@@ -259,12 +266,12 @@ function GachaPageContent() {
         try {
           const poll = await api.gachaBypassStatus(res.reference);
           if (poll.status === "PAID") {
-            setBypassPending(false);
+            setCheckoutUrl(null);
             await refresh();
             return;
           }
           if (poll.status === "EXPIRED") {
-            setBypassPending(false);
+            setCheckoutUrl(null);
             setError("O Pix expirou. Gere uma nova intenção.");
             return;
           }
@@ -272,14 +279,16 @@ function GachaPageContent() {
           break;
         }
       }
-      setBypassPending(false);
     } catch (e) {
       setError(e instanceof ApiError ? e.message : "Erro ao gerar Pix.");
+    } finally {
+      setBypassPending(false);
     }
   }
 
 
   const selectedSpin = spins.find((s) => s.id === selectedSpinId) ?? null;
+  const selectedSpinExpired = selectedSpin != null && new Date(selectedSpin.expiresAt).getTime() <= now;
   const spinCountdown = formatCountdown(status?.nextSpinAt ?? null, now);
   const claimCountdown = formatCountdown(status?.nextClaimAt ?? null, now);
   const canSpinNow = (status?.canSpin ?? status == null) && !spinning;
@@ -388,7 +397,7 @@ function GachaPageContent() {
                 <button
                   type="button"
                   onClick={() => void handleClaim()}
-                  disabled={claiming || !selectedSpin || locked}
+                  disabled={claiming || !selectedSpin || selectedSpinExpired || locked}
                   title={
                     locked
                       ? "Você já guardou uma carta. Aguarde o fim do bloqueio ou desbloqueie via Pix."
@@ -416,6 +425,16 @@ function GachaPageContent() {
                         ? "Aguardando Pix…"
                         : `Desbloquear agora · R$ ${(status.bypassPriceCents / 100).toFixed(2).replace(".", ",")}`}
                     </button>
+                  )}
+                  {checkoutUrl && (
+                    <a
+                      href={checkoutUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="btn-ice mt-3 inline-block px-4 py-3"
+                    >
+                      Abrir checkout Pix
+                    </a>
                   )}
                 </div>
               )}
