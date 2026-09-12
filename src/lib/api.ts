@@ -605,6 +605,9 @@ export const api = {
       body: JSON.stringify(dto),
     }),
 
+  adminGetAnime: (slug: string) =>
+    request<Anime & { _count: { episodes: number } }>(`/admin/anime/${slug}`),
+
   adminUpdateAnime: (
     slug: string,
     dto: Partial<
@@ -617,6 +620,7 @@ export const api = {
         | "rating"
         | "status"
         | "ageRating"
+        | "published"
         | "editorialSynopsis"
         | "editorialWhereToWatch"
         | "editorialDubbingInfo"
