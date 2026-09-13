@@ -2,8 +2,10 @@ import Link from "next/link";
 import { AnimeCard } from "@/components/common/AnimeCard";
 import { Pagination } from "@/components/ui/Pagination";
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 import type { Anime } from "@/types";
 import { serverFetchJson } from "@/lib/api-server";
+import { parsePage } from "@/lib/page";
 import type { AnimeFilters } from "@/types";
 
 export const revalidate = 300;
@@ -14,7 +16,7 @@ export async function generateMetadata({
   searchParams: Promise<{ page?: string }>;
 }): Promise<Metadata> {
   const sp = await searchParams;
-  const page = Math.max(1, Number(sp.page ?? "1") || 1);
+  const page = parsePage(sp.page);
 
   return {
     title: page > 1 ? `Animes em lançamento - Página ${page}` : "Animes em lançamento — Novos episódios toda semana",
@@ -35,7 +37,7 @@ export default async function LancamentosPage({
   searchParams: Promise<{ page?: string }>;
 }) {
   const sp = await searchParams;
-  const page = Math.max(1, Number(sp.page ?? "1") || 1);
+  const page = parsePage(sp.page);
   const limit = 24;
 
   const data = await serverFetchJson<{ data: Anime[]; meta: { total: number; totalPages: number } }>(
@@ -46,6 +48,11 @@ export default async function LancamentosPage({
   const animes = data?.data ?? [];
   const totalPages = data?.meta.totalPages ?? 1;
   const total = data?.meta.total ?? 0;
+  const failed = data === null;
+
+  if (data && page > totalPages && totalPages > 0) {
+    redirect(`/lancamentos?page=${totalPages}`);
+  }
 
   return (
     <div className="mx-auto max-w-shelf px-4 py-6">
@@ -59,10 +66,17 @@ export default async function LancamentosPage({
 
       <h1 className="shelf-label">
         Em lançamento{" "}
-        <span className="shelf-label-data">{total} títulos</span>
+        {!failed && <span className="shelf-label-data">{total} títulos</span>}
       </h1>
       {animes.length === 0 ? (
-        <p className="text-body-sm text-mist">Nenhum anime em lançamento.</p>
+        failed ? (
+          <p className="text-body-sm text-mist">
+            Não foi possível carregar os lançamentos.{" "}
+            <Link href="/lancamentos" className="text-ice underline">Tentar novamente</Link>
+          </p>
+        ) : (
+          <p className="text-body-sm text-mist">Nenhum anime em lançamento.</p>
+        )
       ) : (
         <>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">

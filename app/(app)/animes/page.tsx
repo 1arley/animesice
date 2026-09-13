@@ -2,8 +2,10 @@ import Link from "next/link";
 import { AnimeCard } from "@/components/common/AnimeCard";
 import { Pagination } from "@/components/ui/Pagination";
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 import type { Anime } from "@/types";
 import { serverFetchJson } from "@/lib/api-server";
+import { parsePage } from "@/lib/page";
 import { SITE_URL } from "@/lib/site";
 import { escapeJsonLd } from "@/lib/url";
 
@@ -15,7 +17,7 @@ export async function generateMetadata({
   searchParams: Promise<{ page?: string }>;
 }): Promise<Metadata> {
   const sp = await searchParams;
-  const page = Math.max(1, Number(sp.page ?? "1") || 1);
+  const page = parsePage(sp.page);
 
   return {
     title:
@@ -40,7 +42,7 @@ export default async function AnimesPage({
   searchParams: Promise<{ page?: string }>;
 }) {
   const sp = await searchParams;
-  const page = Math.max(1, Number(sp.page ?? "1") || 1);
+  const page = parsePage(sp.page);
   const limit = 24;
 
   const data = await serverFetchJson<{
@@ -54,6 +56,12 @@ export default async function AnimesPage({
   const animes = data?.data ?? [];
   const totalPages = data?.meta.totalPages ?? 1;
   const total = data?.meta.total ?? 0;
+  const failed = data === null;
+
+  // ?page=999 não é "0 resultados": cai na última página real.
+  if (data && page > totalPages && totalPages > 0) {
+    redirect(`/animes?page=${totalPages}`);
+  }
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -100,11 +108,18 @@ export default async function AnimesPage({
 
       <h1 className="shelf-label">
         Animes{" "}
-        <span className="shelf-label-data">{total} títulos</span>
+        {!failed && <span className="shelf-label-data">{total} títulos</span>}
       </h1>
 
       {animes.length === 0 ? (
-        <p className="text-body-sm text-mist">Nenhum anime encontrado.</p>
+        failed ? (
+          <p className="text-body-sm text-mist">
+            Não foi possível carregar o catálogo.{" "}
+            <Link href="/animes" className="text-ice underline">Tentar novamente</Link>
+          </p>
+        ) : (
+          <p className="text-body-sm text-mist">Nenhum anime encontrado.</p>
+        )
       ) : (
         <>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">

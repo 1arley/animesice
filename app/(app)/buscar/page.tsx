@@ -8,9 +8,11 @@ import {
 } from "@/lib/anime-labels";
 import { PageTitle } from "@/components/ui/PageTitle";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import type { Metadata } from "next";
-import type { Anime, Genre, Paginated, SortMode } from "@/types";
+import type { Anime, Genre, Paginated } from "@/types";
 import { serverFetchJson } from "@/lib/api-server";
+import { parsePage } from "@/lib/page";
 
 export const revalidate = 60;
 
@@ -58,7 +60,7 @@ export default async function SearchPage({
   const qFromUrl = first(sp.q);
   const searchFromUrl = first(sp.search);
   const q = (qFromUrl ?? searchFromUrl ?? "").trim();
-  const page = Math.max(1, Number(first(sp.page) ?? "1") || 1);
+  const page = parsePage(sp.page);
   const limit = 24;
 
   // Múltiplos gêneros chegam como array (um checkbox por slug); o backend
@@ -122,7 +124,16 @@ export default async function SearchPage({
   const total = data?.meta?.total ?? 0;
   const totalPages = data?.meta?.totalPages ?? 1;
 
+  // ?page=999 (gerada por crawlers ou links antigos) não é "0 resultados":
+  // redireciona para a última página real, preservando os filtros.
+  if (data && page > totalPages && totalPages > 0) {
+    redirect(pageHref(totalPages));
+  }
+
   const hasQuery = Boolean(q || genresParam || status || audio || format || year || season || sort || searchFromUrl || adultOptIn);
+
+  // Backend caiu (null do serverFetchJson) não é o mesmo que catálogo vazio.
+  const failed = hasQuery && data === null;
 
   // Collect active filters for display
   const activeFilters: string[] = [];
@@ -139,7 +150,9 @@ export default async function SearchPage({
       <PageTitle
         text="Buscar"
         badge={
-          hasQuery ? (
+          failed ? (
+            "sem sinal"
+          ) : hasQuery ? (
             <>{total} resultado{total !== 1 ? "s" : ""}</>
           ) : (
             "filtros"
@@ -151,7 +164,7 @@ export default async function SearchPage({
       {activeFilters.length > 0 && (
         <div className="mb-4 flex flex-wrap gap-2">
           {activeFilters.map((filter) => (
-            <span key={filter} className="border border-ice/40 bg-ice/10 px-2 py-0.5 font-sans text-caption text-ice">
+            <span key={filter} className="min-w-0 max-w-[20rem] truncate border border-ice/40 bg-ice/10 px-2 py-0.5 font-sans text-caption text-ice">
               {filter}
             </span>
           ))}
@@ -179,6 +192,7 @@ export default async function SearchPage({
                 defaultValue={q}
                 placeholder="Título..."
                 aria-label="Buscar por título"
+                maxLength={100}
                 className="field"
               />
             </fieldset>
@@ -313,6 +327,15 @@ export default async function SearchPage({
                   <circle cx="20" cy="20" r="14" />
                   <path d="M32 32l8 8" strokeLinecap="round" />
                 </svg>
+              }
+            />
+          ) : failed ? (
+            <EmptyState
+              text="Não foi possível carregar os resultados. O sinal do catálogo está instável."
+              action={
+                <Link href={pageHref(page)} className="text-body-sm text-ice hover:opacity-70">
+                  Tentar novamente →
+                </Link>
               }
             />
           ) : results.length === 0 ? (
