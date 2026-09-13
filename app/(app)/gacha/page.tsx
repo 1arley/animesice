@@ -32,7 +32,8 @@ function formatCountdown(target: string | null, now: number): string | null {
 }
 
 const BYPASS_POLL_MS = 3000;
-const BYPASS_POLL_MAX_MS = 10 * 60_000;
+const BYPASS_POLL_MAX_MS = 31 * 60_000;
+const BYPASS_POLL_MAX_FAILURES = 5;
 
 /** Adapta um preview de giro para o RollStage (sem edição, sem dono). */
 function spinToStagePull(spin: GachaSpinPreview): GachaPull {
@@ -101,6 +102,7 @@ function GachaPageContent() {
   const [stagePreview, setStagePreview] = useState(false);
   const [claiming, setClaiming] = useState(false);
   const [bypassPending, setBypassPending] = useState(false);
+  const [bypassReference, setBypassReference] = useState<string | null>(null);
   const [checkoutUrl, setCheckoutUrl] = useState<string | null>(null);
   const [now, setNow] = useState(() => Date.now());
 
@@ -243,6 +245,7 @@ function GachaPageContent() {
     setError("");
     setBypassPending(true);
     setCheckoutUrl(null);
+    setBypassReference(null);
     try {
       const res = await api.gachaBypass();
       if ("alreadyUnlocked" in res || "unlocked" in res) {
@@ -251,24 +254,17 @@ function GachaPageContent() {
       }
       if (!isValidRemoteUrl(res.checkoutUrl)) throw new Error("Checkout Pix inválido.");
       setCheckoutUrl(res.checkoutUrl);
+      setBypassReference(res.reference);
       const started = Date.now();
-      for (;;) {
+      let failures = 0;
+      while (failures < BYPASS_POLL_MAX_FAILURES) {
         await new Promise((r) => setTimeout(r, BYPASS_POLL_MS));
         if (Date.now() - started > BYPASS_POLL_MAX_MS) break;
         try {
-          const poll = await api.gachaBypassStatus(res.reference);
-          if (poll.status === "PAID") {
-            setCheckoutUrl(null);
-            await refresh();
-            return;
-          }
-          if (poll.status === "EXPIRED") {
-            setCheckoutUrl(null);
-            setError("O Pix expirou. Gere uma nova intenção.");
-            return;
-          }
+          if (await pollBypassOnce(res.reference)) return;
+          failures = 0;
         } catch {
-          break;
+          failures += 1;
         }
       }
     } catch (e) {
@@ -278,6 +274,22 @@ function GachaPageContent() {
     }
   }
 
+  async function pollBypassOnce(reference: string): Promise<boolean> {
+    const poll = await api.gachaBypassStatus(reference);
+    if (poll.status === "PAID") {
+      setCheckoutUrl(null);
+      setBypassReference(null);
+      await refresh();
+      return true;
+    }
+    if (poll.status === "EXPIRED") {
+      setCheckoutUrl(null);
+      setBypassReference(null);
+      setError("O Pix expirou. Gere uma nova intenção.");
+      return true;
+    }
+    return false;
+  }
 
   const selectedSpin = spins.find((s) => s.id === selectedSpinId) ?? null;
   const selectedSpinExpired = selectedSpin != null && new Date(selectedSpin.expiresAt).getTime() <= now;
@@ -448,6 +460,13 @@ function GachaPageContent() {
                         href={checkoutUrl}
                         target="_blank"
                         rel="noopener noreferrer"
+                        onClick={() => {
+                          if (bypassReference) {
+                            void pollBypassOnce(bypassReference).catch(
+                              () => undefined,
+                            );
+                          }
+                        }}
                         className="btn-ice mt-3 inline-block px-4 py-3"
                       >
                         Abrir checkout Pix
