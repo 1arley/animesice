@@ -21,13 +21,29 @@ export const metadata: Metadata = {
 };
 
 export default async function GenerosPage() {
-  const genres =
-    (await serverFetchJson<Genre[]>("/genre", {
-      cache: "force-cache",
-      next: { revalidate: 300, tags: ["genres"] },
-    })) ?? [];
+  const genres = await serverFetchJson<Genre[]>("/genre", {
+    cache: "force-cache",
+    next: { revalidate: 300, tags: ["genres"] },
+  });
 
-  if (!genres || genres.length === 0) {
+  // Backend fora do ar não é "não há gêneros": oferece retry em vez de
+  // fingir um catálogo vazio.
+  if (genres === null) {
+    return (
+      <div className="mx-auto max-w-shelf px-4 py-6">
+        <EmptyState
+          text="Não foi possível carregar os gêneros."
+          action={
+            <Link href="/generos" className="text-body-sm text-ice hover:opacity-70">
+              Tentar novamente →
+            </Link>
+          }
+        />
+      </div>
+    );
+  }
+
+  if (genres.length === 0) {
     return (
       <div className="mx-auto max-w-shelf px-4 py-6">
         <EmptyState text="Nenhum gênero encontrado." />
