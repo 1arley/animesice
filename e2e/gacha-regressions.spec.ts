@@ -202,3 +202,96 @@ test("checkout Pix oferece link mesmo quando popups são bloqueados", async ({ p
   await expect(page.getByRole("button", { name: "Pegar carta" })).toBeEnabled();
   await expect(checkout).toHaveCount(0);
 });
+
+test("pix: falhas transitórias não matam o polling nem o link ruem", async ({ page }) => {
+  await page.addInitScript(() => { window.open = () => null; });
+  await page.clock.install();
+  let paid = false;
+  let polls = 0;
+  await page.route("**/gacha/status", route => route.fulfill({ json: {
+    spinsLeft: 4, canSpin: true, nextSpinAt: null,
+    canClaim: paid, nextClaimAt: null,
+    claimWarning: paid ? null : "Aguarde o fim do bloqueio.",
+    bypassPriceCents: paid ? null : 299,
+  } }));
+  await page.route("**/gacha/spins", route => route.fulfill({ json: [spin] }));
+  await page.route("**/gacha/bypass", route => route.fulfill({ json: {
+    reference: "checkout-ttl", checkoutUrl: "https://livepix.gg/checkout-ttl", amountCents: 299,
+  } }));
+  await page.route("**/gacha/bypass/checkout-ttl", route => {
+    polls += 1;
+    if (polls <= 2) return route.fulfill({ status: 500, json: { message: "transiente" } });
+    return route.fulfill({ json: { status: paid ? "PAID" : "PENDING" } });
+  });
+  await page.goto("/gacha");
+  await page.getByRole("button", { name: /Desbloquear agora/ }).click();
+  const checkout = page.getByRole("link", { name: "Abrir checkout Pix" });
+  await expect(checkout).toBeVisible();
+  await page.clock.fastForward(4 * 60_000);
+  await expect(checkout).toBeVisible();
+  await expect(page.getByRole("button", { name: "Pegar carta" })).toBeDisabled();
+  paid = true;
+  await checkout.click();
+  await expect(page.getByRole("button", { name: "Pegar carta" })).toBeEnabled();
+  await expect(checkout).toHaveCount(0);
+});
+
+test("link do Pix reconsulta status ao clicar (auto-cura após rede suspensa)", async ({ page }) => {
+  await page.addInitScript(() => { window.open = () => null; });
+  await page.clock.install();
+  let paid = false;
+  await page.route("**/gacha/status", route => route.fulfill({ json: {
+    spinsLeft: 4, canSpin: true, nextSpinAt: null,
+    canClaim: paid, nextClaimAt: null,
+    claimWarning: paid ? null : "Aguarde o fim do bloqueio.",
+    bypassPriceCents: paid ? null : 299,
+  } }));
+  await page.route("**/gacha/spins", route => route.fulfill({ json: [spin] }));
+  await page.route("**/gacha/bypass", route => route.fulfill({ json: {
+    reference: "checkout-reclick", checkoutUrl: "https://livepix.gg/checkout-reclick", amountCents: 299,
+  } }));
+  await page.route("**/gacha/bypass/checkout-reclick", route => route.fulfill({ json: { status: paid ? "PAID" : "PENDING" } }));
+  await page.goto("/gacha");
+  await page.getByRole("button", { name: /Desbloquear agora/ }).click();
+  const checkout = page.getByRole("link", { name: "Abrir checkout Pix" });
+  await expect(checkout).toBeVisible();
+  paid = true;
+  await checkout.click();
+  await expect(page.getByRole("button", { name: "Pegar carta" })).toBeEnabled();
+  await expect(checkout).toHaveCount(0);
+});
+
+test("navegação entre perfis zera abas (cartas não vazam do perfil anterior)", async ({ page }) => {
+  const profile = (id: string, name: string, userName: string) => ({
+    id, name, userName, avatar: null, bio: null, role: "USER", myAnimeList: null,
+    createdAt: "2026-01-01T00:00:00Z", updatedAt: "2026-01-01T00:00:00Z",
+    _count: { comments: 0, ratings: 0, favorites: 0, watchHistories: 0, followers: 0, following: 0 },
+  });
+  const ana = profile("u-ana", "Ana", "ana");
+  const bruno = profile("u-bruno", "Bruno", "bruno");
+  const anaCard = { ...card, id: "ana-1", user: { ...VIEWER, id: "u-ana", userName: "ana" }, card: { ...card.card, id: "card-ana", name: "Carta A" } };
+  const brunoCard = { ...card, id: "bruno-1", user: { ...VIEWER, id: "u-bruno", userName: "bruno" }, card: { ...card.card, id: "card-bruno", name: "Carta B" } };
+  const result = (data: unknown) => ({ data, meta });
+
+  const usersApi = (p: string) => new RegExp(`//localhost:3001/(?:api/)?${p}$`);
+
+  await page.route(usersApi("users/ana"), route => route.fulfill({ json: ana }));
+  await page.route(usersApi("users/bruno"), route => route.fulfill({ json: bruno }));
+  await page.route(/\/\/localhost:3001\/(?:api\/)?social\/following\/u-ana/, route => route.fulfill({ json: result([bruno]) }));
+  await page.route(usersApi("gacha/collection\\?.*"), route => {
+    const id = new URL(route.request().url()).searchParams.get("userId");
+    return route.fulfill({ json: { data: id === "u-ana" ? [anaCard] : id === "u-bruno" ? [brunoCard] : [], meta } });
+  });
+
+  await page.goto("/users/ana");
+  await expect(page.getByRole("heading", { name: "Ana" })).toBeVisible();
+  await page.getByRole("button", { name: "Cartas" }).click();
+  await expect(page.getByText("Carta A")).toBeVisible();
+  await page.getByRole("button", { name: "Seguindo", exact: true }).click();
+  await expect(page.getByRole("link", { name: /Bruno/ })).toBeVisible();
+  await page.getByRole("link", { name: /Bruno/ }).click();
+  await expect(page.getByRole("heading", { name: "Bruno" })).toBeVisible();
+  await page.getByRole("button", { name: "Cartas" }).click();
+  await expect(page.getByText("Carta B")).toBeVisible();
+  await expect(page.getByText("Carta A")).toHaveCount(0);
+});
