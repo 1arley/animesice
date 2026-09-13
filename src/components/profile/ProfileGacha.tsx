@@ -28,7 +28,20 @@ export function ProfileGacha({
     );
   }
 
-  if (!loading && items.length === 0) {
+  if (loading) {
+    return (
+      <section>
+        <SectionLabel level={2}>Cartas</SectionLabel>
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6" aria-busy="true">
+          {Array.from({ length: 6 }, (_, i) => (
+            <div key={i} className="skeleton aspect-[3/4]" />
+          ))}
+        </div>
+      </section>
+    );
+  }
+
+  if (items.length === 0) {
     return (
       <section>
         <SectionLabel level={2}>Cartas</SectionLabel>
