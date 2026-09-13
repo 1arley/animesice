@@ -121,7 +121,7 @@ export default function AdminGachaPage() {
 
   return <div>
     <h1 className="font-display text-display-xl text-snow">Gacha</h1>
-    {error && <div className="mt-4 border border-signal/40 bg-signal/10 p-3 text-body-sm text-signal">{error}</div>}
+    {error && <div role="alert" className="mt-4 border border-signal/40 bg-signal/10 p-3 text-body-sm text-signal">{error}</div>}
     <section className="mt-6 grid gap-6 lg:grid-cols-2">
       <div className="border border-hairline bg-panel p-4">
         <h2 className="font-display text-display-lg text-snow">Pool</h2>
