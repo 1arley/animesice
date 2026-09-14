@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { safeImageSrc } from "@/lib/url";
 import { blur } from "@/lib/blur";
+import { HoloTilt } from "@/components/core/HoloTilt";
 import type { GachaPull } from "@/types";
 
 export function gachaConditionLabel(condition: number): string {
@@ -81,7 +82,7 @@ export function GachaCard({ pull, preview = false, linkAnime = true }: { pull: G
   const isGalaxy = card.rarity === "GALACTICA";
   const foilText = FOIL_TEXT[pull.foil];
 
-  return (
+  const markup = (
     <div
       className={
         isGalaxy
@@ -108,6 +109,18 @@ export function GachaCard({ pull, preview = false, linkAnime = true }: { pull: G
                 sem arte
               </span>
             </div>
+          )}
+          {pull.foil === "GOLD" && (
+            <>
+              <div
+                aria-hidden
+                className="pointer-events-none absolute inset-0 mix-blend-screen bg-[radial-gradient(120%_90%_at_50%_45%,transparent_40%,rgba(251,191,36,0.28)_72%,rgba(252,211,77,0.55)_100%)]"
+              />
+              <div
+                aria-hidden
+                className="pointer-events-none absolute inset-y-[-25%] left-0 w-1/3 bg-gradient-to-r from-transparent via-amber-100/50 to-transparent mix-blend-screen motion-safe:animate-[gold-shine_5s_ease-in-out_infinite]"
+              />
+            </>
           )}
           <span
             className={`absolute left-1.5 top-1.5 bg-ink/85 px-1.5 py-0.5 font-mono text-caption font-medium backdrop-blur-sm ${isGalaxy ? GALAXY_TEXT : rarity.text}`}
@@ -147,4 +160,6 @@ export function GachaCard({ pull, preview = false, linkAnime = true }: { pull: G
       </div>
     </div>
   );
+
+  return pull.foil === "HOLO" ? <HoloTilt>{markup}</HoloTilt> : markup;
 }

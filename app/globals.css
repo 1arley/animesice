@@ -671,6 +671,13 @@
     100% { transform: translateX(100%); }
   }
 
+  /* Raio dourado dos cards GOLD: atravessa a carta e descansa ~2/3 do ciclo. */
+  @keyframes gold-shine {
+    0%, 55%   { transform: translateX(-160%) skewX(-18deg); opacity: 0; }
+    62%       { opacity: 1; }
+    78%, 100% { transform: translateX(260%) skewX(-18deg); opacity: 0; }
+  }
+
   /* Sweep do GradientText (wordmark "Ice") — animação CSS pura, sem rAF do JS.
      Celular (pointer coarse) e reduced-motion recebem o gradiente estático
      (a classe live só é aplicada quando há animação de verdade). */
