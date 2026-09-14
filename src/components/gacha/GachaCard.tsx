@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import type { CSSProperties } from "react";
 import { safeImageSrc } from "@/lib/url";
 import { blur } from "@/lib/blur";
 import { HoloTilt } from "@/components/core/HoloTilt";
@@ -73,6 +74,41 @@ export const FOIL_TEXT: Record<string, string> = {
   GOLD: "text-amber-300",
 };
 
+export const CONDITION_COLOR: Record<string, string> = {
+  MINT: "text-ice",
+  NM: "text-snow",
+  EX: "text-amber-300",
+  PLAYED: "text-orange-500",
+  POOR: "text-red-500",
+};
+
+export const CONDITION_GLYPH: Record<string, string> = {
+  MINT: "◆◆◆",
+  NM: "◆◆",
+  EX: "◆",
+  PLAYED: "▽",
+  POOR: "✕",
+};
+
+// Arte decaiu junto com a condição: PLAYED dessatura, POOR dessatura + escurece.
+const CONDITION_ART: Record<string, string> = {
+  PLAYED: "saturate-[.75]",
+  POOR: "saturate-[.55] brightness-[.88]",
+};
+
+// Seed deterministica dos riscos por carta: hash do pull.id vira angulo
+// (--sc1/--sc2) e espacamento (--scg) dos gradientes. Estavel entre renders.
+function scratchVars(id: string): CSSProperties {
+  let h = 0;
+  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) | 0;
+  h = Math.abs(h);
+  return {
+    "--sc1": `${60 + (h % 70)}deg`,
+    "--sc2": `${-40 - ((h >> 6) % 60)}deg`,
+    "--scg": `${30 + ((h >> 3) % 26)}px`,
+  } as CSSProperties;
+}
+
 export function GachaCard({ pull, preview = false, linkAnime = true }: { pull: GachaPull; linkAnime?: boolean; /** Preview de giro: sem edição definitiva nem valor final. */ preview?: boolean }) {
   const { card } = pull;
   const art = safeImageSrc(card.image);
@@ -100,7 +136,7 @@ export function GachaCard({ pull, preview = false, linkAnime = true }: { pull: G
               sizes="(max-width: 480px) 50vw, (max-width: 1024px) 25vw, 16vw"
               placeholder="blur"
               blurDataURL={blur.portrait}
-              className="object-cover"
+              className={`object-cover ${CONDITION_ART[label] ?? ""}`}
               quality={80}
             />
           ) : (
@@ -122,6 +158,13 @@ export function GachaCard({ pull, preview = false, linkAnime = true }: { pull: G
               />
             </>
           )}
+          {(label === "PLAYED" || label === "POOR") && (
+            <div
+              aria-hidden
+              className={`pointer-events-none absolute inset-0 ${label === "POOR" ? "card-scratches-poor" : "card-scratches"}`}
+              style={scratchVars(pull.id)}
+            />
+          )}
           <span
             className={`absolute left-1.5 top-1.5 bg-ink/85 px-1.5 py-0.5 font-mono text-caption font-medium backdrop-blur-sm ${isGalaxy ? GALAXY_TEXT : rarity.text}`}
           >
@@ -134,6 +177,12 @@ export function GachaCard({ pull, preview = false, linkAnime = true }: { pull: G
               {pull.foil}
             </span>
           )}
+          <span
+            className={`absolute bottom-1.5 right-1.5 bg-ink/85 px-1.5 py-0.5 font-mono text-caption font-medium backdrop-blur-sm ${CONDITION_COLOR[label] ?? "text-mist"}`}
+          >
+            {CONDITION_GLYPH[label] ? `${CONDITION_GLYPH[label]} ` : ""}
+            {label}
+          </span>
         </div>
         <div className="p-2">
           <p className="truncate font-sans text-body-sm font-medium text-snow">
