@@ -42,6 +42,8 @@ import type {
   GachaStatus,
   GachaPointsPage,
   GachaShop,
+  GachaListing,
+  GachaListingPage,
   GachaSpinPreview,
   GachaBypassCheckout,
   GachaBypassStatus,
@@ -1349,6 +1351,37 @@ export const api = {
       method: "POST",
       body: JSON.stringify(body),
     }),
+
+  gachaListings: (
+    page = 1,
+    limit = 24,
+    sort = "price",
+    rarity = "",
+    foil = "",
+  ) =>
+    request<GachaListingPage>(
+      `/gacha/listings?page=${page}&limit=${limit}&sort=${sort}&rarity=${rarity}&foil=${foil}`,
+    ),
+
+  gachaMyListings: () => request<GachaListing[]>(`/gacha/listings/mine`),
+
+  gachaListCreate: (body: { userCardId: string; price: number }) =>
+    request<GachaListing>(`/gacha/listings`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+
+  gachaListCancel: (id: string) =>
+    request<{ cancelled: true }>(
+      `/gacha/listings/${encodeURIComponent(id)}/cancel`,
+      { method: "POST" },
+    ),
+
+  gachaListBuy: (id: string) =>
+    request<{ purchased: string; price: number }>(
+      `/gacha/listings/${encodeURIComponent(id)}/buy`,
+      { method: "POST" },
+    ),
 
   gachaSpins: () => request<GachaSpinPreview[]>(`/gacha/spins`),
 

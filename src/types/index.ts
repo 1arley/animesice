@@ -606,6 +606,23 @@ export interface GachaShop {
   cosmetics: GachaShopItem[];
 }
 
+/** Anúncio do mercado — buy-now por pontos, expira em 48h. */
+export interface GachaListing {
+  id: string;
+  userId: string;
+  price: number;
+  status: "ACTIVE" | "SOLD" | "CANCELLED" | "EXPIRED";
+  expiresAt: string;
+  createdAt: string;
+  user: SocialUser;
+  userCard: GachaPull;
+}
+
+export interface GachaListingPage {
+  data: GachaListing[];
+  meta: { page: number; limit: number; total: number; totalPages: number };
+}
+
 export type GachaPointEventType = "MINT" | "SPEND" | "SALE" | "TAX" | "ADMIN";
 
 export interface GachaPointEvent {

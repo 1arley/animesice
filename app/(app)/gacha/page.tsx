@@ -103,6 +103,7 @@ function GachaPageContent() {
   const [claiming, setClaiming] = useState(false);
   const [bypassPending, setBypassPending] = useState(false);
   const [rerolling, setRerolling] = useState(false);
+  const [listing, setListing] = useState(false);
   const [bypassReference, setBypassReference] = useState<string | null>(null);
   const [checkoutUrl, setCheckoutUrl] = useState<string | null>(null);
   const [now, setNow] = useState(() => Date.now());
@@ -258,6 +259,23 @@ function GachaPageContent() {
     }
   }
 
+  async function handleList(price: number) {
+    if (!preview || listing) return;
+    setListing(true);
+    setError("");
+    try {
+      await api.gachaListCreate({ userCardId: preview.id, price });
+      closePreview();
+      await refresh();
+    } catch (err) {
+      setError(
+        err instanceof ApiError ? err.message : "Erro ao anunciar a carta.",
+      );
+    } finally {
+      setListing(false);
+    }
+  }
+
   async function handleBypass() {
     if (bypassPending) return;
     setError("");
@@ -345,6 +363,12 @@ function GachaPageContent() {
           canReroll={!!user && preview.user.id === user.id}
           rerolling={rerolling}
           onReroll={() => void handleReroll()}
+          listing={listing}
+          onList={
+            user && preview.user.id === user.id
+              ? (price) => void handleList(price)
+              : undefined
+          }
         />
       )}
 
@@ -469,6 +493,9 @@ function GachaPageContent() {
                   </Link>
                   <Link href="/gacha/trades" className="btn-ghost px-4 py-4">
                     Trocas
+                  </Link>
+                  <Link href="/gacha/mercado" className="btn-ghost px-4 py-4">
+                    Mercado
                   </Link>
                 </div>
 
