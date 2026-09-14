@@ -341,7 +341,7 @@ function GachaPageContent() {
             Gacha
           </h1>
           <p className="mx-auto mt-2 max-w-2xl text-body-sm text-mist">
-            5 giros por hora para revelar cartas. Guarde 1 a cada 12h — girar
+            5 giros por hora para revelar cartas. Guarde 1 a cada 6h — girar
             continua liberado durante o bloqueio. Mesma carta, cópias únicas:
             condition, foil e edição definem o valor.
           </p>
