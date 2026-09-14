@@ -580,8 +580,11 @@ function GachaPageContent() {
                 <span className="text-amber-300">GOLD 3%</span>
               </li>
               <li>
-                Condition: <span className="text-ice">MINT</span> &gt; NM &gt;
-                EX &gt; PLAYED &gt; POOR
+                Condition: <span className="text-ice">◆◆◆ MINT</span> &gt;{" "}
+                <span className="text-snow">◆◆ NM</span> &gt;{" "}
+                <span className="text-amber-300">◆ EX</span> &gt;{" "}
+                <span className="text-orange-500">▽ PLAYED</span> &gt;{" "}
+                <span className="text-red-500">✕ POOR</span>
               </li>
               <li>
                 Edição: #1 a #10 valem bônus alto — quanto menor, mais rara
