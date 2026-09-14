@@ -489,6 +489,7 @@ export interface SocialUser {
   name: string | null;
   userName: string | null;
   avatar: string | null;
+  gachaCosmetics?: string[];
 }
 
 /** Anime referenciado em um post do feed. */
@@ -589,6 +590,20 @@ export interface GachaStatus {
   claimWarning?: string | null;
   bypassPriceCents?: number | null;
   pointsBalance?: number;
+  pointsCosmetics?: string[];
+}
+
+export interface GachaShopItem {
+  key: string;
+  label: string;
+  description: string;
+  price: number;
+  owned: boolean;
+}
+
+export interface GachaShop {
+  balance: number;
+  cosmetics: GachaShopItem[];
 }
 
 export type GachaPointEventType = "MINT" | "SPEND" | "SALE" | "TAX" | "ADMIN";

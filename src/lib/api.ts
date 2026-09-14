@@ -41,6 +41,7 @@ import type {
   AdminGachaCard,
   GachaStatus,
   GachaPointsPage,
+  GachaShop,
   GachaSpinPreview,
   GachaBypassCheckout,
   GachaBypassStatus,
@@ -1334,6 +1335,20 @@ export const api = {
 
   gachaPoints: (page = 1, limit = 20) =>
     request<GachaPointsPage>(`/gacha/points?page=${page}&limit=${limit}`),
+
+  gachaShop: () => request<GachaShop>(`/gacha/shop`),
+
+  gachaReroll: (body: { userCardId: string }) =>
+    request<GachaPull>(`/gacha/reroll`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+
+  gachaBuyCosmetic: (body: { key: string }) =>
+    request<{ purchased: string }>(`/gacha/cosmetics`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
 
   gachaSpins: () => request<GachaSpinPreview[]>(`/gacha/spins`),
 
