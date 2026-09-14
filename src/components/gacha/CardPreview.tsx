@@ -14,16 +14,21 @@ export function CardPreview({
   canReroll = false,
   rerolling = false,
   onReroll,
+  onList,
+  listing = false,
 }: {
   pull: GachaPull;
   onClose: () => void;
   canReroll?: boolean;
   rerolling?: boolean;
   onReroll?: () => void;
+  onList?: (price: number) => void;
+  listing?: boolean;
 }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const fine = useFinePointer();
   const reduced = usePrefersReducedMotion();
+  const priceRef = useRef<HTMLInputElement>(null);
   const cosmetics = pull.user?.gachaCosmetics ?? [];
   const aurora = cosmetics.includes("FRAME_AURORA");
   const destaque = cosmetics.includes("DESTAQUE_CARTA");
@@ -107,6 +112,38 @@ export function CardPreview({
             ? "Rerrollando…"
             : `Rerrollar condition/foil · ${rerollCost} pts`}
         </button>
+      )}
+      {onList && (
+        <form
+          className="mt-3 flex items-center gap-2"
+          onSubmit={(event) => {
+            event.preventDefault();
+            const raw = Number(priceRef.current?.value);
+            if (!Number.isInteger(raw) || raw < 1) return;
+            onList(raw);
+          }}
+        >
+          <label className="sr-only" htmlFor="listing-price">
+            Preço em pontos
+          </label>
+          <input
+            id="listing-price"
+            ref={priceRef}
+            type="number"
+            min={1}
+            step={1}
+            placeholder="Preço em pts"
+            defaultValue={pull.value}
+            className="h-11 w-full border border-hairline bg-ink px-3 font-mono text-caption text-snow placeholder:text-mist focus:border-ice focus:outline-none"
+          />
+          <button
+            type="submit"
+            disabled={listing}
+            className="btn-ghost shrink-0 px-4 py-3 disabled:opacity-50"
+          >
+            {listing ? "Anunciando…" : "Anunciar no mercado"}
+          </button>
+        </form>
       )}
     </div>
   );
