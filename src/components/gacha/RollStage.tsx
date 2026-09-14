@@ -6,6 +6,25 @@ import { GachaCard, GACHA_TIERS, GALAXY_TEXT, RARITY_TEXT } from "./GachaCard";
 import { CountUp } from "@/components/core/CountUp";
 import type { GachaPull } from "@/types";
 
+const PARTICLE_SLOTS = 24;
+const PARTICLE_GALAXY = ["#a78bfa", "#f472b6", "#38bdf8"];
+
+function tierOf(p: GachaPull | null): number {
+  return p ? GACHA_TIERS.indexOf(p.card.rarity as (typeof GACHA_TIERS)[number]) : -1;
+}
+function revealSpeed(idx: number): number {
+  return idx >= 4 ? 0.85 : idx === 3 ? 1 : 1.8;
+}
+function ringCount(idx: number): number {
+  return idx >= 5 ? 3 : idx === 4 ? 2 : idx >= 3 ? 1 : 0;
+}
+function particleCount(idx: number): number {
+  return idx >= 5 ? 24 : idx === 4 ? 12 : idx >= 3 ? 8 : 0;
+}
+function shakeAmp(idx: number): number {
+  return idx >= 5 ? 5 : idx === 4 ? 3 : 0;
+}
+
 export function RollStage({ pull, reduceMotion, onClose, preview = false }: {
   pull: GachaPull | null;
   reduceMotion: boolean;
@@ -15,6 +34,7 @@ export function RollStage({ pull, reduceMotion, onClose, preview = false }: {
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const timeline = useRef<gsap.core.Timeline | null>(null);
+  const flipBuilder = useRef<(idx: number) => void>(() => {});
   const latestPull = useRef(pull);
   latestPull.current = pull;
   const skipped = useRef(false);
@@ -22,9 +42,7 @@ export function RollStage({ pull, reduceMotion, onClose, preview = false }: {
   const [revealed, setRevealed] = useState(reduceMotion);
   const [canSkip, setCanSkip] = useState(false);
   const ready = !!pull && (reduceMotion || revealed);
-  const tierIndex = pull ? GACHA_TIERS.indexOf(pull.card.rarity as (typeof GACHA_TIERS)[number]) : -1;
-  const burst = tierIndex >= 3;
-  const big = tierIndex >= 4;
+  const tierIndex = tierOf(pull);
   const tierText = pull
     ? pull.card.rarity === "GALACTICA"
       ? "text-violet-400"
@@ -51,35 +69,46 @@ export function RollStage({ pull, reduceMotion, onClose, preview = false }: {
     }
     const tl = gsap.timeline();
     timeline.current = tl;
+    if (pull) tl.timeScale(revealSpeed(tierIndex));
+    const buildFlip = (idx: number) => {
+      const el = dialog.current?.querySelector("[data-flip]");
+      if (!el) return;
+      tl.killTweensOf(el);
+      if (idx >= 4) {
+        tl.to(el, { rotationY: 90, scale: 0.88, duration: 0.42, ease: "power2.in" }, "reveal+=0.3")
+          .to({}, { duration: 0.16 })
+          .to(el, { rotationY: 180, duration: 0.42, ease: "power3.out" })
+          .to(el, { scale: 1, duration: 0.5, ease: "back.out(3)" }, "<");
+      } else {
+        tl.to(el, { rotationY: 180, scale: 0.9, duration: 0.6, ease: "power2.in" }, "reveal+=0.3")
+          .to(el, { scale: 1, duration: 0.5, ease: "back.out(3)" }, ">");
+      }
+    };
+    flipBuilder.current = buildFlip;
+    tl.addLabel("reveal", 1.8);
+    buildFlip(tierIndex);
     tl.from("[data-stage]", { scale: 0.94, opacity: 0, duration: 0.15 })
-      .to("[data-crystal]", { rotation: 135, scale: 1.25, opacity: 0.45, duration: 0.4 })
+      .to("[data-crystal]", { rotation: 405, scale: 1.2, duration: 1.2, ease: "power2.in" }, 0.2)
+      .fromTo("[data-glow]", { opacity: 0.25, scale: 1 }, { opacity: 0.8, scale: 1.25, duration: 1.3, ease: "power2.in", immediateRender: false }, 0.3)
       .call(() => setCanSkip(true), [], 0.6)
-      .to("[data-crystal]", { rotation: 225, scale: 0.85, opacity: 1, duration: 0.3 })
-      .to("[data-crystal]", { rotation: 315, scale: 1.35, opacity: 0.6, duration: 0.2 })
-      .to("[data-crystal]", { rotation: 405, scale: 1, opacity: 1, duration: 0.1 })
-      .to("[data-glow]", { opacity: 0.7, scale: 1.2, duration: 0.3, ease: "steps(3)" })
       .call(() => {
         waiting.current = true;
         if (!latestPull.current) tl.pause();
-        else {
-          const idx = latestPull.current
-            ? GACHA_TIERS.indexOf(latestPull.current.card.rarity as (typeof GACHA_TIERS)[number])
-            : -1;
-          tl.timeScale(idx >= 4 ? 0.85 : idx === 3 ? 1 : 1.8);
-        }
+        else tl.timeScale(revealSpeed(tierOf(latestPull.current)));
       }, [], 1.8)
-      .addLabel("reveal", 1.8)
-      .fromTo("[data-ring]", { scale: 0.4, opacity: 0.8 }, { scale: 2, opacity: 0, duration: 0.55, immediateRender: false }, "reveal")
+      .to("[data-crystal]", { scale: 0, opacity: 0, duration: 0.25, ease: "back.in(2)" }, "reveal")
+      .fromTo("[data-ring]", { scale: 0.4, opacity: 0.8 }, { scale: 2, opacity: 0, duration: 0.55, stagger: 0.12, immediateRender: false }, "reveal")
       .fromTo("[data-particle]", { x: 0, y: 0, opacity: 1 }, {
-        x: (i) => Math.cos(i * Math.PI * 2 / 14) * 180,
-        y: (i) => Math.sin(i * Math.PI * 2 / 14) * 230,
+        x: (i) => Math.cos(i * Math.PI * 2 / PARTICLE_SLOTS) * 180,
+        y: (i) => Math.sin(i * Math.PI * 2 / PARTICLE_SLOTS) * 230,
         opacity: 0, duration: 0.65, immediateRender: false, ease: "power2.out",
       }, "reveal")
       .fromTo("[data-flash]", { opacity: 0.3 }, { opacity: 0, duration: 0.4, immediateRender: false }, "reveal")
-      .to("[data-stage]", { x: () => latestPull.current?.card.rarity === "LENDARIA" ? 3 : 0, yoyo: true, repeat: 3, duration: 0.06 }, "reveal")
-      .to("[data-flip]", { rotationY: 180, duration: 0.65, ease: "power2.inOut" }, "reveal+=0.3")
-      .fromTo("[data-badge]", { scale: 0.3, opacity: 0 }, { scale: 1, opacity: 1, ease: "back.out(2)", duration: 0.3, immediateRender: false })
-      .call(() => setRevealed(true));
+      .to("[data-stage]", { x: () => shakeAmp(tierOf(latestPull.current)), yoyo: true, repeat: 7, duration: 0.06 }, "reveal")
+      .fromTo("[data-sweep]", { x: "-150%" }, { x: "150%", duration: 0.6, ease: "power1.inOut", immediateRender: false }, "reveal+=0.75")
+      .fromTo("[data-flash]", { opacity: 0.4 }, { opacity: 0, duration: 0.4, immediateRender: false }, "reveal+=0.85")
+      .fromTo("[data-badge]", { scale: 0.3, opacity: 0 }, { scale: 1, opacity: 1, ease: "back.out(2)", duration: 0.3, immediateRender: false }, "reveal+=0.9")
+      .call(() => setRevealed(true), [], "reveal+=0.9");
     return () => { timeline.current = null; };
   }, { scope: dialog, dependencies: [reduceMotion], revertOnUpdate: true });
 
@@ -90,10 +119,13 @@ export function RollStage({ pull, reduceMotion, onClose, preview = false }: {
       tl?.progress(1, true).pause();
       setRevealed(true);
     } else if (waiting.current) {
+      flipBuilder.current(tierIndex);
       tl?.play("reveal");
+    } else {
+      flipBuilder.current(tierIndex);
+      tl?.timeScale(revealSpeed(tierIndex));
     }
-    if (tl && waiting.current) tl.timeScale(tierIndex >= 4 ? 0.85 : burst ? 1 : 1.3);
-  }, [pull, reduceMotion, burst, tierIndex]);
+  }, [pull, reduceMotion, tierIndex]);
 
   function skipOrClose() {
     if (ready) return onClose();
@@ -116,10 +148,18 @@ export function RollStage({ pull, reduceMotion, onClose, preview = false }: {
         <div data-stage className={`pointer-events-auto relative w-56 max-w-[65vw] ${tierText || "text-ice"}`} style={{ perspective: 1000 }}>
           {!reduceMotion && <>
             <div data-flash aria-hidden="true" className="pointer-events-none absolute -inset-8 bg-current opacity-0 blur-2xl" />
-            <div data-glow aria-hidden="true" className="absolute inset-0 animate-pulseGlow rounded-full bg-current opacity-20 blur-3xl" />
-            <div data-ring aria-hidden="true" className={`absolute inset-0 rounded-full border border-current opacity-0 ${burst ? "" : "hidden"}`} />
-            {Array.from({ length: 14 }, (_, i) => <i key={i} data-particle aria-hidden="true"
-              className={`absolute left-1/2 top-1/2 h-2 w-1 bg-current opacity-0 ${!burst ? "hidden" : i % 2 ? "hidden md:block" : ""}`} />)}
+            <div data-glow aria-hidden="true" className="absolute inset-0 rounded-full bg-current opacity-20 blur-3xl" />
+            {Array.from({ length: 3 }, (_, i) => (
+              <div key={i} data-ring aria-hidden="true"
+                className={`absolute inset-0 rounded-full border border-current opacity-0 ${i < ringCount(tierIndex) ? "" : "hidden"}`} />
+            ))}
+            {Array.from({ length: PARTICLE_SLOTS }, (_, i) => {
+              const count = particleCount(tierIndex);
+              const visible = count > 0 && i % (PARTICLE_SLOTS / count) === 0;
+              return <i key={i} data-particle aria-hidden="true"
+                style={pull?.card.rarity === "GALACTICA" ? { backgroundColor: PARTICLE_GALAXY[i % 3] } : undefined}
+                className={`absolute left-1/2 top-1/2 h-2 w-1 bg-current opacity-0 ${visible ? "" : "hidden"}`} />;
+            })}
           </>}
           <div data-flip className="relative" style={{ transformStyle: "preserve-3d", transform: reduceMotion ? "rotateY(180deg)" : undefined }}>
             <div aria-hidden="true" className="absolute inset-0 flex items-center justify-center overflow-hidden border border-ice/40 bg-panel" style={{ backfaceVisibility: "hidden" }}>
@@ -128,7 +168,10 @@ export function RollStage({ pull, reduceMotion, onClose, preview = false }: {
             </div>
             <div inert={!ready} aria-hidden={!ready} className="relative min-h-80" style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg)" }}>
               {pull && <GachaCard pull={pull} preview={preview} />}
-              {pull?.foil !== "NORMAL" && pull && <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden"><div className="h-full w-full animate-rollShine bg-gradient-to-r from-transparent via-snow/30 to-transparent motion-reduce:animate-none" /></div>}
+              {pull?.foil !== "NORMAL" && pull && <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
+                <div data-sweep className="h-full w-full -translate-x-[150%] bg-gradient-to-r from-transparent via-snow/40 to-transparent mix-blend-screen" />
+                <div className={`h-full w-full bg-gradient-to-r from-transparent via-snow/30 to-transparent motion-reduce:animate-none ${revealed ? "animate-rollShine" : "invisible"}`} />
+              </div>}
             </div>
           </div>
         </div>
