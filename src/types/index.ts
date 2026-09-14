@@ -588,6 +588,24 @@ export interface GachaStatus {
   nextClaimAt?: string | null;
   claimWarning?: string | null;
   bypassPriceCents?: number | null;
+  pointsBalance?: number;
+}
+
+export type GachaPointEventType = "MINT" | "SPEND" | "SALE" | "TAX" | "ADMIN";
+
+export interface GachaPointEvent {
+  id: string;
+  delta: number;
+  type: GachaPointEventType;
+  refId: string | null;
+  reason: string | null;
+  createdAt: string;
+}
+
+export interface GachaPointsPage {
+  balance: number;
+  events: GachaPointEvent[];
+  meta: { page: number; limit: number; total: number };
 }
 
 /** Preview de giro — sorteio sem ownership (sem edition, sem dono). */

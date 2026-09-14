@@ -40,6 +40,7 @@ import type {
   GachaCardInfo,
   AdminGachaCard,
   GachaStatus,
+  GachaPointsPage,
   GachaSpinPreview,
   GachaBypassCheckout,
   GachaBypassStatus,
@@ -1330,6 +1331,9 @@ export const api = {
 
   // --- Gacha ---
   gachaStatus: () => request<GachaStatus>(`/gacha/status`),
+
+  gachaPoints: (page = 1, limit = 20) =>
+    request<GachaPointsPage>(`/gacha/points?page=${page}&limit=${limit}`),
 
   gachaSpins: () => request<GachaSpinPreview[]>(`/gacha/spins`),
 

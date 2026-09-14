@@ -406,6 +406,14 @@ function GachaPageContent() {
                       Próxima carta guardável em {claimCountdown ?? "…"}
                     </span>
                   )}
+                  <span>
+                    <Link
+                      href="/gacha/pontos"
+                      className="text-snow decoration-hairline underline-offset-4 hover:underline"
+                    >
+                      {status?.pointsBalance?.toLocaleString("pt-BR") ?? 0} pts
+                    </Link>
+                  </span>
                 </div>
 
                 <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
