@@ -117,16 +117,21 @@ export function GachaCard({ pull, preview = false, linkAnime = true }: { pull: G
   const rarity = RARITY[card.rarity] ?? RARITY.COMUM!;
   const isGalaxy = card.rarity === "GALACTICA";
   const foilText = FOIL_TEXT[pull.foil];
+  const cosmetics = pull.user?.gachaCosmetics ?? [];
+  const hasAurora = cosmetics.includes("FRAME_AURORA");
+  const destaqueRing = cosmetics.includes("DESTAQUE_CARTA")
+    ? " shadow-[0_0_18px_rgba(252,211,77,0.45)]"
+    : "";
 
   const markup = (
     <div
       className={
-        isGalaxy
-          ? GALAXY_FRAME
-          : `overflow-hidden border bg-panel ${rarity.border} ${rarity.glow ?? ""}`
+        isGalaxy || hasAurora
+          ? GALAXY_FRAME + destaqueRing
+          : `overflow-hidden border bg-panel ${rarity.border} ${rarity.glow ?? ""}${destaqueRing}`
       }
     >
-      <div className={`overflow-hidden ${isGalaxy ? "bg-panel" : ""}`}>
+      <div className={`overflow-hidden ${isGalaxy || hasAurora ? "bg-panel" : ""}`}>
         <div className="relative" style={{ aspectRatio: "3 / 4" }}>
           {art ? (
             <Image

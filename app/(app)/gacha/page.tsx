@@ -102,6 +102,7 @@ function GachaPageContent() {
   const [stagePreview, setStagePreview] = useState(false);
   const [claiming, setClaiming] = useState(false);
   const [bypassPending, setBypassPending] = useState(false);
+  const [rerolling, setRerolling] = useState(false);
   const [bypassReference, setBypassReference] = useState<string | null>(null);
   const [checkoutUrl, setCheckoutUrl] = useState<string | null>(null);
   const [now, setNow] = useState(() => Date.now());
@@ -240,6 +241,23 @@ function GachaPageContent() {
     }
   }
 
+  async function handleReroll() {
+    if (!preview || rerolling) return;
+    setRerolling(true);
+    setError("");
+    try {
+      const updated = await api.gachaReroll({ userCardId: preview.id });
+      setPreview(updated);
+      await refresh();
+    } catch (err) {
+      setError(
+        err instanceof ApiError ? err.message : "Erro ao rerrollar a carta.",
+      );
+    } finally {
+      setRerolling(false);
+    }
+  }
+
   async function handleBypass() {
     if (bypassPending) return;
     setError("");
@@ -320,7 +338,15 @@ function GachaPageContent() {
           }}
         />
       )}
-      {preview && <CardPreview pull={preview} onClose={closePreview} />}
+      {preview && (
+        <CardPreview
+          pull={preview}
+          onClose={closePreview}
+          canReroll={!!user && preview.user.id === user.id}
+          rerolling={rerolling}
+          onReroll={() => void handleReroll()}
+        />
+      )}
 
       <section className="relative mt-4 overflow-hidden border border-hairline bg-panel">
         <div

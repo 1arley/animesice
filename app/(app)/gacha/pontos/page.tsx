@@ -6,7 +6,11 @@ import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { SectionLabel } from "@/components/common/SectionLabel";
-import type { GachaPointEvent, GachaPointEventType } from "@/types";
+import type {
+  GachaPointEvent,
+  GachaPointEventType,
+  GachaShopItem,
+} from "@/types";
 
 const PAGE_SIZE = 20;
 
@@ -26,6 +30,31 @@ export default function GachaPointsPage() {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [shop, setShop] = useState<GachaShopItem[]>([]);
+  const [buying, setBuying] = useState<string | null>(null);
+
+  const loadShop = useCallback(async () => {
+    try {
+      const s = await api.gachaShop();
+      setShop(s.cosmetics);
+      setBalance(s.balance);
+    } catch {}
+  }, []);
+
+  async function handleBuy(key: string) {
+    setBuying(key);
+    setError("");
+    try {
+      await api.gachaBuyCosmetic({ key });
+      await Promise.all([loadShop(), load(1, false)]);
+    } catch (e) {
+      setError(
+        e instanceof Error ? e.message : "Não foi possível concluir a compra.",
+      );
+    } finally {
+      setBuying(null);
+    }
+  }
 
   const load = useCallback(async (target: number, append: boolean) => {
     try {
@@ -46,7 +75,8 @@ export default function GachaPointsPage() {
   useEffect(() => {
     if (!user) return;
     void load(1, false);
-  }, [user, load]);
+    void loadShop();
+  }, [user, load, loadShop]);
 
   if (!user)
     return (
@@ -85,6 +115,45 @@ export default function GachaPointsPage() {
         >
           {error}
         </div>
+      )}
+
+      {shop.length > 0 && (
+        <>
+          <SectionLabel level={2}>Loja</SectionLabel>
+          <ul className="mt-3 grid gap-3 sm:grid-cols-2">
+            {shop.map((item) => (
+              <li
+                key={item.key}
+                className="flex items-start justify-between gap-3 border border-hairline bg-panel p-4"
+              >
+                <div className="min-w-0">
+                  <p className="font-display text-body-sm text-snow">
+                    {item.label}
+                  </p>
+                  <p className="mt-1 text-caption text-mist">
+                    {item.description}
+                  </p>
+                </div>
+                {item.owned ? (
+                  <span className="shrink-0 font-mono text-caption text-ice">
+                    SEU
+                  </span>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => void handleBuy(item.key)}
+                    disabled={buying !== null}
+                    className="btn-ghost shrink-0 px-3 py-2 font-mono text-caption disabled:opacity-50"
+                  >
+                    {buying === item.key
+                      ? "…"
+                      : `Comprar · ${item.price.toLocaleString("pt-BR")}`}
+                  </button>
+                )}
+              </li>
+            ))}
+          </ul>
+        </>
       )}
 
       <SectionLabel level={2}>Extrato</SectionLabel>

@@ -11,13 +11,23 @@ import type { GachaPull } from "@/types";
 export function CardPreview({
   pull,
   onClose,
+  canReroll = false,
+  rerolling = false,
+  onReroll,
 }: {
   pull: GachaPull;
   onClose: () => void;
+  canReroll?: boolean;
+  rerolling?: boolean;
+  onReroll?: () => void;
 }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const fine = useFinePointer();
   const reduced = usePrefersReducedMotion();
+  const cosmetics = pull.user?.gachaCosmetics ?? [];
+  const aurora = cosmetics.includes("FRAME_AURORA");
+  const destaque = cosmetics.includes("DESTAQUE_CARTA");
+  const rerollCost = Math.max(1, Math.round(pull.value * 0.1));
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -34,7 +44,13 @@ export function CardPreview({
   }
 
   const content = (
-    <div className="relative mx-auto w-full max-w-md border border-ice/40 bg-panel p-5 shadow-2xl shadow-ink">
+    <div
+      className={`relative mx-auto w-full max-w-md border bg-panel p-5 shadow-2xl shadow-ink ${
+        aurora
+          ? "border-fuchsia-400/70 shadow-[0_0_20px_rgba(232,121,249,0.3)]"
+          : "border-ice/40"
+      } ${destaque ? " ring-1 ring-amber-300/60" : ""}`}
+    >
       <button
         type="button"
         aria-label="Fechar preview"
@@ -79,6 +95,19 @@ export function CardPreview({
       >
         Compartilhar carta
       </button>
+      {canReroll && onReroll && (
+        <button
+          type="button"
+          onClick={onReroll}
+          disabled={rerolling}
+          title="Sorteia nova condition e foil para esta carta — pode piorar."
+          className="btn-ghost mt-3 w-full px-4 py-3 disabled:opacity-50"
+        >
+          {rerolling
+            ? "Rerrollando…"
+            : `Rerrollar condition/foil · ${rerollCost} pts`}
+        </button>
+      )}
     </div>
   );
 
