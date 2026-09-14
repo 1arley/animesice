@@ -76,8 +76,7 @@ export function RollStage({ pull, reduceMotion, onClose, preview = false }: {
       tl.killTweensOf(el);
       if (idx >= 4) {
         tl.to(el, { rotationY: 90, scale: 0.88, duration: 0.42, ease: "power2.in" }, "reveal+=0.3")
-          .to({}, { duration: 0.16 })
-          .to(el, { rotationY: 180, duration: 0.42, ease: "power3.out" })
+          .to(el, { rotationY: 180, duration: 0.42, ease: "power3.out" }, "reveal+=0.88")
           .to(el, { scale: 1, duration: 0.5, ease: "back.out(3)" }, "<");
       } else {
         tl.to(el, { rotationY: 180, scale: 0.9, duration: 0.6, ease: "power2.in" }, "reveal+=0.3")
@@ -87,7 +86,7 @@ export function RollStage({ pull, reduceMotion, onClose, preview = false }: {
     flipBuilder.current = buildFlip;
     tl.addLabel("reveal", 1.8);
     buildFlip(tierIndex);
-    tl.from("[data-stage]", { scale: 0.94, opacity: 0, duration: 0.15 })
+    tl.from("[data-stage]", { scale: 0.94, opacity: 0, duration: 0.15 }, 0)
       .to("[data-crystal]", { rotation: 405, scale: 1.2, duration: 1.2, ease: "power2.in" }, 0.2)
       .fromTo("[data-glow]", { opacity: 0.25, scale: 1 }, { opacity: 0.8, scale: 1.25, duration: 1.3, ease: "power2.in", immediateRender: false }, 0.3)
       .call(() => setCanSkip(true), [], 0.6)
@@ -168,10 +167,10 @@ export function RollStage({ pull, reduceMotion, onClose, preview = false }: {
             </div>
             <div inert={!ready} aria-hidden={!ready} className="relative min-h-80" style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg)" }}>
               {pull && <GachaCard pull={pull} preview={preview} />}
-              {pull?.foil !== "NORMAL" && pull && <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
+              <div aria-hidden="true" className={`pointer-events-none absolute inset-0 overflow-hidden ${pull && pull.foil !== "NORMAL" ? "" : "invisible"}`}>
                 <div data-sweep className="h-full w-full -translate-x-[150%] bg-gradient-to-r from-transparent via-snow/40 to-transparent mix-blend-screen" />
                 <div className={`h-full w-full bg-gradient-to-r from-transparent via-snow/30 to-transparent motion-reduce:animate-none ${revealed ? "animate-rollShine" : "invisible"}`} />
-              </div>}
+              </div>
             </div>
           </div>
         </div>
