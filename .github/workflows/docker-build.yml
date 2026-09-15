@@ -49,6 +49,6 @@ jobs:
             ${{ secrets.DOCKERHUB_REPO }}:${{ steps.tag.outputs.tag }}
           build-args: |
             NEXT_PUBLIC_API_URL=${{ steps.api.outputs.url }}
-            NEXT_PUBLIC_SITE_URL=https://${{ github.ref_name == 'main' && 'www.animesice.app' || 'dev.animesice.app' }}
+            NEXT_PUBLIC_SITE_URL=https://${{ github.ref_name == 'main' && 'animesice.app' || 'dev.animesice.app' }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
