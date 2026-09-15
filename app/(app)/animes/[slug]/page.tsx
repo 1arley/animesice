@@ -273,6 +273,24 @@ export default async function AnimeDetailPage({
                 </dd>
               </div>
             )}
+            {anime.malId && (
+              <div>
+                <dt className="font-mono text-caption uppercase tracking-wider text-mist">
+                  MyAnimeList
+                </dt>
+                <dd className="font-mono text-body-sm font-medium text-ice tabular-nums">
+                  <Link
+                    href={`https://myanimelist.net/anime/${anime.malId}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="transition-colors hover:text-snow"
+                    title="Abrir no MyAnimeList"
+                  >
+                    #{anime.malId} ↗
+                  </Link>
+                </dd>
+              </div>
+            )}
           </dl>
 
           {anime.genres && anime.genres.length > 0 && (
