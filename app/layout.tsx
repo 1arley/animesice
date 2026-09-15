@@ -71,9 +71,6 @@ export const metadata: Metadata = {
     title: "AnimesIce — Assistir animes online em HD",
     description: "Assistir animes online em HD, legendados e dublados. Catálogo completo.",
   },
-  other: {
-    "msvalidate.01": "3A2AA4AD572C8633ABF4264CE33371FD",
-  },
   icons: {
     icon: [
       { url: "/icons/favicon.ico", sizes: "any" },
@@ -100,6 +97,7 @@ export default function RootLayout({
   return (
     <html lang="pt-BR">
       <head>
+        <meta name="msvalidate.01" content="3A2AA4AD572C8633ABF4264CE33371FD" />
         {/* Preconnect hints no <head>: abre handshake TCP+TLS cedo sem
             baixar nada. Só origens efetivamente requisitadas no load
             (Lighthouse pede <= 4 e penaliza preconnect não usado):
