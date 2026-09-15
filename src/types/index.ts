@@ -55,6 +55,7 @@ export interface Anime {
   endDate?: string | null;
   episodeCount?: number | null;
   anilistId?: number | null;
+  malId?: number | null;
   published?: boolean;
   editorialSynopsis?: string | null;
   editorialWhereToWatch?: string | null;
