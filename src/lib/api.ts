@@ -1394,6 +1394,11 @@ export const api = {
       body: JSON.stringify(body),
     }),
 
+  gachaClaimCompensation: () =>
+    request<GachaPullResponse>(`/gacha/claim-compensation`, {
+      method: "POST",
+    }),
+
   gachaBypass: () =>
     request<GachaBypassCheckout | { alreadyUnlocked: true } | { unlocked: true }>(`/gacha/bypass`, {
       method: "POST",
