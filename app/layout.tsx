@@ -71,6 +71,9 @@ export const metadata: Metadata = {
     title: "AnimesIce — Assistir animes online em HD",
     description: "Assistir animes online em HD, legendados e dublados. Catálogo completo.",
   },
+  other: {
+    "msvalidate.01": "3A2AA4AD572C8633ABF4264CE33371FD",
+  },
   icons: {
     icon: [
       { url: "/icons/favicon.ico", sizes: "any" },
