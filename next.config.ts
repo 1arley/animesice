@@ -32,6 +32,7 @@ const cspHeader = `
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  output: "standalone",
   outputFileTracingRoot: process.cwd(),
   images: {
     // Servir as imagens remotas diretamente evita que todas as capas passem
