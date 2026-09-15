@@ -1,4 +1,4 @@
-import { api, type StreamSource } from "@/lib/api";
+import { api, ApiError, type StreamSource } from "@/lib/api";
 
 const MAX_POLL_ATTEMPTS = 20;
 const SSE_FAST_TIMEOUT_MS = 2_000;
@@ -58,10 +58,14 @@ export async function resolveAsyncSource(
     ssePromise,
     new Promise<"timeout">((r) => {
       const timer = setTimeout(() => r("timeout"), SSE_FAST_TIMEOUT_MS);
-      signal?.addEventListener("abort", () => {
-        clearTimeout(timer);
-        r("timeout");
-      }, { once: true });
+      signal?.addEventListener(
+        "abort",
+        () => {
+          clearTimeout(timer);
+          r("timeout");
+        },
+        { once: true },
+      );
     }),
   ]);
 
@@ -94,10 +98,14 @@ export async function resolveAsyncSource(
     );
     await new Promise<void>((r) => {
       const timer = setTimeout(r, delay);
-      signal?.addEventListener("abort", () => {
-        clearTimeout(timer);
-        r();
-      }, { once: true });
+      signal?.addEventListener(
+        "abort",
+        () => {
+          clearTimeout(timer);
+          r();
+        },
+        { once: true },
+      );
     });
 
     if (signal?.aborted) {
@@ -128,8 +136,15 @@ export async function resolveAsyncSource(
           return { type: "source", source };
         }
       }
-    } catch {
-      // Network error — continue polling
+    } catch (e) {
+      if (e instanceof ApiError && e.statusCode === 404) {
+        cleanup.sse?.();
+        return {
+          type: "failed",
+          error: "Job de extração não encontrado. Tente novamente.",
+        };
+      }
+      // Other errors — continue polling
     }
   }
 
