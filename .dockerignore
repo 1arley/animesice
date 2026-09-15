@@ -1,0 +1,15 @@
+# Dependencias e artefatos locais
+node_modules
+.next
+.vercel
+
+# Git e CI
+.git
+.gitignore
+.github
+.husky
+
+# Env (NEXT_PUBLIC_* sao injetados via ARG/ENV no build)
+.env
+.env.*
+!*.example
