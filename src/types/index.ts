@@ -609,7 +609,7 @@ export interface GachaShop {
   cosmetics: GachaShopItem[];
 }
 
-/** Anúncio do mercado — buy-now por pontos, expira em 48h. */
+/** Anúncio do mercado — buy-now por Crystais, expira em 48h. */
 export interface GachaListing {
   id: string;
   userId: string;
@@ -644,11 +644,13 @@ export interface GachaPointsPage {
 }
 
 export type CrystalEventType =
+  | "INITIAL"
   | "MINT"
-  | "SPEND"
   | "DAILY"
+  | "SPEND"
   | "PURCHASE"
   | "SALE"
+  | "TAX"
   | "ADMIN";
 
 export interface CrystalEvent {

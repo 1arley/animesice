@@ -93,7 +93,7 @@ export default function GachaMarketPage() {
         <div className="flex items-center gap-3">
           {balance != null && (
             <span className="font-mono text-caption text-mist">
-              {balance.toLocaleString("pt-BR")} pts
+              {balance.toLocaleString("pt-BR")} 💎
             </span>
           )}
           <Link href="/gacha" className="btn-ghost px-4 py-2">
@@ -119,7 +119,7 @@ export default function GachaMarketPage() {
               <li key={listing.id}>
                 <GachaCard pull={listing.userCard} linkAnime={false} />
                 <p className="mt-1 text-center font-mono text-caption text-mist">
-                  {listing.price.toLocaleString("pt-BR")} pts ·{" "}
+                  {listing.price.toLocaleString("pt-BR")} 💎 ·{" "}
                   {humansLeft(listing.expiresAt)}
                 </p>
                 <button
@@ -186,7 +186,7 @@ export default function GachaMarketPage() {
                 >
                   {busy === listing.id
                     ? "…"
-                    : `Comprar · ${listing.price.toLocaleString("pt-BR")} pts`}
+                    : `Comprar · ${listing.price.toLocaleString("pt-BR")} 💎`}
                 </button>
               </li>
             ))}
