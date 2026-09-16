@@ -81,7 +81,16 @@ async function collectionFixture(page: import("@playwright/test").Page) {
     r.fulfill({ json: { data: [pull("owned-a", "Sung Jin-Woo", "LENDARIA", "GOLD")], meta: { total: 1, totalPages: 1, page: 1, perPage: 24 } } }),
   );
   await page.route(A("gacha/featured$"), (r) => r.fulfill({ json: pull("owned-a", "Sung Jin-Woo", "LENDARIA", "GOLD") }));
-  await page.route(A("gacha/encyclopedia$"), (r) => r.fulfill({ json: ENC }));
+  await page.route(A("gacha/encyclopedia(?:\\?|$)"), (r) => {
+    const query = new URL(r.request().url()).searchParams;
+    const sets = ENC.sets.map(({ cards, ...set }) => set);
+    const cards = query.get("animeId") === "gachiakuta" ? CARDS.gachi : CARDS.lvl;
+    const isSets = query.get("view") === "sets";
+    return r.fulfill({ json: {
+      view: isSets ? "sets" : "cards", cards: isSets ? [] : cards, sets: isSets ? sets : [],
+      meta: { total: isSets ? sets.length : cards.length, page: 1, limit: 24, totalPages: 1 },
+    } });
+  });
 }
 
 async function profileFixture(page: import("@playwright/test").Page) {
@@ -132,42 +141,42 @@ test.describe("Gacha harden — cerimônia", () => {
   });
 });
 
-test.describe("Gacha harden — enciclopédia da coleção", () => {
-  test("hierarquia h3 com link, legibilidade de faltantes e stats sem overflow", async ({ page }) => {
+test.describe("Gacha harden — enciclopédia paginada", () => {
+  test("coleção não busca catálogo; faltantes usam preto e branco e marcador", async ({ page }) => {
     await blockAds(page);
     await mockGeneric(page);
     await loginAs(page);
     await collectionFixture(page);
+    const requests: string[] = [];
+    page.on("request", request => {
+      if (request.url().includes("localhost:3001/gacha/encyclopedia")) requests.push(request.url());
+    });
     await page.goto("/gacha/collection");
-
-    const enc = page.getByText("Enciclopédia — o que falta");
-    await expect(enc).toBeVisible();
-    await expect(page.getByText("1 de 4 cartas · 0 de 2 sets completos")).toBeVisible();
-    await expect(page.locator("h3 a[href=\"/animes/solo-leveling\"]")).toHaveText("Solo Leveling Season 2 Arise from the Shadow");
-
-    const longName = page.getByText("Esperteza & Finta Genshin Impacta Longa");
-    await expect(longName).toBeVisible();
-    await expect(longName).toHaveCSS("text-overflow", "ellipsis");
-    await expect(longName).toHaveCSS("color", "rgb(148, 163, 184)"); // text-mist, legível
-    await page.locator('section img[alt="Sung Jin-Woo"], img[alt="Sung Jin-Woo"]').first().waitFor({ timeout: 8000 });
+    await expect(page.getByRole("button", { name: "Em destaque" })).toBeVisible();
+    expect(requests).toHaveLength(0);
+    await page.getByRole("link", { name: "Explorar enciclopédia" }).click();
+    await expect(page.getByRole("heading", { name: "Enciclopédia", exact: true })).toBeVisible();
+    await expect(page.getByRole("img", { name: "Beru, Rei das Formigas Gigantes do Castelo" })).toHaveCSS("filter", "grayscale(1)");
+    await expect(page.getByRole("img", { name: "Sung Jin-Woo", exact: true })).toHaveCSS("filter", "none");
+    await expect(page.getByText("Falta", { exact: true })).toHaveCount(2);
     await noHorizontalOverflow(page);
   });
 
-  test("accordion por set: segundo set colapsado até abrir", async ({ page }) => {
+  test("conjuntos carregam cartas ao abrir e preservam visão na URL", async ({ page }) => {
     await blockAds(page);
     await mockGeneric(page);
     await loginAs(page);
     await collectionFixture(page);
-    await page.goto("/gacha/collection");
-    await expect(page.getByText("Enciclopédia — o que falta")).toBeVisible();
-
+    await page.goto("/gacha/encyclopedia?view=sets");
     await expect(page.getByText("Sensei & Aluno")).toHaveCount(0);
-    const toggle = page.getByRole("button", { name: /0\/1/ });
-    await expect(toggle).toHaveAttribute("aria-expanded", "false");
-    await toggle.click();
+    await page.getByRole("link", { name: /Gachiakuta.*Ver cartas/ }).click();
     await expect(page.getByText("Sensei & Aluno")).toBeVisible();
-    await expect(toggle).toHaveAttribute("aria-expanded", "true");
-    await expect(page.getByText("Sung Jin-Woo").last()).toBeVisible();
+    await expect(page).toHaveURL(/animeId=gachiakuta/);
+    await page.getByLabel("Posse das cartas").selectOption("missing");
+    await expect(page).toHaveURL(/ownership=missing/);
+    await page.getByRole("link", { name: "Voltar aos conjuntos" }).click();
+    await expect(page.getByRole("heading", { name: "Gachiakuta", exact: true })).toBeVisible();
+    await expect(page.getByText("Sensei & Aluno")).toHaveCount(0);
     await noHorizontalOverflow(page);
   });
 });
