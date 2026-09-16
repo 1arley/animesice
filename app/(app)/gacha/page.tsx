@@ -34,6 +34,7 @@ function formatCountdown(target: string | null, now: number): string | null {
 const BYPASS_POLL_MS = 3000;
 const BYPASS_POLL_MAX_MS = 31 * 60_000;
 const BYPASS_POLL_MAX_FAILURES = 5;
+const STALE_RE = /expir|claimed|já guardada|indisponível|already|completed|conflict/i;
 
 /** Adapta um preview de giro para o RollStage (sem edição, sem dono). */
 function spinToStagePull(spin: GachaSpinPreview): GachaPull {
@@ -236,7 +237,9 @@ function GachaPageContent() {
       setStageOpen(true);
       await refresh();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Erro ao guardar.");
+      const message = err instanceof ApiError ? err.message : "Erro ao guardar.";
+      setError(message);
+      if (STALE_RE.test(message)) await refresh().catch(() => undefined);
     } finally {
       setClaiming(false);
     }
@@ -304,7 +307,9 @@ function GachaPageContent() {
         }
       }
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : "Erro ao gerar Pix.");
+      const message = e instanceof ApiError ? e.message : "Erro ao gerar Pix.";
+      setError(message);
+      if (STALE_RE.test(message)) await refresh().catch(() => undefined);
     } finally {
       setBypassPending(false);
     }
@@ -547,13 +552,24 @@ function GachaPageContent() {
                     <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
                       {spins.map((spin) => {
                         const active = spin.id === selectedSpinId;
+                        const expired =
+                          new Date(spin.expiresAt).getTime() <= now;
+                        const claimed = spin.claimedAt != null;
                         return (
                           <button
                             key={spin.id}
                             type="button"
                             onClick={() => setSelectedSpinId(spin.id)}
                             aria-pressed={active}
-                            className={`border p-1 text-left transition-colors ${
+                            disabled={expired || claimed}
+                            title={
+                              claimed
+                                ? "Carta já guardada"
+                                : expired
+                                  ? "Preview expirado"
+                                  : undefined
+                            }
+                            className={`border p-1 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
                               active
                                 ? "border-ice"
                                 : "border-hairline hover:border-ice/50"

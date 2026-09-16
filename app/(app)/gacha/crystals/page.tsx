@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { api, ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
@@ -24,6 +24,16 @@ const TYPE_LABEL: Record<CrystalEventType, string> = {
   TAX: "Taxa do mercado",
   ADMIN: "Ajuste da equipe",
 };
+
+function isToday(createdAt: string): boolean {
+  const d = new Date(createdAt);
+  const now = new Date();
+  return (
+    d.getFullYear() === now.getFullYear() &&
+    d.getMonth() === now.getMonth() &&
+    d.getDate() === now.getDate()
+  );
+}
 
 export default function GachaCrystalsPage() {
   const { user } = useAuth();
@@ -51,9 +61,16 @@ export default function GachaCrystalsPage() {
       await api.gachaBuyCosmetic({ key });
       await Promise.all([loadShop(), load(1, false)]);
     } catch (e) {
-      setError(
-        e instanceof Error ? e.message : "Não foi possível concluir a compra.",
-      );
+      const msg =
+        e instanceof Error ? e.message : "Não foi possível concluir a compra.";
+      setError(msg);
+      if (
+        /insuficiente|indisponível|vendid|expir|já foi|said|already|sold|conflict/i.test(
+          msg,
+        )
+      ) {
+        await Promise.all([loadShop(), load(1, false)]);
+      }
     } finally {
       setBuying(null);
     }
@@ -65,12 +82,15 @@ export default function GachaCrystalsPage() {
     try {
       const res = await api.gachaDailyBonus();
       setBalance(res.balance);
+      await load(1, false);
     } catch (e) {
-      setError(
-        e instanceof ApiError
-          ? e.message
-          : "Não foi possível resgatar o bônus.",
-      );
+      const msg =
+        e instanceof ApiError ? e.message : "Não foi possível resgatar o bônus.";
+      if (/resgatado|claimed|already/i.test(msg)) {
+        await load(1, false);
+      } else {
+        setError(msg);
+      }
     } finally {
       setClaimingDaily(false);
     }
@@ -97,6 +117,12 @@ export default function GachaCrystalsPage() {
     void load(1, false);
     void loadShop();
   }, [user, load, loadShop]);
+
+  // ponytail: heurística página 1 (PAGE_SIZE=20); backend não expõe status diário, upgrade quando API retornar flag
+  const dailyClaimed = useMemo(
+    () => events.some((e) => e.type === "DAILY" && isToday(e.createdAt)),
+    [events],
+  );
 
   if (!user)
     return (
@@ -129,10 +155,15 @@ export default function GachaCrystalsPage() {
         <button
           type="button"
           onClick={() => void handleDailyBonus()}
-          disabled={claimingDaily}
+          disabled={claimingDaily || dailyClaimed}
+          title={dailyClaimed ? "Bônus diário já resgatado hoje" : undefined}
           className="btn-ghost mt-3 px-4 py-2 font-mono text-caption disabled:opacity-50"
         >
-          {claimingDaily ? "Resgatando…" : "Bônus diário · 100 💎"}
+          {dailyClaimed
+            ? "Bônus diário resgatado ✓"
+            : claimingDaily
+              ? "Resgatando…"
+              : "Bônus diário · 100 💎"}
         </button>
       </div>
 
@@ -149,37 +180,51 @@ export default function GachaCrystalsPage() {
         <>
           <SectionLabel level={2}>Loja</SectionLabel>
           <ul className="mt-3 grid gap-3 sm:grid-cols-2">
-            {shop.map((item) => (
-              <li
-                key={item.key}
-                className="flex items-start justify-between gap-3 border border-hairline bg-panel p-4"
-              >
-                <div className="min-w-0">
-                  <p className="font-display text-body-sm text-snow">
-                    {item.label}
-                  </p>
-                  <p className="mt-1 text-caption text-mist">
-                    {item.description}
-                  </p>
-                </div>
-                {item.owned ? (
-                  <span className="shrink-0 font-mono text-caption text-ice">
-                    SEU
-                  </span>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => void handleBuy(item.key)}
-                    disabled={buying !== null}
-                    className="btn-ghost shrink-0 px-3 py-2 font-mono text-caption disabled:opacity-50"
-                  >
-                    {buying === item.key
-                      ? "…"
-                      : `Comprar · ${item.price.toLocaleString("pt-BR")} 💎`}
-                  </button>
-                )}
-              </li>
-            ))}
+            {shop.map((item) => {
+              const insufficient = balance != null && balance < item.price;
+              return (
+                <li
+                  key={item.key}
+                  className="flex items-start justify-between gap-3 border border-hairline bg-panel p-4"
+                >
+                  <div className="min-w-0">
+                    <p className="font-display text-body-sm text-snow">
+                      {item.label}
+                    </p>
+                    <p className="mt-1 text-caption text-mist">
+                      {item.description}
+                    </p>
+                  </div>
+                  {item.owned ? (
+                    <span className="shrink-0 font-mono text-caption text-ice">
+                      SEU
+                    </span>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => void handleBuy(item.key)}
+                      disabled={
+                        balance == null ||
+                        (buying !== null && buying !== item.key) ||
+                        insufficient
+                      }
+                      title={
+                        balance == null
+                          ? "Carregando saldo…"
+                          : insufficient
+                            ? "Saldo insuficiente"
+                            : undefined
+                      }
+                      className="btn-ghost shrink-0 px-3 py-2 font-mono text-caption disabled:opacity-50"
+                    >
+                      {buying === item.key
+                        ? "…"
+                        : `Comprar · ${item.price.toLocaleString("pt-BR")} 💎`}
+                    </button>
+                  )}
+                </li>
+              );
+            })}
           </ul>
         </>
       )}
