@@ -704,38 +704,30 @@ export interface GachaRankingEntry {
   pulls: number;
 }
 
-/** Carta do catálogo (enciclopédia) com flag de posse do usuário. */
 export interface GachaEncyclopediaCard {
   id: string;
   name: string;
   image: string | null;
   rarity: string;
-  favourites: number;
+  animeId: string | null;
+  animeTitle: string | null;
   owned: boolean;
 }
 
-/** Conjunto de cartas por anime (set) — contador de progresso. */
 export interface GachaEncyclopediaSet {
   animeId: string | null;
-  animeTitle: string | null;
+  animeTitle: string;
   animeSlug: string | null;
   total: number;
   owned: number;
   complete: boolean;
-  cards: GachaEncyclopediaCard[];
 }
 
-export interface GachaEncyclopediaStats {
-  totalCards: number;
-  ownedCards: number;
-  totalSets: number;
-  completeSets: number;
-}
-
-/** Resposta de GET /gacha/encyclopedia. */
 export interface GachaEncyclopedia {
-  stats: GachaEncyclopediaStats;
+  view: "cards" | "sets";
+  cards: GachaEncyclopediaCard[];
   sets: GachaEncyclopediaSet[];
+  meta: { total: number; page: number; limit: number; totalPages: number };
 }
 
 /** Carta destaque — setComplete sinaliza conjunto completo (prestígio no perfil). */

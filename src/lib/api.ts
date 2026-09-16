@@ -1482,7 +1482,8 @@ export const api = {
       `/gacha/featured/${encodeURIComponent(userId)}`,
     ),
 
-  gachaEncyclopedia: () => request<GachaEncyclopedia>(`/gacha/encyclopedia`),
+  gachaEncyclopedia: (query: string, signal?: AbortSignal) =>
+    request<GachaEncyclopedia>(`/gacha/encyclopedia?${query}`, { signal }),
 
   gachaTradeCreate: (body: {
     offeredUserCardId: string;

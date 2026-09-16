@@ -297,7 +297,7 @@ const server = http.createServer((req, res) => {
   if (req.method === 'GET' && (p === '/api/gacha/featured' || p === '/gacha/featured')) return json(res, null);
   if (req.method === 'GET' && p && /^\/(api\/)?gacha\/featured\/.+/.test(p)) return json(res, null);
   if (req.method === 'GET' && (p === '/api/gacha/encyclopedia' || p === '/gacha/encyclopedia')) {
-    return json(res, { stats: { totalCards: 0, ownedCards: 0, totalSets: 0, completeSets: 0 }, sets: [] });
+    return json(res, { view: "cards", cards: [], sets: [], meta: { total: 0, page: 1, limit: 24, totalPages: 0 } });
   }
   if (req.method === 'GET' && (p === '/api/gacha/trades/mine' || p === '/gacha/trades/mine')) {
     return json(res, []);
