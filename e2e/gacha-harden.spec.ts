@@ -15,10 +15,13 @@ const CARDS = {
     wikiCard("c2", "Esperteza & Finta Genshin Impacta Longa", "COMUM", false, null),
     wikiCard("c3", "Beru, Rei das Formigas Gigantes do Castelo", "GALACTICA", false, "https://img1.ak.crunchyroll.com/i/spire4-tmb/3.webp"),
   ],
+  gachi: [
+    wikiCard("c4", "Sensei & Aluno", "EPICA", false, null),
+  ],
 };
 
 const ENC = {
-  stats: { totalCards: 3, ownedCards: 1, totalSets: 1, completeSets: 0 },
+  stats: { totalCards: 4, ownedCards: 1, totalSets: 2, completeSets: 0 },
   sets: [
     {
       animeId: "solo-leveling-s2",
@@ -28,6 +31,15 @@ const ENC = {
       owned: 1,
       complete: false,
       cards: CARDS.lvl,
+    },
+    {
+      animeId: "gachiakuta",
+      animeTitle: "Gachiakuta",
+      animeSlug: "gachiakuta",
+      total: 1,
+      owned: 0,
+      complete: false,
+      cards: CARDS.gachi,
     },
   ],
 };
@@ -130,7 +142,7 @@ test.describe("Gacha harden — enciclopédia da coleção", () => {
 
     const enc = page.getByText("Enciclopédia — o que falta");
     await expect(enc).toBeVisible();
-    await expect(page.getByText("1 de 3 cartas · 0 de 1 sets completos")).toBeVisible();
+    await expect(page.getByText("1 de 4 cartas · 0 de 2 sets completos")).toBeVisible();
     await expect(page.locator("h3 a[href=\"/animes/solo-leveling\"]")).toHaveText("Solo Leveling Season 2 Arise from the Shadow");
 
     const longName = page.getByText("Esperteza & Finta Genshin Impacta Longa");
@@ -138,6 +150,24 @@ test.describe("Gacha harden — enciclopédia da coleção", () => {
     await expect(longName).toHaveCSS("text-overflow", "ellipsis");
     await expect(longName).toHaveCSS("color", "rgb(148, 163, 184)"); // text-mist, legível
     await page.locator('section img[alt="Sung Jin-Woo"], img[alt="Sung Jin-Woo"]').first().waitFor({ timeout: 8000 });
+    await noHorizontalOverflow(page);
+  });
+
+  test("accordion por set: segundo set colapsado até abrir", async ({ page }) => {
+    await blockAds(page);
+    await mockGeneric(page);
+    await loginAs(page);
+    await collectionFixture(page);
+    await page.goto("/gacha/collection");
+    await expect(page.getByText("Enciclopédia — o que falta")).toBeVisible();
+
+    await expect(page.getByText("Sensei & Aluno")).toHaveCount(0);
+    const toggle = page.getByRole("button", { name: /0\/1/ });
+    await expect(toggle).toHaveAttribute("aria-expanded", "false");
+    await toggle.click();
+    await expect(page.getByText("Sensei & Aluno")).toBeVisible();
+    await expect(toggle).toHaveAttribute("aria-expanded", "true");
+    await expect(page.getByText("Sung Jin-Woo").last()).toBeVisible();
     await noHorizontalOverflow(page);
   });
 });

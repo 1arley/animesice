@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import type { CSSProperties } from "react";
+import { memo, type CSSProperties } from "react";
 import { safeImageSrc } from "@/lib/url";
 import { blur } from "@/lib/blur";
 import { HoloTilt } from "@/components/core/HoloTilt";
@@ -109,7 +109,7 @@ function scratchVars(id: string): CSSProperties {
   } as CSSProperties;
 }
 
-export function GachaCard({ pull, preview = false, linkAnime = true }: { pull: GachaPull; linkAnime?: boolean; /** Preview de giro: sem edição definitiva nem valor final. */ preview?: boolean }) {
+export const GachaCard = memo(function GachaCard({ pull, preview = false, linkAnime = true }: { pull: GachaPull; linkAnime?: boolean; /** Preview de giro: sem edição definitiva nem valor final. */ preview?: boolean }) {
   const { card } = pull;
   const art = safeImageSrc(card.image);
   const label = pull.conditionLabel ?? gachaConditionLabel(pull.condition);
@@ -216,4 +216,4 @@ export function GachaCard({ pull, preview = false, linkAnime = true }: { pull: G
   );
 
   return pull.foil === "HOLO" ? <HoloTilt>{markup}</HoloTilt> : markup;
-}
+});

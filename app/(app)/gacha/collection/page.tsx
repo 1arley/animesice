@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { memo, useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { api } from "@/lib/api";
@@ -36,7 +36,7 @@ function SilhouetteIcon({ className }: { className?: string }) {
 }
 
 /** Mini carta do catálogo — imagem quando possui, silhueta quando falta. */
-function WikiCard({ card }: { card: GachaEncyclopediaCard }) {
+const WikiCard = memo(function WikiCard({ card }: { card: GachaEncyclopediaCard }) {
   const rarity = RARITY[card.rarity] ?? RARITY.COMUM!;
   const art = safeImageSrc(card.image);
   return (
@@ -82,7 +82,7 @@ function WikiCard({ card }: { card: GachaEncyclopediaCard }) {
       </p>
     </div>
   );
-}
+});
 
 export default function GachaCollectionPage() {
   const { user } = useAuth();
@@ -97,8 +97,10 @@ export default function GachaCollectionPage() {
   const [page, setPage] = useState(1);
   const [pages, setPages] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [wikiLoading, setWikiLoading] = useState(true);
   const [error, setError] = useState("");
   const [featuredError, setFeaturedError] = useState("");
+  const [expandedSetId, setExpandedSetId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -106,19 +108,19 @@ export default function GachaCollectionPage() {
     const load = async () => {
       setLoading(true);
       setError("");
-      setFeaturedError("");
       try {
-        const [collection, current, enc] = await Promise.all([
-          api.gachaCollection(user.id, page, 24, sort, rarity, foil),
-          api.gachaFeatured(),
-          api.gachaEncyclopedia().catch(() => null),
-        ]);
+        const collection = await api.gachaCollection(
+          user.id,
+          page,
+          24,
+          sort,
+          rarity,
+          foil,
+        );
         if (cancelled) return;
         setItems(collection.data);
         setTotal(collection.meta.total);
         setPages(collection.meta.totalPages);
-        setFeatured(current);
-        setWiki(enc && Array.isArray(enc.sets) ? enc : null);
       } catch {
         if (!cancelled) setError("Não foi possível carregar sua coleção.");
       } finally {
@@ -129,6 +131,24 @@ export default function GachaCollectionPage() {
     return () => { cancelled = true; };
   }, [user, page, sort, rarity, foil]);
 
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    setWikiLoading(true);
+    const load = async () => {
+      const [current, enc] = await Promise.all([
+        api.gachaFeatured().catch(() => null),
+        api.gachaEncyclopedia().catch(() => null),
+      ]);
+      if (cancelled) return;
+      setFeatured(current);
+      setWiki(enc && Array.isArray(enc.sets) ? enc : null);
+      setWikiLoading(false);
+    };
+    void load();
+    return () => { cancelled = true; };
+  }, [user]);
+
   if (!user)
     return (
       <div className="mx-auto max-w-shelf px-4 py-16">
@@ -137,6 +157,11 @@ export default function GachaCollectionPage() {
         </Link>
       </div>
     );
+
+  const openId =
+    expandedSetId === ""
+      ? null
+      : expandedSetId ?? wiki?.sets[0]?.animeId ?? "orphan";
 
   return (
     <main className="mx-auto max-w-shelf px-4 pb-16 pt-8">
@@ -268,7 +293,9 @@ export default function GachaCollectionPage() {
         </div>
       )}
 
-      {wiki && wiki.sets.length > 0 && (
+      {wikiLoading ? (
+        <div className="skeleton mt-14 h-40" aria-busy="true" />
+      ) : wiki && wiki.sets.length > 0 ? (
         <section className="mt-14">
           <SectionLabel level={2}>Enciclopédia — o que falta</SectionLabel>
           <p className="mt-1 text-body-sm text-mist">
@@ -302,42 +329,75 @@ export default function GachaCollectionPage() {
             </div>
           )}
           <div className="mt-6 space-y-8">
-            {wiki.sets.map((set) => (
-              <div key={set.animeId ?? "orphan"}>
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                  {set.animeSlug ? (
-                    <h3>
-                      <Link
-                        href={`/animes/${set.animeSlug}`}
-                        className="font-display text-body-lg text-snow transition-colors hover:text-ice"
-                      >
+            {wiki.sets.map((set) => {
+              const setId = set.animeId ?? "orphan";
+              return (
+                <div key={setId}>
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                    {set.animeSlug ? (
+                      <h3>
+                        <Link
+                          href={`/animes/${set.animeSlug}`}
+                          className="font-display text-body-lg text-snow transition-colors hover:text-ice"
+                        >
+                          {set.animeTitle ?? "Sem anime"}
+                        </Link>
+                      </h3>
+                    ) : (
+                      <h3 className="font-display text-body-lg text-snow">
                         {set.animeTitle ?? "Sem anime"}
-                      </Link>
-                    </h3>
-                  ) : (
-                    <h3 className="font-display text-body-lg text-snow">
-                      {set.animeTitle ?? "Sem anime"}
-                    </h3>
-                  )}
-                  <span className="font-mono text-caption text-mist">
-                    {set.owned}/{set.total}
-                  </span>
-                  {set.complete && (
-                    <span className="border border-amber-300/60 bg-amber-300/10 px-1.5 py-0.5 font-mono text-caption font-medium text-amber-200">
-                      COMPLETO
-                    </span>
+                      </h3>
+                    )}
+                    <button
+                      type="button"
+                      aria-expanded={openId === setId}
+                      onClick={() =>
+                        setExpandedSetId(openId === setId ? "" : setId)
+                      }
+                      className="inline-flex items-center gap-1.5 font-mono text-caption text-mist transition-colors hover:text-snow"
+                    >
+                      {set.owned}/{set.total}
+                      {set.total > 0 && (
+                        <> · {Math.round((set.owned / set.total) * 100)}%</>
+                      )}
+                      {set.complete && (
+                        <span className="border border-amber-300/60 bg-amber-300/10 px-1.5 py-0.5 font-mono text-caption font-medium text-amber-200">
+                          COMPLETO
+                        </span>
+                      )}
+                      <svg
+                        width="12"
+                        height="12"
+                        viewBox="0 0 16 16"
+                        aria-hidden="true"
+                        className={`transition-transform ${
+                          openId === setId ? "rotate-180" : ""
+                        }`}
+                      >
+                        <path
+                          d="m4 6 4 4 4-4"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          fill="none"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    </button>
+                  </div>
+                  {openId === setId && (
+                    <div className="mt-2 grid grid-cols-3 gap-2 sm:grid-cols-5 md:grid-cols-7">
+                      {set.cards.map((c) => (
+                        <WikiCard key={c.id} card={c} />
+                      ))}
+                    </div>
                   )}
                 </div>
-                <div className="mt-2 grid grid-cols-3 gap-2 sm:grid-cols-5 md:grid-cols-7">
-                  {set.cards.map((c) => (
-                    <WikiCard key={c.id} card={c} />
-                  ))}
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </section>
-      )}
+      ) : null}
     </main>
   );
 }
