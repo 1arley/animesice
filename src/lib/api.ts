@@ -239,6 +239,19 @@ async function revalidateBlogCache(): Promise<void> {
   }).catch(() => undefined);
 }
 
+async function revalidateAdminCache(
+  slug?: string,
+  tags?: string[],
+): Promise<void> {
+  if (typeof window === "undefined") return;
+  await fetch("/api/admin/revalidate", {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ slug, tags }),
+  }).catch(() => undefined);
+}
+
 type GachaPullResponse = GachaPull;
 
 export const api = {
@@ -633,7 +646,7 @@ export const api = {
         | "editorialDubbingInfo"
         | "editorialSeasonsInfo"
       >
-    >,
+    > & { genreSlugs?: string[] },
   ) =>
     request<Anime>(`/admin/anime/${slug}`, {
       method: "PATCH",
@@ -645,10 +658,16 @@ export const api = {
       method: "DELETE",
     }),
 
+  adminGetEpisode: (slug: string, number: number, season?: number) =>
+    request<Episode & { anime: Anime }>(
+      `/admin/episode/${slug}/${number}${season && season > 1 ? `?season=${season}` : ""}`,
+    ),
+
   adminCreateEpisode: (
     slug: string,
     dto: {
       number: number;
+      season?: number;
       title?: string;
       videoUrl?: string;
       embedUrl?: string;
@@ -661,10 +680,11 @@ export const api = {
       body: JSON.stringify(dto),
     }),
 
-  adminDeleteEpisode: (slug: string, number: number) =>
-    request<{ message: string }>(`/admin/episode/${slug}/${number}`, {
-      method: "DELETE",
-    }),
+  adminDeleteEpisode: (slug: string, number: number, season?: number) =>
+    request<{ message: string }>(
+      `/admin/episode/${slug}/${number}${season && season > 1 ? `?season=${season}` : ""}`,
+      { method: "DELETE" },
+    ),
 
   adminListGenres: () => request<Genre[]>(`/genre`),
 
@@ -677,11 +697,15 @@ export const api = {
         "title" | "videoUrl" | "thumbnailUrl" | "duration" | "embedUrl"
       >
     >,
+    season?: number,
   ) =>
-    request<Episode>(`/admin/episode/${slug}/${number}`, {
-      method: "PATCH",
-      body: JSON.stringify(dto),
-    }),
+    request<Episode>(
+      `/admin/episode/${slug}/${number}${season && season > 1 ? `?season=${season}` : ""}`,
+      {
+        method: "PATCH",
+        body: JSON.stringify(dto),
+      },
+    ),
 
   adminImportAnime: (body: {
     anilistId?: number;
@@ -698,12 +722,14 @@ export const api = {
     slug: string,
     number: number,
     file: File,
+    season?: number,
   ): Promise<Episode> => {
     const formData = new FormData();
     formData.append("file", file);
 
+    const qs = season && season > 1 ? `?season=${season}` : "";
     const res = await fetch(
-      `${API_URL}/admin/episode/${slug}/${number}/upload`,
+      `${API_URL}/admin/episode/${slug}/${number}/upload${qs}`,
       {
         method: "POST",
         credentials: "include",
@@ -1231,6 +1257,12 @@ export const api = {
       signal ? { signal } : undefined,
     ),
 
+  adminGetMutationLogs: (days = 7, signal?: AbortSignal) =>
+    request<AuditLogItem[]>(
+      `/admin/audit/mutations?days=${days}`,
+      signal ? { signal } : undefined,
+    ),
+
   // --- Admin: watchtower (SUPERADMIN) ---
   watchtowerStatus: (signal?: AbortSignal) =>
     request<WatchtowerStatus>(
@@ -1475,6 +1507,8 @@ export const api = {
 
   gachaRanking: (limit = 20) =>
     request<GachaRankingEntry[]>(`/gacha/ranking?limit=${limit}`),
+
+  revalidateAdminCache,
 };
 
 export interface RoomInfo {
@@ -1585,6 +1619,7 @@ export interface AuditLogItem {
   id: string;
   action: string;
   resourceType: string;
+  resourceId?: string;
   admin: {
     email: string;
     role: string;

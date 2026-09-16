@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
 import { api, ApiError } from "@/lib/api";
 import { isPrivileged } from "@/lib/role";
-import type { Anime } from "@/types";
+import type { Anime, Genre } from "@/types";
 
 export default function AdminEditAnimePage({
   params,
@@ -32,6 +32,9 @@ export default function AdminEditAnimePage({
   const [editorialWhereToWatch, setEditorialWhereToWatch] = useState("");
   const [editorialDubbingInfo, setEditorialDubbingInfo] = useState("");
   const [editorialSeasonsInfo, setEditorialSeasonsInfo] = useState("");
+
+  const [genreSlugs, setGenreSlugs] = useState<string[]>([]);
+  const [genres, setGenres] = useState<Genre[]>([]);
 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -64,12 +67,17 @@ export default function AdminEditAnimePage({
         setEditorialWhereToWatch(a.editorialWhereToWatch ?? "");
         setEditorialDubbingInfo(a.editorialDubbingInfo ?? "");
         setEditorialSeasonsInfo(a.editorialSeasonsInfo ?? "");
+        setGenreSlugs(a.genres?.map((g) => g.slug) ?? []);
       })
       .catch((e) =>
         setLoadErr(e instanceof ApiError ? e.message : "Erro ao carregar anime."),
       )
       .finally(() => setLoadingAnime(false));
   }, [slug, user]);
+
+  useEffect(() => {
+    api.adminListGenres().then(setGenres).catch(() => {});
+  }, []);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -81,18 +89,20 @@ export default function AdminEditAnimePage({
     try {
       await api.adminUpdateAnime(slug, {
         title: title.trim() || undefined,
-        synopsis: synopsis || undefined,
-        coverImage: coverImage || undefined,
-        bannerImage: bannerImage || undefined,
-        rating: rating ? Number(rating) : undefined,
+        synopsis: synopsis || null,
+        coverImage: coverImage || null,
+        bannerImage: bannerImage || null,
+        rating: rating ? Number(rating) : null,
         status,
         ageRating,
         published,
-        editorialSynopsis: editorialSynopsis || undefined,
-        editorialWhereToWatch: editorialWhereToWatch || undefined,
-        editorialDubbingInfo: editorialDubbingInfo || undefined,
-        editorialSeasonsInfo: editorialSeasonsInfo || undefined,
+        editorialSynopsis: editorialSynopsis || null,
+        editorialWhereToWatch: editorialWhereToWatch || null,
+        editorialDubbingInfo: editorialDubbingInfo || null,
+        editorialSeasonsInfo: editorialSeasonsInfo || null,
+        genreSlugs,
       });
+      await api.revalidateAdminCache(slug);
       setSaved(true);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Erro ao salvar anime.");
@@ -107,6 +117,7 @@ export default function AdminEditAnimePage({
     setSaving(true);
     try {
       await api.adminDeleteAnime(slug);
+      await api.revalidateAdminCache(slug);
       router.push("/admin");
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Erro ao deletar anime.");
@@ -246,6 +257,42 @@ export default function AdminEditAnimePage({
                 {published ? "(visível no site)" : "(desabilitado — oculto do site)"}
               </span>
             </label>
+
+            {genres.length > 0 && (
+              <div>
+                <span className="mb-2 block font-sans text-caption uppercase tracking-wider text-mist">
+                  Gêneros
+                </span>
+                <div className="flex flex-wrap gap-2">
+                  {genres.map((g) => {
+                    const active = genreSlugs.includes(g.slug);
+                    return (
+                      <button
+                        key={g.slug}
+                        type="button"
+                        onClick={() => {
+                          setGenreSlugs((prev) =>
+                            active
+                              ? prev.filter((s) => s !== g.slug)
+                              : [...prev, g.slug],
+                          );
+                        }}
+                        className={
+                          active
+                            ? "btn-ice text-caption"
+                            : "btn-ghost text-caption"
+                        }
+                      >
+                        {g.name}
+                      </button>
+                    );
+                  })}
+                </div>
+                <span className="mt-1 block text-caption text-mist">
+                  {genreSlugs.length} selecionado(s)
+                </span>
+              </div>
+            )}
 
             <fieldset className="space-y-4 border border-hairline bg-panel/30 p-4">
               <legend className="px-2 font-sans text-caption uppercase tracking-wider text-ice">

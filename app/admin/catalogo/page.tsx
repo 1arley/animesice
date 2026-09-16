@@ -57,6 +57,7 @@ export default function AdminCatalogoPage() {
     setError(null);
     try {
       await api.adminDeleteAnime(slug);
+      await api.revalidateAdminCache(slug);
       setConfirmSlug(null);
       loadAnimes(page, search);
     } catch (e) {

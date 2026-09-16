@@ -7,11 +7,13 @@ import { isPrivileged } from "@/lib/role";
 import type { AuditLogItem } from "@/lib/api";
 
 const RESOURCE_TYPES = ["User", "AdminAuditLog", "Report", "ModerationAction"];
+type AuditTab = "access" | "mutations";
 
 const LOAD_TIMEOUT_MS = 15000;
 
 export default function AdminAuditPage() {
   const { user } = useAuth();
+  const [tab, setTab] = useState<AuditTab>("access");
   const [logs, setLogs] = useState<AuditLogItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -27,11 +29,14 @@ export default function AdminAuditPage() {
     setLoading(true);
     setError(null);
     try {
-      const data = await api.adminGetSensitiveAccess(
-        resourceType,
-        days,
-        controller.signal,
-      );
+      const data =
+        tab === "access"
+          ? await api.adminGetSensitiveAccess(
+              resourceType,
+              days,
+              controller.signal,
+            )
+          : await api.adminGetMutationLogs(days, controller.signal);
       if (abortRef.current === controller) {
         setLogs(data);
       }
@@ -48,14 +53,13 @@ export default function AdminAuditPage() {
       abortRef.current = null;
       setLoading(false);
     }
-  }, [resourceType, days]);
+  }, [tab, resourceType, days]);
 
   useEffect(() => {
     if (!isPrivileged(user)) return;
     loadLogs();
   }, [user, loadLogs]);
 
-  // Aborta request pendente ao desmontar — evita setState após unmount.
   useEffect(
     () => () => {
       abortRef.current?.abort();
@@ -87,6 +91,23 @@ export default function AdminAuditPage() {
         Logs de acesso a dados sensíveis e ações administrativas.
       </p>
 
+      <div className="mt-4 flex gap-2">
+        <button
+          type="button"
+          onClick={() => setTab("access")}
+          className={tab === "access" ? "btn-ice text-caption" : "btn-ghost text-caption"}
+        >
+          Acessos sensíveis
+        </button>
+        <button
+          type="button"
+          onClick={() => setTab("mutations")}
+          className={tab === "mutations" ? "btn-ice text-caption" : "btn-ghost text-caption"}
+        >
+          Mutações (CRUD)
+        </button>
+      </div>
+
       {error && (
         <div className="mt-4 border border-signal/40 bg-signal/10 p-3 text-body-sm text-signal">
           {error}
@@ -94,23 +115,25 @@ export default function AdminAuditPage() {
       )}
 
       <div className="mt-4 flex flex-wrap gap-3">
-        <div>
-          <label htmlFor="audit-recurso" className="mb-1.5 block font-mono text-caption uppercase tracking-wider text-mist">
-            Recurso
-          </label>
-          <select
-            id="audit-recurso"
-            value={resourceType}
-            onChange={(e) => setResourceType(e.target.value)}
-            className="field"
-          >
-            {RESOURCE_TYPES.map((r) => (
-              <option key={r} value={r}>
-                {r}
-              </option>
-            ))}
-          </select>
-        </div>
+        {tab === "access" && (
+          <div>
+            <label htmlFor="audit-recurso" className="mb-1.5 block font-mono text-caption uppercase tracking-wider text-mist">
+              Recurso
+            </label>
+            <select
+              id="audit-recurso"
+              value={resourceType}
+              onChange={(e) => setResourceType(e.target.value)}
+              className="field"
+            >
+              {RESOURCE_TYPES.map((r) => (
+                <option key={r} value={r}>
+                  {r}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
         <div>
           <label htmlFor="audit-dias" className="mb-1.5 block font-mono text-caption uppercase tracking-wider text-mist">
             Período (dias)
@@ -141,6 +164,7 @@ export default function AdminAuditPage() {
               <tr>
                 <th>Ação</th>
                 <th>Recurso</th>
+                <th>ID Recurso</th>
                 <th>Admin</th>
                 <th>Role</th>
                 <th>IP</th>
@@ -152,6 +176,9 @@ export default function AdminAuditPage() {
                 <tr key={log.id}>
                   <td className="text-ice">{log.action}</td>
                   <td className="text-mist">{log.resourceType}</td>
+                  <td className="text-mist">
+                    <code className="text-caption">{log.resourceId ?? "—"}</code>
+                  </td>
                   <td className="text-snow">{log.admin?.email ?? "—"}</td>
                   <td>
                     <span className="badge badge-muted">{log.admin?.role ?? "—"}</span>
