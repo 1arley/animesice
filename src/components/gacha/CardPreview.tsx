@@ -16,6 +16,8 @@ export function CardPreview({
   onReroll,
   onList,
   listing = false,
+  burning = false,
+  onBurn,
 }: {
   pull: GachaPull;
   onClose: () => void;
@@ -24,6 +26,8 @@ export function CardPreview({
   onReroll?: () => void;
   onList?: (price: number) => void;
   listing?: boolean;
+  burning?: boolean;
+  onBurn?: () => void;
 }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const fine = useFinePointer();
@@ -43,7 +47,8 @@ export function CardPreview({
   async function share() {
     const url = `${window.location.origin}/gacha?card=${pull.id}`;
     try {
-      if (navigator.share) await navigator.share({ title: pull.card.name, url });
+      if (navigator.share)
+        await navigator.share({ title: pull.card.name, url });
       else await navigator.clipboard.writeText(url);
     } catch {}
   }
@@ -144,6 +149,18 @@ export function CardPreview({
             {listing ? "Anunciando…" : "Anunciar no mercado"}
           </button>
         </form>
+      )}
+      {onBurn && (
+        <button
+          type="button"
+          onClick={onBurn}
+          disabled={burning}
+          className="mt-3 w-full border border-signal/60 px-4 py-3 font-mono text-caption text-signal disabled:opacity-50"
+        >
+          {burning
+            ? "Queimando…"
+            : `Queimar · ${Math.max(1, Math.floor(pull.value * 0.4))} crystals`}
+        </button>
       )}
     </div>
   );

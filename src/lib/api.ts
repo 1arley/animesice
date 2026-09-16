@@ -1379,6 +1379,12 @@ export const api = {
       body: JSON.stringify(body),
     }),
 
+  gachaBurn: (body: { userCardId: string }) =>
+    request<{ burned: string; payout: number }>(`/gacha/burn`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+
   gachaCrystals: (page = 1, limit = 20) =>
     request<CrystalPage>(`/gacha/crystals?page=${page}&limit=${limit}`),
 

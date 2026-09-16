@@ -315,24 +315,24 @@ export interface ActivityAnime {
  */
 export type PublicActivityEvent =
   | {
-      type: "watch";
+      type: 'watch';
       episodeNumber: number;
       anime: ActivityAnime;
       createdAt: string;
     }
   | {
-      type: "rating";
+      type: 'rating';
       score: number;
       anime: ActivityAnime;
       createdAt: string;
     }
   | {
-      type: "favorite";
+      type: 'favorite';
       anime: ActivityAnime;
       createdAt: string;
     }
   | {
-      type: "comment";
+      type: 'comment';
       id: string;
       content: string;
       edited: boolean;
@@ -440,13 +440,7 @@ export interface PrivacySettings {
 }
 
 /** Moderation report. */
-export type ReportTargetType =
-  | 'COMMENT'
-  | 'CHAT_MESSAGE'
-  | 'USER'
-  | 'ANIME'
-  | 'POST'
-  | 'POST_COMMENT';
+export type ReportTargetType = 'COMMENT' | 'CHAT_MESSAGE' | 'USER' | 'ANIME' | 'POST' | 'POST_COMMENT';
 export type ReportReason = 'SPAM' | 'HARASSMENT' | 'NSFW' | 'SPOILER' | 'ILLEGAL' | 'OTHER';
 export type ReportStatusType = 'PENDING' | 'RESOLVED' | 'DISMISSED';
 export type ModerationActionType = 'WARN' | 'MUTE' | 'BAN' | 'DELETE_CONTENT';
@@ -456,7 +450,11 @@ export interface ReportItem {
   reporterId: string;
   reporter: { id: string; name: string | null; userName: string | null };
   moderatorId: string | null;
-  moderator: { id: string; name: string | null; userName: string | null } | null;
+  moderator: {
+    id: string;
+    name: string | null;
+    userName: string | null;
+  } | null;
   targetType: ReportTargetType;
   targetId: string;
   reason: ReportReason;
@@ -614,7 +612,7 @@ export interface GachaListing {
   id: string;
   userId: string;
   price: number;
-  status: "ACTIVE" | "SOLD" | "CANCELLED" | "EXPIRED";
+  status: 'ACTIVE' | 'SOLD' | 'CANCELLED' | 'EXPIRED';
   expiresAt: string;
   createdAt: string;
   user: SocialUser;
@@ -626,7 +624,7 @@ export interface GachaListingPage {
   meta: { page: number; limit: number; total: number; totalPages: number };
 }
 
-export type GachaPointEventType = "MINT" | "SPEND" | "SALE" | "TAX" | "ADMIN";
+export type GachaPointEventType = 'MINT' | 'SPEND' | 'SALE' | 'TAX' | 'ADMIN';
 
 export interface GachaPointEvent {
   id: string;
@@ -643,15 +641,7 @@ export interface GachaPointsPage {
   meta: { page: number; limit: number; total: number };
 }
 
-export type CrystalEventType =
-  | "INITIAL"
-  | "MINT"
-  | "DAILY"
-  | "SPEND"
-  | "PURCHASE"
-  | "SALE"
-  | "TAX"
-  | "ADMIN";
+export type CrystalEventType = 'INITIAL' | 'MINT' | 'DAILY' | 'SPEND' | 'PURCHASE' | 'SALE' | 'TAX' | 'ADMIN' | 'BURN';
 
 export interface CrystalEvent {
   id: string;
@@ -726,7 +716,7 @@ export interface GachaEncyclopediaSet {
 }
 
 export interface GachaEncyclopedia {
-  view: "cards" | "sets";
+  view: 'cards' | 'sets';
   cards: GachaEncyclopediaCard[];
   sets: GachaEncyclopediaSet[];
   meta: { total: number; page: number; limit: number; totalPages: number };
@@ -758,8 +748,7 @@ export interface GachaTrade {
  *  - activity: evento público (watch/rating/favorite/comment) com o autor
  */
 export type FeedItem =
-  | { type: "post"; post: SocialPost }
-  | { type: "activity"; event: PublicActivityEvent; user: SocialUser };
+  { type: 'post'; post: SocialPost } | { type: 'activity'; event: PublicActivityEvent; user: SocialUser };
 
 /** Resultado da busca/diretório de usuários (GET /users). */
 export interface UserSearchResult {
@@ -785,7 +774,12 @@ export type FeedbackStatus = 'OPEN' | 'ACKNOWLEDGED' | 'RESOLVED' | 'WONT_FIX' |
 export interface AnimeRequestItem {
   id: string;
   userId: string;
-  user: { id: string; name: string | null; userName: string | null; avatar: string | null };
+  user: {
+    id: string;
+    name: string | null;
+    userName: string | null;
+    avatar: string | null;
+  };
   title: string;
   alternativeTitle: string | null;
   notes: string | null;
@@ -803,7 +797,12 @@ export type FeedbackType = 'SUGGESTION' | 'BUG' | 'REQUEST';
 export interface SiteFeedbackItem {
   id: string;
   userId: string;
-  user: { id: string; name: string | null; userName: string | null; avatar: string | null };
+  user: {
+    id: string;
+    name: string | null;
+    userName: string | null;
+    avatar: string | null;
+  };
   type: FeedbackType;
   title: string;
   description: string;

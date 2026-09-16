@@ -10,6 +10,7 @@ import { SpinPreviewCard } from "@/components/gacha/SpinPreviewCard";
 import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
 import { isValidRemoteUrl } from "@/lib/url";
 import { GachaCard } from "@/components/gacha/GachaCard";
+import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import { SectionLabel } from "@/components/common/SectionLabel";
 import { Avatar } from "@/components/common/Avatar";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -102,6 +103,7 @@ function GachaPageContent() {
   const [claimResult, setClaimResult] = useState<GachaPull | null>(null);
   const [stagePreview, setStagePreview] = useState(false);
   const [claiming, setClaiming] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const [bypassPending, setBypassPending] = useState(false);
   const [rerolling, setRerolling] = useState(false);
   const [listing, setListing] = useState(false);
@@ -227,6 +229,7 @@ function GachaPageContent() {
 
   async function handleClaim() {
     if (!selectedSpin || claiming || new Date(selectedSpin.expiresAt).getTime() <= Date.now()) return;
+    setConfirmOpen(false);
     setError("");
     setClaiming(true);
     try {
@@ -376,6 +379,25 @@ function GachaPageContent() {
           }
         />
       )}
+      {selectedSpin && (
+        <ConfirmDialog
+          open={confirmOpen}
+          title="Guardar carta?"
+          confirmLabel="Pegar carta"
+          busy={claiming}
+          onCancel={() => setConfirmOpen(false)}
+          onConfirm={() => void handleClaim()}
+        >
+          <div className="mx-auto w-44 max-w-full">
+            <SpinPreviewCard spin={selectedSpin} />
+          </div>
+          <p className="mt-4 text-body-sm text-mist">
+            Guardar {selectedSpin.card.name} ({selectedSpin.card.rarity} ·{" "}
+            {selectedSpin.foil}) consome o preview e inicia o cooldown de
+            guarda.
+          </p>
+        </ConfirmDialog>
+      )}
 
       <section className="relative mt-4 overflow-hidden border border-hairline bg-panel">
         <div
@@ -483,7 +505,7 @@ function GachaPageContent() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => void handleClaim()}
+                    onClick={() => setConfirmOpen(true)}
                     disabled={claiming || !selectedSpin || selectedSpinExpired || locked}
                     title={
                       locked
