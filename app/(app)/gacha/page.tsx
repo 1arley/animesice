@@ -459,7 +459,7 @@ function GachaPageContent() {
                   )}
                   <span>
                     <Link
-                      href="/gacha/pontos"
+                      href="/gacha/crystals"
                       className="text-snow decoration-hairline underline-offset-4 hover:underline"
                     >
                       {status?.crystalBalance?.toLocaleString("pt-BR") ?? 0} 💎

@@ -87,7 +87,7 @@ export default function GachaMarketPage() {
         <div>
           <h1 className="font-display text-display-lg text-snow">Mercado</h1>
           <p className="text-body-sm text-mist">
-            Cartas anunciadas por pontos — compra direta, taxa de 10%.
+            Cartas anunciadas por Crystais — compra direta, taxa de 10%.
           </p>
         </div>
         <div className="flex items-center gap-3">
