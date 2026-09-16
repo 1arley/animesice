@@ -593,6 +593,7 @@ export interface GachaStatus {
   bypassPriceCents?: number | null;
   pointsBalance?: number;
   pointsCosmetics?: string[];
+  crystalBalance?: number;
 }
 
 export interface GachaShopItem {
@@ -640,6 +641,29 @@ export interface GachaPointsPage {
   balance: number;
   events: GachaPointEvent[];
   meta: { page: number; limit: number; total: number };
+}
+
+export type CrystalEventType =
+  | "MINT"
+  | "SPEND"
+  | "DAILY"
+  | "PURCHASE"
+  | "SALE"
+  | "ADMIN";
+
+export interface CrystalEvent {
+  id: string;
+  delta: number;
+  type: CrystalEventType;
+  refId: string | null;
+  reason: string | null;
+  createdAt: string;
+}
+
+export interface CrystalPage {
+  balance: number;
+  events: CrystalEvent[];
+  meta: { page: number; limit: number; total: number; totalPages: number };
 }
 
 /** Preview de giro — sorteio sem ownership (sem edition, sem dono). */

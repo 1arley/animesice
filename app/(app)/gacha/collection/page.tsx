@@ -101,6 +101,8 @@ export default function GachaCollectionPage() {
   const [error, setError] = useState("");
   const [featuredError, setFeaturedError] = useState("");
   const [expandedSetId, setExpandedSetId] = useState<string | null>(null);
+  const [rerolling, setRerolling] = useState(false);
+  const [listing, setListing] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -149,6 +151,37 @@ export default function GachaCollectionPage() {
     return () => { cancelled = true; };
   }, [user]);
 
+  async function handleReroll() {
+    if (!preview || rerolling) return;
+    setRerolling(true);
+    try {
+      const updated = await api.gachaReroll({ userCardId: preview.id });
+      setPreview(updated);
+      setItems((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Erro ao rerrollar a carta.",
+      );
+    } finally {
+      setRerolling(false);
+    }
+  }
+
+  async function handleList(price: number) {
+    if (!preview || listing) return;
+    setListing(true);
+    try {
+      await api.gachaListCreate({ userCardId: preview.id, price });
+      setPreview(null);
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Erro ao anunciar a carta.",
+      );
+    } finally {
+      setListing(false);
+    }
+  }
+
   if (!user)
     return (
       <div className="mx-auto max-w-shelf px-4 py-16">
@@ -166,7 +199,19 @@ export default function GachaCollectionPage() {
   return (
     <main className="mx-auto max-w-shelf px-4 pb-16 pt-8">
       {preview && (
-        <CardPreview pull={preview} onClose={() => setPreview(null)} />
+        <CardPreview
+          pull={preview}
+          onClose={() => setPreview(null)}
+          canReroll={preview.user.id === user.id}
+          rerolling={rerolling}
+          onReroll={() => void handleReroll()}
+          listing={listing}
+          onList={
+            preview.user.id === user.id
+              ? (price) => void handleList(price)
+              : undefined
+          }
+        />
       )}
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>

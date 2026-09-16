@@ -461,7 +461,7 @@ function GachaPageContent() {
                       href="/gacha/pontos"
                       className="text-snow decoration-hairline underline-offset-4 hover:underline"
                     >
-                      {status?.pointsBalance?.toLocaleString("pt-BR") ?? 0} pts
+                      {status?.crystalBalance?.toLocaleString("pt-BR") ?? 0} 💎
                     </Link>
                   </span>
                 </div>
