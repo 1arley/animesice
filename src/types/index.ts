@@ -21,6 +21,7 @@ export interface Genre {
 export interface Episode {
   id: string;
   number: number;
+  season: number;
   title: string | null;
   thumbnailUrl: string | null;
   videoUrl: string | null;

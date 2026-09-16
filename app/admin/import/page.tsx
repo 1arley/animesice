@@ -30,6 +30,7 @@ export default function AdminImportPage() {
         anilistId: id ? Number(id) : undefined,
         search: term || undefined,
       });
+      await api.revalidateAdminCache(anime.slug);
       setResult(anime);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Erro ao importar.");

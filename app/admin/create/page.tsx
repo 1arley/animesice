@@ -66,6 +66,7 @@ export default function AdminCreateAnimePage() {
         ageRating,
         genreSlugs: genreSlugs.length ? genreSlugs : undefined,
       });
+      await api.revalidateAdminCache(anime.slug);
       setResult(anime);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Erro ao criar anime.");
