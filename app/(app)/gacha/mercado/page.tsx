@@ -71,11 +71,18 @@ export default function GachaMarketPage() {
       await fn();
       await Promise.all([load(), loadMine()]);
     } catch (e) {
-      setError(
+      const msg =
         e instanceof Error && e.message
           ? e.message
-          : "Não foi possível concluir.",
-      );
+          : "Não foi possível concluir.";
+      setError(msg);
+      if (
+        /insuficiente|indisponível|vendid|expir|já foi|said|already|sold|conflict/i.test(
+          msg,
+        )
+      ) {
+        await Promise.all([load(), loadMine()]);
+      }
     } finally {
       setBusy(null);
     }
@@ -128,6 +135,7 @@ export default function GachaMarketPage() {
                     void act(listing.id, () => api.gachaListCancel(listing.id))
                   }
                   disabled={busy !== null}
+                  title={busy === listing.id ? "Cancelando…" : undefined}
                   className="btn-ghost mt-1 w-full px-2 py-1 text-caption disabled:opacity-50"
                 >
                   {busy === listing.id ? "…" : "Desanunciar"}
@@ -169,27 +177,47 @@ export default function GachaMarketPage() {
           />
         ) : (
           <ul className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-6">
-            {listings.map((listing) => (
-              <li key={listing.id}>
-                <GachaCard pull={listing.userCard} linkAnime={false} />
-                <p className="mt-1 truncate text-center font-mono text-caption text-mist">
-                  {listing.user.name?.trim() || listing.user.userName} ·{" "}
-                  {humansLeft(listing.expiresAt)}
-                </p>
-                <button
-                  type="button"
-                  onClick={() =>
-                    void act(listing.id, () => api.gachaListBuy(listing.id))
-                  }
-                  disabled={!user || busy !== null || listing.userId === user.id}
-                  className="btn-ice mt-1 w-full px-2 py-1.5 font-mono text-caption disabled:opacity-50"
-                >
-                  {busy === listing.id
-                    ? "…"
-                    : `Comprar · ${listing.price.toLocaleString("pt-BR")} 💎`}
-                </button>
-              </li>
-            ))}
+            {listings.map((listing) => {
+              const isOwn = !!user && listing.userId === user.id;
+              const insufficient =
+                balance != null && balance < listing.price;
+              const disabled =
+                !user ||
+                isOwn ||
+                balance == null ||
+                insufficient ||
+                busy === listing.id;
+              return (
+                <li key={listing.id}>
+                  <GachaCard pull={listing.userCard} linkAnime={false} />
+                  <p className="mt-1 truncate text-center font-mono text-caption text-mist">
+                    {listing.user.name?.trim() || listing.user.userName} ·{" "}
+                    {humansLeft(listing.expiresAt)}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      void act(listing.id, () => api.gachaListBuy(listing.id))
+                    }
+                    disabled={disabled}
+                    title={
+                      isOwn
+                        ? "Este anúncio é seu"
+                        : balance == null
+                          ? "Carregando saldo…"
+                          : insufficient
+                            ? "Saldo insuficiente"
+                            : undefined
+                    }
+                    className="btn-ice mt-1 w-full px-2 py-1.5 font-mono text-caption disabled:opacity-50"
+                  >
+                    {busy === listing.id
+                      ? "…"
+                      : `Comprar · ${listing.price.toLocaleString("pt-BR")} 💎`}
+                  </button>
+                </li>
+              );
+            })}
           </ul>
         )}
         {meta.totalPages > 1 && (

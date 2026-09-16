@@ -14,9 +14,10 @@ import type {
 } from "@/types";
 
 const ACTIVE = "PENDING" as const;
+const STALE_RE = /expir|claimed|já guardada|indisponível|already|completed|conflict/i;
 
-function humansLeft(expiresAt: string): string {
-  const left = new Date(expiresAt).getTime() - Date.now();
+function humansLeft(expiresAt: string, now: number): string {
+  const left = new Date(expiresAt).getTime() - now;
   if (left <= 0) return "expirada";
   const h = Math.ceil(left / 3_600_000);
   if (h >= 48) return `válida por ${Math.floor(h / 24)}d`;
@@ -58,16 +59,23 @@ function TradeRow({
   onAccept,
   onCancel,
   onDecline,
-  busy,
+  busyId,
+  now,
 }: {
   trade: GachaTrade;
   myId: string;
   onAccept: () => void;
   onCancel: () => void;
   onDecline: () => void;
-  busy: boolean;
+  busyId: string | null;
+  now: number;
 }) {
   const incoming = trade.requestedUserId === myId;
+  const expired = new Date(trade.expiresAt).getTime() <= now;
+  const busy = busyId?.startsWith(`${trade.id}:`) ?? false;
+  const acceptActive = busyId === `${trade.id}:accept`;
+  const declineActive = busyId === `${trade.id}:decline`;
+  const cancelActive = busyId === `${trade.id}:cancel`;
   if (trade.status === ACTIVE) {
     return (
       <li className="border border-hairline bg-panel p-4">
@@ -95,18 +103,19 @@ function TradeRow({
           </>
         )}
         <p className="mt-3 font-mono text-caption text-mist">
-          {humansLeft(trade.expiresAt)}
+          {humansLeft(trade.expiresAt, now)}
         </p>
         <div className="mt-3 flex flex-wrap gap-3">
           {incoming ? (
             <>
               <button
                 type="button"
-                disabled={busy}
+                disabled={busy || expired}
+                title={expired ? "Troca expirada" : undefined}
                 onClick={onAccept}
                 className="btn-ice px-5 py-2.5 disabled:opacity-50"
               >
-                Aceitar
+                {acceptActive ? "…" : "Aceitar"}
               </button>
               <button
                 type="button"
@@ -114,7 +123,7 @@ function TradeRow({
                 onClick={onDecline}
                 className="btn-ghost px-5 py-2.5 disabled:opacity-50"
               >
-                Recusar
+                {declineActive ? "…" : "Recusar"}
               </button>
             </>
           ) : (
@@ -124,7 +133,7 @@ function TradeRow({
               onClick={onCancel}
               className="btn-ghost px-5 py-2.5 disabled:opacity-50"
             >
-              Cancelar
+              {cancelActive ? "…" : "Cancelar"}
             </button>
           )}
         </div>
@@ -158,8 +167,9 @@ export default function GachaTradesPage() {
   const [trades, setTrades] = useState<GachaTrade[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [busy, setBusy] = useState(false);
+  const [busyId, setBusyId] = useState<string | null>(null);
   const [composing, setComposing] = useState(false);
+  const [now, setNow] = useState(() => Date.now());
 
   const load = useCallback(async () => {
     try {
@@ -175,6 +185,11 @@ export default function GachaTradesPage() {
     if (!user) return;
     void load();
   }, [user, load]);
+
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 30_000);
+    return () => clearInterval(t);
+  }, []);
 
   if (!user)
     return (
@@ -195,8 +210,8 @@ export default function GachaTradesPage() {
     .filter((t) => t.status !== ACTIVE)
     .slice(0, 20);
 
-  const act = async (fn: () => Promise<unknown>) => {
-    setBusy(true);
+  const act = async (key: string, fn: () => Promise<unknown>) => {
+    setBusyId(key);
     try {
       await fn();
       setTrades(await api.gachaMyTrades());
@@ -205,9 +220,12 @@ export default function GachaTradesPage() {
         e instanceof Error
           ? e.message
           : "Não foi possível concluir a troca.";
-      setError(message === "Failed to fetch" ? "Erro de conexão." : message);
+      setError(message.includes("Failed to fetch") ? "Erro de conexão." : message);
+      if (STALE_RE.test(message)) {
+        await api.gachaMyTrades().then(setTrades).catch(() => undefined);
+      }
     } finally {
-      setBusy(false);
+      setBusyId(null);
     }
   };
 
@@ -253,10 +271,11 @@ export default function GachaTradesPage() {
                     key={t.id}
                     trade={t}
                     myId={user.id}
-                    busy={busy}
-                    onAccept={() => void act(() => api.gachaTradeAccept(t.id))}
-                    onDecline={() => void act(() => api.gachaTradeDecline(t.id))}
-                    onCancel={() => void act(() => api.gachaTradeCancel(t.id))}
+                    busyId={busyId}
+                    now={now}
+                    onAccept={() => void act(`${t.id}:accept`, () => api.gachaTradeAccept(t.id))}
+                    onDecline={() => void act(`${t.id}:decline`, () => api.gachaTradeDecline(t.id))}
+                    onCancel={() => void act(`${t.id}:cancel`, () => api.gachaTradeCancel(t.id))}
                   />
                 ))}
               </ul>
@@ -274,10 +293,11 @@ export default function GachaTradesPage() {
                     key={t.id}
                     trade={t}
                     myId={user.id}
-                    busy={busy}
-                    onAccept={() => void act(() => api.gachaTradeAccept(t.id))}
-                    onDecline={() => void act(() => api.gachaTradeDecline(t.id))}
-                    onCancel={() => void act(() => api.gachaTradeCancel(t.id))}
+                    busyId={busyId}
+                    now={now}
+                    onAccept={() => void act(`${t.id}:accept`, () => api.gachaTradeAccept(t.id))}
+                    onDecline={() => void act(`${t.id}:decline`, () => api.gachaTradeDecline(t.id))}
+                    onCancel={() => void act(`${t.id}:cancel`, () => api.gachaTradeCancel(t.id))}
                   />
                 ))}
               </ul>
@@ -293,10 +313,11 @@ export default function GachaTradesPage() {
                     key={t.id}
                     trade={t}
                     myId={user.id}
-                    busy={busy}
-                    onAccept={() => void act(() => api.gachaTradeAccept(t.id))}
-                    onDecline={() => void act(() => api.gachaTradeDecline(t.id))}
-                    onCancel={() => void act(() => api.gachaTradeCancel(t.id))}
+                    busyId={busyId}
+                    now={now}
+                    onAccept={() => void act(`${t.id}:accept`, () => api.gachaTradeAccept(t.id))}
+                    onDecline={() => void act(`${t.id}:decline`, () => api.gachaTradeDecline(t.id))}
+                    onCancel={() => void act(`${t.id}:cancel`, () => api.gachaTradeCancel(t.id))}
                   />
                 ))}
               </ul>
