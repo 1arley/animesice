@@ -124,7 +124,7 @@ export function CardPreview({
           }}
         >
           <label className="sr-only" htmlFor="listing-price">
-            Preço em pontos
+            Preço em Crystais
           </label>
           <input
             id="listing-price"
@@ -132,7 +132,7 @@ export function CardPreview({
             type="number"
             min={1}
             step={1}
-            placeholder="Preço em pts"
+            placeholder="Preço em Crystais"
             defaultValue={pull.value}
             className="h-11 w-full border border-hairline bg-ink px-3 font-mono text-caption text-snow placeholder:text-mist focus:border-ice focus:outline-none"
           />

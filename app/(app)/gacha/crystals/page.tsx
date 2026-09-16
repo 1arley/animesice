@@ -15,15 +15,17 @@ import type {
 const PAGE_SIZE = 20;
 
 const TYPE_LABEL: Record<CrystalEventType, string> = {
+  INITIAL: "Saldo inicial",
   MINT: "Carta guardada",
-  SPEND: "Gasto",
   DAILY: "Bônus diário",
+  SPEND: "Gasto",
   PURCHASE: "Compra Pix",
   SALE: "Venda no mercado",
+  TAX: "Taxa do mercado",
   ADMIN: "Ajuste da equipe",
 };
 
-export default function GachaPointsPage() {
+export default function GachaCrystalsPage() {
   const { user } = useAuth();
   const [balance, setBalance] = useState<number | null>(null);
   const [events, setEvents] = useState<CrystalEvent[]>([]);
