@@ -7,6 +7,7 @@ import { useAuth } from "@/lib/auth-context";
 import { GachaCard, GACHA_TIERS } from "@/components/gacha/GachaCard";
 import { CardPreview } from "@/components/gacha/CardPreview";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import type { GachaPull } from "@/types";
 
 export default function GachaCollectionPage() {
@@ -25,6 +26,8 @@ export default function GachaCollectionPage() {
   const [featuredError, setFeaturedError] = useState("");
   const [rerolling, setRerolling] = useState(false);
   const [listing, setListing] = useState(false);
+  const [burning, setBurning] = useState(false);
+  const [burnTarget, setBurnTarget] = useState<GachaPull | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -101,6 +104,22 @@ export default function GachaCollectionPage() {
     }
   }
 
+  async function handleBurn() {
+    if (!burnTarget || burning) return;
+    setBurning(true);
+    try {
+      await api.gachaBurn({ userCardId: burnTarget.id });
+      setItems((prev) => prev.filter((pull) => pull.id !== burnTarget.id));
+      setTotal((value) => Math.max(0, value - 1));
+      setPreview(null);
+      setBurnTarget(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erro ao queimar a carta.");
+    } finally {
+      setBurning(false);
+    }
+  }
+
   if (!user)
     return (
       <div className="mx-auto max-w-shelf px-4 py-16">
@@ -120,6 +139,12 @@ export default function GachaCollectionPage() {
           rerolling={rerolling}
           onReroll={() => void handleReroll()}
           listing={listing}
+          burning={burning}
+          onBurn={
+            preview.user.id === user.id
+              ? () => setBurnTarget(preview)
+              : undefined
+          }
           onList={
             preview.user.id === user.id
               ? (price) => void handleList(price)
@@ -127,6 +152,20 @@ export default function GachaCollectionPage() {
           }
         />
       )}
+      <ConfirmDialog
+        open={burnTarget !== null}
+        title="Queimar carta?"
+        confirmLabel="Queimar carta"
+        busy={burning}
+        onCancel={() => setBurnTarget(null)}
+        onConfirm={() => void handleBurn()}
+      >
+        <p className="text-body-sm text-mist">
+          Você receberá{" "}
+          {burnTarget ? Math.max(1, Math.floor(burnTarget.value * 0.4)) : 0}{" "}
+          crystals. Ação irreversível.
+        </p>
+      </ConfirmDialog>
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="font-display text-display-lg text-snow">

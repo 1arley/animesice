@@ -23,6 +23,7 @@ const TYPE_LABEL: Record<CrystalEventType, string> = {
   SALE: "Venda no mercado",
   TAX: "Taxa do mercado",
   ADMIN: "Ajuste da equipe",
+  BURN: "Carta queimada",
 };
 
 function isToday(createdAt: string): boolean {
