@@ -41,6 +41,7 @@ import type {
   AdminGachaCard,
   GachaStatus,
   GachaPointsPage,
+  CrystalPage,
   GachaShop,
   GachaListing,
   GachaListingPage,
@@ -1376,6 +1377,15 @@ export const api = {
     request<GachaPull>(`/gacha/reroll`, {
       method: "POST",
       body: JSON.stringify(body),
+    }),
+
+  gachaCrystals: (page = 1, limit = 20) =>
+    request<CrystalPage>(`/gacha/crystals?page=${page}&limit=${limit}`),
+
+  gachaDailyBonus: () =>
+    request<{ balance: number; claimed: number }>(`/gacha/crystals/daily`, {
+      method: "POST",
+      body: JSON.stringify({}),
     }),
 
   gachaBuyCosmetic: (body: { key: string }) =>

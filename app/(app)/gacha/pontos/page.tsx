@@ -2,42 +2,43 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { api } from "@/lib/api";
+import { api, ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { SectionLabel } from "@/components/common/SectionLabel";
 import type {
-  GachaPointEvent,
-  GachaPointEventType,
+  CrystalEvent,
+  CrystalEventType,
   GachaShopItem,
 } from "@/types";
 
 const PAGE_SIZE = 20;
 
-const TYPE_LABEL: Record<GachaPointEventType, string> = {
+const TYPE_LABEL: Record<CrystalEventType, string> = {
   MINT: "Carta guardada",
-  SPEND: "Gasto na loja",
+  SPEND: "Gasto",
+  DAILY: "Bônus diário",
+  PURCHASE: "Compra Pix",
   SALE: "Venda no mercado",
-  TAX: "Taxa do mercado",
   ADMIN: "Ajuste da equipe",
 };
 
 export default function GachaPointsPage() {
   const { user } = useAuth();
   const [balance, setBalance] = useState<number | null>(null);
-  const [events, setEvents] = useState<GachaPointEvent[]>([]);
+  const [events, setEvents] = useState<CrystalEvent[]>([]);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [shop, setShop] = useState<GachaShopItem[]>([]);
   const [buying, setBuying] = useState<string | null>(null);
+  const [claimingDaily, setClaimingDaily] = useState(false);
 
   const loadShop = useCallback(async () => {
     try {
       const s = await api.gachaShop();
       setShop(s.cosmetics);
-      setBalance(s.balance);
     } catch {}
   }, []);
 
@@ -56,9 +57,26 @@ export default function GachaPointsPage() {
     }
   }
 
+  async function handleDailyBonus() {
+    setClaimingDaily(true);
+    setError("");
+    try {
+      const res = await api.gachaDailyBonus();
+      setBalance(res.balance);
+    } catch (e) {
+      setError(
+        e instanceof ApiError
+          ? e.message
+          : "Não foi possível resgatar o bônus.",
+      );
+    } finally {
+      setClaimingDaily(false);
+    }
+  }
+
   const load = useCallback(async (target: number, append: boolean) => {
     try {
-      const data = await api.gachaPoints(target, PAGE_SIZE);
+      const data = await api.gachaCrystals(target, PAGE_SIZE);
       setBalance(data.balance);
       setTotal(data.meta.total);
       setEvents((prev) =>
@@ -66,7 +84,7 @@ export default function GachaPointsPage() {
       );
       setPage(target);
     } catch {
-      setError("Não foi possível carregar seus pontos.");
+      setError("Não foi possível carregar seus Crystais.");
     } finally {
       setLoading(false);
     }
@@ -82,7 +100,7 @@ export default function GachaPointsPage() {
     return (
       <main className="mx-auto max-w-shelf px-4 py-16">
         <Link href="/login" className="text-ice">
-          Entre para ver seus pontos.
+          Entre para ver seus Crystais.
         </Link>
       </main>
     );
@@ -91,9 +109,9 @@ export default function GachaPointsPage() {
     <main className="mx-auto max-w-shelf px-4 pb-16 pt-8">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="font-display text-display-lg text-snow">Pontos</h1>
+          <h1 className="font-display text-display-lg text-snow">Crystais</h1>
           <p className="text-body-sm text-mist">
-            Cada carta guardada rende pontos do seu valor.
+            Moeda do gacha — use para reroll, mercado e loja.
           </p>
         </div>
         <Link href="/gacha" className="btn-ghost px-4 py-2">
@@ -104,8 +122,16 @@ export default function GachaPointsPage() {
       <div className="mt-6 border border-hairline bg-panel px-4 py-5">
         <p className="font-mono text-caption text-mist">SALDO</p>
         <p className="font-display text-display-lg text-snow">
-          {balance == null ? "—" : balance.toLocaleString("pt-BR")}
+          {balance == null ? "—" : balance.toLocaleString("pt-BR")} 💎
         </p>
+        <button
+          type="button"
+          onClick={() => void handleDailyBonus()}
+          disabled={claimingDaily}
+          className="btn-ghost mt-3 px-4 py-2 font-mono text-caption disabled:opacity-50"
+        >
+          {claimingDaily ? "Resgatando…" : "Bônus diário · 100 💎"}
+        </button>
       </div>
 
       {error && (
@@ -147,7 +173,7 @@ export default function GachaPointsPage() {
                   >
                     {buying === item.key
                       ? "…"
-                      : `Comprar · ${item.price.toLocaleString("pt-BR")}`}
+                      : `Comprar · ${item.price.toLocaleString("pt-BR")} 💎`}
                   </button>
                 )}
               </li>
@@ -160,7 +186,10 @@ export default function GachaPointsPage() {
       {loading ? (
         <div className="skeleton mt-3 h-32" aria-busy="true" />
       ) : events.length === 0 ? (
-        <EmptyState text="Nenhum ponto ganho ainda. Guarde uma carta no gacha." variant="compact" />
+        <EmptyState
+          text="Nenhum Crystal ainda. Guarde uma carta no gacha para ganhar."
+          variant="compact"
+        />
       ) : (
         <ul className="mt-3 divide-y divide-hairline border border-hairline bg-panel">
           {events.map((event) => (
@@ -192,7 +221,7 @@ export default function GachaPointsPage() {
                 }`}
               >
                 {event.delta >= 0 ? "+" : ""}
-                {event.delta.toLocaleString("pt-BR")}
+                {event.delta.toLocaleString("pt-BR")} 💎
               </span>
             </li>
           ))}
