@@ -1526,12 +1526,15 @@ export const api = {
 
   gachaSpin: () => request<GachaSpinPreview>(`/gacha/spin`, { method: "POST" }),
 
-  gachaSkins: () => request<GachaSkinsResponse>(`/gacha/skins`),
+  gachaSkins: (page = 1, limit = 48) =>
+    request<GachaSkinsResponse>(`/gacha/skins?page=${page}&limit=${limit}`),
   gachaSkinSpin: () =>
-    request<{ skin: GachaSkin; nextSpinAt: string; price: number }>(
-      `/gacha/skins/spin`,
-      { method: "POST" },
-    ),
+    request<{
+      skin: GachaSkin;
+      nextSpinAt: string;
+      price: number;
+      crystalBalance: number;
+    }>(`/gacha/skins/spin`, { method: "POST" }),
   gachaEquipSkin: (skinId: string | null) =>
     request<{ equippedSkinId: string | null }>(`/gacha/skins/equip`, {
       method: "PATCH",
