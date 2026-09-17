@@ -21,6 +21,8 @@ function Encyclopedia() {
   const page =
     Number.isInteger(rawPage) && rawPage > 0 && rawPage <= 100000 ? rawPage : 1;
   const search = (params.get("search") ?? "").slice(0, 100);
+  const [typedSearch, setTypedSearch] = useState(search);
+  useEffect(() => setTypedSearch(search), [search]);
   const rarity = params.get("rarity") ?? "";
   const ownership = params.get("ownership") ?? "all";
   const progress = params.get("progress") ?? "all";
@@ -48,6 +50,7 @@ function Encyclopedia() {
     error?: string;
   } | null>(null);
   const [retry, setRetry] = useState(0);
+  const [suggestions, setSuggestions] = useState<string[]>([]);
   const data = result?.key === requestKey ? result.data : undefined;
   const error = result?.key === requestKey ? result.error : undefined;
 
@@ -74,6 +77,16 @@ function Encyclopedia() {
     };
   }, [authLoading, queryString, requestKey, retry]);
 
+  useEffect(() => {
+    if (typedSearch.trim().length < 2) { setSuggestions([]); return; }
+    const controller = new AbortController();
+    const timer = setTimeout(() => {
+      void api.gachaEncyclopediaSuggestions(typedSearch.trim(), controller.signal)
+        .then(setSuggestions, () => setSuggestions([]));
+    }, 250);
+    return () => { clearTimeout(timer); controller.abort(); };
+  }, [typedSearch]);
+
   function href(changes: Record<string, string>) {
     const next = new URLSearchParams(params.toString());
     next.delete("page");
@@ -81,7 +94,7 @@ function Encyclopedia() {
       if (value) next.set(key, value);
       else next.delete(key);
     }
-    return `/gacha/encyclopedia?${next}`;
+    return `/gacha/enciclopedia?${next}`;
   }
 
   return (
@@ -95,7 +108,7 @@ function Encyclopedia() {
             Descubra cartas e complete seus conjuntos.
           </p>
         </div>
-        <Link href="/gacha/collection" className="btn-ghost px-4 py-3">
+        <Link href="/gacha/colecao" className="btn-ghost px-4 py-3">
           Minha coleção
         </Link>
       </div>
@@ -167,10 +180,15 @@ function Encyclopedia() {
           name="search"
           type="search"
           maxLength={100}
-          defaultValue={search}
+          value={typedSearch}
+          onChange={(event) => setTypedSearch(event.target.value)}
+          list="encyclopedia-suggestions"
           placeholder="Personagem ou anime"
           className="min-w-0 flex-1 border border-hairline bg-panel p-3 text-snow"
         />
+        <datalist id="encyclopedia-suggestions">
+          {suggestions.map((item) => <option key={item} value={item} />)}
+        </datalist>
         <button className="btn-ice px-4 py-3" type="submit">
           Buscar
         </button>
@@ -221,7 +239,7 @@ function Encyclopedia() {
       </div>
       {!authLoading && !user && (
         <p className="mt-4 text-body-sm text-mist">
-          <Link href="/login" className="text-ice underline">
+          <Link href="/entrar" className="text-ice underline">
             Entre
           </Link>{" "}
           para acompanhar seu progresso.
