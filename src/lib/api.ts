@@ -54,6 +54,8 @@ import type {
   GachaWishlistResponse,
   GachaInterestedUser,
   GachaFeatured,
+  GachaSkinsResponse,
+  GachaSkin,
   GachaTrade,
   UserSearchResult,
   FeedbackStatus,
@@ -1472,6 +1474,22 @@ export const api = {
       method: "PATCH",
       body: JSON.stringify(body),
     }),
+  adminCreateSkin: (body: {
+    name: string;
+    imageUrl: string;
+    cardId?: string;
+    sourceUrl?: string;
+    active?: boolean;
+  }) =>
+    request(`/gacha/admin/skins`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  adminUpdateSkin: (id: string, body: Record<string, unknown>) =>
+    request(`/gacha/admin/skins/${encodeURIComponent(id)}`, {
+      method: "PATCH",
+      body: JSON.stringify(body),
+    }),
 
   gachaListings: (
     page = 1,
@@ -1507,6 +1525,18 @@ export const api = {
   gachaSpins: () => request<GachaSpinPreview[]>(`/gacha/spins`),
 
   gachaSpin: () => request<GachaSpinPreview>(`/gacha/spin`, { method: "POST" }),
+
+  gachaSkins: () => request<GachaSkinsResponse>(`/gacha/skins`),
+  gachaSkinSpin: () =>
+    request<{ skin: GachaSkin; nextSpinAt: string; price: number }>(
+      `/gacha/skins/spin`,
+      { method: "POST" },
+    ),
+  gachaEquipSkin: (skinId: string | null) =>
+    request<{ equippedSkinId: string | null }>(`/gacha/skins/equip`, {
+      method: "PATCH",
+      body: JSON.stringify({ skinId }),
+    }),
 
   gachaClaim: (body: { spinId: string }) =>
     request<GachaPullResponse>(`/gacha/claim`, {

@@ -609,6 +609,25 @@ export interface GachaStatus {
   crystalBalance?: number;
 }
 
+export interface GachaSkin {
+  id: string;
+  characterId: string;
+  name: string;
+  imageUrl: string;
+  owned: boolean;
+  equipped: boolean;
+  sourceUrl?: string | null;
+}
+
+export interface GachaSkinsResponse {
+  skins: GachaSkin[];
+  crystalBalance: number;
+  canSpin: boolean;
+  nextSpinAt: string | null;
+  spinPrice: number;
+  cooldownHours: number;
+}
+
 export interface GachaShopItem {
   key: string;
   label: string;
