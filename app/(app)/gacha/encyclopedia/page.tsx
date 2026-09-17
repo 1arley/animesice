@@ -8,6 +8,7 @@ import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { safeImageSrc } from "@/lib/url";
 import { GACHA_TIERS, RARITY } from "@/components/gacha/GachaCard";
+import { WishlistButton } from "@/components/gacha/WishlistButton";
 import type { GachaEncyclopedia } from "@/types";
 
 function Encyclopedia() {
@@ -78,13 +79,20 @@ function Encyclopedia() {
   }, [authLoading, queryString, requestKey, retry]);
 
   useEffect(() => {
-    if (typedSearch.trim().length < 2) { setSuggestions([]); return; }
+    if (typedSearch.trim().length < 2) {
+      setSuggestions([]);
+      return;
+    }
     const controller = new AbortController();
     const timer = setTimeout(() => {
-      void api.gachaEncyclopediaSuggestions(typedSearch.trim(), controller.signal)
+      void api
+        .gachaEncyclopediaSuggestions(typedSearch.trim(), controller.signal)
         .then(setSuggestions, () => setSuggestions([]));
     }, 250);
-    return () => { clearTimeout(timer); controller.abort(); };
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
   }, [typedSearch]);
 
   function href(changes: Record<string, string>) {
@@ -187,7 +195,9 @@ function Encyclopedia() {
           className="min-w-0 flex-1 border border-hairline bg-panel p-3 text-snow"
         />
         <datalist id="encyclopedia-suggestions">
-          {suggestions.map((item) => <option key={item} value={item} />)}
+          {suggestions.map((item) => (
+            <option key={item} value={item} />
+          ))}
         </datalist>
         <button className="btn-ice px-4 py-3" type="submit">
           Buscar
@@ -279,36 +289,43 @@ function Encyclopedia() {
           ) : isSets ? (
             <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {data.sets.map((set) => (
-                <Link
-                  key={set.animeId ?? "orphan"}
-                  href={href({
-                    animeId: set.animeId ?? "orphan",
-                    title: set.animeTitle,
-                    search: "",
-                    rarity: "",
-                    ownership: "",
-                  })}
-                  className="border border-hairline bg-panel p-5 transition-colors hover:border-ice"
-                >
-                  <h2 className="font-display text-body-lg text-snow">
-                    {set.animeTitle}
-                  </h2>
-                  <p className="mt-3 text-body-sm text-mist">
-                    {set.owned}/{set.total} cartas ·{" "}
-                    {set.complete
-                      ? "Completo"
-                      : `${set.total - set.owned} faltantes`}
-                  </p>
-                  <progress
-                    aria-label={`Progresso de ${set.animeTitle}`}
-                    value={set.owned}
-                    max={set.total}
-                    className="mt-3 h-2 w-full accent-ice"
-                  />
-                  <span className="mt-3 block text-body-sm text-ice">
-                    Ver cartas
-                  </span>
-                </Link>
+                <article key={set.animeId ?? "orphan"}>
+                  <Link
+                    href={href({
+                      animeId: set.animeId ?? "orphan",
+                      title: set.animeTitle,
+                      search: "",
+                      rarity: "",
+                      ownership: "",
+                    })}
+                    className="block border border-hairline bg-panel p-5 transition-colors hover:border-ice"
+                  >
+                    <h2 className="font-display text-body-lg text-snow">
+                      {set.animeTitle}
+                    </h2>
+                    <p className="mt-3 text-body-sm text-mist">
+                      {set.owned}/{set.total} cartas ·{" "}
+                      {set.complete
+                        ? "Completo"
+                        : `${set.total - set.owned} faltantes`}
+                    </p>
+                    <progress
+                      aria-label={`Progresso de ${set.animeTitle}`}
+                      value={set.owned}
+                      max={set.total}
+                      className="mt-3 h-2 w-full accent-ice"
+                    />
+                    <span className="mt-3 block text-body-sm text-ice">
+                      Ver cartas
+                    </span>
+                  </Link>
+                  {set.animeId && (
+                    <WishlistButton
+                      animeId={set.animeId}
+                      initialWishlisted={set.wishlisted}
+                    />
+                  )}
+                </article>
               ))}
             </div>
           ) : (
@@ -341,6 +358,11 @@ function Encyclopedia() {
                     <p className="mt-1 text-caption text-mist">
                       {card.animeTitle ?? "Sem anime"} · {card.rarity}
                     </p>
+                    <WishlistButton
+                      cardId={card.id}
+                      initialWishlisted={card.wishlisted}
+                      disabled={card.owned && !card.wishlisted}
+                    />
                   </article>
                 );
               })}

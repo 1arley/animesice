@@ -231,6 +231,11 @@ export default function GachaMarketPage() {
                     {listing.user.name?.trim() || listing.user.userName} ·{" "}
                     {humansLeft(listing.expiresAt)}
                   </p>
+                  {listing.interestedCount ? (
+                    <p className="text-center text-caption text-ice">
+                      {listing.interestedCount} interessado{listing.interestedCount === 1 ? "" : "s"}
+                    </p>
+                  ) : null}
                   <button
                     type="button"
                     onClick={() =>
