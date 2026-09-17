@@ -100,10 +100,7 @@ export default async function WatchPage({
   const number = Number(numberParam);
   if (Number.isNaN(number)) notFound();
 
-  // O stream é deliberadamente resolvido depois do primeiro paint. Extração,
-  // retries ou indisponibilidade do vídeo não podem bloquear o HTML do episódio.
-  // A flag server-side oferece rollback operacional sem alterar o bundle.
-  const fastShellEnabled = process.env.EPISODE_FAST_SHELL_ENABLED !== "false";
+  const fastShellEnabled = process.env.EPISODE_FAST_SHELL_ENABLED === "true";
   const [episode, initialSource] = fastShellEnabled
     ? [await getEpisode(slug, numberParam), null]
     : await Promise.all([

@@ -70,6 +70,11 @@ const nextConfig: NextConfig = {
   async redirects() {
     return [
       {
+        source: "/favicon.ico",
+        destination: "/icons/favicon.ico",
+        permanent: true,
+      },
+      {
         source: "/pedidos",
         destination: "/comunidade/pedidos",
         permanent: true,
