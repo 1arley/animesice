@@ -46,7 +46,10 @@ export default function AdminGenerosPage() {
     setError(null);
     setSuccess(null);
     try {
-      const created = await api.adminCreateGenre({ slug: slug.trim(), name: name.trim() });
+      const created = await api.adminCreateGenre({
+        slug: slug.trim(),
+        name: name.trim(),
+      });
       setGenres((prev) => [...prev, created].sort((a, b) => a.name.localeCompare(b.name)));
       setSuccess(`Gênero "${created.name}" criado.`);
       setSlug("");
@@ -76,13 +79,7 @@ export default function AdminGenerosPage() {
     }
   }
 
-  const filteredGenres = search
-    ? genres.filter(
-        (g) =>
-          g.name.toLowerCase().includes(search.toLowerCase()) ||
-          g.slug.toLowerCase().includes(search.toLowerCase()),
-      )
-    : genres;
+  const filteredGenres = search ? genres.filter((g) => g.name.toLowerCase().includes(search.toLowerCase()) || g.slug.toLowerCase().includes(search.toLowerCase())) : genres;
 
   return (
     <>
@@ -93,21 +90,11 @@ export default function AdminGenerosPage() {
           {genres.length} total
         </span>
       </div>
-      <p className="text-body-sm text-mist">
-        Cadastrar e listar gêneros disponíveis no catálogo.
-      </p>
+      <p className="text-body-sm text-mist">Cadastrar e listar gêneros disponíveis no catálogo.</p>
 
-      {error && (
-        <div className="mt-4 border border-signal/40 bg-signal/10 p-3 text-body-sm text-signal">
-          {error}
-        </div>
-      )}
+      {error && <div className="mt-4 border border-signal/40 bg-signal/10 p-3 text-body-sm text-signal">{error}</div>}
 
-      {success && (
-        <div className="mt-4 border border-ice/40 bg-ice/10 p-3 text-body-sm text-ice">
-          {success}
-        </div>
-      )}
+      {success && <div className="mt-4 border border-ice/40 bg-ice/10 p-3 text-body-sm text-ice">{success}</div>}
 
       <section className="mt-6 admin-card p-5">
         <h2 className="shelf-label">Novo gênero</h2>
@@ -116,27 +103,13 @@ export default function AdminGenerosPage() {
             <label htmlFor="genero-nome" className="mb-1.5 block font-mono text-caption uppercase tracking-wider text-mist">
               Nome
             </label>
-            <input
-              id="genero-nome"
-              type="text"
-              value={name}
-              onChange={(e) => handleNameChange(e.target.value)}
-              placeholder="Ex: Ação"
-              className="field"
-            />
+            <input id="genero-nome" type="text" value={name} onChange={(e) => handleNameChange(e.target.value)} placeholder="Ex: Ação" className="field" />
           </div>
           <div>
             <label htmlFor="genero-slug" className="mb-1.5 block font-mono text-caption uppercase tracking-wider text-mist">
               Slug
             </label>
-            <input
-              id="genero-slug"
-              type="text"
-              value={slug}
-              onChange={(e) => setSlug(e.target.value)}
-              placeholder="acao"
-              className="field font-mono"
-            />
+            <input id="genero-slug" type="text" value={slug} onChange={(e) => setSlug(e.target.value)} placeholder="acao" className="field font-mono" />
           </div>
           <div className="flex items-end">
             <button type="submit" disabled={creating} className="btn-ice">
@@ -147,7 +120,7 @@ export default function AdminGenerosPage() {
       </section>
 
       <section className="mt-6">
-        <div className="flex items-center gap-3">
+        <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center">
           <h2 className="shelf-label">Lista</h2>
           <input
             type="search"
@@ -160,19 +133,17 @@ export default function AdminGenerosPage() {
               if (debounceRef.current) clearTimeout(debounceRef.current);
               debounceRef.current = setTimeout(() => setSearch(value), 100);
             }}
-            className="ml-auto w-full max-w-xs border border-hairline bg-panel px-3 py-1.5 text-body-sm text-snow placeholder:text-mist focus:border-ice focus:outline-none"
+            className="w-full border border-hairline bg-panel px-3 py-2.5 text-body-sm text-snow placeholder:text-mist focus:border-ice focus:outline-none sm:ml-auto sm:max-w-xs"
           />
         </div>
 
         {loading ? (
           <div className="admin-empty mt-4">Carregando...</div>
         ) : filteredGenres.length === 0 ? (
-          <div className="admin-empty mt-4">
-            {search ? `Nenhum gênero encontrado para "${search}".` : "Nenhum gênero cadastrado."}
-          </div>
+          <div className="admin-empty mt-4">{search ? `Nenhum gênero encontrado para "${search}".` : "Nenhum gênero cadastrado."}</div>
         ) : (
-          <div className="mt-4 overflow-x-auto border border-hairline">
-            <table className="admin-table">
+          <div className="mt-4 border border-hairline md:overflow-x-auto">
+            <table className="admin-table admin-table-responsive">
               <thead>
                 <tr>
                   <th>Nome</th>
@@ -182,8 +153,10 @@ export default function AdminGenerosPage() {
               <tbody>
                 {filteredGenres.map((g) => (
                   <tr key={g.id}>
-                    <td className="text-snow">{g.name}</td>
-                    <td>
+                    <td data-label="Nome" className="text-snow">
+                      {g.name}
+                    </td>
+                    <td data-label="Slug">
                       <code className="text-mist">{g.slug}</code>
                     </td>
                   </tr>

@@ -82,214 +82,146 @@ export default function AdminCreateAnimePage() {
           ← Painel
         </Link>
       </p>
-        <h1 className="font-display text-display-xl text-snow">Criar anime manual</h1>
-        <p className="mt-2 text-body-sm text-mist">
-          Cadastro manual de anime. Para metadados automáticos (capa, sinopse,
-          gêneros), use a{" "}
-          <Link href="/admin/import" className="text-ice transition-colors hover:opacity-70">
-            importação do AniList
-          </Link>.
-        </p>
+      <h1 className="font-display text-display-xl text-snow">Criar anime manual</h1>
+      <p className="mt-2 text-body-sm text-mist">
+        Cadastro manual de anime. Para metadados automáticos (capa, sinopse, gêneros), use a{" "}
+        <Link href="/admin/import" className="text-ice transition-colors hover:opacity-70">
+          importação do AniList
+        </Link>
+        .
+      </p>
 
-        <form onSubmit={submit} className="mt-6 space-y-4">
+      <form onSubmit={submit} className="mt-6 space-y-4">
+        <label className="block">
+          <span className="mb-1.5 block font-sans text-caption uppercase tracking-wider text-mist">Título *</span>
+          <input className="field" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="ex: Sousou no Frieren" required />
+        </label>
+
+        <label className="block">
+          <span className="mb-1.5 block font-sans text-caption uppercase tracking-wider text-mist">Slug (URL)</span>
+          <input
+            className="field"
+            value={computedSlug}
+            onChange={(e) => {
+              setSlug(e.target.value);
+              setSlugTouched(true);
+            }}
+            placeholder="gerado automaticamente do título"
+          />
+          <span className="mt-1 block text-caption text-mist">Identificador único na URL. Auto-gerado do título; editável se necessário.</span>
+        </label>
+
+        <label className="block">
+          <span className="mb-1.5 block font-sans text-caption uppercase tracking-wider text-mist">Sinopse</span>
+          <textarea className="field min-h-[80px]" value={synopsis} onChange={(e) => setSynopsis(e.target.value)} placeholder="Descrição do anime..." />
+        </label>
+
+        <label className="block">
+          <span className="mb-1.5 block font-sans text-caption uppercase tracking-wider text-mist">Capa (URL da imagem)</span>
+          <input className="field" value={coverImage} onChange={(e) => setCoverImage(e.target.value)} placeholder="https://.../cover.jpg" />
+        </label>
+
+        <label className="block">
+          <span className="mb-1.5 block font-sans text-caption uppercase tracking-wider text-mist">Banner (URL da imagem)</span>
+          <input className="field" value={bannerImage} onChange={(e) => setBannerImage(e.target.value)} placeholder="https://.../banner.jpg" />
+        </label>
+
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <label className="block">
-            <span className="mb-1.5 block font-sans text-caption uppercase tracking-wider text-mist">
-              Título *
-            </span>
-            <input
-              className="field"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="ex: Sousou no Frieren"
-              required
-            />
+            <span className="mb-1.5 block font-sans text-caption uppercase tracking-wider text-mist">Status</span>
+            <select className="field" value={status} onChange={(e) => setStatus(e.target.value)}>
+              <option value="LANCAMENTO">Lançamento</option>
+              <option value="FINALIZADO">Finalizado</option>
+              <option value="EM_BREVE">Em breve</option>
+              <option value="PAUSADO">Pausado</option>
+            </select>
           </label>
 
-          <label className="block">
-            <span className="mb-1.5 block font-sans text-caption uppercase tracking-wider text-mist">
-              Slug (URL)
-            </span>
-            <input
-              className="field"
-              value={computedSlug}
-              onChange={(e) => {
-                setSlug(e.target.value);
-                setSlugTouched(true);
-              }}
-              placeholder="gerado automaticamente do título"
-            />
-            <span className="mt-1 block text-caption text-mist">
-              Identificador único na URL. Auto-gerado do título; editável se necessário.
-            </span>
-          </label>
-
-          <label className="block">
-            <span className="mb-1.5 block font-sans text-caption uppercase tracking-wider text-mist">
-              Sinopse
-            </span>
-            <textarea
-              className="field min-h-[80px]"
-              value={synopsis}
-              onChange={(e) => setSynopsis(e.target.value)}
-              placeholder="Descrição do anime..."
-            />
-          </label>
-
-          <label className="block">
-            <span className="mb-1.5 block font-sans text-caption uppercase tracking-wider text-mist">
-              Capa (URL da imagem)
-            </span>
-            <input
-              className="field"
-              value={coverImage}
-              onChange={(e) => setCoverImage(e.target.value)}
-              placeholder="https://.../cover.jpg"
-            />
-          </label>
-
-          <label className="block">
-            <span className="mb-1.5 block font-sans text-caption uppercase tracking-wider text-mist">
-              Banner (URL da imagem)
-            </span>
-            <input
-              className="field"
-              value={bannerImage}
-              onChange={(e) => setBannerImage(e.target.value)}
-              placeholder="https://.../banner.jpg"
-            />
-          </label>
-
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <label className="block">
-              <span className="mb-1.5 block font-sans text-caption uppercase tracking-wider text-mist">
-                Status
-              </span>
-              <select
-                className="field"
-                value={status}
-                onChange={(e) => setStatus(e.target.value)}
-              >
-                <option value="LANCAMENTO">Lançamento</option>
-                <option value="FINALIZADO">Finalizado</option>
-                <option value="EM_BREVE">Em breve</option>
-                <option value="PAUSADO">Pausado</option>
-              </select>
-            </label>
-
-            <div className="border border-hairline bg-panel p-3">
-              <span className="block font-sans text-caption uppercase tracking-wider text-mist">
-                Áudio detectado
-              </span>
-              <strong className="mt-1 block text-body-sm text-snow">
-                {animeAudioLabelFromTitle(title)}
-              </strong>
-              <span className="mt-1 block text-caption text-mist">
-                Inclua “Dublado” no título para cadastrar essa versão.
-              </span>
-            </div>
+          <div className="border border-hairline bg-panel p-3">
+            <span className="block font-sans text-caption uppercase tracking-wider text-mist">Áudio detectado</span>
+            <strong className="mt-1 block text-body-sm text-snow">{animeAudioLabelFromTitle(title)}</strong>
+            <span className="mt-1 block text-caption text-mist">Inclua “Dublado” no título para cadastrar essa versão.</span>
           </div>
+        </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <label className="block">
-              <span className="mb-1.5 block font-sans text-caption uppercase tracking-wider text-mist">
-                Rating (0-10)
-              </span>
-              <input
-                className="field"
-                value={rating}
-                onChange={(e) => setRating(e.target.value)}
-                placeholder="ex: 8.5"
-                inputMode="decimal"
-              />
-            </label>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <label className="block">
+            <span className="mb-1.5 block font-sans text-caption uppercase tracking-wider text-mist">Rating (0-10)</span>
+            <input className="field" value={rating} onChange={(e) => setRating(e.target.value)} placeholder="ex: 8.5" inputMode="decimal" />
+          </label>
 
-            <label className="block">
-              <span className="mb-1.5 block font-sans text-caption uppercase tracking-wider text-mist">
-                Classificação etária
-              </span>
-              <select
-                className="field"
-                value={ageRating}
-                onChange={(e) => setAgeRating(e.target.value)}
-              >
-                <option value="A10">A10</option>
-                <option value="A14">A14</option>
-                <option value="A16">A16</option>
-                <option value="A18">A18</option>
-              </select>
-            </label>
-          </div>
+          <label className="block">
+            <span className="mb-1.5 block font-sans text-caption uppercase tracking-wider text-mist">Classificação etária</span>
+            <select className="field" value={ageRating} onChange={(e) => setAgeRating(e.target.value)}>
+              <option value="A10">A10</option>
+              <option value="A14">A14</option>
+              <option value="A16">A16</option>
+              <option value="A18">A18</option>
+            </select>
+          </label>
+        </div>
 
-          {genres.length > 0 && (
-            <div>
-              <span className="mb-2 block font-sans text-caption uppercase tracking-wider text-mist">
-                Gêneros
-              </span>
-              <div className="flex flex-wrap gap-2">
-                {genres.map((g) => {
-                  const active = genreSlugSet.has(g.slug);
-                  return (
-                    <button
-                      key={g.slug}
-                      type="button"
-                      onClick={() => {
-                        setGenreSlugs((prev) => {
-                          const next = new Set(prev);
-                          if (next.has(g.slug)) next.delete(g.slug);
-                          else next.add(g.slug);
-                          return [...next];
-                        });
-                      }}
-                      className={
-                        active
-                          ? "btn-ice text-caption"
-                          : "btn-ghost text-caption"
-                      }
-                    >
-                      {g.name}
-                    </button>
-                  );
-                })}
-              </div>
-              <span className="mt-1 block text-caption text-mist">
-                {genreSlugs.length} selecionado(s)
-              </span>
+        {genres.length > 0 && (
+          <div>
+            <span className="mb-2 block font-sans text-caption uppercase tracking-wider text-mist">Gêneros</span>
+            <div className="flex flex-wrap gap-2">
+              {genres.map((g) => {
+                const active = genreSlugSet.has(g.slug);
+                return (
+                  <button
+                    key={g.slug}
+                    type="button"
+                    onClick={() => {
+                      setGenreSlugs((prev) => {
+                        const next = new Set(prev);
+                        if (next.has(g.slug)) next.delete(g.slug);
+                        else next.add(g.slug);
+                        return [...next];
+                      });
+                    }}
+                    className={active ? "btn-ice text-caption" : "btn-ghost text-caption"}
+                  >
+                    {g.name}
+                  </button>
+                );
+              })}
             </div>
-          )}
-
-          {error && (
-            <p role="alert" className="border border-signal/40 bg-signal/10 p-3 text-body-sm text-signal">
-              {error}
-            </p>
-          )}
-
-          <button type="submit" disabled={submitting} className="btn-ice">
-            {submitting ? "Criando..." : "Criar anime"}
-          </button>
-        </form>
-
-        {result && (
-          <div className="mt-6 border border-hairline bg-panel p-4">
-            <p className="text-body-sm text-ice">Anime criado com sucesso!</p>
-            <p className="mt-1 text-body text-snow">
-              <strong>{result.title}</strong>{" "}
-              <code className="text-mist">/{result.slug}</code>
-            </p>
-            <p className="mt-2 flex gap-3 text-body-sm">
-              <Link href={`/animes/${result.slug}`} className="text-ice transition-colors hover:opacity-70">
-                ver no site
-              </Link>
-              <span className="text-hairline">·</span>
-              <Link href={`/admin/episode/${result.slug}/1`} className="text-ice transition-colors hover:opacity-70">
-                editar ep 1
-              </Link>
-              <span className="text-hairline">·</span>
-              <Link href={`/admin/create-episode/${result.slug}`} className="text-ice transition-colors hover:opacity-70">
-                criar episódio
-              </Link>
-            </p>
+            <span className="mt-1 block text-caption text-mist">{genreSlugs.length} selecionado(s)</span>
           </div>
         )}
+
+        {error && (
+          <p role="alert" className="border border-signal/40 bg-signal/10 p-3 text-body-sm text-signal">
+            {error}
+          </p>
+        )}
+
+        <button type="submit" disabled={submitting} className="btn-ice">
+          {submitting ? "Criando..." : "Criar anime"}
+        </button>
+      </form>
+
+      {result && (
+        <div className="mt-6 border border-hairline bg-panel p-4">
+          <p className="text-body-sm text-ice">Anime criado com sucesso!</p>
+          <p className="mt-1 text-body text-snow">
+            <strong>{result.title}</strong> <code className="text-mist">/{result.slug}</code>
+          </p>
+          <p className="mt-2 flex gap-3 text-body-sm">
+            <Link href={`/animes/${result.slug}`} className="text-ice transition-colors hover:opacity-70">
+              ver no site
+            </Link>
+            <span className="text-hairline">·</span>
+            <Link href={`/admin/episode/${result.slug}/1`} className="text-ice transition-colors hover:opacity-70">
+              editar ep 1
+            </Link>
+            <span className="text-hairline">·</span>
+            <Link href={`/admin/create-episode/${result.slug}`} className="text-ice transition-colors hover:opacity-70">
+              criar episódio
+            </Link>
+          </p>
+        </div>
+      )}
     </div>
   );
 }
