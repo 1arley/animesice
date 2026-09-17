@@ -6,6 +6,7 @@ import { api, ApiError } from "@/lib/api";
 import type {
   GachaFeatured,
   GachaPull,
+  GachaWishlistResponse,
   PublicUserProfile,
   PublicActivityEvent,
   UserRating,
@@ -26,6 +27,7 @@ import { ProfileRatings } from "@/components/profile/ProfileRatings";
 import { ProfileCollection } from "@/components/profile/ProfileCollection";
 import { ProfileGacha } from "@/components/profile/ProfileGacha";
 import { ProfileFollowList } from "@/components/profile/ProfileFollowList";
+import { ProfileWishlist } from "@/components/profile/ProfileWishlist";
 
 const LIMIT = 24;
 
@@ -39,6 +41,7 @@ const TAB_ALIASES: Record<string, ProfileTab> = {
   activity: "activity",
   collection: "collection",
   gacha: "gacha",
+  wishlist: "wishlist",
 };
 
 export default function PublicProfilePage({
@@ -96,6 +99,9 @@ export default function PublicProfilePage({
   const [tabGachaPage, setTabGachaPage] = useState(1);
   const [tabGachaHasMore, setTabGachaHasMore] = useState(false);
   const [tabGachaPrivate, setTabGachaPrivate] = useState(false);
+  const [tabWishlist, setTabWishlist] = useState<GachaWishlistResponse | null>(
+    null,
+  );
   const [featuredCard, setFeaturedCard] = useState<GachaFeatured | null>(null);
 
   useEffect(() => {
@@ -134,6 +140,7 @@ export default function PublicProfilePage({
       setTabFollowersTotal(0);
       setTabFollowersPage(1);
       setTabFollowersHasMore(false);
+      setTabWishlist(null);
       setCollectionStatus("ALL");
       setTabList([]);
       setTabListTotal(0);
@@ -352,6 +359,9 @@ export default function PublicProfilePage({
           }
         }
       }
+      if (tab === "wishlist" && !tabWishlist) {
+        setTabWishlist(await api.gachaWishlist(profile.id));
+      }
       if (tab === "following" && tabFollowing.length === 0) {
         const res = await api.getFollowingForUser(profile.id, 1, LIMIT);
         setTabFollowing(res.data ?? []);
@@ -516,6 +526,13 @@ export default function PublicProfilePage({
                 </button>
               )}
             </>
+          )}
+
+          {activeTab === "wishlist" && (
+            <ProfileWishlist
+              data={tabWishlist}
+              loading={tabLoading && !tabWishlist}
+            />
           )}
 
           {activeTab === "following" && (

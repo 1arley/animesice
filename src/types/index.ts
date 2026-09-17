@@ -1,8 +1,8 @@
 // Animesice - Tipos alinhados com o Prisma (backend animesice-back/schema.prisma)
 
-export type AnimeFormat = 'TV' | 'MOVIE' | 'OVA' | 'ONA' | 'SPECIAL' | 'MUSIC';
-export type AnimeSeason = 'WINTER' | 'SPRING' | 'SUMMER' | 'FALL';
-export type SortMode = 'recentlyAdded' | 'rating' | 'views' | 'year' | 'title';
+export type AnimeFormat = "TV" | "MOVIE" | "OVA" | "ONA" | "SPECIAL" | "MUSIC";
+export type AnimeSeason = "WINTER" | "SPRING" | "SUMMER" | "FALL";
+export type SortMode = "recentlyAdded" | "rating" | "views" | "year" | "title";
 
 export interface AnimeSchedule {
   id: string;
@@ -43,7 +43,7 @@ export interface Anime {
   rating: number | null;
   ageRating: string | null;
   status: string;
-  audio: 'LEGENDADO' | 'DUBLADO';
+  audio: "LEGENDADO" | "DUBLADO";
   format?: AnimeFormat | null;
   year?: number | null;
   season?: AnimeSeason | null;
@@ -315,24 +315,24 @@ export interface ActivityAnime {
  */
 export type PublicActivityEvent =
   | {
-      type: 'watch';
+      type: "watch";
       episodeNumber: number;
       anime: ActivityAnime;
       createdAt: string;
     }
   | {
-      type: 'rating';
+      type: "rating";
       score: number;
       anime: ActivityAnime;
       createdAt: string;
     }
   | {
-      type: 'favorite';
+      type: "favorite";
       anime: ActivityAnime;
       createdAt: string;
     }
   | {
-      type: 'comment';
+      type: "comment";
       id: string;
       content: string;
       edited: boolean;
@@ -386,7 +386,8 @@ export interface AnimeFilters {
 }
 
 /** Watchlist item (UserAnimeList). */
-export type WatchStatus = 'PLANNING' | 'WATCHING' | 'COMPLETED' | 'ON_HOLD' | 'DROPPED';
+export type WatchStatus =
+  "PLANNING" | "WATCHING" | "COMPLETED" | "ON_HOLD" | "DROPPED";
 
 export interface UserAnimeListItem {
   userId: string;
@@ -411,15 +412,15 @@ export interface CheckListResponse {
 
 /** Notification preferences. */
 export type NotificationType =
-  | 'NEW_EPISODE'
-  | 'COMMENT_REPLY'
-  | 'COMMENT_LIKE'
-  | 'MODERATION_ACTION'
-  | 'SYSTEM'
-  | 'POST_LIKE'
-  | 'POST_COMMENT'
-  | 'NEW_FOLLOW';
-export type NotificationChannel = 'IN_APP' | 'EMAIL';
+  | "NEW_EPISODE"
+  | "COMMENT_REPLY"
+  | "COMMENT_LIKE"
+  | "MODERATION_ACTION"
+  | "SYSTEM"
+  | "POST_LIKE"
+  | "POST_COMMENT"
+  | "NEW_FOLLOW";
+export type NotificationChannel = "IN_APP" | "EMAIL";
 
 export interface NotificationPreference {
   id: string;
@@ -440,10 +441,12 @@ export interface PrivacySettings {
 }
 
 /** Moderation report. */
-export type ReportTargetType = 'COMMENT' | 'CHAT_MESSAGE' | 'USER' | 'ANIME' | 'POST' | 'POST_COMMENT';
-export type ReportReason = 'SPAM' | 'HARASSMENT' | 'NSFW' | 'SPOILER' | 'ILLEGAL' | 'OTHER';
-export type ReportStatusType = 'PENDING' | 'RESOLVED' | 'DISMISSED';
-export type ModerationActionType = 'WARN' | 'MUTE' | 'BAN' | 'DELETE_CONTENT';
+export type ReportTargetType =
+  "COMMENT" | "CHAT_MESSAGE" | "USER" | "ANIME" | "POST" | "POST_COMMENT";
+export type ReportReason =
+  "SPAM" | "HARASSMENT" | "NSFW" | "SPOILER" | "ILLEGAL" | "OTHER";
+export type ReportStatusType = "PENDING" | "RESOLVED" | "DISMISSED";
+export type ModerationActionType = "WARN" | "MUTE" | "BAN" | "DELETE_CONTENT";
 
 export interface ReportItem {
   id: string;
@@ -619,11 +622,12 @@ export interface GachaListing {
   id: string;
   userId: string;
   price: number;
-  status: 'ACTIVE' | 'SOLD' | 'CANCELLED' | 'EXPIRED';
+  status: "ACTIVE" | "SOLD" | "CANCELLED" | "EXPIRED";
   expiresAt: string;
   createdAt: string;
   user: SocialUser;
   userCard: GachaPull;
+  interestedCount?: number;
 }
 
 export interface GachaListingPage {
@@ -631,7 +635,14 @@ export interface GachaListingPage {
   meta: { page: number; limit: number; total: number; totalPages: number };
 }
 
-export type GachaPointEventType = 'MINT' | 'SPEND' | 'SALE' | 'TAX' | 'ADMIN';
+export interface GachaInterestedUser {
+  id: string;
+  name: string | null;
+  userName: string | null;
+  avatar: string | null;
+}
+
+export type GachaPointEventType = "MINT" | "SPEND" | "SALE" | "TAX" | "ADMIN";
 
 export interface GachaPointEvent {
   id: string;
@@ -648,7 +659,16 @@ export interface GachaPointsPage {
   meta: { page: number; limit: number; total: number };
 }
 
-export type CrystalEventType = 'INITIAL' | 'MINT' | 'DAILY' | 'SPEND' | 'PURCHASE' | 'SALE' | 'TAX' | 'ADMIN' | 'BURN';
+export type CrystalEventType =
+  | "INITIAL"
+  | "MINT"
+  | "DAILY"
+  | "SPEND"
+  | "PURCHASE"
+  | "SALE"
+  | "TAX"
+  | "ADMIN"
+  | "BURN";
 
 export interface CrystalEvent {
   id: string;
@@ -687,7 +707,7 @@ export interface GachaBypassCheckout {
   amountCents: number;
 }
 
-export type GachaBypassStatus = 'PENDING' | 'PAID' | 'EXPIRED';
+export type GachaBypassStatus = "PENDING" | "PAID" | "EXPIRED";
 
 /** Coleção de cartas com stats. */
 export interface GachaCollectionResponse {
@@ -711,6 +731,8 @@ export interface GachaEncyclopediaCard {
   animeId: string | null;
   animeTitle: string | null;
   owned: boolean;
+  wishlisted: boolean;
+  wishlistPriority: string | null;
 }
 
 export interface GachaEncyclopediaSet {
@@ -720,19 +742,60 @@ export interface GachaEncyclopediaSet {
   total: number;
   owned: number;
   complete: boolean;
+  wishlisted: boolean;
 }
 
 export interface GachaEncyclopedia {
-  view: 'cards' | 'sets';
+  view: "cards" | "sets";
   cards: GachaEncyclopediaCard[];
   sets: GachaEncyclopediaSet[];
   meta: { total: number; page: number; limit: number; totalPages: number };
 }
 
+export type WishlistPriority = "LOW" | "NORMAL" | "HIGH";
+
+export interface GachaWishlistCard {
+  id: string;
+  cardId: string;
+  priority: WishlistPriority;
+  acceptedFoils: string[];
+  minCondition: string | null;
+  maxEdition: number | null;
+  complete: boolean;
+  card: GachaEncyclopediaCard & {
+    anime: { id: string; slug: string; title: string } | null;
+  };
+}
+
+export interface GachaWishlistSet {
+  id: string;
+  animeId: string;
+  priority: WishlistPriority;
+  total: number;
+  owned: number;
+  complete: boolean;
+  anime: { id: string; slug: string; title: string; coverImage: string | null };
+}
+
+export interface GachaWishlistResponse {
+  private: boolean;
+  isPublic: boolean;
+  cards: GachaWishlistCard[];
+  sets: GachaWishlistSet[];
+  meta: {
+    cards: number;
+    sets: number;
+    page?: number;
+    limit?: number;
+    totalPages?: number;
+  };
+}
+
 /** Carta destaque — setComplete sinaliza conjunto completo (prestígio no perfil). */
 export type GachaFeatured = GachaPull & { setComplete?: boolean };
 
-export type GachaTradeStatus = 'PENDING' | 'COMPLETED' | 'CANCELLED' | 'EXPIRED';
+export type GachaTradeStatus =
+  "PENDING" | "COMPLETED" | "CANCELLED" | "EXPIRED";
 
 /** Troca 1:1 entre dois usuários — escrow confirmado pelo receptor. */
 export interface GachaTrade {
@@ -755,7 +818,8 @@ export interface GachaTrade {
  *  - activity: evento público (watch/rating/favorite/comment) com o autor
  */
 export type FeedItem =
-  { type: 'post'; post: SocialPost } | { type: 'activity'; event: PublicActivityEvent; user: SocialUser };
+  | { type: "post"; post: SocialPost }
+  | { type: "activity"; event: PublicActivityEvent; user: SocialUser };
 
 /** Resultado da busca/diretório de usuários (GET /users). */
 export interface UserSearchResult {
@@ -776,7 +840,8 @@ export interface UserSearchResult {
 }
 
 /** Anime request (community). */
-export type FeedbackStatus = 'OPEN' | 'ACKNOWLEDGED' | 'RESOLVED' | 'WONT_FIX' | 'COMPLETED' | 'REJECTED';
+export type FeedbackStatus =
+  "OPEN" | "ACKNOWLEDGED" | "RESOLVED" | "WONT_FIX" | "COMPLETED" | "REJECTED";
 
 export interface AnimeRequestItem {
   id: string;
@@ -799,7 +864,7 @@ export interface AnimeRequestItem {
 }
 
 /** Site feedback (suggestion/bug). */
-export type FeedbackType = 'SUGGESTION' | 'BUG' | 'REQUEST';
+export type FeedbackType = "SUGGESTION" | "BUG" | "REQUEST";
 
 export interface SiteFeedbackItem {
   id: string;

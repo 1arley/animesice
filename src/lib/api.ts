@@ -51,6 +51,8 @@ import type {
   GachaCollectionResponse,
   GachaRankingEntry,
   GachaEncyclopedia,
+  GachaWishlistResponse,
+  GachaInterestedUser,
   GachaFeatured,
   GachaTrade,
   UserSearchResult,
@@ -1348,14 +1350,28 @@ export const api = {
     }),
   adminUpdateGachaCard: (
     id: string,
-    body: { name?: string; image?: string; rarity?: string; animeId?: string; status?: string; variantName?: string; variantType?: string },
+    body: {
+      name?: string;
+      image?: string;
+      rarity?: string;
+      animeId?: string;
+      status?: string;
+      variantName?: string;
+      variantType?: string;
+    },
   ) =>
     request<AdminGachaCard>(`/gacha/admin/cards/${id}`, {
       method: "PATCH",
       body: JSON.stringify(body),
     }),
-  adminPublishGachaCard: (id: string) => request<AdminGachaCard>(`/gacha/admin/cards/${id}/publish`, { method: "POST" }),
-  adminArchiveGachaCard: (id: string) => request<AdminGachaCard>(`/gacha/admin/cards/${id}/archive`, { method: "POST" }),
+  adminPublishGachaCard: (id: string) =>
+    request<AdminGachaCard>(`/gacha/admin/cards/${id}/publish`, {
+      method: "POST",
+    }),
+  adminArchiveGachaCard: (id: string) =>
+    request<AdminGachaCard>(`/gacha/admin/cards/${id}/archive`, {
+      method: "POST",
+    }),
   adminListUserCards: (userId: string, page = 1, limit = 50) =>
     request<Paginated<GachaPull>>(
       `/gacha/admin/users/${userId}/cards?page=${page}&limit=${limit}`,
@@ -1414,9 +1430,37 @@ export const api = {
       method: "PATCH",
       body: JSON.stringify({ key }),
     }),
-  adminCardBacks: () => request<Array<{ id: string; key: string; name: string; description: string | null; svg: string; previewUrl: string | null; price: number; status: string }>>('/gacha/admin/card-backs'),
-  adminCreateCardBack: (body: { key: string; name: string; description?: string; svg: string; previewUrl?: string; price?: number; status?: string }) => request('/gacha/admin/card-backs', { method: 'POST', body: JSON.stringify(body) }),
-  adminUpdateCardBack: (id: string, body: Record<string, unknown>) => request(`/gacha/admin/card-backs/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(body) }),
+  adminCardBacks: () =>
+    request<
+      Array<{
+        id: string;
+        key: string;
+        name: string;
+        description: string | null;
+        svg: string;
+        previewUrl: string | null;
+        price: number;
+        status: string;
+      }>
+    >("/gacha/admin/card-backs"),
+  adminCreateCardBack: (body: {
+    key: string;
+    name: string;
+    description?: string;
+    svg: string;
+    previewUrl?: string;
+    price?: number;
+    status?: string;
+  }) =>
+    request("/gacha/admin/card-backs", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  adminUpdateCardBack: (id: string, body: Record<string, unknown>) =>
+    request(`/gacha/admin/card-backs/${encodeURIComponent(id)}`, {
+      method: "PATCH",
+      body: JSON.stringify(body),
+    }),
 
   gachaListings: (
     page = 1,
@@ -1451,8 +1495,7 @@ export const api = {
 
   gachaSpins: () => request<GachaSpinPreview[]>(`/gacha/spins`),
 
-  gachaSpin: () =>
-    request<GachaSpinPreview>(`/gacha/spin`, { method: "POST" }),
+  gachaSpin: () => request<GachaSpinPreview>(`/gacha/spin`, { method: "POST" }),
 
   gachaClaim: (body: { spinId: string }) =>
     request<GachaPullResponse>(`/gacha/claim`, {
@@ -1466,7 +1509,9 @@ export const api = {
     }),
 
   gachaBypass: () =>
-    request<GachaBypassCheckout | { alreadyUnlocked: true } | { unlocked: true }>(`/gacha/bypass`, {
+    request<
+      GachaBypassCheckout | { alreadyUnlocked: true } | { unlocked: true }
+    >(`/gacha/bypass`, {
       method: "POST",
     }),
 
@@ -1509,7 +1554,49 @@ export const api = {
   gachaEncyclopedia: (query: string, signal?: AbortSignal) =>
     request<GachaEncyclopedia>(`/gacha/encyclopedia?${query}`, { signal }),
   gachaEncyclopediaSuggestions: (query: string, signal?: AbortSignal) =>
-    request<string[]>(`/gacha/encyclopedia/suggestions?q=${encodeURIComponent(query)}`, { signal }),
+    request<string[]>(
+      `/gacha/encyclopedia/suggestions?q=${encodeURIComponent(query)}`,
+      { signal },
+    ),
+  gachaWishlist: (userId?: string, query = "") =>
+    request<GachaWishlistResponse>(
+      `/gacha/wishlist?${userId ? "userId=" + encodeURIComponent(userId) + "&" : ""}${query}`,
+    ),
+  gachaWishlistCard: (cardId: string, body: Record<string, unknown> = {}) =>
+    request(`/gacha/wishlist/cards/${encodeURIComponent(cardId)}`, {
+      method: "PUT",
+      body: JSON.stringify(body),
+    }),
+  gachaWishlistCardDelete: (cardId: string) =>
+    request(`/gacha/wishlist/cards/${encodeURIComponent(cardId)}`, {
+      method: "DELETE",
+    }),
+  gachaWishlistSet: (animeId: string, body: Record<string, unknown> = {}) =>
+    request(`/gacha/wishlist/sets/${encodeURIComponent(animeId)}`, {
+      method: "PUT",
+      body: JSON.stringify(body),
+    }),
+  gachaWishlistSetDelete: (animeId: string) =>
+    request(`/gacha/wishlist/sets/${encodeURIComponent(animeId)}`, {
+      method: "DELETE",
+    }),
+  gachaWishlistPrivacy: (isPublic: boolean) =>
+    request<{ gachaWishlistPublic: boolean }>("/gacha/wishlist/privacy", {
+      method: "PATCH",
+      body: JSON.stringify({ isPublic }),
+    }),
+  gachaWishlistInterested: (
+    cardId: string,
+    params: {
+      animeId?: string | null;
+      condition: number;
+      foil: string;
+      edition: number;
+    },
+  ) =>
+    request<GachaInterestedUser[]>(
+      `/gacha/wishlist/interested/${encodeURIComponent(cardId)}?animeId=${encodeURIComponent(params.animeId ?? "")}&condition=${params.condition}&foil=${encodeURIComponent(params.foil)}&edition=${params.edition}`,
+    ),
 
   gachaTradeCreate: (body: {
     offeredUserCardId: string;

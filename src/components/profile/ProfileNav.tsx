@@ -7,6 +7,7 @@ export type ProfileTab =
   | "collection"
   | "favorites"
   | "gacha"
+  | "wishlist"
   | "following"
   | "followers";
 
@@ -17,6 +18,7 @@ const TABS: Array<{ id: ProfileTab; label: string }> = [
   { id: "collection", label: "Coleção" },
   { id: "favorites", label: "Favoritos" },
   { id: "gacha", label: "Cartas" },
+  { id: "wishlist", label: "Wishlist" },
   { id: "following", label: "Seguindo" },
   { id: "followers", label: "Seguidores" },
 ];
