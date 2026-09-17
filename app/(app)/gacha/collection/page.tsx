@@ -123,7 +123,7 @@ export default function GachaCollectionPage() {
   if (!user)
     return (
       <div className="mx-auto max-w-shelf px-4 py-16">
-        <Link href="/login" className="text-ice">
+        <Link href="/entrar" className="text-ice">
           Entre para ver sua coleção.
         </Link>
       </div>
@@ -173,7 +173,7 @@ export default function GachaCollectionPage() {
           </h1>
           <p className="text-body-sm text-mist">{total} cartas</p>
         </div>
-        <Link href="/gacha/encyclopedia" className="btn-ice px-4 py-2">
+        <Link href="/gacha/enciclopedia" className="btn-ice px-4 py-2">
           Explorar enciclopédia
         </Link>
         <Link href="/gacha" className="btn-ghost px-4 py-2">
