@@ -502,6 +502,7 @@ export interface PostAnime {
   slug: string;
   title: string;
   coverImage: string | null;
+  malId?: number | null;
 }
 
 /** Post do feed social (GET /social/posts). */
@@ -535,6 +536,7 @@ export interface GachaPullMeta {
   cardId: string;
   name: string;
   image: string | null;
+  imageHidden?: boolean;
   rarity: string;
   foil: string;
   condition: number;
@@ -547,6 +549,7 @@ export interface AdminGachaCard {
   id: string;
   name: string;
   image: string | null;
+  imageHidden: boolean;
   rarity: string;
   favourites: number;
   animeId: string | null;
@@ -557,12 +560,14 @@ export interface AdminGachaCard {
   source: "MAL" | "MANUAL";
   variantName: string | null;
   variantType: string;
+  anime?: PostAnime | null;
 }
 
 export interface GachaCardInfo {
   id: string;
   name: string;
   image: string | null;
+  imageHidden: boolean;
   rarity: string;
   favourites: number;
   animeId: string | null;
@@ -578,6 +583,7 @@ export interface GachaPull {
   foil: string;
   edition: number;
   value: number;
+  valueOverride?: number | null;
   obtainedAt: string;
   user: SocialUser;
   card: GachaCardInfo;

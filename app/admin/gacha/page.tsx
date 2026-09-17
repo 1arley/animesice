@@ -33,7 +33,7 @@ export default function AdminGachaPage() {
   const [userCardsVersion, setUserCardsVersion] = useState(0);
   const [search, setSearch] = useState("");
   const [selectedUser, setSelectedUser] = useState("");
-  const [form, setForm] = useState({ name: "", image: "", rarity: "COMUM", animeId: "" });
+  const [form, setForm] = useState({ name: "", image: "", imageHidden: false, rarity: "COMUM", animeId: "", reason: "" });
   const [editing, setEditing] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const debounce = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -84,9 +84,13 @@ export default function AdminGachaPage() {
   async function saveCard(e: React.FormEvent) {
     e.preventDefault();
     try {
-      if (editing) await api.adminUpdateGachaCard(editing, form);
+      if (editing) {
+        const current = cards.find(card => card.id === editing);
+        if (current?.rarity !== form.rarity && !window.confirm("Alterar raridade recalculará todas as cópias sem override. Continuar?")) return;
+        await api.adminUpdateGachaCard(editing, form);
+      }
       else await api.adminCreateGachaCard(form);
-      setForm({ name: "", image: "", rarity: "COMUM", animeId: "" }); setEditing(null); await loadCards();
+      setForm({ name: "", image: "", imageHidden: false, rarity: "COMUM", animeId: "", reason: "" }); setEditing(null); await loadCards();
     } catch (e) { setError(e instanceof ApiError ? e.message : "Erro ao salvar carta."); }
   }
 
@@ -129,6 +133,15 @@ export default function AdminGachaPage() {
     try { await api.adminGrantUserCard(selectedUser, cardId); setUserCardsVersion(v => v + 1); } catch (e) { setError(e instanceof ApiError ? e.message : "Erro ao conceder carta."); }
   }
 
+  async function setCardValue(card: GachaPull, restore = false) {
+    const raw = restore ? null : window.prompt("Novo valor inteiro entre 0 e 1000000", String(card.value));
+    if (!restore && raw === null) return;
+    const reason = window.prompt("Motivo da alteração (mínimo 10 caracteres)");
+    if (!reason) return;
+    try { await api.adminSetUserCardValue(card.id, { value: restore ? null : Number(raw), reason }); setUserCardsVersion(v => v + 1); }
+    catch (e) { setError(e instanceof ApiError ? e.message : "Erro ao ajustar valor."); }
+  }
+
   return <div>
     <h1 className="font-display text-display-xl text-snow">Gacha</h1>
     {error && <div role="alert" className="mt-4 border border-signal/40 bg-signal/10 p-3 text-body-sm text-signal">{error}</div>}
@@ -138,6 +151,7 @@ export default function AdminGachaPage() {
         <form className="mt-4 grid gap-3" onSubmit={saveCard}>
           <input className="field" required placeholder="Personagem" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} />
           <input className="field" required type="url" placeholder="Imagem HTTPS" value={form.image} onChange={e => setForm({ ...form, image: e.target.value })} />
+          <label className="flex items-center gap-2 text-body-sm text-mist"><input type="checkbox" checked={form.imageHidden} onChange={e => setForm({ ...form, imageHidden: e.target.checked })} />Ocultar arte como ???</label>
           <input className="field" required placeholder="Buscar anime" aria-label="Buscar anime" onChange={e => void searchAnimes(e.target.value)} />
           <select className="field" required aria-label="Anime da carta" value={form.animeId} onChange={e => { const a = animes.find(x => x.id === e.target.value); setForm({ ...form, animeId: e.target.value, image: form.image || a?.coverImage || "" }); }}>
             <option value="">Selecione anime</option>
@@ -146,6 +160,7 @@ export default function AdminGachaPage() {
           <select className="field" value={form.rarity} onChange={e => setForm({ ...form, rarity: e.target.value })}>
             {TIERS.map(t => <option key={t} value={t}>{t}</option>)}
           </select>
+          {editing && <input className="field" placeholder="Motivo (obrigatório ao mudar anime ou raridade)" value={form.reason} onChange={e => setForm({ ...form, reason: e.target.value })} />}
           <button className="admin-tab w-fit" type="submit">{editing ? "Salvar" : "Criar"}</button>
         </form>
         <div className="mt-4 flex gap-2">
@@ -158,9 +173,9 @@ export default function AdminGachaPage() {
         </div>
         <p className="mt-2 font-mono text-caption text-mist-soft">{cardMeta.total} cartas · página {cardMeta.page}/{cardMeta.totalPages}</p>
         <div className="mt-2 space-y-2">{cards.map(card => <div className="flex items-center justify-between gap-2 border-b border-hairline py-2" key={card.id}>
-          <span className="min-w-0 truncate text-mist">{card.name} <small>{card.rarity} · {card.status}</small>{card.animeTitle && <small className="block text-mist-soft">{card.animeTitle}</small>}</span>
+          <span className="min-w-0 truncate text-mist">{card.name} <small>{card.rarity} · {card.status}{card.imageHidden ? " · ???" : ""}</small>{(card.anime?.title ?? card.animeTitle) && <small className="block text-mist-soft">{card.anime?.title ?? card.animeTitle}{card.anime?.malId ? ` · MAL ${card.anime.malId}` : ""}</small>}</span>
           <span className="flex flex-none gap-1">
-            <button className="admin-tab" onClick={() => { setEditing(card.id); setForm({ name: card.name, image: card.image ?? "", rarity: card.rarity, animeId: card.animeId ?? "" }); }}>Editar</button>
+            <button className="admin-tab" onClick={() => { setEditing(card.id); if (card.anime && !animes.some(a => a.id === card.anime!.id)) setAnimes(current => [...current, card.anime as Anime]); setForm({ name: card.name, image: card.image ?? "", imageHidden: card.imageHidden, rarity: card.rarity, animeId: card.animeId ?? "", reason: "" }); }}>Editar</button>
             {user?.role === "SUPERADMIN" && card.status !== "ACTIVE" && <button className="admin-tab" onClick={() => void api.adminPublishGachaCard(card.id).then(() => loadCards()).catch(e => setError(e instanceof ApiError ? e.message : "Erro ao publicar carta."))}>Publicar</button>}
             {user?.role === "SUPERADMIN" && card.status === "ACTIVE" && <button className="admin-tab" onClick={() => void api.adminArchiveGachaCard(card.id).then(() => loadCards()).catch(e => setError(e instanceof ApiError ? e.message : "Erro ao arquivar carta."))}>Arquivar</button>}
             {selectedUser && <button className="admin-tab" onClick={() => void grantCard(card.id)}>Conceder</button>}
@@ -179,8 +194,8 @@ export default function AdminGachaPage() {
           <div className="mt-4"><button className="admin-tab" onClick={() => void resetRoll()}>Reset roll</button></div>
           <p className="mt-3 font-mono text-caption text-mist-soft">{userCardsMeta.total} cartas · página {userCardsMeta.page}/{userCardsMeta.totalPages}</p>
           <div className="mt-2 space-y-2">{userCards.map(card => <div className="flex items-center justify-between border-b border-hairline py-2" key={card.id}>
-            <span className="min-w-0 truncate text-mist">{card.card.name} · {card.card.rarity}</span>
-            <button className="admin-tab flex-none" onClick={() => void removeCard(card.id)}>Excluir</button>
+            <span className="min-w-0 truncate text-mist">{card.card.name} · {card.card.rarity} · {card.value} pts{card.valueOverride !== null && card.valueOverride !== undefined ? " · override" : ""}</span>
+            <span className="flex flex-none gap-1">{user?.role === "SUPERADMIN" && <><button className="admin-tab" onClick={() => void setCardValue(card)}>Valor</button>{card.valueOverride !== null && card.valueOverride !== undefined && <button className="admin-tab" onClick={() => void setCardValue(card, true)}>Restaurar</button>}</>}<button className="admin-tab" onClick={() => void removeCard(card.id)}>Excluir</button></span>
           </div>)}</div>
           {userCardsMeta.totalPages > 1 && <div className="mt-3 flex items-center justify-between">
             <button className="admin-tab" disabled={userCardsMeta.page <= 1} onClick={() => void loadUserCards(selectedUser, userCardsMeta.page - 1)}>Anterior</button>

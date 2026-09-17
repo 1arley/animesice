@@ -1338,6 +1338,7 @@ export const api = {
   adminCreateGachaCard: (body: {
     name: string;
     image?: string;
+    imageHidden?: boolean;
     rarity: string;
     animeId: string;
     source?: "MAL" | "MANUAL";
@@ -1353,11 +1354,13 @@ export const api = {
     body: {
       name?: string;
       image?: string;
+      imageHidden?: boolean;
       rarity?: string;
       animeId?: string;
       status?: string;
       variantName?: string;
       variantType?: string;
+      reason?: string;
     },
   ) =>
     request<AdminGachaCard>(`/gacha/admin/cards/${id}`, {
@@ -1384,6 +1387,14 @@ export const api = {
   adminDeleteUserCard: (id: string) =>
     request<AdminGachaCard>(`/gacha/admin/user-cards/${id}`, {
       method: "DELETE",
+    }),
+  adminSetUserCardValue: (
+    id: string,
+    body: { value: number | null; reason: string },
+  ) =>
+    request<GachaPull>(`/gacha/admin/user-cards/${id}/value`, {
+      method: "PATCH",
+      body: JSON.stringify(body),
     }),
   adminResetGachaRoll: (userId: string) =>
     request<{ count: number }>(`/gacha/admin/users/${userId}/reset-roll`, {
