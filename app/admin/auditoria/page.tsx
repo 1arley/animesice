@@ -29,14 +29,7 @@ export default function AdminAuditPage() {
     setLoading(true);
     setError(null);
     try {
-      const data =
-        tab === "access"
-          ? await api.adminGetSensitiveAccess(
-              resourceType,
-              days,
-              controller.signal,
-            )
-          : await api.adminGetMutationLogs(days, controller.signal);
+      const data = tab === "access" ? await api.adminGetSensitiveAccess(resourceType, days, controller.signal) : await api.adminGetMutationLogs(days, controller.signal);
       if (abortRef.current === controller) {
         setLogs(data);
       }
@@ -71,11 +64,7 @@ export default function AdminAuditPage() {
   const isSuperadmin = user?.role === "SUPERADMIN";
 
   if (!isSuperadmin) {
-    return (
-      <div className="mt-2 border border-signal/40 bg-signal/10 p-4 text-body-sm text-signal">
-        Acesso restrito a SUPERADMIN.
-      </div>
-    );
+    return <div className="mt-2 border border-signal/40 bg-signal/10 p-4 text-body-sm text-signal">Acesso restrito a SUPERADMIN.</div>;
   }
 
   return (
@@ -87,32 +76,18 @@ export default function AdminAuditPage() {
           {logs.length} registros
         </span>
       </div>
-      <p className="text-body-sm text-mist">
-        Logs de acesso a dados sensíveis e ações administrativas.
-      </p>
+      <p className="text-body-sm text-mist">Logs de acesso a dados sensíveis e ações administrativas.</p>
 
       <div className="mt-4 flex gap-2">
-        <button
-          type="button"
-          onClick={() => setTab("access")}
-          className={tab === "access" ? "btn-ice text-caption" : "btn-ghost text-caption"}
-        >
+        <button type="button" onClick={() => setTab("access")} className={tab === "access" ? "btn-ice text-caption" : "btn-ghost text-caption"}>
           Acessos sensíveis
         </button>
-        <button
-          type="button"
-          onClick={() => setTab("mutations")}
-          className={tab === "mutations" ? "btn-ice text-caption" : "btn-ghost text-caption"}
-        >
+        <button type="button" onClick={() => setTab("mutations")} className={tab === "mutations" ? "btn-ice text-caption" : "btn-ghost text-caption"}>
           Mutações (CRUD)
         </button>
       </div>
 
-      {error && (
-        <div className="mt-4 border border-signal/40 bg-signal/10 p-3 text-body-sm text-signal">
-          {error}
-        </div>
-      )}
+      {error && <div className="mt-4 border border-signal/40 bg-signal/10 p-3 text-body-sm text-signal">{error}</div>}
 
       <div className="mt-4 flex flex-wrap gap-3">
         {tab === "access" && (
@@ -120,12 +95,7 @@ export default function AdminAuditPage() {
             <label htmlFor="audit-recurso" className="mb-1.5 block font-mono text-caption uppercase tracking-wider text-mist">
               Recurso
             </label>
-            <select
-              id="audit-recurso"
-              value={resourceType}
-              onChange={(e) => setResourceType(e.target.value)}
-              className="field"
-            >
+            <select id="audit-recurso" value={resourceType} onChange={(e) => setResourceType(e.target.value)} className="field">
               {RESOURCE_TYPES.map((r) => (
                 <option key={r} value={r}>
                   {r}
@@ -138,12 +108,7 @@ export default function AdminAuditPage() {
           <label htmlFor="audit-dias" className="mb-1.5 block font-mono text-caption uppercase tracking-wider text-mist">
             Período (dias)
           </label>
-          <select
-            id="audit-dias"
-            value={days}
-            onChange={(e) => setDays(parseInt(e.target.value, 10))}
-            className="field"
-          >
+          <select id="audit-dias" value={days} onChange={(e) => setDays(parseInt(e.target.value, 10))} className="field">
             {[1, 7, 14, 30, 90].map((d) => (
               <option key={d} value={d}>
                 {d} {d === 1 ? "dia" : "dias"}
@@ -158,8 +123,8 @@ export default function AdminAuditPage() {
       ) : logs.length === 0 ? (
         <div className="admin-empty mt-4">Nenhum log encontrado no período.</div>
       ) : (
-        <div className="mt-4 overflow-x-auto border border-hairline">
-          <table className="admin-table">
+        <div className="mt-4 border border-hairline md:overflow-x-auto">
+          <table className="admin-table admin-table-responsive">
             <thead>
               <tr>
                 <th>Ação</th>
@@ -174,22 +139,26 @@ export default function AdminAuditPage() {
             <tbody>
               {logs.map((log) => (
                 <tr key={log.id}>
-                  <td className="text-ice">{log.action}</td>
-                  <td className="text-mist">{log.resourceType}</td>
-                  <td className="text-mist">
+                  <td data-label="Ação" className="text-ice">
+                    {log.action}
+                  </td>
+                  <td data-label="Recurso" className="text-mist">
+                    {log.resourceType}
+                  </td>
+                  <td data-label="ID Recurso" className="text-mist">
                     <code className="text-caption">{log.resourceId ?? "—"}</code>
                   </td>
-                  <td className="text-snow">{log.admin?.email ?? "—"}</td>
-                  <td>
+                  <td data-label="Admin" className="text-snow">
+                    {log.admin?.email ?? "—"}
+                  </td>
+                  <td data-label="Role">
                     <span className="badge badge-muted">{log.admin?.role ?? "—"}</span>
                   </td>
-                  <td>
+                  <td data-label="IP">
                     <code className="text-mist">{log.ipAddress ?? "—"}</code>
                   </td>
-                  <td className="text-caption text-mist">
-                    {log.createdAt
-                      ? new Date(log.createdAt).toLocaleString("pt-BR")
-                      : "—"}
+                  <td data-label="Data" className="text-caption text-mist">
+                    {log.createdAt ? new Date(log.createdAt).toLocaleString("pt-BR") : "—"}
                   </td>
                 </tr>
               ))}
