@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { api, ApiError } from "@/lib/api";
-import type { AdminGachaCard, GachaPull } from "@/types";
+import { useAuth } from "@/lib/auth-context";
+import type { AdminGachaCard, Anime, GachaPull } from "@/types";
 
 const TIERS = [
   "COMUM",
@@ -17,10 +18,14 @@ const TIERS = [
 const PAGE_SIZE = 48;
 
 export default function AdminGachaPage() {
+  const { user } = useAuth();
   const [cards, setCards] = useState<AdminGachaCard[]>([]);
   const [cardMeta, setCardMeta] = useState({ page: 1, totalPages: 1, total: 0 });
   const [cardSearch, setCardSearch] = useState("");
   const [rarity, setRarity] = useState("");
+  const [status, setStatus] = useState("");
+  const [animeId, setAnimeId] = useState("");
+  const [animes, setAnimes] = useState<Anime[]>([]);
   const [users, setUsers] = useState<{ id: string; email: string; name: string | null; userName: string | null }[]>([]);
   const [userCards, setUserCards] = useState<GachaPull[]>([]);
   const [userCardsMeta, setUserCardsMeta] = useState({ page: 1, totalPages: 1, total: 0 });
@@ -28,14 +33,14 @@ export default function AdminGachaPage() {
   const [userCardsVersion, setUserCardsVersion] = useState(0);
   const [search, setSearch] = useState("");
   const [selectedUser, setSelectedUser] = useState("");
-  const [form, setForm] = useState({ name: "", image: "", rarity: "COMUM" });
+  const [form, setForm] = useState({ name: "", image: "", rarity: "COMUM", animeId: "" });
   const [editing, setEditing] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const debounce = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  async function loadCards(page = 1, name = cardSearch, rar = rarity) {
+  async function loadCards(page = 1, name = cardSearch, rar = rarity, anime = animeId, state = status) {
     try {
-      const res = await api.adminListGachaCards(page, PAGE_SIZE, name || undefined, rar || undefined);
+      const res = await api.adminListGachaCards(page, PAGE_SIZE, name || undefined, rar || undefined, anime || undefined, state || undefined);
       setCards(res.data);
       setCardMeta({ page: res.meta.page, totalPages: res.meta.totalPages, total: res.meta.total });
     } catch (e) { setError(e instanceof ApiError ? e.message : "Erro ao carregar pool."); }
@@ -71,12 +76,17 @@ export default function AdminGachaPage() {
     try { setUsers((await api.adminListUsers(1, 10, value)).data); } catch (e) { setError(e instanceof ApiError ? e.message : "Erro ao buscar usuários."); }
   }
 
+  async function searchAnimes(value: string) {
+    if (value.length < 2) { setAnimes([]); return; }
+    try { setAnimes((await api.adminListAnimes(1, 10, value)).data); } catch (e) { setError(e instanceof ApiError ? e.message : "Erro ao buscar animes."); }
+  }
+
   async function saveCard(e: React.FormEvent) {
     e.preventDefault();
     try {
       if (editing) await api.adminUpdateGachaCard(editing, form);
       else await api.adminCreateGachaCard(form);
-      setForm({ name: "", image: "", rarity: "COMUM" }); setEditing(null); await loadCards();
+      setForm({ name: "", image: "", rarity: "COMUM", animeId: "" }); setEditing(null); await loadCards();
     } catch (e) { setError(e instanceof ApiError ? e.message : "Erro ao salvar carta."); }
   }
 
@@ -126,25 +136,33 @@ export default function AdminGachaPage() {
       <div className="border border-hairline bg-panel p-4">
         <h2 className="font-display text-display-lg text-snow">Pool</h2>
         <form className="mt-4 grid gap-3" onSubmit={saveCard}>
-          <input className="field" required placeholder="Nome" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} />
-          <input className="field" placeholder="Imagem" value={form.image} onChange={e => setForm({ ...form, image: e.target.value })} />
+          <input className="field" required placeholder="Personagem" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} />
+          <input className="field" required type="url" placeholder="Imagem HTTPS" value={form.image} onChange={e => setForm({ ...form, image: e.target.value })} />
+          <input className="field" required placeholder="Buscar anime" aria-label="Buscar anime" onChange={e => void searchAnimes(e.target.value)} />
+          <select className="field" required aria-label="Anime da carta" value={form.animeId} onChange={e => { const a = animes.find(x => x.id === e.target.value); setForm({ ...form, animeId: e.target.value, image: form.image || a?.coverImage || "" }); }}>
+            <option value="">Selecione anime</option>
+            {animes.map(a => <option key={a.id} value={a.id}>{a.title}</option>)}
+          </select>
           <select className="field" value={form.rarity} onChange={e => setForm({ ...form, rarity: e.target.value })}>
             {TIERS.map(t => <option key={t} value={t}>{t}</option>)}
           </select>
           <button className="admin-tab w-fit" type="submit">{editing ? "Salvar" : "Criar"}</button>
         </form>
         <div className="mt-4 flex gap-2">
-          <input className="field flex-1" placeholder="Buscar carta por nome" value={cardSearch} onChange={e => onCardSearch(e.target.value)} />
+          <input className="field flex-1" placeholder="Buscar personagem" aria-label="Buscar personagem" value={cardSearch} onChange={e => onCardSearch(e.target.value)} />
           <select className="field w-40" value={rarity} onChange={e => onRarityChange(e.target.value)}>
             <option value="">Todas</option>
             {TIERS.map(t => <option key={t} value={t}>{t}</option>)}
           </select>
+          <select className="field w-36" aria-label="Filtrar status" value={status} onChange={e => { setStatus(e.target.value); void loadCards(1, cardSearch, rarity, animeId, e.target.value); }}><option value="">Status</option><option value="DRAFT">Rascunho</option><option value="REVIEW">Revisão</option><option value="ACTIVE">Ativa</option><option value="ARCHIVED">Arquivada</option></select>
         </div>
         <p className="mt-2 font-mono text-caption text-mist-soft">{cardMeta.total} cartas · página {cardMeta.page}/{cardMeta.totalPages}</p>
         <div className="mt-2 space-y-2">{cards.map(card => <div className="flex items-center justify-between gap-2 border-b border-hairline py-2" key={card.id}>
-          <span className="min-w-0 truncate text-mist">{card.name} <small>{card.rarity}</small></span>
+          <span className="min-w-0 truncate text-mist">{card.name} <small>{card.rarity} · {card.status}</small>{card.animeTitle && <small className="block text-mist-soft">{card.animeTitle}</small>}</span>
           <span className="flex flex-none gap-1">
-            <button className="admin-tab" onClick={() => { setEditing(card.id); setForm({ name: card.name, image: card.image ?? "", rarity: card.rarity }); }}>Editar</button>
+            <button className="admin-tab" onClick={() => { setEditing(card.id); setForm({ name: card.name, image: card.image ?? "", rarity: card.rarity, animeId: card.animeId ?? "" }); }}>Editar</button>
+            {user?.role === "SUPERADMIN" && card.status !== "ACTIVE" && <button className="admin-tab" onClick={() => void api.adminPublishGachaCard(card.id).then(() => loadCards()).catch(e => setError(e instanceof ApiError ? e.message : "Erro ao publicar carta."))}>Publicar</button>}
+            {user?.role === "SUPERADMIN" && card.status === "ACTIVE" && <button className="admin-tab" onClick={() => void api.adminArchiveGachaCard(card.id).then(() => loadCards()).catch(e => setError(e instanceof ApiError ? e.message : "Erro ao arquivar carta."))}>Arquivar</button>}
             {selectedUser && <button className="admin-tab" onClick={() => void grantCard(card.id)}>Conceder</button>}
           </span>
         </div>)}</div>

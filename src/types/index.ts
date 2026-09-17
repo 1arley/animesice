@@ -550,6 +550,10 @@ export interface AdminGachaCard {
   animeTitle: string | null;
   createdAt: string;
   updatedAt: string;
+  status: "DRAFT" | "REVIEW" | "ACTIVE" | "ARCHIVED";
+  source: "MAL" | "MANUAL";
+  variantName: string | null;
+  variantType: string;
 }
 
 export interface GachaCardInfo {
