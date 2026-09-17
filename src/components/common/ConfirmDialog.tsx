@@ -8,6 +8,7 @@ export function ConfirmDialog({
   title,
   children,
   confirmLabel = "Confirmar",
+  busyLabel = "Guardando…",
   busy = false,
   onCancel,
   onConfirm,
@@ -16,6 +17,7 @@ export function ConfirmDialog({
   title: string;
   children: ReactNode;
   confirmLabel?: string;
+  busyLabel?: string;
   busy?: boolean;
   onCancel: () => void;
   onConfirm: () => void;
@@ -41,7 +43,7 @@ export function ConfirmDialog({
             disabled={busy}
             className="btn-ice disabled:opacity-50"
           >
-            {busy ? "Guardando…" : confirmLabel}
+            {busy ? busyLabel : confirmLabel}
           </button>
         </>
       }

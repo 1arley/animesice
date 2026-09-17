@@ -28,6 +28,16 @@ export default function GachaCollectionPage() {
   const [listing, setListing] = useState(false);
   const [burning, setBurning] = useState(false);
   const [burnTarget, setBurnTarget] = useState<GachaPull | null>(null);
+  const [burnResult, setBurnResult] = useState<{
+    pull: GachaPull;
+    payout: number;
+  } | null>(null);
+
+  useEffect(() => {
+    if (!burnResult) return;
+    const timer = window.setTimeout(() => setBurnResult(null), 1200);
+    return () => window.clearTimeout(timer);
+  }, [burnResult]);
 
   useEffect(() => {
     if (!user) return;
@@ -108,11 +118,13 @@ export default function GachaCollectionPage() {
     if (!burnTarget || burning) return;
     setBurning(true);
     try {
-      await api.gachaBurn({ userCardId: burnTarget.id });
-      setItems((prev) => prev.filter((pull) => pull.id !== burnTarget.id));
+      const target = burnTarget;
+      const result = await api.gachaBurn({ userCardId: target.id });
+      setItems((prev) => prev.filter((pull) => pull.id !== target.id));
       setTotal((value) => Math.max(0, value - 1));
       setPreview(null);
       setBurnTarget(null);
+      setBurnResult({ pull: target, payout: result.payout });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao queimar a carta.");
     } finally {
@@ -142,7 +154,10 @@ export default function GachaCollectionPage() {
           burning={burning}
           onBurn={
             preview.user.id === user.id
-              ? () => setBurnTarget(preview)
+              ? () => {
+                  setBurnTarget(preview);
+                  setPreview(null);
+                }
               : undefined
           }
           onList={
@@ -156,6 +171,7 @@ export default function GachaCollectionPage() {
         open={burnTarget !== null}
         title="Queimar carta?"
         confirmLabel="Queimar carta"
+        busyLabel="Queimando…"
         busy={burning}
         onCancel={() => setBurnTarget(null)}
         onConfirm={() => void handleBurn()}
@@ -166,6 +182,25 @@ export default function GachaCollectionPage() {
           crystals. Ação irreversível.
         </p>
       </ConfirmDialog>
+      {burnResult && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="pointer-events-none fixed inset-0 z-[140] flex items-center justify-center bg-ink/85 p-6"
+        >
+          <div className="text-center">
+            <div className="card-burn-visual mx-auto w-44 sm:w-52" aria-hidden="true">
+              <GachaCard pull={burnResult.pull} linkAnime={false} showInfo={false} />
+            </div>
+            <p className="mt-5 font-display text-display-sm text-snow">
+              Carta queimada
+            </p>
+            <p className="mt-1 font-mono text-body-sm text-amber-300">
+              +{burnResult.payout} crystals
+            </p>
+          </div>
+        </div>
+      )}
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="font-display text-display-lg text-snow">
