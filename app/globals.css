@@ -708,6 +708,44 @@
     box-shadow: inset 0 0 48px 18px rgba(0, 0, 0, 0.35);
   }
 
+  /* Condição altera superfície, não moldura de raridade. MINT/NM/EX precisam
+     continuar reconhecíveis mesmo quando arte e card estão pequenos. */
+  .condition-surface-mint {
+    box-shadow:
+      inset 0 0 0 1px rgba(56, 232, 218, 0.72),
+      inset 0 0 24px 3px rgba(56, 232, 218, 0.12);
+  }
+  .condition-surface-nm {
+    box-shadow: inset 0 0 0 1px rgba(241, 245, 249, 0.2);
+  }
+  .condition-surface-ex {
+    background:
+      linear-gradient(126deg, rgba(255, 255, 255, 0.1), transparent 16% 82%, rgba(0, 0, 0, 0.16)),
+      repeating-linear-gradient(112deg, transparent 0 38px, rgba(255, 255, 255, 0.13) 39px 40px, transparent 41px 76px);
+    box-shadow:
+      inset 0 0 0 1px rgba(251, 191, 36, 0.25),
+      inset 0 0 28px 6px rgba(0, 0, 0, 0.14);
+  }
+  .condition-mint-glare {
+    background: linear-gradient(115deg, transparent 28%, rgba(255, 255, 255, 0.3) 47%, transparent 64%);
+    background-size: 240% 100%;
+    opacity: 0;
+  }
+  .group:hover .condition-mint-glare,
+  .group:focus-within .condition-mint-glare {
+    opacity: 1;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .group:hover .condition-mint-glare,
+    .group:focus-within .condition-mint-glare {
+      animation: condition-mint-glare 750ms ease-out both;
+    }
+  }
+  @keyframes condition-mint-glare {
+    from { background-position: 140% 0; }
+    to { background-position: -40% 0; }
+  }
+
   /* Sweep do GradientText (wordmark "Ice") — animação CSS pura, sem rAF do JS.
      Celular (pointer coarse) e reduced-motion recebem o gradiente estático
      (a classe live só é aplicada quando há animação de verdade). */
