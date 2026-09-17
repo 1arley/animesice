@@ -797,7 +797,6 @@ export type GachaFeatured = GachaPull & { setComplete?: boolean };
 export type GachaTradeStatus =
   "PENDING" | "COMPLETED" | "CANCELLED" | "EXPIRED";
 
-/** Troca 1:1 entre dois usuários — escrow confirmado pelo receptor. */
 export interface GachaTrade {
   id: string;
   status: GachaTradeStatus;
@@ -810,6 +809,8 @@ export interface GachaTrade {
   requestedUserCardId: string;
   offeredUserCard: GachaPull;
   requestedUserCard: GachaPull;
+  offeredUserCards: GachaPull[];
+  requestedUserCards: GachaPull[];
 }
 
 /**
