@@ -92,8 +92,17 @@ export const CONDITION_GLYPH: Record<string, string> = {
 
 // Arte decaiu junto com a condição: PLAYED dessatura, POOR dessatura + escurece.
 const CONDITION_ART: Record<string, string> = {
+  MINT: "saturate-[1.08] brightness-[1.03]",
+  NM: "saturate-[1.02] brightness-[1.01]",
+  EX: "saturate-[.82] brightness-[.96]",
   PLAYED: "saturate-[.75]",
   POOR: "saturate-[.55] brightness-[.88]",
+};
+
+const CONDITION_SURFACE: Record<string, string> = {
+  MINT: "condition-surface-mint",
+  NM: "condition-surface-nm",
+  EX: "condition-surface-ex",
 };
 
 // Seed deterministica dos riscos por carta: hash do pull.id vira angulo
@@ -128,8 +137,8 @@ export const GachaCard = memo(function GachaCard({ pull, preview = false, linkAn
     <div
       className={
         isGalaxy || hasAurora
-          ? GALAXY_FRAME + destaqueRing
-          : `overflow-hidden border bg-panel ${rarity.border} ${rarity.glow ?? ""}${destaqueRing}`
+          ? `group ${GALAXY_FRAME}${destaqueRing}`
+          : `group overflow-hidden border bg-panel ${rarity.border} ${rarity.glow ?? ""}${destaqueRing}`
       }
     >
       <div className={`overflow-hidden ${isGalaxy || hasAurora ? "bg-panel" : ""}`}>
@@ -145,7 +154,7 @@ export const GachaCard = memo(function GachaCard({ pull, preview = false, linkAn
             </div>
           </div>
         ) : <>
-        <div className="relative" style={{ aspectRatio: "3 / 4" }}>
+        <div className="group relative" style={{ aspectRatio: "3 / 4" }}>
           {art ? (
             <Image
               src={art}
@@ -182,6 +191,15 @@ export const GachaCard = memo(function GachaCard({ pull, preview = false, linkAn
               className={`pointer-events-none absolute inset-0 ${label === "POOR" ? "card-scratches-poor" : "card-scratches"}`}
               style={scratchVars(pull.id)}
             />
+          )}
+          {CONDITION_SURFACE[label] && (
+            <div
+              aria-hidden
+              className={`pointer-events-none absolute inset-0 ${CONDITION_SURFACE[label]}`}
+            />
+          )}
+          {label === "MINT" && pull.foil === "NORMAL" && (
+            <div aria-hidden className="condition-mint-glare pointer-events-none absolute inset-0" />
           )}
           <span
             className={`absolute left-1.5 top-1.5 bg-ink/85 px-1.5 py-0.5 font-mono text-caption font-medium backdrop-blur-sm ${isGalaxy ? GALAXY_TEXT : rarity.text}`}
