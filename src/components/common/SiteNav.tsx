@@ -62,13 +62,13 @@ export function SiteNav() {
 
   const contaLinks: NavLink[] = user
     ? [
-        { href: "/settings", title: "Configurações", icon: "config" },
+        { href: "/configuracoes", title: "Configurações", icon: "config" },
         { href: "/biblioteca", title: "Minha biblioteca", icon: "biblioteca" },
       ]
     : [
         { href: "/biblioteca", title: "Minha biblioteca", icon: "biblioteca" },
-        { href: "/login", title: "Entrar", icon: "login" },
-        { href: "/register", title: "Registrar", icon: "register" },
+        { href: "/entrar", title: "Entrar", icon: "login" },
+        { href: "/cadastro", title: "Registrar", icon: "register" },
       ];
 
   const navItems: NavItem[] = [
@@ -247,7 +247,7 @@ export function SiteNav() {
         })}
         {user && (
           <Link
-            href="/settings"
+            href="/configuracoes"
             className="ml-auto flex items-center gap-2 px-3 py-3 font-mono text-body-sm uppercase tracking-wider text-mist transition-colors hover:text-ice"
           >
             <Avatar name={displayName(user)} src={user.avatar} size={24} />
@@ -294,7 +294,7 @@ export function SiteNav() {
             {/* User row */}
             {user ? (
               <Link
-                href="/settings"
+                href="/configuracoes"
                 onClick={handleClose}
                 className="mx-4 mb-4 flex items-center gap-3 border-b border-hairline pb-4"
               >
@@ -308,10 +308,10 @@ export function SiteNav() {
               </Link>
             ) : (
               <div className="mx-4 mb-4 flex gap-2 border-b border-hairline pb-4">
-                <Link href="/login" onClick={handleClose} className="btn-ghost flex-1">
+                <Link href="/entrar" onClick={handleClose} className="btn-ghost flex-1">
                   Entrar
                 </Link>
-                <Link href="/register" onClick={handleClose} className="btn-ice flex-1">
+                <Link href="/cadastro" onClick={handleClose} className="btn-ice flex-1">
                   Cadastrar
                 </Link>
               </div>
