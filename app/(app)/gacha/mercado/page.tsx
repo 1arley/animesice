@@ -7,7 +7,7 @@ import { useAuth } from "@/lib/auth-context";
 import { GachaCard } from "@/components/gacha/GachaCard";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { SectionLabel } from "@/components/common/SectionLabel";
-import type { GachaListing } from "@/types";
+import type { GachaListing, GachaShopItem } from "@/types";
 
 const PAGE_SIZE = 24;
 
@@ -30,6 +30,7 @@ export default function GachaMarketPage() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
   const [mine, setMine] = useState<GachaListing[]>([]);
+  const [cosmetics, setCosmetics] = useState<GachaShopItem[]>([]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -52,6 +53,7 @@ export default function GachaMarketPage() {
         api.gachaShop().catch(() => null),
       ]);
       setMine(my);
+      setCosmetics(shop?.cosmetics ?? []);
       if (shop) setBalance(shop.balance);
     } catch {}
   }, [user]);
@@ -88,6 +90,19 @@ export default function GachaMarketPage() {
     }
   }
 
+  async function buyCosmetic(key: string) {
+    setBusy(key);
+    setError("");
+    try {
+      await api.gachaBuyCosmetic({ key });
+      await loadMine();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Não foi possível comprar a capa.");
+    } finally {
+      setBusy(null);
+    }
+  }
+
   return (
     <main className="mx-auto max-w-shelf px-4 pb-16 pt-8">
       <div className="flex flex-wrap items-end justify-between gap-4">
@@ -116,6 +131,28 @@ export default function GachaMarketPage() {
         >
           {error}
         </div>
+      )}
+
+      {user && cosmetics.length > 0 && (
+        <section className="mt-8" aria-label="Capas oficiais">
+          <SectionLabel level={2}>Capas oficiais</SectionLabel>
+          <p className="mt-1 text-body-sm text-mist">Cosméticos criados pela equipe, vinculados à sua conta.</p>
+          <ul className="mt-3 grid gap-3 sm:grid-cols-2">
+            {cosmetics.filter((item) => item.key.startsWith("BACK_")).map((item) => (
+              <li key={item.key} className="flex items-center justify-between gap-3 border border-hairline bg-panel p-4">
+                <div className="min-w-0">
+                  <p className="font-display text-body-sm text-snow">{item.label}</p>
+                  <p className="mt-1 text-caption text-mist">{item.description}</p>
+                </div>
+                {item.owned ? <span className="font-mono text-caption text-ice">Na sua conta</span> : (
+                  <button type="button" onClick={() => void buyCosmetic(item.key)} disabled={busy !== null || balance == null || balance < item.price} className="btn-ice min-h-11 shrink-0 px-3 py-2 font-mono text-caption">
+                    {busy === item.key ? "Comprando…" : `Comprar · ${item.price.toLocaleString("pt-BR")} 💎`}
+                  </button>
+                )}
+              </li>
+            ))}
+          </ul>
+        </section>
       )}
 
       {user && mine.length > 0 && (

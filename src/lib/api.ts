@@ -1400,6 +1400,15 @@ export const api = {
       body: JSON.stringify(body),
     }),
 
+  gachaSetCardBack: (key: string | null) =>
+    request<{ gachaCardBack: string | null }>(`/gacha/card-back`, {
+      method: "PATCH",
+      body: JSON.stringify({ key }),
+    }),
+  adminCardBacks: () => request<Array<{ id: string; key: string; name: string; description: string | null; svg: string; previewUrl: string | null; price: number; status: string }>>('/gacha/admin/card-backs'),
+  adminCreateCardBack: (body: { key: string; name: string; description?: string; svg: string; previewUrl?: string; price?: number; status?: string }) => request('/gacha/admin/card-backs', { method: 'POST', body: JSON.stringify(body) }),
+  adminUpdateCardBack: (id: string, body: Record<string, unknown>) => request(`/gacha/admin/card-backs/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(body) }),
+
   gachaListings: (
     page = 1,
     limit = 24,
@@ -1490,6 +1499,8 @@ export const api = {
 
   gachaEncyclopedia: (query: string, signal?: AbortSignal) =>
     request<GachaEncyclopedia>(`/gacha/encyclopedia?${query}`, { signal }),
+  gachaEncyclopediaSuggestions: (query: string, signal?: AbortSignal) =>
+    request<string[]>(`/gacha/encyclopedia/suggestions?q=${encodeURIComponent(query)}`, { signal }),
 
   gachaTradeCreate: (body: {
     offeredUserCardId: string;
