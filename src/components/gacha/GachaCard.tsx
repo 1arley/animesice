@@ -109,7 +109,7 @@ function scratchVars(id: string): CSSProperties {
   } as CSSProperties;
 }
 
-export const GachaCard = memo(function GachaCard({ pull, preview = false, linkAnime = true }: { pull: GachaPull; linkAnime?: boolean; /** Preview de giro: sem edição definitiva nem valor final. */ preview?: boolean }) {
+export const GachaCard = memo(function GachaCard({ pull, preview = false, linkAnime = true, showInfo = true, side = "front" }: { pull: GachaPull; linkAnime?: boolean; /** Preview de giro: sem edição definitiva nem valor final. */ preview?: boolean; /** Preview modal: usa só a arte. */ showInfo?: boolean; side?: "front" | "back" }) {
   const { card } = pull;
   const art = safeImageSrc(card.image);
   const label = pull.conditionLabel ?? gachaConditionLabel(pull.condition);
@@ -119,6 +119,7 @@ export const GachaCard = memo(function GachaCard({ pull, preview = false, linkAn
   const foilText = FOIL_TEXT[pull.foil];
   const cosmetics = pull.user?.gachaCosmetics ?? [];
   const hasAurora = cosmetics.includes("FRAME_AURORA");
+  const backKey = pull.user?.gachaCardBack;
   const destaqueRing = cosmetics.includes("DESTAQUE_CARTA")
     ? " shadow-[0_0_18px_rgba(252,211,77,0.45)]"
     : "";
@@ -132,6 +133,18 @@ export const GachaCard = memo(function GachaCard({ pull, preview = false, linkAn
       }
     >
       <div className={`overflow-hidden ${isGalaxy || hasAurora ? "bg-panel" : ""}`}>
+        {side === "back" ? (
+          <div
+            className={`relative flex aspect-[3/4] items-center justify-center overflow-hidden p-5 ${backKey === "BACK_ICE" ? "bg-[radial-gradient(circle_at_30%_20%,rgba(56,232,218,.5),transparent_35%),linear-gradient(145deg,#183d55,#080c12_55%,#0d2439)]" : "bg-[radial-gradient(circle_at_30%_20%,rgba(56,232,218,.3),transparent_35%),linear-gradient(145deg,#101d30,#080c12_55%,#172f48)]"}`}
+            role="img"
+            aria-label="Verso personalizado da carta"
+          >
+            <div className="absolute inset-3 border border-ice/40" aria-hidden="true" />
+            <div className="relative flex h-full w-full items-center justify-center border border-white/10 bg-ink/30">
+              <span className="font-display text-center text-display-md text-ice/90">ANIMESICE</span>
+            </div>
+          </div>
+        ) : <>
         <div className="relative" style={{ aspectRatio: "3 / 4" }}>
           {art ? (
             <Image
@@ -189,28 +202,36 @@ export const GachaCard = memo(function GachaCard({ pull, preview = false, linkAn
             {label}
           </span>
         </div>
-        <div className="p-2">
-          <p className="truncate font-sans text-body-sm font-medium text-snow">
-            {card.name}
-          </p>
+        {showInfo && (
+          <div className="p-2">
+            <p className="truncate font-sans text-body-sm font-medium text-snow">
+              {card.name}
+            </p>
           <p className="truncate font-mono text-caption text-mist-soft">
-            {preview ? `${label} · prévia · ~${pull.value} pts` : `${label} · #${pull.edition} · ${pull.value} pts`}
+            {preview ? `${label} · prévia` : `${label} · #${pull.edition} · ${pull.value} pts`}
           </p>
-          {card.animeTitle && animeSlug && (
-            linkAnime ? (
-              <Link
-                href={`/animes/${animeSlug}`}
-                className="mt-0.5 block truncate font-mono text-caption text-ice hover:text-snow"
-              >
-                {card.animeTitle}
-              </Link>
-            ) : (
-              <span className="mt-0.5 block truncate font-mono text-caption text-ice">
-                {card.animeTitle}
-              </span>
-            )
+          {preview && (
+            <p className="break-words font-mono text-body-sm font-semibold text-ice" aria-label={`Valor estimado: ${pull.value} pontos`}>
+              ~{pull.value} pts
+            </p>
           )}
-        </div>
+            {card.animeTitle && animeSlug && (
+              linkAnime ? (
+                <Link
+                  href={`/animes/${animeSlug}`}
+                  className="mt-0.5 block truncate font-mono text-caption text-ice hover:text-snow"
+                >
+                  {card.animeTitle}
+                </Link>
+              ) : (
+                <span className="mt-0.5 block truncate font-mono text-caption text-ice">
+                  {card.animeTitle}
+                </span>
+              )
+            )}
+          </div>
+        )}
+        </>}
       </div>
     </div>
   );
