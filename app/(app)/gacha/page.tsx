@@ -435,7 +435,7 @@ function GachaPageContent() {
                 </div>
               )}
               <div className="border border-hairline bg-ink/60 p-5 text-center text-body-sm text-mist">
-                <Link href="/login" className="text-ice hover:text-snow">
+                <Link href="/entrar" className="text-ice hover:text-snow">
                   Entre
                 </Link>{" "}
                 com uma conta verificada para girar e completar sets.
@@ -486,7 +486,7 @@ function GachaPageContent() {
                   )}
                   <span>
                     <Link
-                      href="/gacha/crystals"
+                      href="/gacha/cristais"
                       className="text-snow decoration-hairline underline-offset-4 hover:underline"
                     >
                       {status?.crystalBalance?.toLocaleString("pt-BR") ?? 0} 💎
@@ -516,10 +516,10 @@ function GachaPageContent() {
                   >
                     {claiming ? "Guardando…" : "Pegar carta"}
                   </button>
-                  <Link href="/gacha/collection" className="btn-ghost px-4 py-4">
+                  <Link href="/gacha/colecao" className="btn-ghost px-4 py-4">
                     Minha coleção
                   </Link>
-                  <Link href="/gacha/trades" className="btn-ghost px-4 py-4">
+                  <Link href="/gacha/trocas" className="btn-ghost px-4 py-4">
                     Trocas
                   </Link>
                   <Link href="/gacha/mercado" className="btn-ghost px-4 py-4">
@@ -571,7 +571,7 @@ function GachaPageContent() {
                     <p className="mb-2 font-mono text-caption uppercase tracking-wider text-mist">
                       Previews desta hora ({spins.length}/5)
                     </p>
-                    <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
+                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
                       {spins.map((spin) => {
                         const active = spin.id === selectedSpinId;
                         const expired =
@@ -640,7 +640,7 @@ function GachaPageContent() {
                   <GachaCard pull={pull} linkAnime={false} />
                 </Link>
                 <Link
-                  href={`/users/${pull.user.userName ?? pull.user.id}`}
+                  href={`/usuarios/${pull.user.userName ?? pull.user.id}`}
                   className="mt-1 block truncate font-mono text-caption text-mist-soft hover:text-ice"
                 >
                   @{pull.user.userName ?? "usuário"}
@@ -715,7 +715,7 @@ function GachaPageContent() {
                   size={28}
                 />
                 <Link
-                  href={`/users/${entry.user.userName ?? entry.user.id}`}
+                  href={`/usuarios/${entry.user.userName ?? entry.user.id}`}
                   className="min-w-0 flex-1 truncate text-body-sm text-snow hover:text-ice"
                 >
                   {entry.user.name || entry.user.userName || "Usuário"}

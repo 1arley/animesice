@@ -149,7 +149,8 @@ test.describe("Gacha", () => {
     await expect(page.getByRole("dialog")).toHaveCount(0);
   });
 
-  test("logado: gira preview e guarda a carta", async ({ page }) => {
+  test("logado: gira preview e guarda a carta", async ({ page, isMobile }) => {
+    if (isMobile) await page.setViewportSize({ width: 320, height: 740 });
     await blockAds(page);
     await mockGeneric(page);
     await loginAs(page);
@@ -193,7 +194,15 @@ test.describe("Gacha", () => {
     await dialog.getByRole("button", { name: "Continuar" }).click();
     await expect(dialog).toHaveCount(0);
     await expect(page.getByText("Previews desta hora (1/5)")).toBeVisible();
-    await page.getByRole("button", { name: "Pegar carta" }).click();
+    const preview = page.getByRole("button", { name: /Waifu E2E/ });
+    const points = preview.getByText("~9500 pts", { exact: true });
+    await points.scrollIntoViewIfNeeded();
+    await expect(points).toBeInViewport();
+    expect(await points.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true);
+    await page.getByRole("button", { name: "Pegar carta", exact: true }).click();
+    await expect(dialog.getByRole("heading", { name: "Guardar carta?" })).toBeVisible();
+    await expect(dialog.getByText("~9500 pts", { exact: true })).toBeVisible();
+    await dialog.getByRole("button", { name: "Pegar carta", exact: true }).click();
     await expect(page.getByRole("dialog").getByText("Sua carta")).toBeVisible();
   });
 
