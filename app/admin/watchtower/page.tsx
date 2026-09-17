@@ -222,7 +222,7 @@ export default function AdminWatchtowerPage() {
                   </thead>
                   <tbody>
                     {status.sources.map((s) => (
-                      <tr key={s.id}>
+                      <tr key={s.sourceId}>
                         <td>
                           <code className="text-mist">{s.sourceId}</code>
                         </td>

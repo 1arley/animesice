@@ -1665,12 +1665,17 @@ export interface WatchtowerJobStats {
 }
 
 export interface WatchtowerSourceHealth {
-  id: string;
   sourceId: string;
   disabled: boolean;
   consecutiveFailures: number;
   lastCheckedAt: string | null;
   lastError: string | null;
+  lastFailureKind?: string | null;
+  availabilityFailures?: number;
+  contentMisses?: number;
+  extractionFailures?: number;
+  validationFailures?: number;
+  capacityFailures?: number;
 }
 
 export interface WatchtowerStatus {
