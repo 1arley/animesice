@@ -45,6 +45,7 @@ export default function GachaCrystalsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [shop, setShop] = useState<GachaShopItem[]>([]);
+  const [activeBack, setActiveBack] = useState<string | null>(null);
   const [buying, setBuying] = useState<string | null>(null);
   const [claimingDaily, setClaimingDaily] = useState(false);
 
@@ -52,6 +53,7 @@ export default function GachaCrystalsPage() {
     try {
       const s = await api.gachaShop();
       setShop(s.cosmetics);
+      setActiveBack(s.activeCardBack ?? null);
     } catch {}
   }, []);
 
@@ -94,6 +96,16 @@ export default function GachaCrystalsPage() {
       }
     } finally {
       setClaimingDaily(false);
+    }
+  }
+
+  async function handleBack(key: string | null) {
+    setError("");
+    try {
+      const result = await api.gachaSetCardBack(key);
+      setActiveBack(result.gachaCardBack);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Não foi possível trocar a capa.");
     }
   }
 
@@ -197,9 +209,18 @@ export default function GachaCrystalsPage() {
                     </p>
                   </div>
                   {item.owned ? (
-                    <span className="shrink-0 font-mono text-caption text-ice">
-                      SEU
-                    </span>
+                    <div className="flex shrink-0 flex-col items-end gap-1">
+                      <span className="font-mono text-caption text-ice">SEU</span>
+                      {item.key.startsWith("BACK_") && (
+                        <button
+                          type="button"
+                          onClick={() => void handleBack(activeBack === item.key ? null : item.key)}
+                          className="btn-ghost min-h-11 px-3 py-2 font-mono text-caption"
+                        >
+                          {activeBack === item.key ? "Capa ativa" : "Usar capa"}
+                        </button>
+                      )}
+                    </div>
                   ) : (
                     <button
                       type="button"

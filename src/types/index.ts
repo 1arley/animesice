@@ -490,6 +490,7 @@ export interface SocialUser {
   userName: string | null;
   avatar: string | null;
   gachaCosmetics?: string[];
+  gachaCardBack?: string | null;
 }
 
 /** Anime referenciado em um post do feed. */
@@ -573,6 +574,7 @@ export interface GachaPull {
   obtainedAt: string;
   user: SocialUser;
   card: GachaCardInfo;
+  originalUser?: SocialUser | null;
 }
 
 /** Status do roll diário + giros/claim (campos novos opcionais p/ compat). */
@@ -605,6 +607,7 @@ export interface GachaShopItem {
 export interface GachaShop {
   balance: number;
   cosmetics: GachaShopItem[];
+  activeCardBack?: string | null;
 }
 
 /** Anúncio do mercado — buy-now por Crystais, expira em 48h. */
