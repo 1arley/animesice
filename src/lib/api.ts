@@ -1599,8 +1599,8 @@ export const api = {
     ),
 
   gachaTradeCreate: (body: {
-    offeredUserCardId: string;
-    requestedUserCardId: string;
+    offeredUserCardIds: string[];
+    requestedUserCardIds: string[];
   }) =>
     request<GachaTrade>(`/gacha/trades`, {
       method: "POST",

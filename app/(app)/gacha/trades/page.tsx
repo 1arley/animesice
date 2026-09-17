@@ -352,9 +352,9 @@ function ProposalComposer({
   const [userName, setUserName] = useState("");
   const [target, setTarget] = useState<PublicUserProfile | null>(null);
   const [targetCards, setTargetCards] = useState<GachaPull[]>([]);
-  const [targetCardId, setTargetCardId] = useState("");
+  const [targetCardIds, setTargetCardIds] = useState<string[]>([]);
   const [myCards, setMyCards] = useState<GachaPull[]>([]);
-  const [myCardId, setMyCardId] = useState("");
+  const [myCardIds, setMyCardIds] = useState<string[]>([]);
   const [loadingTarget, setLoadingTarget] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -370,7 +370,7 @@ function ProposalComposer({
     if (!name) return;
     setLoadingTarget(true);
     setError("");
-    setTargetCardId("");
+    setTargetCardIds([]);
     setTarget(null);
     setTargetCards([]);
     try {
@@ -393,11 +393,11 @@ function ProposalComposer({
   };
 
   const submit = async () => {
-    if (!targetCardId || !myCardId) {
+    if (!targetCardIds.length || !myCardIds.length) {
       setError("Escolha as duas cartas da troca.");
       return;
     }
-    const targetCard = targetCards.find((c) => c.id === targetCardId);
+    const targetCard = targetCards.find((c) => c.id === targetCardIds[0]);
     if (targetCard && targetCard.user.id === myId) {
       setError("Você já tem a carta que está pedindo.");
       return;
@@ -406,8 +406,8 @@ function ProposalComposer({
     setError("");
     try {
       await api.gachaTradeCreate({
-        offeredUserCardId: myCardId,
-        requestedUserCardId: targetCardId,
+        offeredUserCardIds: myCardIds,
+        requestedUserCardIds: targetCardIds,
       });
       await onCreated();
     } catch (e) {
@@ -468,29 +468,21 @@ function ProposalComposer({
               Carta que você quer (de{" "}
               {target.name?.trim() || target.userName || "outro usuário"})
             </label>
-            <select
-              value={targetCardId}
-              onChange={(e) => setTargetCardId(e.target.value)}
-              aria-label="Carta que você quer"
-              className="mt-1 w-full border border-hairline bg-ink/60 p-3 text-snow"
-            >
-              <option value="">Selecione…</option>
+            <div className="mt-1 grid gap-2">
               {targetCards.map((c) => (
-                <option key={c.id} value={c.id}>
+                <label key={c.id} className="flex gap-2 border border-hairline p-2 text-snow">
+                  <input type="checkbox" checked={targetCardIds.includes(c.id)} disabled={!targetCardIds.includes(c.id) && targetCardIds.length >= 3} onChange={() => setTargetCardIds((ids) => ids.includes(c.id) ? ids.filter((id) => id !== c.id) : [...ids, c.id])} />
                   {c.card.name} · {c.card.rarity} · {c.foil} · {c.conditionLabel} · {c.value} pts
-                </option>
+                </label>
               ))}
-            </select>
+            </div>
           </>
         )}
 
         <label className="mt-5 block font-mono text-caption text-mist">
           Sua carta de oferta
         </label>
-        <select
-          value={myCardId}
-          onChange={(e) => setMyCardId(e.target.value)}
-          aria-label="Sua carta de oferta"
+        <div aria-label="Suas cartas de oferta" className="mt-1 grid gap-2"
           onFocus={() => {
             if (myCards.length === 0) {
               api.gachaCollection(myId, 1, 100).then((c) =>
@@ -498,19 +490,17 @@ function ProposalComposer({
               );
             }
           }}
-          className="mt-1 w-full border border-hairline bg-ink/60 p-3 text-snow"
         >
-          <option value="">Selecione…</option>
           {myCards.map((c) => (
-            <option key={c.id} value={c.id}>
+            <label key={c.id} className="flex gap-2 border border-hairline p-2 text-snow"><input type="checkbox" checked={myCardIds.includes(c.id)} disabled={!myCardIds.includes(c.id) && myCardIds.length >= 3} onChange={() => setMyCardIds((ids) => ids.includes(c.id) ? ids.filter((id) => id !== c.id) : [...ids, c.id])} />
               {c.card.name} · {c.card.rarity} · {c.foil} · {c.conditionLabel} · {c.value} pts
-            </option>
+            </label>
           ))}
-        </select>
+        </div>
 
         <button
           type="button"
-          disabled={busy || !targetCardId || !myCardId || !target}
+          disabled={busy || !targetCardIds.length || !myCardIds.length || !target}
           onClick={() => void submit()}
           className="btn-ice mt-6 w-full px-4 py-3 disabled:opacity-50"
         >
