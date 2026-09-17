@@ -123,6 +123,7 @@ export const GachaCard = memo(function GachaCard({ pull, preview = false, linkAn
   const art = safeImageSrc(card.image);
   const label = pull.conditionLabel ?? gachaConditionLabel(pull.condition);
   const animeSlug = card.anime?.slug ?? null;
+  const animeTitle = card.anime?.title ?? card.animeTitle;
   const rarity = RARITY[card.rarity] ?? RARITY.COMUM!;
   const isGalaxy = card.rarity === "GALACTICA";
   const foilText = FOIL_TEXT[pull.foil];
@@ -167,9 +168,9 @@ export const GachaCard = memo(function GachaCard({ pull, preview = false, linkAn
               quality={80}
             />
           ) : (
-            <div className="absolute inset-0 flex items-center justify-center bg-hairline">
-              <span className="font-mono text-caption uppercase tracking-wider text-mist">
-                sem arte
+            <div className="absolute inset-0 flex items-center justify-center bg-[radial-gradient(circle_at_center,rgba(56,232,218,0.14),transparent_55%),linear-gradient(145deg,#111827,#05070a)]" role="img" aria-label={card.imageHidden ? "Imagem misteriosa da carta" : "Carta sem arte"}>
+              <span className="font-display text-display-xl tracking-widest text-ice">
+                {card.imageHidden ? "???" : "sem arte"}
               </span>
             </div>
           )}
@@ -233,19 +234,24 @@ export const GachaCard = memo(function GachaCard({ pull, preview = false, linkAn
               ~{pull.value} pts
             </p>
           )}
-            {card.animeTitle && animeSlug && (
+            {animeTitle && animeSlug && (
               linkAnime ? (
                 <Link
                   href={`/animes/${animeSlug}`}
                   className="mt-0.5 block truncate font-mono text-caption text-ice hover:text-snow"
                 >
-                  {card.animeTitle}
+                  {animeTitle}
                 </Link>
               ) : (
                 <span className="mt-0.5 block truncate font-mono text-caption text-ice">
-                  {card.animeTitle}
+                  {animeTitle}
                 </span>
               )
+            )}
+            {card.anime?.malId && (
+              <a href={`https://myanimelist.net/anime/${card.anime.malId}`} target="_blank" rel="noreferrer" className="mt-0.5 block truncate font-mono text-caption text-mist-soft hover:text-snow">
+                MyAnimeList
+              </a>
             )}
           </div>
         )}

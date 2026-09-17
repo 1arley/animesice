@@ -198,6 +198,7 @@ export function FeedPost({
                 id: post.meta.cardId,
                 name: post.meta.name,
                 image: post.meta.image,
+                imageHidden: post.meta.imageHidden ?? false,
                 rarity: post.meta.rarity,
                 favourites: 0,
                 animeId: post.animeId,
