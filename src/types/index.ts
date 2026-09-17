@@ -617,15 +617,24 @@ export interface GachaSkin {
   owned: boolean;
   equipped: boolean;
   sourceUrl?: string | null;
+  acquiredAt?: string | null;
 }
 
 export interface GachaSkinsResponse {
   skins: GachaSkin[];
+  owned: GachaSkin[];
+  equippedSkinId: string | null;
   crystalBalance: number;
   canSpin: boolean;
   nextSpinAt: string | null;
   spinPrice: number;
   cooldownHours: number;
+  meta: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
 }
 
 export interface GachaShopItem {
