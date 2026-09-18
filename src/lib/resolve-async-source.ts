@@ -1,6 +1,6 @@
-import { api, ApiError, type StreamSource } from "@/lib/api";
+import { api, type StreamSource } from "@/lib/api";
 
-const MAX_POLL_ATTEMPTS = 20;
+const MAX_POLL_ATTEMPTS = 8;
 const SSE_FAST_TIMEOUT_MS = 2_000;
 const POLL_INTERVAL_BASE = 300;
 const POLL_BACKOFF = 1.25;
@@ -33,48 +33,54 @@ export async function resolveAsyncSource(
   // after the Promise constructor (which assigns it synchronously).
   const cleanup = { sse: null as (() => void) | null };
 
-  const ssePromise = new Promise<"source" | "failed" | "timeout">((resolve) => {
+  const ssePromise = new Promise<
+    | { type: "source"; source: StreamSource }
+    | { type: "failed" }
+    | { type: "timeout" }
+  >((resolve) => {
     cleanup.sse = api.streamSourceSSE(slug, episodeNumber, {
-      onSource: () => {
+      onSource: (source) => {
         if (sseResolved || signal?.aborted) return;
         sseResolved = true;
-        resolve("source");
+        resolve({ type: "source", source });
       },
       onFailed: () => {
         if (sseResolved || signal?.aborted) return;
         sseResolved = true;
-        resolve("failed");
+        resolve({ type: "failed" });
       },
       onTimeout: () => {
-        if (!sseResolved) resolve("timeout");
+        if (!sseResolved) resolve({ type: "timeout" });
       },
       onError: () => {
-        if (!sseResolved) resolve("timeout");
+        if (!sseResolved) resolve({ type: "timeout" });
       },
     });
   });
 
   const sseRace = await Promise.race([
     ssePromise,
-    new Promise<"timeout">((r) => {
-      const timer = setTimeout(() => r("timeout"), SSE_FAST_TIMEOUT_MS);
+    new Promise<{ type: "timeout" }>((r) => {
+      const timer = setTimeout(
+        () => r({ type: "timeout" }),
+        SSE_FAST_TIMEOUT_MS,
+      );
       signal?.addEventListener(
         "abort",
         () => {
           clearTimeout(timer);
-          r("timeout");
+          r({ type: "timeout" });
         },
         { once: true },
       );
     }),
   ]);
 
-  if (sseRace === "source") {
+  if (sseRace.type === "source") {
     cleanup.sse?.();
-    const source = await api.streamSource(slug, episodeNumber);
-    return { type: "source", source };
+    return sseRace;
   }
-  if (sseRace === "failed") {
+  if (sseRace.type === "failed") {
     cleanup.sse?.();
     return { type: "failed", error: "Extracao falhou. Tente novamente." };
   }
@@ -136,15 +142,8 @@ export async function resolveAsyncSource(
           return { type: "source", source };
         }
       }
-    } catch (e) {
-      if (e instanceof ApiError && e.statusCode === 404) {
-        cleanup.sse?.();
-        return {
-          type: "failed",
-          error: "Job de extração não encontrado. Tente novamente.",
-        };
-      }
-      // Other errors — continue polling
+    } catch {
+      // Network error — continue polling
     }
   }
 
