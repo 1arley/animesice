@@ -7,6 +7,7 @@ import { useAuth } from "@/lib/auth-context";
 import { GachaCard } from "@/components/gacha/GachaCard";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { SectionLabel } from "@/components/common/SectionLabel";
+import { useToast } from "@/components/common/ToastProvider";
 import type { GachaListing, GachaShopItem } from "@/types";
 
 const PAGE_SIZE = 24;
@@ -31,6 +32,7 @@ export default function GachaMarketPage() {
   const [busy, setBusy] = useState<string | null>(null);
   const [mine, setMine] = useState<GachaListing[]>([]);
   const [cosmetics, setCosmetics] = useState<GachaShopItem[]>([]);
+  const { toast } = useToast();
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -66,12 +68,13 @@ export default function GachaMarketPage() {
     void loadMine();
   }, [loadMine]);
 
-  async function act(id: string, fn: () => Promise<unknown>) {
+  async function act(id: string, fn: () => Promise<unknown>, success: string) {
     setBusy(id);
     setError("");
     try {
       await fn();
       await Promise.all([load(), loadMine()]);
+      toast(success, "success");
     } catch (e) {
       const msg =
         e instanceof Error && e.message
@@ -96,6 +99,7 @@ export default function GachaMarketPage() {
     try {
       await api.gachaBuyCosmetic({ key });
       await loadMine();
+      toast("Capa comprada.", "success");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Não foi possível comprar a capa.");
     } finally {
@@ -169,7 +173,7 @@ export default function GachaMarketPage() {
                 <button
                   type="button"
                   onClick={() =>
-                    void act(listing.id, () => api.gachaListCancel(listing.id))
+                    void act(listing.id, () => api.gachaListCancel(listing.id), "Anúncio cancelado.")
                   }
                   disabled={busy !== null}
                   title={busy === listing.id ? "Cancelando…" : undefined}
@@ -239,7 +243,7 @@ export default function GachaMarketPage() {
                   <button
                     type="button"
                     onClick={() =>
-                      void act(listing.id, () => api.gachaListBuy(listing.id))
+                      void act(listing.id, () => api.gachaListBuy(listing.id), "Carta comprada.")
                     }
                     disabled={disabled}
                     title={

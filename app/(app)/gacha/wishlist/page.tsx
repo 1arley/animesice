@@ -6,6 +6,7 @@ import Image from "next/image";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { safeImageSrc } from "@/lib/url";
+import { useToast } from "@/components/common/ToastProvider";
 import type { GachaWishlistResponse } from "@/types";
 
 export default function GachaWishlistPage() {
@@ -14,6 +15,7 @@ export default function GachaWishlistPage() {
   const [error, setError] = useState("");
   const [publicList, setPublicList] = useState(true);
   const [savingPrivacy, setSavingPrivacy] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     if (!user) return;
@@ -51,6 +53,12 @@ export default function GachaWishlistPage() {
     try {
       const next = await api.gachaWishlistPrivacy(!publicList);
       setPublicList(next.gachaWishlistPublic);
+      toast(
+        next.gachaWishlistPublic ? "Wishlist pública." : "Wishlist privada.",
+        "success",
+      );
+    } catch {
+      setError("Não foi possível salvar a privacidade.");
     } finally {
       setSavingPrivacy(false);
     }

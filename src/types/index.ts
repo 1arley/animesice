@@ -588,6 +588,7 @@ export interface GachaPull {
   user: SocialUser;
   card: GachaCardInfo;
   originalUser?: SocialUser | null;
+  skin?: Pick<GachaSkin, "id" | "name" | "imageUrl"> | null;
 }
 
 /** Status do roll diário + giros/claim (campos novos opcionais p/ compat). */

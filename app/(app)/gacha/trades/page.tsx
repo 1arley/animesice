@@ -7,6 +7,7 @@ import { useAuth } from "@/lib/auth-context";
 import { GachaCard } from "@/components/gacha/GachaCard";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { SectionLabel } from "@/components/common/SectionLabel";
+import { useToast } from "@/components/common/ToastProvider";
 import type {
   GachaPull,
   GachaTrade,
@@ -170,6 +171,7 @@ export default function GachaTradesPage() {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [composing, setComposing] = useState(false);
   const [now, setNow] = useState(() => Date.now());
+  const { toast } = useToast();
 
   const load = useCallback(async () => {
     try {
@@ -210,11 +212,12 @@ export default function GachaTradesPage() {
     .filter((t) => t.status !== ACTIVE)
     .slice(0, 20);
 
-  const act = async (key: string, fn: () => Promise<unknown>) => {
+  const act = async (key: string, fn: () => Promise<unknown>, success: string) => {
     setBusyId(key);
     try {
       await fn();
       setTrades(await api.gachaMyTrades());
+      toast(success, "success");
     } catch (e) {
       const message =
         e instanceof Error
@@ -273,9 +276,9 @@ export default function GachaTradesPage() {
                     myId={user.id}
                     busyId={busyId}
                     now={now}
-                    onAccept={() => void act(`${t.id}:accept`, () => api.gachaTradeAccept(t.id))}
-                    onDecline={() => void act(`${t.id}:decline`, () => api.gachaTradeDecline(t.id))}
-                    onCancel={() => void act(`${t.id}:cancel`, () => api.gachaTradeCancel(t.id))}
+                    onAccept={() => void act(`${t.id}:accept`, () => api.gachaTradeAccept(t.id), "Troca aceita.")}
+                    onDecline={() => void act(`${t.id}:decline`, () => api.gachaTradeDecline(t.id), "Troca recusada.")}
+                    onCancel={() => void act(`${t.id}:cancel`, () => api.gachaTradeCancel(t.id), "Proposta cancelada.")}
                   />
                 ))}
               </ul>
@@ -295,9 +298,9 @@ export default function GachaTradesPage() {
                     myId={user.id}
                     busyId={busyId}
                     now={now}
-                    onAccept={() => void act(`${t.id}:accept`, () => api.gachaTradeAccept(t.id))}
-                    onDecline={() => void act(`${t.id}:decline`, () => api.gachaTradeDecline(t.id))}
-                    onCancel={() => void act(`${t.id}:cancel`, () => api.gachaTradeCancel(t.id))}
+                    onAccept={() => void act(`${t.id}:accept`, () => api.gachaTradeAccept(t.id), "Troca aceita.")}
+                    onDecline={() => void act(`${t.id}:decline`, () => api.gachaTradeDecline(t.id), "Troca recusada.")}
+                    onCancel={() => void act(`${t.id}:cancel`, () => api.gachaTradeCancel(t.id), "Proposta cancelada.")}
                   />
                 ))}
               </ul>
@@ -315,9 +318,9 @@ export default function GachaTradesPage() {
                     myId={user.id}
                     busyId={busyId}
                     now={now}
-                    onAccept={() => void act(`${t.id}:accept`, () => api.gachaTradeAccept(t.id))}
-                    onDecline={() => void act(`${t.id}:decline`, () => api.gachaTradeDecline(t.id))}
-                    onCancel={() => void act(`${t.id}:cancel`, () => api.gachaTradeCancel(t.id))}
+                    onAccept={() => void act(`${t.id}:accept`, () => api.gachaTradeAccept(t.id), "Troca aceita.")}
+                    onDecline={() => void act(`${t.id}:decline`, () => api.gachaTradeDecline(t.id), "Troca recusada.")}
+                    onCancel={() => void act(`${t.id}:cancel`, () => api.gachaTradeCancel(t.id), "Proposta cancelada.")}
                   />
                 ))}
               </ul>
@@ -358,6 +361,7 @@ function ProposalComposer({
   const [loadingTarget, setLoadingTarget] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const { toast } = useToast();
 
   useEffect(() => {
     api.gachaCollection(myId, 1, 100)
@@ -409,6 +413,7 @@ function ProposalComposer({
         offeredUserCardIds: myCardIds,
         requestedUserCardIds: targetCardIds,
       });
+      toast("Proposta enviada.", "success");
       await onCreated();
     } catch (e) {
       const message =

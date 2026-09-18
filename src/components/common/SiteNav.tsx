@@ -110,8 +110,6 @@ export function SiteNav() {
       links: [
         { href: "/comunidade/feed", title: "Feed", icon: "feed" },
         { href: "/gacha", title: "Gacha", icon: "gacha" },
-        { href: "/gacha/skins", title: "Skins", icon: "gacha" },
-        { href: "/gacha/wishlist", title: "Wishlist", icon: "gacha" },
         { href: "/blog", title: "Blog", icon: "feed" },
         { href: "/comunidade/usuarios", title: "Usuários", icon: "usuarios" },
         {
