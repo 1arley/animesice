@@ -15,6 +15,33 @@ test.beforeEach(async ({ page }) => {
   await loginAs(page);
 });
 
+test("conservação distingue as cinco qualidades sem mudar a raridade", async ({ page }, testInfo) => {
+  const conditions = [0.04, 0.1, 0.25, 0.45, 0.8];
+  const labels = ["MINT", "NM", "EX", "PLAYED", "POOR"];
+  await page.route("**/gacha/collection?**", route => route.fulfill({ json: {
+    data: conditions.map((condition, i) => ({
+      ...card, id: `quality-${i}`, condition,
+      card: { ...card.card, name: `Conservação ${labels[i]}` },
+    })),
+    meta: { ...meta, total: 5 }, stats: { total: 5, totalValue: 500 },
+  } }));
+  await page.goto("/gacha/collection");
+  const surfaces = [];
+  for (const label of labels) {
+    const owned = page.getByRole("button", { name: new RegExp(`Conservação ${label}`) });
+    await expect(owned).toBeVisible();
+    await expect(owned.getByText("RARA", { exact: true })).toBeVisible();
+    const surface = owned.locator('[aria-hidden].pointer-events-none:not(.condition-mint-glare)');
+    await expect(surface).toHaveCount(1);
+    surfaces.push(await surface.evaluate(el => {
+      const css = getComputedStyle(el);
+      return `${css.backgroundImage}|${css.boxShadow}`;
+    }));
+  }
+  expect(new Set(surfaces).size).toBe(5);
+  await page.screenshot({ path: testInfo.outputPath("conditions.png"), fullPage: true });
+});
+
 for (const unlock of ["clock", "alreadyUnlocked", "unlocked"]) {
   test(`claim libera por ${unlock}`, async ({ page }) => {
     const now = new Date("2026-09-11T00:00:00Z");
