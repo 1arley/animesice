@@ -170,7 +170,7 @@ async function ensureRefresh(): Promise<void> {
       });
       if (!res.ok) throw new ApiError(res.status, "Sessao expirada.");
     } catch (e) {
-      if (ac.signal.aborted) throw new ApiError(401, "Refresh timeout.");
+      if (ac.signal.aborted) throw new ApiError(503, "Refresh timeout.");
       throw e;
     } finally {
       clearTimeout(timer);
@@ -218,13 +218,8 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     if (!hasSession) {
       throw new ApiError(401, "Sessão expirada.");
     }
-    try {
-      await ensureRefresh();
-      res = await exec();
-    } catch (e) {
-      if (e instanceof ApiError) throw e;
-      throw new ApiError(401, "Sessão expirada.");
-    }
+    await ensureRefresh();
+    res = await exec();
   }
 
   const data = await res.json().catch(() => null);
