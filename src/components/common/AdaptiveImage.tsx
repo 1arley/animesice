@@ -28,6 +28,7 @@ export function AdaptiveImage({
   desktopMinWidth = 0,
   onError,
   alt,
+  priority = false,
   ...imageProps
 }: AdaptiveImageProps) {
   const [desktopFailed, setDesktopFailed] = useState(false);
@@ -50,6 +51,7 @@ export function AdaptiveImage({
         key={hasDesktopCandidate ? "preferred" : "fallback"}
         src={hasDesktopCandidate ? (desktopSrc as string) : src}
         alt={alt}
+        priority={priority}
         onError={handleError}
       />
     );
@@ -57,13 +59,18 @@ export function AdaptiveImage({
 
   return (
     <picture>
-      <source
-        media={`(min-width: ${desktopMinWidth}px)`}
-        srcSet={desktopSrc}
-        data-image-resolution="desktop"
-      />
+      {!priority && (
+        <source
+          media={`(min-width: ${desktopMinWidth}px)`}
+          srcSet={desktopSrc}
+          data-image-resolution="desktop"
+        />
+      )}
       <Image
         {...imageProps}
+        priority={false}
+        loading={priority ? "eager" : imageProps.loading}
+        fetchPriority={priority ? "high" : imageProps.fetchPriority}
         key={desktopFailed ? "fallback" : "preferred"}
         src={src}
         alt={alt}

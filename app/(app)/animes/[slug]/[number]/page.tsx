@@ -5,6 +5,7 @@ import { serverFetchJson, serverStreamSourceAsync } from "@/lib/api-server";
 import type { Episode, Anime } from "@/types";
 
 import { WatchClient } from "@/components/common/WatchClient";
+import { SponsoredSignal } from "@/components/common/SponsoredSignal";
 import { SITE_URL } from "@/lib/site";
 import { escapeJsonLd } from "@/lib/url";
 
@@ -109,12 +110,6 @@ export default async function WatchPage({
       ]);
   if (!episode) notFound();
 
-  // Números dos episódios já vem do backend (evita fetch extra no client)
-  const episodeNumbers = (episode.anime.episodes ?? [])
-    .map((ep: { number: number }) => ep.number)
-    .filter((v: number, i: number, a: number[]) => a.indexOf(v) === i)
-    .sort((a: number, b: number) => a - b);
-
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "TVEpisode",
@@ -174,8 +169,8 @@ export default async function WatchPage({
         number={number}
         initialEpisode={episode}
         initialSource={initialSource}
-        episodeNumbers={episodeNumbers}
       />
+      <SponsoredSignal href={process.env.MONETAG_SPONSOR_LINK} />
     </div>
   );
 }
