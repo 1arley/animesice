@@ -747,7 +747,11 @@ export type GachaBypassStatus = "PENDING" | "PAID" | "EXPIRED";
 /** Coleção de cartas com stats. */
 export interface GachaCollectionResponse {
   data: GachaPull[];
-  stats: { total: number; totalValue: number };
+  stats: {
+    total: number;
+    totalValue: number;
+    medals: Array<{ id: string; name: string; version: number }>;
+  };
   meta: { total: number; page: number; limit: number; totalPages: number };
 }
 
@@ -827,7 +831,56 @@ export interface GachaWishlistResponse {
 }
 
 /** Carta destaque — setComplete sinaliza conjunto completo (prestígio no perfil). */
-export type GachaFeatured = GachaPull & { setComplete?: boolean };
+export type GachaFeatured = GachaPull & {
+  setComplete?: boolean;
+  featured?: {
+    enabled: boolean;
+    claimed: number;
+    startedAt: string | null;
+    settledAt: string | null;
+    ratePercentPerTwoHours: number;
+    dailyCapPercent: number;
+    accumulationDays: number;
+    medal: { id: string; name: string } | null;
+  };
+};
+
+export interface GachaCollectionProgress {
+  id: string;
+  name: string;
+  slug: string;
+  version: number;
+  total: number;
+  discovered: number;
+  percent: number;
+  rewards: {
+    reward25At: string | null;
+    reward50At: string | null;
+    reward100At: string | null;
+  };
+  favorite: boolean;
+  pinned: boolean;
+}
+
+export interface GachaEngagementPilotDashboard {
+  config: { percent: number; startedAt: string };
+  cohort: { assigned: number; totalUsers: number };
+  economy: {
+    emitted: number;
+    sinks: number;
+    ratio: number | null;
+    pause: boolean;
+  };
+  behavior: {
+    earners: number;
+    meaningfulUsers: number;
+    rewardOnlyUsers: number;
+    rewardOnlyRate: number;
+    sharedCards: number;
+    pause: boolean;
+  };
+  satisfaction: { measured: boolean };
+}
 
 export type GachaTradeStatus =
   "PENDING" | "COMPLETED" | "CANCELLED" | "EXPIRED";
