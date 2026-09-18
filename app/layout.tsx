@@ -5,7 +5,6 @@ import { AuthProvider } from "@/lib/auth-context";
 import { ToastProvider } from "@/components/common/ToastProvider";
 import { SITE_URL } from "@/lib/site";
 import { escapeJsonLd } from "@/lib/url";
-import { ThirdPartyScripts } from "@/components/common/ThirdPartyScripts";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/next";
 import { DeferredCrystalSplash } from "@/components/animesice/DeferredCrystalSplash";
@@ -161,8 +160,6 @@ export default function RootLayout({
         <DeferredCrystalSplash />
         <SpeedInsights />
         <Analytics />
-        {/* Direct Link controlado localmente; nenhum script de anúncios remoto. */}
-        <ThirdPartyScripts />
       </body>
     </html>
   );
