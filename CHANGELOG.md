@@ -1,3 +1,10 @@
+# [1.1.0](https://github.com/1arley/animesice/compare/v1.0.0...v1.1.0) (2026-09-18)
+
+
+### Features
+
+* **ads:** sinal de patrocinador nas paginas de anime e watch ([cf13d6f](https://github.com/1arley/animesice/commit/cf13d6fd4434ec42524f16916a19456f74775ef7))
+
 # 1.0.0 (2026-09-18)
 
 
