@@ -4,9 +4,22 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { api, ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
-import type { AdminGachaCard, Anime, GachaPull } from "@/types";
+import type {
+  AdminGachaCard,
+  Anime,
+  GachaEngagementPilotDashboard,
+  GachaPull,
+} from "@/types";
 
-const TIERS = ["COMUM", "INCOMUM", "RARA", "EPICA", "LENDARIA", "MITICA", "GALACTICA"] as const;
+const TIERS = [
+  "COMUM",
+  "INCOMUM",
+  "RARA",
+  "EPICA",
+  "LENDARIA",
+  "MITICA",
+  "GALACTICA",
+] as const;
 
 const PAGE_SIZE = 48;
 
@@ -51,11 +64,30 @@ export default function AdminGachaPage() {
   });
   const [editing, setEditing] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [pilot, setPilot] = useState<GachaEngagementPilotDashboard | null>(
+    null,
+  );
+  const [pilotPercent, setPilotPercent] = useState(10);
+  const [savingPilot, setSavingPilot] = useState(false);
+  const [pilotMessage, setPilotMessage] = useState("");
   const debounce = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  async function loadCards(page = 1, name = cardSearch, rar = rarity, anime = animeId, state = status) {
+  async function loadCards(
+    page = 1,
+    name = cardSearch,
+    rar = rarity,
+    anime = animeId,
+    state = status,
+  ) {
     try {
-      const res = await api.adminListGachaCards(page, PAGE_SIZE, name || undefined, rar || undefined, anime || undefined, state || undefined);
+      const res = await api.adminListGachaCards(
+        page,
+        PAGE_SIZE,
+        name || undefined,
+        rar || undefined,
+        anime || undefined,
+        state || undefined,
+      );
       setCards(res.data);
       setCardMeta({
         page: res.meta.page,
@@ -78,8 +110,40 @@ export default function AdminGachaPage() {
           total: res.meta.total,
         });
       })
-      .catch((e) => setError(e instanceof ApiError ? e.message : "Erro ao carregar pool."));
+      .catch((e) =>
+        setError(e instanceof ApiError ? e.message : "Erro ao carregar pool."),
+      );
   }, []);
+
+  useEffect(() => {
+    api
+      .adminGachaEngagementPilot()
+      .then((dashboard) => {
+        setPilot(dashboard);
+        setPilotPercent(dashboard.config.percent);
+      })
+      .catch((e) =>
+        setError(
+          e instanceof ApiError ? e.message : "Erro ao carregar o piloto.",
+        ),
+      );
+  }, []);
+
+  async function savePilot() {
+    if (savingPilot) return;
+    setSavingPilot(true);
+    setPilotMessage("");
+    try {
+      setPilot(await api.adminUpdateGachaEngagementPilot(pilotPercent));
+      setPilotMessage(`Piloto atualizado para ${pilotPercent}% da base.`);
+    } catch (e) {
+      setError(
+        e instanceof ApiError ? e.message : "Erro ao atualizar o piloto.",
+      );
+    } finally {
+      setSavingPilot(false);
+    }
+  }
 
   function onCardSearch(value: string) {
     setCardSearch(value);
@@ -126,7 +190,13 @@ export default function AdminGachaPage() {
     try {
       if (editing) {
         const current = cards.find((card) => card.id === editing);
-        if (current?.rarity !== form.rarity && !window.confirm("Alterar raridade recalculará todas as cópias sem override. Continuar?")) return;
+        if (
+          current?.rarity !== form.rarity &&
+          !window.confirm(
+            "Alterar raridade recalculará todas as cópias sem override. Continuar?",
+          )
+        )
+          return;
         await api.adminUpdateGachaCard(editing, form);
       } else await api.adminCreateGachaCard(form);
       setForm({
@@ -168,7 +238,10 @@ export default function AdminGachaPage() {
         });
       })
       .catch((e) => {
-        if (!cancelled) setError(e instanceof ApiError ? e.message : "Erro ao carregar cartas.");
+        if (!cancelled)
+          setError(
+            e instanceof ApiError ? e.message : "Erro ao carregar cartas.",
+          );
       });
     return () => {
       cancelled = true;
@@ -205,7 +278,12 @@ export default function AdminGachaPage() {
   }
 
   async function setCardValue(card: GachaPull, restore = false) {
-    const raw = restore ? null : window.prompt("Novo valor inteiro entre 0 e 1000000", String(card.value));
+    const raw = restore
+      ? null
+      : window.prompt(
+          "Novo valor inteiro entre 0 e 1000000",
+          String(card.value),
+        );
     if (!restore && raw === null) return;
     const reason = window.prompt("Motivo da alteração (mínimo 10 caracteres)");
     if (!reason) return;
@@ -229,21 +307,156 @@ export default function AdminGachaPage() {
         </Link>
       </div>
       {error && (
-        <div role="alert" className="mt-4 border border-signal/40 bg-signal/10 p-3 text-body-sm text-signal">
+        <div
+          role="alert"
+          className="mt-4 border border-signal/40 bg-signal/10 p-3 text-body-sm text-signal"
+        >
           {error}
         </div>
+      )}
+      {pilot && (
+        <section
+          aria-labelledby="pilot-title"
+          className="mt-6 border border-hairline bg-panel p-4"
+        >
+          <div className="flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <h2
+                id="pilot-title"
+                className="font-display text-display-lg text-snow"
+              >
+                Piloto de destaque
+              </h2>
+              <p className="mt-1 text-body-sm text-mist">
+                Coorte estável desde{" "}
+                {new Date(pilot.config.startedAt).toLocaleDateString("pt-BR")}.
+              </p>
+            </div>
+            <div className="flex flex-wrap items-end gap-2">
+              <label
+                className="grid gap-1 text-caption text-mist"
+                htmlFor="pilot-percent"
+              >
+                Percentual da base
+                <input
+                  id="pilot-percent"
+                  className="field w-28"
+                  type="number"
+                  min={0}
+                  max={100}
+                  value={pilotPercent}
+                  onChange={(e) => setPilotPercent(Number(e.target.value))}
+                />
+              </label>
+              {user?.role === "SUPERADMIN" && (
+                <button
+                  type="button"
+                  className="admin-tab min-h-11"
+                  disabled={
+                    savingPilot || pilotPercent < 0 || pilotPercent > 100
+                  }
+                  onClick={() => void savePilot()}
+                >
+                  {savingPilot ? "Salvando…" : "Aplicar"}
+                </button>
+              )}
+            </div>
+          </div>
+          <dl className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="border border-hairline p-3">
+              <dt className="font-mono text-caption text-mist">Coorte</dt>
+              <dd className="mt-1 text-title text-snow">
+                {pilot.cohort.assigned}/{pilot.cohort.totalUsers}
+              </dd>
+            </div>
+            <div className="border border-hairline p-3">
+              <dt className="font-mono text-caption text-mist">
+                Emissão / gasto
+              </dt>
+              <dd className="mt-1 text-title text-snow">
+                {pilot.economy.emitted} / {pilot.economy.sinks}
+              </dd>
+            </div>
+            <div className="border border-hairline p-3">
+              <dt className="font-mono text-caption text-mist">
+                Uso só por recompensa
+              </dt>
+              <dd className="mt-1 text-title text-snow">
+                {(pilot.behavior.rewardOnlyRate * 100).toFixed(1)}%
+              </dd>
+            </div>
+            <div className="border border-hairline p-3">
+              <dt className="font-mono text-caption text-mist">
+                Cartas muito circuladas
+              </dt>
+              <dd className="mt-1 text-title text-snow">
+                {pilot.behavior.sharedCards}
+              </dd>
+            </div>
+          </dl>
+          <p
+            role="status"
+            className={`mt-4 border p-3 text-body-sm ${
+              pilot.economy.pause || pilot.behavior.pause
+                ? "border-signal/40 text-signal"
+                : "border-ice/30 text-ice"
+            }`}
+          >
+            {pilot.economy.pause || pilot.behavior.pause
+              ? "Pausar expansão: um limite econômico ou comportamental foi excedido."
+              : pilot.satisfaction.measured
+                ? "Limites técnicos saudáveis; confira satisfação antes de expandir."
+                : "Limites técnicos saudáveis, mas satisfação ainda não foi medida: não expandir."}
+          </p>
+          {pilotMessage && (
+            <p
+              role="status"
+              aria-atomic="true"
+              className="mt-2 text-body-sm text-ice"
+            >
+              {pilotMessage}
+            </p>
+          )}
+        </section>
       )}
       <section className="mt-6 grid gap-6 lg:grid-cols-2">
         <div className="border border-hairline bg-panel p-4">
           <h2 className="font-display text-display-lg text-snow">Pool</h2>
           <form className="mt-4 grid gap-3" onSubmit={saveCard}>
-            <input className="field" required placeholder="Personagem" aria-label="Personagem" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-            <input className="field" required type="url" placeholder="Imagem HTTPS" aria-label="Imagem HTTPS" value={form.image} onChange={(e) => setForm({ ...form, image: e.target.value })} />
+            <input
+              className="field"
+              required
+              placeholder="Personagem"
+              aria-label="Personagem"
+              value={form.name}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
+            />
+            <input
+              className="field"
+              required
+              type="url"
+              placeholder="Imagem HTTPS"
+              aria-label="Imagem HTTPS"
+              value={form.image}
+              onChange={(e) => setForm({ ...form, image: e.target.value })}
+            />
             <label className="flex items-center gap-2 text-body-sm text-mist">
-              <input type="checkbox" checked={form.imageHidden} onChange={(e) => setForm({ ...form, imageHidden: e.target.checked })} />
+              <input
+                type="checkbox"
+                checked={form.imageHidden}
+                onChange={(e) =>
+                  setForm({ ...form, imageHidden: e.target.checked })
+                }
+              />
               Ocultar arte como ???
             </label>
-            <input className="field" required placeholder="Buscar anime" aria-label="Buscar anime" onChange={(e) => void searchAnimes(e.target.value)} />
+            <input
+              className="field"
+              required
+              placeholder="Buscar anime"
+              aria-label="Buscar anime"
+              onChange={(e) => void searchAnimes(e.target.value)}
+            />
             <select
               className="field"
               required
@@ -265,21 +478,45 @@ export default function AdminGachaPage() {
                 </option>
               ))}
             </select>
-            <select className="field" aria-label="Raridade" value={form.rarity} onChange={(e) => setForm({ ...form, rarity: e.target.value })}>
+            <select
+              className="field"
+              aria-label="Raridade"
+              value={form.rarity}
+              onChange={(e) => setForm({ ...form, rarity: e.target.value })}
+            >
               {TIERS.map((t) => (
                 <option key={t} value={t}>
                   {t}
                 </option>
               ))}
             </select>
-            {editing && <input className="field" placeholder="Motivo (obrigatório ao mudar anime ou raridade)" aria-label="Motivo da alteração" value={form.reason} onChange={(e) => setForm({ ...form, reason: e.target.value })} />}
+            {editing && (
+              <input
+                className="field"
+                placeholder="Motivo (obrigatório ao mudar anime ou raridade)"
+                aria-label="Motivo da alteração"
+                value={form.reason}
+                onChange={(e) => setForm({ ...form, reason: e.target.value })}
+              />
+            )}
             <button className="admin-tab w-fit" type="submit">
               {editing ? "Salvar" : "Criar"}
             </button>
           </form>
           <div className="mt-4 grid gap-2 sm:grid-cols-[minmax(0,1fr)_10rem_9rem]">
-            <input className="field flex-1" placeholder="Buscar personagem" aria-label="Buscar personagem" value={cardSearch} onChange={(e) => onCardSearch(e.target.value)} />
-            <select className="field" aria-label="Filtrar raridade" value={rarity} onChange={(e) => onRarityChange(e.target.value)}>
+            <input
+              className="field flex-1"
+              placeholder="Buscar personagem"
+              aria-label="Buscar personagem"
+              value={cardSearch}
+              onChange={(e) => onCardSearch(e.target.value)}
+            />
+            <select
+              className="field"
+              aria-label="Filtrar raridade"
+              value={rarity}
+              onChange={(e) => onRarityChange(e.target.value)}
+            >
               <option value="">Todas</option>
               {TIERS.map((t) => (
                 <option key={t} value={t}>
@@ -304,11 +541,15 @@ export default function AdminGachaPage() {
             </select>
           </div>
           <p className="mt-2 font-mono text-caption text-mist-soft">
-            {cardMeta.total} cartas · página {cardMeta.page}/{cardMeta.totalPages}
+            {cardMeta.total} cartas · página {cardMeta.page}/
+            {cardMeta.totalPages}
           </p>
           <div className="mt-2 space-y-2">
             {cards.map((card) => (
-              <div className="flex flex-col gap-2 border-b border-hairline py-3 sm:flex-row sm:items-center sm:justify-between" key={card.id}>
+              <div
+                className="flex flex-col gap-2 border-b border-hairline py-3 sm:flex-row sm:items-center sm:justify-between"
+                key={card.id}
+              >
                 <span className="min-w-0 truncate text-mist">
                   {card.name}{" "}
                   <small>
@@ -327,7 +568,14 @@ export default function AdminGachaPage() {
                     className="admin-tab"
                     onClick={() => {
                       setEditing(card.id);
-                      if (card.anime && !animes.some((a) => a.id === card.anime!.id)) setAnimes((current) => [...current, card.anime as Anime]);
+                      if (
+                        card.anime &&
+                        !animes.some((a) => a.id === card.anime!.id)
+                      )
+                        setAnimes((current) => [
+                          ...current,
+                          card.anime as Anime,
+                        ]);
                       setForm({
                         name: card.name,
                         image: card.image ?? "",
@@ -347,7 +595,13 @@ export default function AdminGachaPage() {
                         void api
                           .adminPublishGachaCard(card.id)
                           .then(() => loadCards())
-                          .catch((e) => setError(e instanceof ApiError ? e.message : "Erro ao publicar carta."))
+                          .catch((e) =>
+                            setError(
+                              e instanceof ApiError
+                                ? e.message
+                                : "Erro ao publicar carta.",
+                            ),
+                          )
                       }
                     >
                       Publicar
@@ -360,14 +614,23 @@ export default function AdminGachaPage() {
                         void api
                           .adminArchiveGachaCard(card.id)
                           .then(() => loadCards())
-                          .catch((e) => setError(e instanceof ApiError ? e.message : "Erro ao arquivar carta."))
+                          .catch((e) =>
+                            setError(
+                              e instanceof ApiError
+                                ? e.message
+                                : "Erro ao arquivar carta.",
+                            ),
+                          )
                       }
                     >
                       Arquivar
                     </button>
                   )}
                   {selectedUser && (
-                    <button className="admin-tab" onClick={() => void grantCard(card.id)}>
+                    <button
+                      className="admin-tab"
+                      onClick={() => void grantCard(card.id)}
+                    >
                       Conceder
                     </button>
                   )}
@@ -377,10 +640,18 @@ export default function AdminGachaPage() {
           </div>
           {cardMeta.totalPages > 1 && (
             <div className="mt-3 flex items-center justify-between">
-              <button className="admin-tab" disabled={cardMeta.page <= 1} onClick={() => gotoCardPage(cardMeta.page - 1)}>
+              <button
+                className="admin-tab"
+                disabled={cardMeta.page <= 1}
+                onClick={() => gotoCardPage(cardMeta.page - 1)}
+              >
                 Anterior
               </button>
-              <button className="admin-tab" disabled={cardMeta.page >= cardMeta.totalPages} onClick={() => gotoCardPage(cardMeta.page + 1)}>
+              <button
+                className="admin-tab"
+                disabled={cardMeta.page >= cardMeta.totalPages}
+                onClick={() => gotoCardPage(cardMeta.page + 1)}
+              >
                 Próxima
               </button>
             </div>
@@ -388,10 +659,20 @@ export default function AdminGachaPage() {
         </div>
         <div className="border border-hairline bg-panel p-4">
           <h2 className="font-display text-display-lg text-snow">Usuário</h2>
-          <input className="field mt-4" placeholder="Buscar usuário" aria-label="Buscar usuário" value={search} onChange={(e) => void searchUsers(e.target.value)} />
+          <input
+            className="field mt-4"
+            placeholder="Buscar usuário"
+            aria-label="Buscar usuário"
+            value={search}
+            onChange={(e) => void searchUsers(e.target.value)}
+          />
           <div className="mt-2 space-y-1">
             {users.map((user) => (
-              <button className="block w-full p-2 text-left text-mist hover:bg-white/5" key={user.id} onClick={() => void loadUserCards(user.id, 1)}>
+              <button
+                className="block w-full p-2 text-left text-mist hover:bg-white/5"
+                key={user.id}
+                onClick={() => void loadUserCards(user.id, 1)}
+              >
                 {user.userName ?? user.name ?? user.email}
               </button>
             ))}
@@ -404,29 +685,46 @@ export default function AdminGachaPage() {
                 </button>
               </div>
               <p className="mt-3 font-mono text-caption text-mist-soft">
-                {userCardsMeta.total} cartas · página {userCardsMeta.page}/{userCardsMeta.totalPages}
+                {userCardsMeta.total} cartas · página {userCardsMeta.page}/
+                {userCardsMeta.totalPages}
               </p>
               <div className="mt-2 space-y-2">
                 {userCards.map((card) => (
-                  <div className="flex flex-col gap-2 border-b border-hairline py-3 sm:flex-row sm:items-center sm:justify-between" key={card.id}>
+                  <div
+                    className="flex flex-col gap-2 border-b border-hairline py-3 sm:flex-row sm:items-center sm:justify-between"
+                    key={card.id}
+                  >
                     <span className="min-w-0 truncate text-mist">
                       {card.card.name} · {card.card.rarity} · {card.value} pts
-                      {card.valueOverride !== null && card.valueOverride !== undefined ? " · override" : ""}
+                      {card.valueOverride !== null &&
+                      card.valueOverride !== undefined
+                        ? " · override"
+                        : ""}
                     </span>
                     <span className="flex flex-wrap gap-1 sm:flex-none">
                       {user?.role === "SUPERADMIN" && (
                         <>
-                          <button className="admin-tab" onClick={() => void setCardValue(card)}>
+                          <button
+                            className="admin-tab"
+                            onClick={() => void setCardValue(card)}
+                          >
                             Valor
                           </button>
-                          {card.valueOverride !== null && card.valueOverride !== undefined && (
-                            <button className="admin-tab" onClick={() => void setCardValue(card, true)}>
-                              Restaurar
-                            </button>
-                          )}
+                          {card.valueOverride !== null &&
+                            card.valueOverride !== undefined && (
+                              <button
+                                className="admin-tab"
+                                onClick={() => void setCardValue(card, true)}
+                              >
+                                Restaurar
+                              </button>
+                            )}
                         </>
                       )}
-                      <button className="admin-tab" onClick={() => void removeCard(card.id)}>
+                      <button
+                        className="admin-tab"
+                        onClick={() => void removeCard(card.id)}
+                      >
                         Excluir
                       </button>
                     </span>
@@ -435,10 +733,22 @@ export default function AdminGachaPage() {
               </div>
               {userCardsMeta.totalPages > 1 && (
                 <div className="mt-3 flex items-center justify-between">
-                  <button className="admin-tab" disabled={userCardsMeta.page <= 1} onClick={() => void loadUserCards(selectedUser, userCardsMeta.page - 1)}>
+                  <button
+                    className="admin-tab"
+                    disabled={userCardsMeta.page <= 1}
+                    onClick={() =>
+                      void loadUserCards(selectedUser, userCardsMeta.page - 1)
+                    }
+                  >
                     Anterior
                   </button>
-                  <button className="admin-tab" disabled={userCardsMeta.page >= userCardsMeta.totalPages} onClick={() => void loadUserCards(selectedUser, userCardsMeta.page + 1)}>
+                  <button
+                    className="admin-tab"
+                    disabled={userCardsMeta.page >= userCardsMeta.totalPages}
+                    onClick={() =>
+                      void loadUserCards(selectedUser, userCardsMeta.page + 1)
+                    }
+                  >
                     Próxima
                   </button>
                 </div>
