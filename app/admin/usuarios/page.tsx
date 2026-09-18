@@ -55,22 +55,17 @@ export default function AdminUsersPage() {
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const loadUsers = useCallback(
-    (targetPage: number, targetSearch: string) => {
-      setLoading(true);
-      api
-        .adminListUsers(targetPage, PAGE_SIZE, targetSearch || undefined)
-        .then((res) => {
-          setUsers(res.data);
-          setMeta(res.meta);
-        })
-        .catch((e) =>
-          setError(e instanceof ApiError ? e.message : "Erro ao carregar usuários."),
-        )
-        .finally(() => setLoading(false));
-    },
-    [],
-  );
+  const loadUsers = useCallback((targetPage: number, targetSearch: string) => {
+    setLoading(true);
+    api
+      .adminListUsers(targetPage, PAGE_SIZE, targetSearch || undefined)
+      .then((res) => {
+        setUsers(res.data);
+        setMeta(res.meta);
+      })
+      .catch((e) => setError(e instanceof ApiError ? e.message : "Erro ao carregar usuários."))
+      .finally(() => setLoading(false));
+  }, []);
 
   useEffect(() => {
     if (!isPrivileged(user)) return;
@@ -125,37 +120,22 @@ export default function AdminUsersPage() {
           {total} total
         </span>
       </div>
-      <p className="text-body-sm text-mist">
-        Buscar, alterar cargo, suspender e excluir usuários.
-      </p>
+      <p className="text-body-sm text-mist">Buscar, alterar cargo, suspender e excluir usuários.</p>
 
-      {error && (
-        <div className="mt-4 border border-signal/40 bg-signal/10 p-3 text-body-sm text-signal">
-          {error}
-        </div>
-      )}
+      {error && <div className="mt-4 border border-signal/40 bg-signal/10 p-3 text-body-sm text-signal">{error}</div>}
 
       <div className="mt-4 flex items-center gap-3">
-        <input
-          type="search"
-          placeholder="Buscar por email, nome ou apelido..."
-          aria-label="Buscar por email, nome ou apelido"
-          value={search}
-          onChange={(e) => handleSearchChange(e.target.value)}
-          className="field max-w-xs"
-        />
+        <input type="search" placeholder="Buscar por email, nome ou apelido..." aria-label="Buscar por email, nome ou apelido" value={search} onChange={(e) => handleSearchChange(e.target.value)} className="field max-w-xs" />
       </div>
 
       {loading ? (
         <div className="admin-empty mt-4">Carregando...</div>
       ) : users.length === 0 ? (
-        <div className="admin-empty mt-4">
-          {search ? `Nenhum usuário encontrado para "${search}".` : "Nenhum usuário."}
-        </div>
+        <div className="admin-empty mt-4">{search ? `Nenhum usuário encontrado para "${search}".` : "Nenhum usuário."}</div>
       ) : (
         <>
-          <div className="mt-4 overflow-x-auto border border-hairline">
-            <table className="admin-table">
+          <div className="mt-4 border border-hairline md:overflow-x-auto">
+            <table className="admin-table admin-table-responsive">
               <thead>
                 <tr>
                   <th>Email</th>
@@ -176,16 +156,16 @@ export default function AdminUsersPage() {
 
                   return (
                     <tr key={u.id}>
-                      <td className="text-mist">{u.email}</td>
-                      <td className="text-mist">
+                      <td data-label="Email" className="text-mist">
+                        {u.email}
+                      </td>
+                      <td data-label="Nome" className="text-mist">
                         {u.userName ?? u.name ?? "—"}
                       </td>
-                      <td>
-                        <span className={`badge ${ROLE_BADGE[u.role] ?? "badge-muted"}`}>
-                          {ROLE_LABELS[u.role] ?? u.role}
-                        </span>
+                      <td data-label="Cargo">
+                        <span className={`badge ${ROLE_BADGE[u.role] ?? "badge-muted"}`}>{ROLE_LABELS[u.role] ?? u.role}</span>
                       </td>
-                      <td>
+                      <td data-label="Verificado">
                         {u.isVerified ? (
                           <span className="badge badge-ice">
                             <span className="badge-dot bg-ice" />
@@ -198,7 +178,7 @@ export default function AdminUsersPage() {
                           </span>
                         )}
                       </td>
-                      <td>
+                      <td data-label="Status">
                         {isSuspended ? (
                           <span className="badge badge-signal">
                             <span className="badge-dot bg-signal" />
@@ -210,68 +190,33 @@ export default function AdminUsersPage() {
                             Ativo
                           </span>
                         )}
-                        {isSuspended && (
-                          <span className="ml-2 block text-caption text-mist">
-                            até {new Date(u.suspendedUntil!).toLocaleDateString("pt-BR")}
-                          </span>
-                        )}
+                        {isSuspended && <span className="ml-2 block text-caption text-mist">até {new Date(u.suspendedUntil!).toLocaleDateString("pt-BR")}</span>}
                       </td>
-                      <td className="text-caption text-mist">
+                      <td data-label="Criado" className="text-caption text-mist">
                         {new Date(u.createdAt).toLocaleDateString("pt-BR")}
                       </td>
-                      <td>
+                      <td data-label="Ações">
                         <div className="flex flex-wrap gap-1.5">
-                          <Link
-                            href={`/admin/usuarios/${u.id}`}
-                            className="btn-ghost btn-sm"
-                          >
+                          <Link href={`/admin/usuarios/${u.id}`} className="btn-ghost btn-sm">
                             Ver
                           </Link>
-                          <button
-                            onClick={() => setRoleModal(u)}
-                            disabled={isSelf}
-                            className="btn-ghost btn-sm"
-                            title={isSelf ? "Não pode alterar próprio cargo" : "Alterar cargo"}
-                          >
+                          <button onClick={() => setRoleModal(u)} disabled={isSelf} className="btn-ghost btn-sm" title={isSelf ? "Não pode alterar próprio cargo" : "Alterar cargo"}>
                             Cargo
                           </button>
-                          <button
-                            onClick={() => setModerateModal(u)}
-                            disabled={!canModify}
-                            className="btn-ghost btn-sm"
-                            title={!canModify ? "Sem permissão" : "Moderar usuário"}
-                          >
+                          <button onClick={() => setModerateModal(u)} disabled={!canModify} className="btn-ghost btn-sm" title={!canModify ? "Sem permissão" : "Moderar usuário"}>
                             Moderar
                           </button>
                           {confirmDelete === u.id ? (
                             <>
-                              <button
-                                onClick={() => deleteUser(u.id)}
-                                disabled={actioning === u.id || !canDelete}
-                                className="btn-danger btn-sm"
-                              >
+                              <button onClick={() => deleteUser(u.id)} disabled={actioning === u.id || !canDelete} className="btn-danger btn-sm">
                                 {actioning === u.id ? "..." : "Confirmar?"}
                               </button>
-                              <button
-                                onClick={() => setConfirmDelete(null)}
-                                className="btn-ghost btn-sm"
-                              >
+                              <button onClick={() => setConfirmDelete(null)} className="btn-ghost btn-sm">
                                 Cancelar
                               </button>
                             </>
                           ) : (
-                            <button
-                              onClick={() => setConfirmDelete(u.id)}
-                              disabled={!canDelete}
-                              className="btn-ghost btn-sm text-signal"
-                              title={
-                                isSelf
-                                  ? "Não pode excluir a si mesmo"
-                                  : u.role === "SUPERADMIN"
-                                    ? "Não é possível excluir SUPERADMIN"
-                                    : "Excluir usuário"
-                              }
-                            >
+                            <button onClick={() => setConfirmDelete(u.id)} disabled={!canDelete} className="btn-ghost btn-sm text-signal" title={isSelf ? "Não pode excluir a si mesmo" : u.role === "SUPERADMIN" ? "Não é possível excluir SUPERADMIN" : "Excluir usuário"}>
                               Excluir
                             </button>
                           )}
@@ -286,21 +231,13 @@ export default function AdminUsersPage() {
 
           {totalPages > 1 && (
             <nav className="mt-6 flex items-center justify-center gap-3" aria-label="Paginação">
-              <button
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={page <= 1}
-                className="btn-ghost disabled:opacity-40 disabled:cursor-not-allowed"
-              >
+              <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page <= 1} className="btn-ghost disabled:opacity-40 disabled:cursor-not-allowed">
                 ← Anterior
               </button>
               <span className="font-display text-body-sm text-mist tabular-nums">
                 {page} / {totalPages}
               </span>
-              <button
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                disabled={page >= totalPages}
-                className="btn-ghost disabled:opacity-40 disabled:cursor-not-allowed"
-              >
+              <button onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page >= totalPages} className="btn-ghost disabled:opacity-40 disabled:cursor-not-allowed">
                 Próxima →
               </button>
             </nav>
@@ -309,11 +246,7 @@ export default function AdminUsersPage() {
       )}
 
       {roleModal && (
-        <SharedModal
-          open={!!roleModal}
-          onClose={() => setRoleModal(null)}
-          title="Alterar cargo"
-        >
+        <SharedModal open={!!roleModal} onClose={() => setRoleModal(null)} title="Alterar cargo">
           <p className="text-body-sm text-mist">
             Usuário: <span className="text-ice">{roleModal.email}</span>
           </p>
@@ -322,16 +255,7 @@ export default function AdminUsersPage() {
           </p>
           <div className="mt-4 flex flex-col gap-2">
             {(["USER", "ADMIN", "SUPERADMIN"] as const).map((r) => (
-              <button
-                key={r}
-                onClick={() => changeRole(roleModal.id, r)}
-                disabled={r === roleModal.role || actioning === roleModal.id}
-                className={`border px-3 py-2 text-left text-body-sm transition-colors disabled:opacity-50 ${
-                  r === roleModal.role
-                    ? "border-ice bg-ice/5 text-ice"
-                    : "border-hairline text-mist hover:border-ice/40 hover:text-ice"
-                }`}
-              >
+              <button key={r} onClick={() => changeRole(roleModal.id, r)} disabled={r === roleModal.role || actioning === roleModal.id} className={`border px-3 py-2 text-left text-body-sm transition-colors disabled:opacity-50 ${r === roleModal.role ? "border-ice bg-ice/5 text-ice" : "border-hairline text-mist hover:border-ice/40 hover:text-ice"}`}>
                 {ROLE_LABELS[r]}
               </button>
             ))}
@@ -344,26 +268,12 @@ export default function AdminUsersPage() {
         </SharedModal>
       )}
 
-      {moderateModal && (
-        <ModerateUserModal
-          target={moderateModal}
-          onClose={() => setModerateModal(null)}
-          onSuccess={() => loadUsers(page, search)}
-        />
-      )}
+      {moderateModal && <ModerateUserModal target={moderateModal} onClose={() => setModerateModal(null)} onSuccess={() => loadUsers(page, search)} />}
     </>
   );
 }
 
-function ModerateUserModal({
-  target,
-  onClose,
-  onSuccess,
-}: {
-  target: AdminUserListItem;
-  onClose: () => void;
-  onSuccess: () => void;
-}) {
+function ModerateUserModal({ target, onClose, onSuccess }: { target: AdminUserListItem; onClose: () => void; onSuccess: () => void }) {
   const [action, setAction] = useState<ModerateAction>("WARN");
   const [reason, setReason] = useState("");
   const [hours, setHours] = useState("");
@@ -376,7 +286,11 @@ function ModerateUserModal({
     setSaving(true);
     setError(null);
     try {
-      const body: { actionType: ModerateAction; reason?: string; hours?: number } = {
+      const body: {
+        actionType: ModerateAction;
+        reason?: string;
+        hours?: number;
+      } = {
         actionType: action,
       };
       if (reason) body.reason = reason;
@@ -412,67 +326,29 @@ function ModerateUserModal({
         </div>
 
         <div>
-          <span className="mb-1.5 block font-mono text-caption uppercase tracking-wider text-mist">
-            Ação
-          </span>
+          <span className="mb-1.5 block font-mono text-caption uppercase tracking-wider text-mist">Ação</span>
           <div className="grid grid-cols-2 gap-2">
             {(["WARN", "MUTE", "BAN", "DELETE_CONTENT"] as ModerateAction[]).map((a) => (
-              <button
-                key={a}
-                onClick={() => setAction(a)}
-                className={`border px-3 py-2 text-left transition-colors ${
-                  action === a
-                    ? a === "BAN"
-                      ? "border-signal bg-signal/5 text-signal"
-                      : "border-ice bg-ice/5 text-ice"
-                    : "border-hairline text-mist hover:border-ice/40 hover:text-ice"
-                }`}
-              >
-                <p className="font-mono text-caption uppercase tracking-wider">
-                  {ACTION_LABELS[a]}
-                </p>
-                <p className="mt-0.5 text-caption normal-case text-mist">
-                  {ACTION_DESC[a]}
-                </p>
+              <button key={a} onClick={() => setAction(a)} className={`border px-3 py-2 text-left transition-colors ${action === a ? (a === "BAN" ? "border-signal bg-signal/5 text-signal" : "border-ice bg-ice/5 text-ice") : "border-hairline text-mist hover:border-ice/40 hover:text-ice"}`}>
+                <p className="font-mono text-caption uppercase tracking-wider">{ACTION_LABELS[a]}</p>
+                <p className="mt-0.5 text-caption normal-case text-mist">{ACTION_DESC[a]}</p>
               </button>
             ))}
           </div>
         </div>
 
         <div>
-          <span className="mb-1.5 block font-mono text-caption uppercase tracking-wider text-mist">
-            Motivo
-          </span>
-          <input
-            type="text"
-            value={reason}
-            onChange={(e) => setReason(e.target.value)}
-            placeholder="Motivo da ação..."
-            aria-label="Motivo"
-            className="field"
-          />
+          <span className="mb-1.5 block font-mono text-caption uppercase tracking-wider text-mist">Motivo</span>
+          <input type="text" value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Motivo da ação..." aria-label="Motivo" className="field" />
         </div>
 
         {(action === "MUTE" || action === "BAN") && (
           <div>
-            <span className="mb-1.5 block font-mono text-caption uppercase tracking-wider text-mist">
-              Duração (horas) — vazio = permanente
-            </span>
-            <input
-              type="number"
-              value={hours}
-              onChange={(e) => setHours(e.target.value)}
-              placeholder="ex: 24, 168..."
-              aria-label="Duração em horas"
-              className="field"
-            />
+            <span className="mb-1.5 block font-mono text-caption uppercase tracking-wider text-mist">Duração (horas) — vazio = permanente</span>
+            <input type="number" value={hours} onChange={(e) => setHours(e.target.value)} placeholder="ex: 24, 168..." aria-label="Duração em horas" className="field" />
             <div className="mt-1.5 flex gap-2">
               {[24, 168, 720].map((h) => (
-                <button
-                  key={h}
-                  onClick={() => setHours(String(h))}
-                  className="admin-tab"
-                >
+                <button key={h} onClick={() => setHours(String(h))} className="admin-tab">
                   {h === 24 ? "1 dia" : h === 168 ? "7 dias" : "30 dias"}
                 </button>
               ))}
@@ -480,19 +356,11 @@ function ModerateUserModal({
           </div>
         )}
 
-        {error && (
-          <div className="border border-signal/40 bg-signal/10 p-3 text-caption text-signal">
-            {error}
-          </div>
-        )}
+        {error && <div className="border border-signal/40 bg-signal/10 p-3 text-caption text-signal">{error}</div>}
       </div>
 
       <div className="mt-4 flex gap-3">
-        <button
-          onClick={handleSubmit}
-          disabled={saving}
-          className={action === "BAN" ? "btn-danger" : "btn-ice"}
-        >
+        <button onClick={handleSubmit} disabled={saving} className={action === "BAN" ? "btn-danger" : "btn-ice"}>
           {saving ? "Aplicando..." : `Confirmar ${ACTION_LABELS[action]}`}
         </button>
         <button onClick={onClose} className="btn-ghost">

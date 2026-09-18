@@ -9,7 +9,15 @@ export async function GET(request: NextRequest) {
   const animeSlug = request.nextUrl.searchParams.get("anime") ?? "";
   const episodeParam = request.nextUrl.searchParams.get("episode") ?? "";
   const episodeNumber = Number(episodeParam);
-  const refresh = request.nextUrl.searchParams.get("refresh") === "1";
+  // Forced refresh is intentionally not exposed through this public
+  // same-origin route: without authentication it permits unbounded
+  // re-extraction loops. Use the protected backend operation instead.
+  if (request.nextUrl.searchParams.get("refresh") === "1") {
+    return NextResponse.json(
+      { message: "Refresh não disponível neste endpoint." },
+      { status: 400, headers: { "Cache-Control": NO_STORE } },
+    );
+  }
 
   if (
     !ANIME_SLUG.test(animeSlug) ||
@@ -23,7 +31,7 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const result = await serverStreamSourceAsync(animeSlug, episodeNumber, refresh).catch(
+  const result = await serverStreamSourceAsync(animeSlug, episodeNumber).catch(
     () => null,
   );
   if (!result) {
@@ -37,8 +45,7 @@ export async function GET(request: NextRequest) {
   return NextResponse.json(result, {
     status: resolved ? 200 : 202,
     headers: {
-      "Cache-Control": resolved && !refresh ? RESOLVED_CACHE_CONTROL : NO_STORE,
+      "Cache-Control": resolved ? RESOLVED_CACHE_CONTROL : NO_STORE,
     },
   });
 }
-

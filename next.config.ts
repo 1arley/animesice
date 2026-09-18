@@ -70,6 +70,11 @@ const nextConfig: NextConfig = {
   async redirects() {
     return [
       {
+        source: "/favicon.ico",
+        destination: "/icons/favicon.ico",
+        permanent: true,
+      },
+      {
         source: "/pedidos",
         destination: "/comunidade/pedidos",
         permanent: true,
@@ -80,6 +85,16 @@ const nextConfig: NextConfig = {
         permanent: true,
       },
       { source: "/regras", destination: "/comunidade/regras", permanent: true },
+      { source: "/login", destination: "/entrar", permanent: true },
+      { source: "/register", destination: "/cadastro", permanent: true },
+      { source: "/settings", destination: "/configuracoes", permanent: true },
+      { source: "/me", destination: "/minha-conta", permanent: true },
+      { source: "/users/:userName", destination: "/usuarios/:userName", permanent: true },
+      { source: "/room/:slug", destination: "/sala/:slug", permanent: true },
+      { source: "/gacha/collection", destination: "/gacha/colecao", permanent: true },
+      { source: "/gacha/crystals", destination: "/gacha/cristais", permanent: true },
+      { source: "/gacha/encyclopedia", destination: "/gacha/enciclopedia", permanent: true },
+      { source: "/gacha/trades", destination: "/gacha/trocas", permanent: true },
     ];
   },
   async headers() {

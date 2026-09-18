@@ -52,7 +52,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   while (hasMore && page <= 50) {
     const res = await serverFetchJson<Paginated<Pick<Anime, "slug" | "updatedAt" | "genres">>>(
-      `/anime?page=${page}&limit=${limit}`,
+      `/anime?page=${page}&limit=${limit}&includeHentai=1`,
       { cache: "force-cache", next: { revalidate: 3600, tags: ["sitemap"] } },
     );
     const items = res?.data ?? [];
@@ -62,9 +62,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }
 
     for (const anime of items) {
-      // Conteúdo +18 foi movido para hentaisice.com — não pode mais
-      // aparecer no sitemap do animesice.
-      if (anime.genres?.some((g) => g.slug === "hentai")) continue;
       animeEntries.push({
         url: `${SITE_URL}/animes/${anime.slug}`,
         lastModified: new Date(anime.updatedAt ?? new Date()),

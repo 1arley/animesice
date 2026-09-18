@@ -1,8 +1,8 @@
 // Animesice - Tipos alinhados com o Prisma (backend animesice-back/schema.prisma)
 
-export type AnimeFormat = 'TV' | 'MOVIE' | 'OVA' | 'ONA' | 'SPECIAL' | 'MUSIC';
-export type AnimeSeason = 'WINTER' | 'SPRING' | 'SUMMER' | 'FALL';
-export type SortMode = 'recentlyAdded' | 'rating' | 'views' | 'year' | 'title';
+export type AnimeFormat = "TV" | "MOVIE" | "OVA" | "ONA" | "SPECIAL" | "MUSIC";
+export type AnimeSeason = "WINTER" | "SPRING" | "SUMMER" | "FALL";
+export type SortMode = "recentlyAdded" | "rating" | "views" | "year" | "title";
 
 export interface AnimeSchedule {
   id: string;
@@ -21,6 +21,7 @@ export interface Genre {
 export interface Episode {
   id: string;
   number: number;
+  season: number;
   title: string | null;
   thumbnailUrl: string | null;
   videoUrl: string | null;
@@ -42,7 +43,7 @@ export interface Anime {
   rating: number | null;
   ageRating: string | null;
   status: string;
-  audio: 'LEGENDADO' | 'DUBLADO';
+  audio: "LEGENDADO" | "DUBLADO";
   format?: AnimeFormat | null;
   year?: number | null;
   season?: AnimeSeason | null;
@@ -55,6 +56,7 @@ export interface Anime {
   endDate?: string | null;
   episodeCount?: number | null;
   anilistId?: number | null;
+  malId?: number | null;
   published?: boolean;
   editorialSynopsis?: string | null;
   editorialWhereToWatch?: string | null;
@@ -384,7 +386,8 @@ export interface AnimeFilters {
 }
 
 /** Watchlist item (UserAnimeList). */
-export type WatchStatus = 'PLANNING' | 'WATCHING' | 'COMPLETED' | 'ON_HOLD' | 'DROPPED';
+export type WatchStatus =
+  "PLANNING" | "WATCHING" | "COMPLETED" | "ON_HOLD" | "DROPPED";
 
 export interface UserAnimeListItem {
   userId: string;
@@ -409,15 +412,15 @@ export interface CheckListResponse {
 
 /** Notification preferences. */
 export type NotificationType =
-  | 'NEW_EPISODE'
-  | 'COMMENT_REPLY'
-  | 'COMMENT_LIKE'
-  | 'MODERATION_ACTION'
-  | 'SYSTEM'
-  | 'POST_LIKE'
-  | 'POST_COMMENT'
-  | 'NEW_FOLLOW';
-export type NotificationChannel = 'IN_APP' | 'EMAIL';
+  | "NEW_EPISODE"
+  | "COMMENT_REPLY"
+  | "COMMENT_LIKE"
+  | "MODERATION_ACTION"
+  | "SYSTEM"
+  | "POST_LIKE"
+  | "POST_COMMENT"
+  | "NEW_FOLLOW";
+export type NotificationChannel = "IN_APP" | "EMAIL";
 
 export interface NotificationPreference {
   id: string;
@@ -433,27 +436,28 @@ export interface PrivacySettings {
   showActivity: boolean;
   showFavorites: boolean;
   showRatings: boolean;
+  showGacha: boolean;
   privateAnimeLists: number;
 }
 
 /** Moderation report. */
 export type ReportTargetType =
-  | 'COMMENT'
-  | 'CHAT_MESSAGE'
-  | 'USER'
-  | 'ANIME'
-  | 'POST'
-  | 'POST_COMMENT';
-export type ReportReason = 'SPAM' | 'HARASSMENT' | 'NSFW' | 'SPOILER' | 'ILLEGAL' | 'OTHER';
-export type ReportStatusType = 'PENDING' | 'RESOLVED' | 'DISMISSED';
-export type ModerationActionType = 'WARN' | 'MUTE' | 'BAN' | 'DELETE_CONTENT';
+  "COMMENT" | "CHAT_MESSAGE" | "USER" | "ANIME" | "POST" | "POST_COMMENT";
+export type ReportReason =
+  "SPAM" | "HARASSMENT" | "NSFW" | "SPOILER" | "ILLEGAL" | "OTHER";
+export type ReportStatusType = "PENDING" | "RESOLVED" | "DISMISSED";
+export type ModerationActionType = "WARN" | "MUTE" | "BAN" | "DELETE_CONTENT";
 
 export interface ReportItem {
   id: string;
   reporterId: string;
   reporter: { id: string; name: string | null; userName: string | null };
   moderatorId: string | null;
-  moderator: { id: string; name: string | null; userName: string | null } | null;
+  moderator: {
+    id: string;
+    name: string | null;
+    userName: string | null;
+  } | null;
   targetType: ReportTargetType;
   targetId: string;
   reason: ReportReason;
@@ -488,6 +492,8 @@ export interface SocialUser {
   name: string | null;
   userName: string | null;
   avatar: string | null;
+  gachaCosmetics?: string[];
+  gachaCardBack?: string | null;
 }
 
 /** Anime referenciado em um post do feed. */
@@ -496,12 +502,15 @@ export interface PostAnime {
   slug: string;
   title: string;
   coverImage: string | null;
+  malId?: number | null;
 }
 
 /** Post do feed social (GET /social/posts). */
 export interface SocialPost {
   id: string;
   content: string;
+  kind: string;
+  meta: GachaPullMeta | null;
   animeId: string | null;
   anime: PostAnime | null;
   user: SocialUser;
@@ -519,6 +528,324 @@ export interface PostCommentItem {
   content: string;
   user: SocialUser;
   createdAt: string;
+}
+
+/** Meta de um post GACHA_PULL (pull Épico+ publicado no feed). */
+export interface GachaPullMeta {
+  userCardId: string;
+  cardId: string;
+  name: string;
+  image: string | null;
+  imageHidden?: boolean;
+  rarity: string;
+  foil: string;
+  condition: number;
+  edition: number;
+  value: number;
+}
+
+/** Carta do gacha (personagem cacheado do AniList). */
+export interface AdminGachaCard {
+  id: string;
+  name: string;
+  image: string | null;
+  imageHidden: boolean;
+  rarity: string;
+  favourites: number;
+  animeId: string | null;
+  animeTitle: string | null;
+  createdAt: string;
+  updatedAt: string;
+  status: "DRAFT" | "REVIEW" | "ACTIVE" | "ARCHIVED";
+  source: "MAL" | "MANUAL";
+  variantName: string | null;
+  variantType: string;
+  anime?: PostAnime | null;
+}
+
+export interface GachaCardInfo {
+  id: string;
+  name: string;
+  image: string | null;
+  imageHidden: boolean;
+  rarity: string;
+  favourites: number;
+  animeId: string | null;
+  animeTitle: string | null;
+  anime: PostAnime | null;
+}
+
+/** Cópia de carta de um usuário. */
+export interface GachaPull {
+  id: string;
+  condition: number;
+  conditionLabel?: string;
+  foil: string;
+  edition: number;
+  value: number;
+  valueOverride?: number | null;
+  obtainedAt: string;
+  user: SocialUser;
+  card: GachaCardInfo;
+  originalUser?: SocialUser | null;
+  skin?: Pick<GachaSkin, "id" | "name" | "imageUrl"> | null;
+}
+
+/** Status do roll diário + giros/claim (campos novos opcionais p/ compat). */
+export interface GachaStatus {
+  canRoll: boolean;
+  rollsLeft: number;
+  nextRollAt: string | null;
+  pityDaysLeft: number;
+  pityDue: boolean;
+  spinsLeft?: number;
+  canSpin?: boolean;
+  nextSpinAt?: string | null;
+  canClaim?: boolean;
+  nextClaimAt?: string | null;
+  claimWarning?: string | null;
+  bypassPriceCents?: number | null;
+  pointsBalance?: number;
+  pointsCosmetics?: string[];
+  crystalBalance?: number;
+}
+
+export interface GachaSkin {
+  id: string;
+  characterId: string;
+  name: string;
+  imageUrl: string;
+  owned: boolean;
+  equipped: boolean;
+  sourceUrl?: string | null;
+  acquiredAt?: string | null;
+}
+
+export interface GachaSkinsResponse {
+  skins: GachaSkin[];
+  owned: GachaSkin[];
+  equippedSkinId: string | null;
+  crystalBalance: number;
+  canSpin: boolean;
+  nextSpinAt: string | null;
+  spinPrice: number;
+  cooldownHours: number;
+  meta: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+}
+
+export interface GachaShopItem {
+  key: string;
+  label: string;
+  description: string;
+  price: number;
+  owned: boolean;
+}
+
+export interface GachaShop {
+  balance: number;
+  cosmetics: GachaShopItem[];
+  activeCardBack?: string | null;
+}
+
+/** Anúncio do mercado — buy-now por Crystais, expira em 48h. */
+export interface GachaListing {
+  id: string;
+  userId: string;
+  price: number;
+  status: "ACTIVE" | "SOLD" | "CANCELLED" | "EXPIRED";
+  expiresAt: string;
+  createdAt: string;
+  user: SocialUser;
+  userCard: GachaPull;
+  interestedCount?: number;
+}
+
+export interface GachaListingPage {
+  data: GachaListing[];
+  meta: { page: number; limit: number; total: number; totalPages: number };
+}
+
+export interface GachaInterestedUser {
+  id: string;
+  name: string | null;
+  userName: string | null;
+  avatar: string | null;
+}
+
+export type GachaPointEventType = "MINT" | "SPEND" | "SALE" | "TAX" | "ADMIN";
+
+export interface GachaPointEvent {
+  id: string;
+  delta: number;
+  type: GachaPointEventType;
+  refId: string | null;
+  reason: string | null;
+  createdAt: string;
+}
+
+export interface GachaPointsPage {
+  balance: number;
+  events: GachaPointEvent[];
+  meta: { page: number; limit: number; total: number };
+}
+
+export type CrystalEventType =
+  | "INITIAL"
+  | "MINT"
+  | "DAILY"
+  | "SPEND"
+  | "PURCHASE"
+  | "SALE"
+  | "TAX"
+  | "ADMIN"
+  | "BURN";
+
+export interface CrystalEvent {
+  id: string;
+  delta: number;
+  type: CrystalEventType;
+  refId: string | null;
+  reason: string | null;
+  createdAt: string;
+}
+
+export interface CrystalPage {
+  balance: number;
+  events: CrystalEvent[];
+  meta: { page: number; limit: number; total: number; totalPages: number };
+}
+
+/** Preview de giro — sorteio sem ownership (sem edition, sem dono). */
+export interface GachaSpinPreview {
+  id: string;
+  hour: string;
+  slot: number;
+  condition: number;
+  conditionLabel?: string;
+  foil: string;
+  value: number;
+  claimedAt: string | null;
+  expiresAt: string;
+  createdAt: string;
+  pityDue?: boolean;
+  card: GachaCardInfo;
+}
+
+export interface GachaBypassCheckout {
+  reference: string;
+  checkoutUrl: string;
+  amountCents: number;
+}
+
+export type GachaBypassStatus = "PENDING" | "PAID" | "EXPIRED";
+
+/** Coleção de cartas com stats. */
+export interface GachaCollectionResponse {
+  data: GachaPull[];
+  stats: { total: number; totalValue: number };
+  meta: { total: number; page: number; limit: number; totalPages: number };
+}
+
+/** Linha do ranking de colecionadores. */
+export interface GachaRankingEntry {
+  user: SocialUser;
+  totalValue: number;
+  pulls: number;
+}
+
+export interface GachaEncyclopediaCard {
+  id: string;
+  name: string;
+  image: string | null;
+  rarity: string;
+  animeId: string | null;
+  animeTitle: string | null;
+  owned: boolean;
+  wishlisted: boolean;
+  wishlistPriority: string | null;
+}
+
+export interface GachaEncyclopediaSet {
+  animeId: string | null;
+  animeTitle: string;
+  animeSlug: string | null;
+  total: number;
+  owned: number;
+  complete: boolean;
+  wishlisted: boolean;
+}
+
+export interface GachaEncyclopedia {
+  view: "cards" | "sets";
+  cards: GachaEncyclopediaCard[];
+  sets: GachaEncyclopediaSet[];
+  meta: { total: number; page: number; limit: number; totalPages: number };
+}
+
+export type WishlistPriority = "LOW" | "NORMAL" | "HIGH";
+
+export interface GachaWishlistCard {
+  id: string;
+  cardId: string;
+  priority: WishlistPriority;
+  acceptedFoils: string[];
+  minCondition: string | null;
+  maxEdition: number | null;
+  complete: boolean;
+  card: GachaEncyclopediaCard & {
+    anime: { id: string; slug: string; title: string } | null;
+  };
+}
+
+export interface GachaWishlistSet {
+  id: string;
+  animeId: string;
+  priority: WishlistPriority;
+  total: number;
+  owned: number;
+  complete: boolean;
+  anime: { id: string; slug: string; title: string; coverImage: string | null };
+}
+
+export interface GachaWishlistResponse {
+  private: boolean;
+  isPublic: boolean;
+  cards: GachaWishlistCard[];
+  sets: GachaWishlistSet[];
+  meta: {
+    cards: number;
+    sets: number;
+    page?: number;
+    limit?: number;
+    totalPages?: number;
+  };
+}
+
+/** Carta destaque — setComplete sinaliza conjunto completo (prestígio no perfil). */
+export type GachaFeatured = GachaPull & { setComplete?: boolean };
+
+export type GachaTradeStatus =
+  "PENDING" | "COMPLETED" | "CANCELLED" | "EXPIRED";
+
+export interface GachaTrade {
+  id: string;
+  status: GachaTradeStatus;
+  expiresAt: string;
+  createdAt: string;
+  completedAt: string | null;
+  offeredUserId: string;
+  requestedUserId: string;
+  offeredUserCardId: string;
+  requestedUserCardId: string;
+  offeredUserCard: GachaPull;
+  requestedUserCard: GachaPull;
+  offeredUserCards: GachaPull[];
+  requestedUserCards: GachaPull[];
 }
 
 /**
@@ -549,12 +876,18 @@ export interface UserSearchResult {
 }
 
 /** Anime request (community). */
-export type FeedbackStatus = 'OPEN' | 'ACKNOWLEDGED' | 'RESOLVED' | 'WONT_FIX' | 'COMPLETED' | 'REJECTED';
+export type FeedbackStatus =
+  "OPEN" | "ACKNOWLEDGED" | "RESOLVED" | "WONT_FIX" | "COMPLETED" | "REJECTED";
 
 export interface AnimeRequestItem {
   id: string;
   userId: string;
-  user: { id: string; name: string | null; userName: string | null; avatar: string | null };
+  user: {
+    id: string;
+    name: string | null;
+    userName: string | null;
+    avatar: string | null;
+  };
   title: string;
   alternativeTitle: string | null;
   notes: string | null;
@@ -567,12 +900,17 @@ export interface AnimeRequestItem {
 }
 
 /** Site feedback (suggestion/bug). */
-export type FeedbackType = 'SUGGESTION' | 'BUG' | 'REQUEST';
+export type FeedbackType = "SUGGESTION" | "BUG" | "REQUEST";
 
 export interface SiteFeedbackItem {
   id: string;
   userId: string;
-  user: { id: string; name: string | null; userName: string | null; avatar: string | null };
+  user: {
+    id: string;
+    name: string | null;
+    userName: string | null;
+    avatar: string | null;
+  };
   type: FeedbackType;
   title: string;
   description: string;

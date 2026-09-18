@@ -6,6 +6,13 @@ test("stream endpoint rejects invalid episode identifiers", async ({ request }) 
   expect(response.status()).toBe(400);
 });
 
+test("stream endpoint rejects unauthenticated forced refresh", async ({ request }) => {
+  const response = await request.get("/api/stream-source?anime=cached-stream&episode=1&refresh=1");
+
+  expect(response.status()).toBe(400);
+  expect(response.headers()["cache-control"]).toBe("no-store");
+});
+
 test("stream endpoint does not cache pending extraction jobs", async ({ request }) => {
   const response = await request.get("/api/stream-source?anime=slow-stream&episode=1");
 
@@ -23,4 +30,3 @@ test("stream endpoint caches resolved sources for five minutes", async ({ reques
   );
   await expect(response.json()).resolves.toMatchObject({ src: "https://video.example/episode.m3u8" });
 });
-

@@ -23,20 +23,15 @@ export default function AdminCatalogoPage() {
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const loadAnimes = useCallback(
-    (targetPage: number, targetSearch: string) => {
-      api
-        .adminListAnimes(targetPage, PAGE_SIZE, targetSearch || undefined)
-        .then((res) => {
-          setAnimes(res.data);
-          setMeta(res.meta);
-        })
-        .catch((e) =>
-          setError(e instanceof ApiError ? e.message : "Erro ao carregar animes."),
-        );
-    },
-    [],
-  );
+  const loadAnimes = useCallback((targetPage: number, targetSearch: string) => {
+    api
+      .adminListAnimes(targetPage, PAGE_SIZE, targetSearch || undefined)
+      .then((res) => {
+        setAnimes(res.data);
+        setMeta(res.meta);
+      })
+      .catch((e) => setError(e instanceof ApiError ? e.message : "Erro ao carregar animes."));
+  }, []);
 
   useEffect(() => {
     if (!isPrivileged(user)) return;
@@ -57,6 +52,7 @@ export default function AdminCatalogoPage() {
     setError(null);
     try {
       await api.adminDeleteAnime(slug);
+      await api.revalidateAdminCache(slug);
       setConfirmSlug(null);
       loadAnimes(page, search);
     } catch (e) {
@@ -72,41 +68,32 @@ export default function AdminCatalogoPage() {
   return (
     <>
       <h1 className="font-display text-display-xl text-snow">Gerenciar Catálogo</h1>
-      <p className="mt-1 text-body-sm text-mist">
-        Listar, cadastrar, editar e remover animes e episódios.
-      </p>
+      <p className="mt-1 text-body-sm text-mist">Listar, cadastrar, editar e remover animes e episódios.</p>
 
       <div className="mt-4 flex flex-wrap gap-3">
-        <Link href="/admin/create" className="btn-ice">+ Criar anime manual</Link>
-        <Link href="/admin/import" className="btn-ghost">Importar do AniList</Link>
+        <Link href="/admin/create" className="btn-ice">
+          + Criar anime manual
+        </Link>
+        <Link href="/admin/import" className="btn-ghost">
+          Importar do AniList
+        </Link>
       </div>
 
-      <div className="mt-6 flex items-center gap-3">
+      <div className="mt-6 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center">
         <h2 className="shelf-label">
           Animes <span className="shelf-label-data">{total}</span>
         </h2>
-        <input
-          type="search"
-          placeholder="Buscar por título ou slug…"
-          aria-label="Buscar por título ou slug"
-          value={search}
-          onChange={(e) => handleSearchChange(e.target.value)}
-          className="ml-auto w-full max-w-xs border border-hairline bg-panel px-3 py-1.5 text-body-sm text-snow placeholder:text-mist focus:border-ice focus:outline-none"
-        />
+        <input type="search" placeholder="Buscar por título ou slug…" aria-label="Buscar por título ou slug" value={search} onChange={(e) => handleSearchChange(e.target.value)} className="w-full border border-hairline bg-panel px-3 py-2.5 text-body-sm text-snow placeholder:text-mist focus:border-ice focus:outline-none sm:ml-auto sm:max-w-xs" />
       </div>
 
       {error ? (
         <p className="mt-4 border border-signal/40 bg-signal/10 p-3 text-body-sm text-signal">{error}</p>
       ) : animes.length === 0 ? (
-        <p className="mt-4 text-body-sm text-mist">
-          {search
-            ? `Nenhum anime encontrado para "${search}".`
-            : "Catálogo vazio. Crie um anime manualmente ou importe pelo AniList."}
-        </p>
+        <p className="mt-4 text-body-sm text-mist">{search ? `Nenhum anime encontrado para "${search}".` : "Catálogo vazio. Crie um anime manualmente ou importe pelo AniList."}</p>
       ) : (
         <>
-          <div className="mt-4 overflow-x-auto">
-            <table className="w-full border-collapse text-left">
+          <div className="mt-4 border border-hairline md:overflow-x-auto md:border-0">
+            <table className="admin-table admin-table-responsive">
               <thead>
                 <tr className="border-b border-hairline text-caption uppercase tracking-wider text-mist">
                   <th className="py-2 pr-4 font-semibold">Título</th>
@@ -120,65 +107,44 @@ export default function AdminCatalogoPage() {
               <tbody className="font-sans text-body-sm">
                 {animes.map((a) => (
                   <tr key={a.id} className="border-b border-hairline/60 align-middle">
-                    <td className="py-2 pr-4 text-mist">
-                      <Link
-                        href={`/admin/episode/${a.slug}/1`}
-                        className="transition-colors hover:text-ice"
-                        title={`Editar episódios de ${a.title}`}
-                      >
+                    <td data-label="Título" className="py-2 pr-4 text-mist">
+                      <Link href={`/admin/episode/${a.slug}/1`} className="transition-colors hover:text-ice" title={`Editar episódios de ${a.title}`}>
                         {a.title}
                       </Link>
                     </td>
-                    <td className="py-2 pr-4">
+                    <td data-label="Slug" className="py-2 pr-4">
                       <code className="text-mist">{a.slug}</code>
                     </td>
-                    <td className="py-2 pr-4 text-mist">{a.status}</td>
-                    <td className="py-2 pr-4 text-right font-display tabular-nums text-mist">
+                    <td data-label="Status" className="py-2 pr-4 text-mist">
+                      {a.status}
+                    </td>
+                    <td data-label="Episódios" className="py-2 pr-4 text-right font-display tabular-nums text-mist md:text-right">
                       {a._count.episodes}
                     </td>
-                    <td className="py-2 pr-4">
+                    <td data-label="Ver" className="py-2 pr-4">
                       <Link href={`/animes/${a.slug}`} className="text-ice transition-colors hover:opacity-70">
                         detalhe
                       </Link>
                     </td>
-                    <td className="py-2">
-                      <div className="flex gap-2">
-                        <Link
-                          href={`/admin/edit/${a.slug}`}
-                          className="text-caption text-ice transition-colors hover:opacity-70"
-                          title="Editar anime"
-                        >
+                    <td data-label="Ações" className="py-2">
+                      <div className="flex flex-wrap gap-2">
+                        <Link href={`/admin/edit/${a.slug}`} className="admin-tab" title="Editar anime">
                           editar
                         </Link>
-                        <Link
-                          href={`/admin/create-episode/${a.slug}`}
-                          className="text-caption text-ice transition-colors hover:opacity-70"
-                          title="Criar episódio"
-                        >
+                        <Link href={`/admin/create-episode/${a.slug}`} className="admin-tab" title="Criar episódio">
                           + ep
                         </Link>
                         {confirmSlug === a.slug ? (
                           <>
-                            <button
-                              onClick={() => deleteAnime(a.slug)}
-                              disabled={deleting === a.slug}
-                              className="text-caption text-signal transition-colors hover:opacity-70"
-                            >
+                            <button onClick={() => deleteAnime(a.slug)} disabled={deleting === a.slug} className="admin-tab text-signal">
                               {deleting === a.slug ? "..." : "confirmar?"}
                             </button>
-                            <button
-                              onClick={() => setConfirmSlug(null)}
-                              className="text-caption text-mist transition-colors hover:opacity-70"
-                            >
+                            <button onClick={() => setConfirmSlug(null)} className="admin-tab">
                               cancelar
                             </button>
                           </>
                         ) : (
-                          <button
-                            onClick={() => setConfirmSlug(a.slug)}
-                            className="text-caption text-signal transition-colors hover:opacity-70"
-                            title="Deletar anime"
-                          >
+                          <button onClick={() => setConfirmSlug(a.slug)} className="admin-tab text-signal" title="Deletar anime">
                             deletar
                           </button>
                         )}
@@ -192,21 +158,13 @@ export default function AdminCatalogoPage() {
 
           {totalPages > 1 && (
             <nav className="mt-6 flex items-center justify-center gap-3" aria-label="Paginação">
-              <button
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={page <= 1}
-                className="btn-ghost disabled:opacity-40 disabled:cursor-not-allowed"
-              >
+              <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page <= 1} className="btn-ghost disabled:opacity-40 disabled:cursor-not-allowed">
                 ← Anterior
               </button>
               <span className="font-display text-body-sm text-mist tabular-nums">
                 {page} / {totalPages}
               </span>
-              <button
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                disabled={page >= totalPages}
-                className="btn-ghost disabled:opacity-40 disabled:cursor-not-allowed"
-              >
+              <button onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page >= totalPages} className="btn-ghost disabled:opacity-40 disabled:cursor-not-allowed">
                 Próxima →
               </button>
             </nav>
