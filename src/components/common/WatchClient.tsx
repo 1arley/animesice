@@ -21,7 +21,10 @@ interface WatchClientProps {
   number: number;
   initialEpisode: Episode & { anime: Anime };
   /** Source já resolvido via SSR pre-fetch — renderiza instantaneamente. */
-  initialSource?: { src: string; embedUrl?: string; thumbnailUrl?: string } | { jobId: string } | null;
+  initialSource?:
+    | { src: string; embedUrl?: string; thumbnailUrl?: string }
+    | { jobId: string }
+    | null;
 }
 
 export function WatchClient({
@@ -85,7 +88,11 @@ export function WatchClient({
     setSource(null);
 
     // 1. Source vindo de SSR pre-fetch — renderiza imediatamente
-    if (initialSourceProp && "src" in initialSourceProp && id === loadSourceId.current) {
+    if (
+      initialSourceProp &&
+      "src" in initialSourceProp &&
+      id === loadSourceId.current
+    ) {
       setSource(initialSourceProp as StreamSource);
       api._sourceCache.set(slug, number, initialSourceProp as StreamSource);
       setLoadingSource(false);
@@ -104,9 +111,10 @@ export function WatchClient({
       // Preserve a job started by the SSR fallback. Re-requesting the
       // endpoint here can enqueue a duplicate extraction when the backend
       // has not yet deduplicated the original job.
-      const res = initialSourceProp && "jobId" in initialSourceProp
-        ? initialSourceProp
-        : await api.episodeStreamSourceAsync(slug, number);
+      const res =
+        initialSourceProp && "jobId" in initialSourceProp
+          ? initialSourceProp
+          : await api.episodeStreamSourceAsync(slug, number);
       if (id !== loadSourceId.current) return;
 
       // Source direto (vídeo já existia no cache)
@@ -130,8 +138,9 @@ export function WatchClient({
         } else if (result.type === "failed") {
           setSourceError(result.error);
         } else {
-          // Esgotou tentativas — fallback para modo síncrono
-          await loadSource();
+          setSourceError(
+            "A extração demorou mais que o esperado. Tente novamente.",
+          );
         }
       }
     } catch (e) {
@@ -171,13 +180,14 @@ export function WatchClient({
     recoveryAttempts.current = 0;
     resumeAt.current = 0;
     void loadSourceAsync();
-    return () => { asyncAbortRef.current?.abort(); };
+    return () => {
+      asyncAbortRef.current?.abort();
+    };
   }, [loadSourceAsync]);
 
   useEffect(() => {
     const navigation = performance.getEntriesByType("navigation")[0] as
-      | PerformanceNavigationTiming
-      | undefined;
+      PerformanceNavigationTiming | undefined;
     if (navigation) {
       performance.measure("episode:ttfb", {
         start: navigation.startTime,
@@ -241,7 +251,9 @@ export function WatchClient({
           </div>
         ) : loadingSource ? (
           <EpisodePlayerShell
-            posterUrl={episode.thumbnailUrl ?? episode.anime.coverImage ?? undefined}
+            posterUrl={
+              episode.thumbnailUrl ?? episode.anime.coverImage ?? undefined
+            }
             title={episode.anime.title}
           />
         ) : source ? (
@@ -300,7 +312,9 @@ function EpisodePlayerShell({
       ) : null}
       <div className="relative flex items-center gap-3 rounded-full bg-ink/70 px-4 py-2 backdrop-blur-sm">
         <span className="h-4 w-4 animate-spin rounded-full border-2 border-ice border-t-transparent" />
-        <span className="font-mono text-caption text-snow">Preparando vídeo…</span>
+        <span className="font-mono text-caption text-snow">
+          Preparando vídeo…
+        </span>
       </div>
     </div>
   );
