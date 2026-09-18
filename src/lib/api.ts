@@ -633,6 +633,15 @@ export const api = {
   adminGetAnime: (slug: string) =>
     request<Anime & { _count: { episodes: number } }>(`/admin/anime/${slug}`),
 
+  adminCreateExternalAnime: (url: string, title?: string, coverImage?: string) =>
+    request<Anime & { externalUrl: string; externalSource: string }>(
+      "/admin/anime/external",
+      {
+        method: "POST",
+        body: JSON.stringify({ url, title, coverImage }),
+      },
+    ),
+
   adminUpdateAnime: (
     slug: string,
     dto: Partial<
