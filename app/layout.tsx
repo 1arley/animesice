@@ -5,7 +5,6 @@ import { AuthProvider } from "@/lib/auth-context";
 import { ToastProvider } from "@/components/common/ToastProvider";
 import { SITE_URL } from "@/lib/site";
 import { escapeJsonLd } from "@/lib/url";
-import { ThirdPartyScripts } from "@/components/common/ThirdPartyScripts";
 import { DeferredCrystalSplash } from "@/components/animesice/DeferredCrystalSplash";
 import { chunkRecoveryScript } from "@/lib/chunk-recovery-script";
 import { ServiceNotice } from "@/components/common/ServiceNotice";
@@ -159,8 +158,6 @@ export default function RootLayout({
         {/* Abertura da identidade de motion: cristal em foco puxado, uma vez
             por sessão, dispensável a qualquer toque/tecla. Nunca bloqueia. */}
         <DeferredCrystalSplash />
-        {/* Direct Link controlado localmente; nenhum script de anúncios remoto. */}
-        <ThirdPartyScripts />
       </body>
     </html>
   );
