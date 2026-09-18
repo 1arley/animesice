@@ -9,6 +9,7 @@ import {
   type ReactNode,
 } from "react";
 import type { User, RegisterResponse } from "@/lib/api";
+import { ApiError } from "@/lib/api";
 
 const loadApi = () => import("@/lib/api").then((module) => module.api);
 
@@ -39,12 +40,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    const start = () => loadApi().then((api) => api.me())
-      .then(setUser)
-      .catch(() => {
+    const start = async () => {
+      try {
+        const api = await loadApi();
+        for (let attempt = 0; ; attempt++) {
+          try {
+            setUser(await api.me());
+            break;
+          } catch (e) {
+            const definitive =
+              e instanceof ApiError &&
+              (e.statusCode === 401 || e.statusCode === 403);
+            if (definitive || attempt >= 2) {
+              setUser(null);
+              break;
+            }
+            await new Promise((r) => setTimeout(r, 800 * (attempt + 1)));
+          }
+        }
+      } catch {
         setUser(null);
-      })
-      .finally(() => setLoading(false));
+      } finally {
+        setLoading(false);
+      }
+    };
     const idleWindow = window as Window & {
       requestIdleCallback?: (callback: () => void, options?: { timeout: number }) => number;
       cancelIdleCallback?: (id: number) => void;
