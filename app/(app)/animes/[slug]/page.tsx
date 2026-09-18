@@ -19,6 +19,7 @@ import { PageTitle } from "@/components/ui/PageTitle";
 import { ShareButtons } from "@/components/common/ShareButtons";
 import { PrefetchEpisodeLink } from "@/components/common/PrefetchEpisodeLink";
 import { EpisodePrefetcher } from "@/components/common/EpisodePrefetcher";
+import { SponsoredSignal } from "@/components/common/SponsoredSignal";
 import Image from "next/image";
 import { SITE_URL } from "@/lib/site";
 
@@ -424,6 +425,8 @@ export default async function AnimeDetailPage({
           )}
         </div>
       </div>
+
+      <SponsoredSignal />
 
       {/* Avaliação */}
       <section className="mt-10 border-y border-hairline py-6">
