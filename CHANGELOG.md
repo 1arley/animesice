@@ -6,6 +6,22 @@
 * **ads:** inject Monetag sponsor link into Docker build via secret ([8cdb625](https://github.com/1arley/animesice/commit/8cdb625e322e917dc827e76dca0ab50f07cb7e59))
 * **ads:** read sponsor link from runtime env instead of build-time ([929dfce](https://github.com/1arley/animesice/commit/929dfcef5720fece5fcd6530ce34b97c2bfbd55b))
 * **anime:** drop background episode prefetch and honor priority in AdaptiveImage ([5371c3e](https://github.com/1arley/animesice/commit/5371c3e7bb44427c3bc474fd61dd198d5bd69a8b))
+* **stream:** stop blocking on exhausted extraction jobs ([05e81bf](https://github.com/1arley/animesice/commit/05e81bfbf79ef531f152d9d8d5d64cbd7ab11a8f))
+* **watch:** refresh stale cached source once on playback error/timeout ([d127864](https://github.com/1arley/animesice/commit/d127864a1850f913fe7e3f4393019944c3f804ea))
+
+
+### Features
+
+* **ads:** sinal de patrocinador nas paginas de anime e watch ([cf13d6f](https://github.com/1arley/animesice/commit/cf13d6fd4434ec42524f16916a19456f74775ef7))
+
+# [1.1.0](https://github.com/1arley/animesice/compare/v1.0.0...v1.1.0) (2026-09-18)
+
+
+### Bug Fixes
+
+* **ads:** inject Monetag sponsor link into Docker build via secret ([8cdb625](https://github.com/1arley/animesice/commit/8cdb625e322e917dc827e76dca0ab50f07cb7e59))
+* **ads:** read sponsor link from runtime env instead of build-time ([929dfce](https://github.com/1arley/animesice/commit/929dfcef5720fece5fcd6530ce34b97c2bfbd55b))
+* **anime:** drop background episode prefetch and honor priority in AdaptiveImage ([5371c3e](https://github.com/1arley/animesice/commit/5371c3e7bb44427c3bc474fd61dd198d5bd69a8b))
 * **watch:** refresh stale cached source once on playback error/timeout ([d127864](https://github.com/1arley/animesice/commit/d127864a1850f913fe7e3f4393019944c3f804ea))
 
 
