@@ -4,7 +4,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import dynamic from "next/dynamic";
-import { EpisodeLoadingState } from "@/components/common/EpisodeLoadingState";
 import { api, ApiError, isProxyEmbed, type StreamSource } from "@/lib/api";
 import { resolveAsyncSource } from "@/lib/resolve-async-source";
 import type { Episode, Anime } from "@/types";
@@ -13,7 +12,7 @@ import { CreateRoomButton } from "@/components/common/CreateRoomButton";
 
 const VideoPlayer = dynamic(
   () => import("@/components/common/VideoPlayer").then((m) => m.VideoPlayer),
-  { ssr: false, loading: () => <EpisodeLoadingState /> },
+  { ssr: false, loading: () => null },
 );
 
 interface WatchClientProps {
