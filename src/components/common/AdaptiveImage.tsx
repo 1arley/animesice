@@ -38,7 +38,7 @@ export function AdaptiveImage({
 
   return (
     <picture>
-      {hasDesktopCandidate && (
+      {hasDesktopCandidate && !priority && (
         <source
           media={`(min-width: ${desktopMinWidth}px)`}
           srcSet={desktopSrc}
