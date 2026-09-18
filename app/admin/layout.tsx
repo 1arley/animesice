@@ -30,6 +30,11 @@ const NAV_ITEMS: NavItem[] = [
     icon: "M4 6a2 2 0 012-2h2v12H6a2 2 0 01-2-2V6zM10 4h4v12h-4zM16 4h2a2 2 0 012 2v8a2 2 0 01-2 2h-2V4z",
   },
   {
+    href: "/admin/obras-externas",
+    label: "Obra externa",
+    icon: "M13.828 10.172a4 4 0 010 5.656l-3 3a4 4 0 01-5.656-5.656l1.5-1.5m7.156-1.5l1.5-1.5a4 4 0 00-5.656-5.656l-3 3a4 4 0 000 5.656",
+  },
+  {
     href: "/admin/gacha",
     label: "Gacha",
     icon: "M12 2l2.09 6.26L20 10l-5.91 1.74L12 18l-2.09-6.26L4 10l5.91-1.74L12 2z",
