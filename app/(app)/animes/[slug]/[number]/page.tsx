@@ -5,6 +5,7 @@ import { serverFetchJson, serverStreamSourceAsync } from "@/lib/api-server";
 import type { Episode, Anime } from "@/types";
 
 import { WatchClient } from "@/components/common/WatchClient";
+import { SponsoredSignal } from "@/components/common/SponsoredSignal";
 import { SITE_URL } from "@/lib/site";
 import { escapeJsonLd } from "@/lib/url";
 
@@ -172,6 +173,7 @@ export default async function WatchPage({
         initialEpisode={episode}
         initialSource={initialSource}
       />
+      <SponsoredSignal />
     </div>
   );
 }
