@@ -91,6 +91,9 @@ test.describe("Gacha trading — fluxo de propostas", () => {
       .locator("li", { hasText: incomingText })
       .filter({ hasText: "Beru" });
     await expect(beruRow).toBeVisible();
+    await beruRow.getByRole("button", { name: "Visualizar Beru, Rei das Formigas" }).click();
+    await expect(page.getByRole("dialog", { name: "Beru, Rei das Formigas" })).toBeVisible();
+    await page.getByRole("button", { name: "Fechar preview" }).click();
     await beruRow.getByRole("button", { name: "Aceitar" }).click();
 
     await expect(page.getByRole("heading", { name: /Recebidas \(1\)/ })).toBeVisible();

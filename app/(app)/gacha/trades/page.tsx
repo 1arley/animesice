@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
+import { CardPreview } from "@/components/gacha/CardPreview";
 import { GachaCard } from "@/components/gacha/GachaCard";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { SectionLabel } from "@/components/common/SectionLabel";
@@ -29,9 +30,11 @@ function humansLeft(expiresAt: string, now: number): string {
 function MiniPair({
   mine,
   theirs,
+  onPreview,
 }: {
   mine: GachaPull;
   theirs: GachaPull;
+  onPreview: (pull: GachaPull) => void;
 }) {
   return (
     <div className="flex items-stretch gap-4">
@@ -40,6 +43,9 @@ function MiniPair({
         <p className="mt-1 truncate text-caption text-mist">
           Sua {mine.card.name}
         </p>
+        <button type="button" aria-label={`Visualizar ${mine.card.name}`} onClick={() => onPreview(mine)} className="mt-1 min-h-11 w-full text-left font-mono text-caption text-ice hover:text-snow focus-visible:outline focus-visible:outline-2 focus-visible:outline-ice">
+          Ver carta
+        </button>
       </div>
       <div className="flex items-center font-mono text-caption text-mist">
         ⇄
@@ -49,6 +55,9 @@ function MiniPair({
         <p className="mt-1 truncate text-caption text-mist">
           {theirs.user.name?.trim() || theirs.user.userName || "o outro"} desse
         </p>
+        <button type="button" aria-label={`Visualizar ${theirs.card.name}`} onClick={() => onPreview(theirs)} className="mt-1 min-h-11 w-full text-left font-mono text-caption text-ice hover:text-snow focus-visible:outline focus-visible:outline-2 focus-visible:outline-ice">
+          Ver carta
+        </button>
       </div>
     </div>
   );
@@ -62,6 +71,7 @@ function TradeRow({
   onDecline,
   busyId,
   now,
+  onPreview,
 }: {
   trade: GachaTrade;
   myId: string;
@@ -70,6 +80,7 @@ function TradeRow({
   onDecline: () => void;
   busyId: string | null;
   now: number;
+  onPreview: (pull: GachaPull) => void;
 }) {
   const incoming = trade.requestedUserId === myId;
   const expired = new Date(trade.expiresAt).getTime() <= now;
@@ -88,7 +99,7 @@ function TradeRow({
               quer trocar a carta dele pela sua:
             </p>
             <div className="mt-3">
-              <MiniPair mine={trade.requestedUserCard} theirs={trade.offeredUserCard} />
+              <MiniPair mine={trade.requestedUserCard} theirs={trade.offeredUserCard} onPreview={onPreview} />
             </div>
           </>
         ) : (
@@ -99,7 +110,7 @@ function TradeRow({
                 trade.requestedUserCard.user.userName}:
             </p>
             <div className="mt-3">
-              <MiniPair mine={trade.offeredUserCard} theirs={trade.requestedUserCard} />
+              <MiniPair mine={trade.offeredUserCard} theirs={trade.requestedUserCard} onPreview={onPreview} />
             </div>
           </>
         )}
@@ -157,6 +168,7 @@ function TradeRow({
         <MiniPair
           mine={incoming ? trade.requestedUserCard : trade.offeredUserCard}
           theirs={incoming ? trade.offeredUserCard : trade.requestedUserCard}
+          onPreview={onPreview}
         />
       </div>
     </li>
@@ -170,6 +182,7 @@ export default function GachaTradesPage() {
   const [error, setError] = useState("");
   const [busyId, setBusyId] = useState<string | null>(null);
   const [composing, setComposing] = useState(false);
+  const [preview, setPreview] = useState<GachaPull | null>(null);
   const [now, setNow] = useState(() => Date.now());
   const { toast } = useToast();
 
@@ -276,6 +289,7 @@ export default function GachaTradesPage() {
                     myId={user.id}
                     busyId={busyId}
                     now={now}
+                    onPreview={setPreview}
                     onAccept={() => void act(`${t.id}:accept`, () => api.gachaTradeAccept(t.id), "Troca aceita.")}
                     onDecline={() => void act(`${t.id}:decline`, () => api.gachaTradeDecline(t.id), "Troca recusada.")}
                     onCancel={() => void act(`${t.id}:cancel`, () => api.gachaTradeCancel(t.id), "Proposta cancelada.")}
@@ -298,6 +312,7 @@ export default function GachaTradesPage() {
                     myId={user.id}
                     busyId={busyId}
                     now={now}
+                    onPreview={setPreview}
                     onAccept={() => void act(`${t.id}:accept`, () => api.gachaTradeAccept(t.id), "Troca aceita.")}
                     onDecline={() => void act(`${t.id}:decline`, () => api.gachaTradeDecline(t.id), "Troca recusada.")}
                     onCancel={() => void act(`${t.id}:cancel`, () => api.gachaTradeCancel(t.id), "Proposta cancelada.")}
@@ -318,6 +333,7 @@ export default function GachaTradesPage() {
                     myId={user.id}
                     busyId={busyId}
                     now={now}
+                    onPreview={setPreview}
                     onAccept={() => void act(`${t.id}:accept`, () => api.gachaTradeAccept(t.id), "Troca aceita.")}
                     onDecline={() => void act(`${t.id}:decline`, () => api.gachaTradeDecline(t.id), "Troca recusada.")}
                     onCancel={() => void act(`${t.id}:cancel`, () => api.gachaTradeCancel(t.id), "Proposta cancelada.")}
@@ -339,6 +355,7 @@ export default function GachaTradesPage() {
           }}
         />
       )}
+      {preview && <CardPreview pull={preview} onClose={() => setPreview(null)} />}
     </main>
   );
 }
@@ -361,6 +378,7 @@ function ProposalComposer({
   const [loadingTarget, setLoadingTarget] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [preview, setPreview] = useState<GachaPull | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -475,10 +493,10 @@ function ProposalComposer({
             </label>
             <div className="mt-1 grid gap-2">
               {targetCards.map((c) => (
-                <label key={c.id} className="flex gap-2 border border-hairline p-2 text-snow">
-                  <input type="checkbox" checked={targetCardIds.includes(c.id)} disabled={!targetCardIds.includes(c.id) && targetCardIds.length >= 3} onChange={() => setTargetCardIds((ids) => ids.includes(c.id) ? ids.filter((id) => id !== c.id) : [...ids, c.id])} />
-                  {c.card.name} · {c.card.rarity} · {c.foil} · {c.conditionLabel} · {c.value} pts
-                </label>
+                <div key={c.id} className="flex items-center gap-2 border border-hairline p-2 text-snow">
+                  <label className="flex min-h-11 min-w-0 flex-1 items-center gap-2"><input type="checkbox" checked={targetCardIds.includes(c.id)} disabled={!targetCardIds.includes(c.id) && targetCardIds.length >= 3} onChange={() => setTargetCardIds((ids) => ids.includes(c.id) ? ids.filter((id) => id !== c.id) : [...ids, c.id])} /><span className="min-w-0 break-words">{c.card.name} · {c.card.rarity} · {c.foil} · {c.conditionLabel} · {c.value} pts</span></label>
+                  <button type="button" aria-label={`Visualizar ${c.card.name}`} onClick={() => setPreview(c)} className="btn-ghost min-h-11 shrink-0 px-3 py-2">Visualizar</button>
+                </div>
               ))}
             </div>
           </>
@@ -497,9 +515,10 @@ function ProposalComposer({
           }}
         >
           {myCards.map((c) => (
-            <label key={c.id} className="flex gap-2 border border-hairline p-2 text-snow"><input type="checkbox" checked={myCardIds.includes(c.id)} disabled={!myCardIds.includes(c.id) && myCardIds.length >= 3} onChange={() => setMyCardIds((ids) => ids.includes(c.id) ? ids.filter((id) => id !== c.id) : [...ids, c.id])} />
-              {c.card.name} · {c.card.rarity} · {c.foil} · {c.conditionLabel} · {c.value} pts
-            </label>
+            <div key={c.id} className="flex items-center gap-2 border border-hairline p-2 text-snow">
+              <label className="flex min-h-11 min-w-0 flex-1 items-center gap-2"><input type="checkbox" checked={myCardIds.includes(c.id)} disabled={!myCardIds.includes(c.id) && myCardIds.length >= 3} onChange={() => setMyCardIds((ids) => ids.includes(c.id) ? ids.filter((id) => id !== c.id) : [...ids, c.id])} /><span className="min-w-0 break-words">{c.card.name} · {c.card.rarity} · {c.foil} · {c.conditionLabel} · {c.value} pts</span></label>
+              <button type="button" aria-label={`Visualizar ${c.card.name}`} onClick={() => setPreview(c)} className="btn-ghost min-h-11 shrink-0 px-3 py-2">Visualizar</button>
+            </div>
           ))}
         </div>
 
@@ -512,6 +531,7 @@ function ProposalComposer({
           {busy ? "Enviando…" : "Enviar proposta"}
         </button>
       </div>
+      {preview && <CardPreview pull={preview} onClose={() => setPreview(null)} />}
     </div>
   );
 }
