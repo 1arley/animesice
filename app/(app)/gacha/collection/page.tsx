@@ -13,12 +13,19 @@ import { CardPreview } from "@/components/gacha/CardPreview";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import { useToast } from "@/components/common/ToastProvider";
-import type { GachaPull } from "@/types";
+import type {
+  GachaCollectionProgress,
+  GachaFeatured,
+  GachaPull,
+} from "@/types";
 
 export default function GachaCollectionPage() {
   const { user } = useAuth();
   const [items, setItems] = useState<GachaPull[]>([]);
-  const [featured, setFeatured] = useState<GachaPull | null>(null);
+  const [featured, setFeatured] = useState<GachaFeatured | null>(null);
+  const [progress, setProgress] = useState<GachaCollectionProgress[]>([]);
+  const [pilotEnabled, setPilotEnabled] = useState(false);
+  const [savingProgress, setSavingProgress] = useState(false);
   const [preview, setPreview] = useState<GachaPull | null>(null);
   const [sort, setSort] = useState("value");
   const [rarity, setRarity] = useState("");
@@ -82,13 +89,66 @@ export default function GachaCollectionPage() {
     let cancelled = false;
     const load = async () => {
       const current = await api.gachaFeatured().catch(() => null);
-      if (!cancelled) setFeatured(current);
+      if (!cancelled) {
+        setFeatured(current);
+        if (current?.featured?.claimed) {
+          toast(
+            `Destaque atualizado: +${current.featured.claimed} crystals.`,
+            "success",
+          );
+        }
+      }
     };
     void load();
     return () => {
       cancelled = true;
     };
+  }, [user, toast]);
+
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    void api
+      .gachaEngagementPilot()
+      .then(async (pilot) => {
+        if (cancelled) return;
+        setPilotEnabled(pilot.enabled);
+        if (!pilot.enabled) return;
+        const collections = await api.gachaCollectionProgress();
+        if (!cancelled) setProgress(collections);
+      })
+      .catch(() => {
+        if (!cancelled) setError("Não foi possível carregar o progresso.");
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [user]);
+
+  async function saveProgress(
+    favoriteCollectionId: string | null,
+    pinnedCollectionIds = progress
+      .filter((collection) => collection.pinned)
+      .map((collection) => collection.id),
+  ) {
+    if (savingProgress) return;
+    setSavingProgress(true);
+    try {
+      setProgress(
+        await api.updateGachaCollectionPreferences({
+          favoriteCollectionId,
+          pinnedCollectionIds,
+        }),
+      );
+      toast("Preferências da coleção atualizadas.", "success");
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Não foi possível atualizar.",
+      );
+    } finally {
+      setSavingProgress(false);
+    }
+  }
 
   async function handleReroll() {
     if (!preview || rerolling) return;
@@ -255,6 +315,118 @@ export default function GachaCollectionPage() {
           Voltar ao Gacha
         </Link>
       </div>
+      {pilotEnabled && (featured || progress.length > 0) && (
+        <section
+          aria-labelledby="collection-progress-title"
+          className="mt-8 border border-hairline bg-panel/70 p-4 sm:p-6"
+        >
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <h2
+                id="collection-progress-title"
+                className="font-display text-display-sm text-snow"
+              >
+                Progresso das coleções
+              </h2>
+              <p className="mt-1 text-body-sm text-mist">
+                Tudo atualizado. Descobertas permanecem mesmo após uma troca.
+              </p>
+            </div>
+            {featured?.featured?.enabled && (
+              <div className="border border-ice/30 px-4 py-3 text-right">
+                <p className="font-mono text-caption uppercase text-ice">
+                  Destaque ativo
+                </p>
+                <p className="mt-1 text-body-sm text-snow">
+                  {featured.featured.ratePercentPerTwoHours}% a cada 2h · teto{" "}
+                  {featured.featured.dailyCapPercent}% ao dia
+                </p>
+                <p className="text-caption text-mist">
+                  Acumula por até {featured.featured.accumulationDays} dias
+                </p>
+              </div>
+            )}
+          </div>
+          <div className="mt-5 grid gap-3 md:grid-cols-2">
+            {progress.map((collection) => {
+              const pinnedIds = progress
+                .filter((item) => item.pinned)
+                .map((item) => item.id);
+              return (
+                <article
+                  key={`${collection.id}:${collection.version}`}
+                  className="border border-hairline bg-ink/40 p-4"
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <h3 className="font-display text-title-sm text-snow">
+                      {collection.name}
+                    </h3>
+                    <span className="font-mono text-caption text-mist">
+                      {collection.discovered}/{collection.total}
+                    </span>
+                  </div>
+                  <div
+                    role="progressbar"
+                    aria-label={`Progresso de ${collection.name}`}
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-valuenow={collection.percent}
+                    className="mt-3 h-2 overflow-hidden bg-white/10"
+                  >
+                    <div
+                      className="h-full bg-ice transition-[width] duration-300 motion-reduce:transition-none"
+                      style={{ width: `${collection.percent}%` }}
+                    />
+                  </div>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {collection.rewards.reward50At && (
+                      <span className="flex min-h-11 items-center border border-white/15 px-3 font-mono text-caption text-snow">
+                        Título: Colecionador de {collection.name}
+                      </span>
+                    )}
+                    {collection.percent >= 25 && collection.percent < 100 && (
+                      <button
+                        type="button"
+                        disabled={savingProgress}
+                        onClick={() =>
+                          void saveProgress(
+                            collection.favorite ? null : collection.id,
+                          )
+                        }
+                        className="min-h-11 border border-ice/40 px-3 font-mono text-caption text-ice disabled:opacity-50"
+                      >
+                        {collection.favorite
+                          ? "Favorita · peso 1× → 1,15×"
+                          : "Usar peso 1× → 1,15×"}
+                      </button>
+                    )}
+                    {collection.rewards.reward100At && (
+                      <button
+                        type="button"
+                        disabled={
+                          savingProgress ||
+                          (!collection.pinned && pinnedIds.length >= 3)
+                        }
+                        onClick={() =>
+                          void saveProgress(
+                            progress.find((item) => item.favorite)?.id ?? null,
+                            collection.pinned
+                              ? pinnedIds.filter((id) => id !== collection.id)
+                              : [...pinnedIds, collection.id],
+                          )
+                        }
+                        className="min-h-11 border border-amber-300/40 px-3 font-mono text-caption text-amber-300 disabled:opacity-50"
+                      >
+                        {collection.pinned ? "Medalha fixada" : "Fixar medalha"}
+                      </button>
+                    )}
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        </section>
+      )}
       <div className="mt-6 flex flex-wrap gap-3">
         <select
           aria-label="Ordenação"
