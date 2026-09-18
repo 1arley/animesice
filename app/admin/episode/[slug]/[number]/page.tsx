@@ -45,7 +45,7 @@ export default function AdminEditEpisodePage({
     if (!isPrivileged(user)) return;
     setLoading(true);
     api
-      .getEpisode(slug, number)
+      .adminGetEpisode(slug, number)
       .then((ep) => {
         setEpisode(ep);
         setVideoUrl(ep.videoUrl ?? "");
@@ -66,12 +66,13 @@ export default function AdminEditEpisodePage({
     setError(null);
     try {
       await api.adminUpdateEpisode(slug, number, {
-        title: title || undefined,
-        videoUrl: videoUrl || undefined,
-        thumbnailUrl: thumbnailUrl || undefined,
-        duration: duration || undefined,
+        title: title || null,
+        videoUrl: videoUrl || null,
+        thumbnailUrl: thumbnailUrl || null,
+        duration: duration || null,
         embedUrl: embedUrl || null,
       });
+      await api.revalidateAdminCache(slug);
       setSaved(true);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Erro ao salvar.");

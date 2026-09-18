@@ -2,8 +2,11 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { api } from "@/lib/api";
+import { api, ApiError } from "@/lib/api";
 import type {
+  GachaFeatured,
+  GachaPull,
+  GachaWishlistResponse,
   PublicUserProfile,
   PublicActivityEvent,
   UserRating,
@@ -22,7 +25,9 @@ import { ProfileActivity } from "@/components/profile/ProfileActivity";
 import { ProfileFavorites } from "@/components/profile/ProfileFavorites";
 import { ProfileRatings } from "@/components/profile/ProfileRatings";
 import { ProfileCollection } from "@/components/profile/ProfileCollection";
+import { ProfileGacha } from "@/components/profile/ProfileGacha";
 import { ProfileFollowList } from "@/components/profile/ProfileFollowList";
+import { ProfileWishlist } from "@/components/profile/ProfileWishlist";
 
 const LIMIT = 24;
 
@@ -35,6 +40,8 @@ const TAB_ALIASES: Record<string, ProfileTab> = {
   overview: "overview",
   activity: "activity",
   collection: "collection",
+  gacha: "gacha",
+  wishlist: "wishlist",
 };
 
 export default function PublicProfilePage({
@@ -79,15 +86,74 @@ export default function PublicProfilePage({
   const [tabFollowersTotal, setTabFollowersTotal] = useState(0);
   const [tabFollowersPage, setTabFollowersPage] = useState(1);
   const [tabFollowersHasMore, setTabFollowersHasMore] = useState(false);
-  const [collectionStatus, setCollectionStatus] = useState<WatchStatus | "ALL">("ALL");
+  const [collectionStatus, setCollectionStatus] = useState<WatchStatus | "ALL">(
+    "ALL",
+  );
   const [tabList, setTabList] = useState<PublicAnimeListItem[]>([]);
   const [tabListTotal, setTabListTotal] = useState(0);
   const [tabListPage, setTabListPage] = useState(1);
   const [tabListHasMore, setTabListHasMore] = useState(false);
+  const [tabGacha, setTabGacha] = useState<GachaPull[]>([]);
+  const [tabGachaTotal, setTabGachaTotal] = useState(0);
+  const [tabGachaValue, setTabGachaValue] = useState(0);
+  const [tabGachaPage, setTabGachaPage] = useState(1);
+  const [tabGachaHasMore, setTabGachaHasMore] = useState(false);
+  const [tabGachaPrivate, setTabGachaPrivate] = useState(false);
+  const [tabWishlist, setTabWishlist] = useState<GachaWishlistResponse | null>(
+    null,
+  );
+  const [featuredCard, setFeaturedCard] = useState<GachaFeatured | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     const load = async () => {
+      // Navegação entre perfis reusa este componente (mesma rota, outro
+      // userName): zera a visão geral para nunca mostrar dados do perfil
+      // anterior (ex.: carta destaque de outro usuário) enquanto resolve.
+      setError(false);
+      setOverviewLoading(true);
+      setList([]);
+      setListTotal(0);
+      setActivity([]);
+      setRatings([]);
+      setRatingsTotal(0);
+      setFavorites([]);
+      setFavoritesTotal(0);
+      setFeaturedCard(null);
+      setTabActivity([]);
+      setTabActivityTotal(0);
+      setTabActivityPage(1);
+      setTabActivityHasMore(false);
+      setTabRatings([]);
+      setTabRatingsTotal(0);
+      setTabRatingsPage(1);
+      setTabRatingsHasMore(false);
+      setTabFavorites([]);
+      setTabFavoritesTotal(0);
+      setTabFavoritesPage(1);
+      setTabFavoritesHasMore(false);
+      setTabFollowing([]);
+      setTabFollowingTotal(0);
+      setTabFollowingPage(1);
+      setTabFollowingHasMore(false);
+      setTabFollowers([]);
+      setTabFollowersTotal(0);
+      setTabFollowersPage(1);
+      setTabFollowersHasMore(false);
+      setTabWishlist(null);
+      setCollectionStatus("ALL");
+      setTabList([]);
+      setTabListTotal(0);
+      setTabListPage(1);
+      setTabListHasMore(false);
+      setTabGacha([]);
+      setTabGachaTotal(0);
+      setTabGachaValue(0);
+      setTabGachaPage(1);
+      setTabGachaHasMore(false);
+      setTabGachaPrivate(false);
+      setTabLoading(false);
+      setActiveTab("overview");
       try {
         const { userName } = await params;
         if (!userName) throw new Error("missing userName");
@@ -101,13 +167,15 @@ export default function PublicProfilePage({
 
         // Visão geral em paralelo — sem cascata de requests.
         const uid = prof.id;
-        const [l, a, r, f] = await Promise.all([
+        const [l, a, r, f, featured] = await Promise.all([
           api.getUserAnimeList(uid, 1, 100),
           api.getUserActivity(uid, 1, 8),
           api.getUserRatings(uid, 1, 4),
           api.getUserFavorites(uid, 1, 12),
+          api.gachaPublicFeatured(uid).catch(() => null),
         ]);
         if (cancelled) return;
+        setFeaturedCard(featured);
         setList(l.data ?? []);
         setListTotal(l.meta?.total ?? 0);
         setActivity(a.data ?? []);
@@ -228,6 +296,16 @@ export default function PublicProfilePage({
     } catch {}
   }
 
+  async function loadMoreGacha() {
+    const next = tabGachaPage + 1;
+    try {
+      const res = await api.gachaCollection(profile!.id, next, LIMIT);
+      setTabGacha((prev) => [...prev, ...(res.data ?? [])]);
+      setTabGachaPage(next);
+      setTabGachaHasMore(next < (res.meta?.totalPages ?? 1));
+    } catch {}
+  }
+
   // Abas carregam sob demanda (primeira ativação), reutilizando os dados
   // da visão geral quando possível — sem requests duplicados.
   async function ensureTab(tab: ProfileTab) {
@@ -266,6 +344,23 @@ export default function PublicProfilePage({
         setTabListTotal(res.meta?.total ?? 0);
         setTabListPage(1);
         setTabListHasMore(1 < (res.meta?.totalPages ?? 1));
+      }
+      if (tab === "gacha" && tabGacha.length === 0 && !tabGachaPrivate) {
+        try {
+          const res = await api.gachaCollection(profile.id, 1, LIMIT);
+          setTabGacha(res.data ?? []);
+          setTabGachaTotal(res.stats?.total ?? 0);
+          setTabGachaValue(res.stats?.totalValue ?? 0);
+          setTabGachaPage(1);
+          setTabGachaHasMore(1 < (res.meta?.totalPages ?? 1));
+        } catch (err) {
+          if (err instanceof ApiError && err.statusCode === 403) {
+            setTabGachaPrivate(true);
+          }
+        }
+      }
+      if (tab === "wishlist" && !tabWishlist) {
+        setTabWishlist(await api.gachaWishlist(profile.id));
       }
       if (tab === "following" && tabFollowing.length === 0) {
         const res = await api.getFollowingForUser(profile.id, 1, LIMIT);
@@ -317,12 +412,13 @@ export default function PublicProfilePage({
 
   return (
     <>
-      <ProfileHero profile={profile} />
+      <ProfileHero
+        profile={profile}
+        featuredCard={featuredCard}
+        featuredLoading={overviewLoading}
+      />
 
-      <div
-        id="profile-content"
-        className="mx-auto max-w-shelf px-4 pb-16 pt-4"
-      >
+      <div id="profile-content" className="mx-auto max-w-shelf px-4 pb-16 pt-4">
         <ProfileStats counts={profile._count} onNavigate={handleNavigate} />
 
         <div className="mt-6">
@@ -345,12 +441,12 @@ export default function PublicProfilePage({
                 ) : (
                   <>
                     <ProfileCurrentlyWatching items={watching} />
-                    <ProfileActivity
-                      events={activity}
-                      userName={displayName}
-                    />
+                    <ProfileActivity events={activity} userName={displayName} />
                     <ProfileRatings items={ratings} total={ratingsTotal} />
-                    <ProfileFavorites items={favorites} total={favoritesTotal} />
+                    <ProfileFavorites
+                      items={favorites}
+                      total={favoritesTotal}
+                    />
                   </>
                 )}
               </div>
@@ -386,7 +482,10 @@ export default function PublicProfilePage({
 
           {activeTab === "favorites" && (
             <>
-              <ProfileFavorites items={tabFavorites} total={tabFavorites.length} />
+              <ProfileFavorites
+                items={tabFavorites}
+                total={tabFavorites.length}
+              />
               {tabFavoritesHasMore && (
                 <button onClick={loadMoreFavorites} className="btn-ghost mt-4">
                   Carregar mais
@@ -410,6 +509,30 @@ export default function PublicProfilePage({
                 </button>
               )}
             </>
+          )}
+
+          {activeTab === "gacha" && (
+            <>
+              <ProfileGacha
+                items={tabGacha}
+                total={tabGachaTotal}
+                totalValue={tabGachaValue}
+                isPrivate={tabGachaPrivate}
+                loading={tabLoading && tabGacha.length === 0}
+              />
+              {tabGachaHasMore && !tabLoading && !tabGachaPrivate && (
+                <button onClick={loadMoreGacha} className="btn-ghost mt-4">
+                  Carregar mais
+                </button>
+              )}
+            </>
+          )}
+
+          {activeTab === "wishlist" && (
+            <ProfileWishlist
+              data={tabWishlist}
+              loading={tabLoading && !tabWishlist}
+            />
           )}
 
           {activeTab === "following" && (

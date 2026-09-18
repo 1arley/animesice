@@ -67,9 +67,7 @@ export function Modal({ open, onClose, title, children, footer }: { open: boolea
     if (!open || !mounted) return;
     const previouslyFocused = document.activeElement as HTMLElement | null;
     const timer = window.setTimeout(() => {
-      dialogRef.current
-        ?.querySelector<HTMLElement>(FOCUSABLE)
-        ?.focus();
+      dialogRef.current?.querySelector<HTMLElement>(FOCUSABLE)?.focus();
     }, 20);
     return () => {
       window.clearTimeout(timer);
@@ -80,7 +78,7 @@ export function Modal({ open, onClose, title, children, footer }: { open: boolea
   if (!open && !mounted) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center">
+    <div className="fixed inset-0 z-[100] flex items-end justify-center px-0 pt-8 sm:items-center sm:px-4 sm:py-6">
       <div
         className="absolute inset-0 bg-black/50"
         role="button"
@@ -94,14 +92,7 @@ export function Modal({ open, onClose, title, children, footer }: { open: boolea
           }
         }}
       />
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-label={title ?? "Diálogo"}
-        ref={dialogRef}
-        className="relative z-10 w-full max-w-md bg-panel border border-hairline p-6 rounded transition-opacity duration-200"
-        style={{ animation: open ? "fadeIn 160ms" : "fadeOut 120ms" }}
-      >
+      <div role="dialog" aria-modal="true" aria-label={title ?? "Diálogo"} ref={dialogRef} className="relative z-10 max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto overscroll-contain border border-hairline bg-panel p-4 pb-[max(1rem,env(safe-area-inset-bottom))] transition-opacity duration-200 sm:rounded sm:p-6" style={{ animation: open ? "fadeIn 160ms" : "fadeOut 120ms" }}>
         {title && <h3 className="font-display text-lg text-ice mb-3">{title}</h3>}
         <div>{children}</div>
         <div className="mt-4 flex justify-end gap-2">
@@ -112,7 +103,7 @@ export function Modal({ open, onClose, title, children, footer }: { open: boolea
           )}
         </div>
       </div>
-      <style>{`@keyframes fadeIn { from { opacity: 0; transform: translateY(-6px) } to { opacity: 1; transform: translateY(0) } } @keyframes fadeOut { from { opacity: 1; transform: translateY(0) } to { opacity: 0; transform: translateY(-6px) } }`}</style>
+      <style>{`@keyframes fadeIn { from { opacity: 0; transform: translateY(8px) } to { opacity: 1; transform: translateY(0) } } @keyframes fadeOut { from { opacity: 1; transform: translateY(0) } to { opacity: 0; transform: translateY(8px) } } @media (prefers-reduced-motion: reduce) { [role="dialog"] { animation: none !important; } }`}</style>
     </div>
   );
 }

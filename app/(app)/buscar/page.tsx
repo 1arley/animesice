@@ -8,9 +8,11 @@ import {
 } from "@/lib/anime-labels";
 import { PageTitle } from "@/components/ui/PageTitle";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import type { Metadata } from "next";
-import type { Anime, Genre, Paginated, SortMode } from "@/types";
+import type { Anime, Genre, Paginated } from "@/types";
 import { serverFetchJson } from "@/lib/api-server";
+import { parsePage } from "@/lib/page";
 
 export const revalidate = 60;
 
@@ -18,6 +20,7 @@ export const metadata: Metadata = {
   title: "Buscar animes — Encontre por título, gênero, ano e mais",
   description: "Busque animes por título, gênero, ano, formato, status e mais. Encontre exatamente o que procura no AnimesIce.",
   alternates: { canonical: "/buscar" },
+  robots: { index: false, follow: true },
   openGraph: {
     title: "Buscar animes | AnimesIce",
     description: "Busque animes por título, gênero, ano, formato e mais.",
@@ -50,13 +53,14 @@ export default async function SearchPage({
     year?: SearchParam;
     season?: SearchParam;
     sort?: SearchParam;
+    adult?: SearchParam;
   }>;
 }) {
   const sp = await searchParams;
   const qFromUrl = first(sp.q);
   const searchFromUrl = first(sp.search);
   const q = (qFromUrl ?? searchFromUrl ?? "").trim();
-  const page = Math.max(1, Number(first(sp.page) ?? "1") || 1);
+  const page = parsePage(sp.page);
   const limit = 24;
 
   // Múltiplos gêneros chegam como array (um checkbox por slug); o backend
@@ -69,9 +73,11 @@ export default async function SearchPage({
   const year = first(sp.year);
   const season = first(sp.season);
   const sort = first(sp.sort);
+  const adultOptIn = first(sp.adult) === "1";
 
   // Hoisted outside the genre map — evita re-fatiar a string por item.
   const selectedGenres = new Set(genresParam?.split(",") ?? []);
+  const includeAdult = adultOptIn || selectedGenres.has("hentai");
 
   const params = new URLSearchParams();
   params.set("page", String(page));
@@ -84,6 +90,7 @@ export default async function SearchPage({
   if (year) params.set("year", year);
   if (season) params.set("season", season);
   if (sort) params.set("sort", sort);
+  if (includeAdult) params.set("includeHentai", "1");
 
   /** Monta URL de paginação com os nomes públicos (q, não o search da API).
    *  Antes usava `params` (search=...) e a página lê q= — a busca se perdia
@@ -99,25 +106,39 @@ export default async function SearchPage({
     if (year) p.set("year", year);
     if (season) p.set("season", season);
     if (sort) p.set("sort", sort);
+    if (adultOptIn) p.set("adult", "1");
     return `/buscar?${p.toString()}`;
   };
 
   const [data, genreList] = await Promise.all([
-    q || genresParam || status || audio || format || year || season || sort
+    q || genresParam || status || audio || format || year || season || sort || adultOptIn
       ? serverFetchJson<Paginated<Anime>>(`/anime?${params.toString()}`)
       : Promise.resolve(null),
     serverFetchJson<Genre[]>(`/genre`),
   ]);
 
+  const visibleGenres = (genreList ?? []).filter(
+    (g) => includeAdult || g.slug !== "hentai",
+  );
   const results = data?.data ?? [];
   const total = data?.meta?.total ?? 0;
   const totalPages = data?.meta?.totalPages ?? 1;
 
-  const hasQuery = Boolean(q || genresParam || status || audio || format || year || season || sort || searchFromUrl);
+  // ?page=999 (gerada por crawlers ou links antigos) não é "0 resultados":
+  // redireciona para a última página real, preservando os filtros.
+  if (data && page > totalPages && totalPages > 0) {
+    redirect(pageHref(totalPages));
+  }
+
+  const hasQuery = Boolean(q || genresParam || status || audio || format || year || season || sort || searchFromUrl || adultOptIn);
+
+  // Backend caiu (null do serverFetchJson) não é o mesmo que catálogo vazio.
+  const failed = hasQuery && data === null;
 
   // Collect active filters for display
   const activeFilters: string[] = [];
   if (q) activeFilters.push(`"${q}"`);
+  if (includeAdult) activeFilters.push("+18");
   if (audio) activeFilters.push(audio === "DUBLADO" ? "Dublado" : "Legendado");
   if (format) activeFilters.push(animeFormatLabel(format));
   if (status) activeFilters.push(animeStatusLabel(status));
@@ -129,7 +150,9 @@ export default async function SearchPage({
       <PageTitle
         text="Buscar"
         badge={
-          hasQuery ? (
+          failed ? (
+            "sem sinal"
+          ) : hasQuery ? (
             <>{total} resultado{total !== 1 ? "s" : ""}</>
           ) : (
             "filtros"
@@ -141,7 +164,7 @@ export default async function SearchPage({
       {activeFilters.length > 0 && (
         <div className="mb-4 flex flex-wrap gap-2">
           {activeFilters.map((filter) => (
-            <span key={filter} className="border border-ice/40 bg-ice/10 px-2 py-0.5 font-sans text-caption text-ice">
+            <span key={filter} className="min-w-0 max-w-[20rem] truncate border border-ice/40 bg-ice/10 px-2 py-0.5 font-sans text-caption text-ice">
               {filter}
             </span>
           ))}
@@ -169,17 +192,18 @@ export default async function SearchPage({
                 defaultValue={q}
                 placeholder="Título..."
                 aria-label="Buscar por título"
+                maxLength={100}
                 className="field"
               />
             </fieldset>
 
-            {genreList && genreList.length > 0 && (
+            {visibleGenres.length > 0 && (
               <fieldset>
                 <legend className="mb-2 font-mono text-caption uppercase tracking-wider text-mist">
                   Gêneros
                 </legend>
                 <div className="max-h-48 space-y-1 overflow-y-auto [scrollbar-width:thin]">
-                  {genreList.map((g) => (
+                  {visibleGenres.map((g) => (
                     <label key={g.id} className="flex cursor-pointer items-center gap-2 text-body-sm text-mist transition-colors hover:text-ice">
                       <input
                         type="checkbox"
@@ -199,6 +223,19 @@ export default async function SearchPage({
                 </div>
               </fieldset>
             )}
+
+            <fieldset>
+              <label className="flex cursor-pointer items-center gap-2 text-body-sm text-mist transition-colors hover:text-ice">
+                <input
+                  type="checkbox"
+                  name="adult"
+                  value="1"
+                  defaultChecked={adultOptIn}
+                  className="accent-ice"
+                />
+                Conteúdo adulto (+18)
+              </label>
+            </fieldset>
 
             <fieldset>
               <legend className="mb-2 font-mono text-caption uppercase tracking-wider text-mist">
@@ -290,6 +327,15 @@ export default async function SearchPage({
                   <circle cx="20" cy="20" r="14" />
                   <path d="M32 32l8 8" strokeLinecap="round" />
                 </svg>
+              }
+            />
+          ) : failed ? (
+            <EmptyState
+              text="Não foi possível carregar os resultados. O sinal do catálogo está instável."
+              action={
+                <Link href={pageHref(page)} className="text-body-sm text-ice hover:opacity-70">
+                  Tentar novamente →
+                </Link>
               }
             />
           ) : results.length === 0 ? (

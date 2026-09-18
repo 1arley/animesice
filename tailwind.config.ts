@@ -90,6 +90,10 @@ module.exports = {
         "4.5": "1.125rem",
       },
       keyframes: {
+        rollShine: {
+          "0%, 30%": { transform: "translateX(-150%)" },
+          "70%, 100%": { transform: "translateX(150%)" },
+        },
         blink: {
           "0%, 100%": { opacity: "1" },
           "50%": { opacity: "0.2" },
@@ -104,6 +108,7 @@ module.exports = {
         },
       },
       animation: {
+        rollShine: "rollShine 3s ease-in-out infinite",
         blink: "blink 1.6s steps(1) infinite",
         fade: "fade 500ms cubic-bezier(0.16, 1, 0.3, 1) both",
         pulseGlow: "pulseGlow 3s ease-in-out infinite",

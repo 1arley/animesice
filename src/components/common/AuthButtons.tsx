@@ -19,7 +19,7 @@ export function AuthButtons() {
     return (
       <div className="flex items-center gap-3">
         <Link
-          href="/settings"
+          href="/configuracoes"
           className="flex items-center gap-2 text-body-sm text-mist transition-colors hover:text-ice"
         >
           <Avatar name={displayName(user)} src={user.avatar} size={28} />
@@ -56,10 +56,10 @@ export function AuthButtons() {
 
   return (
     <div className="flex items-center gap-2">
-      <Link href="/login" className="btn-ghost">
+      <Link href="/entrar" className="btn-ghost">
         Entrar
       </Link>
-      <Link href="/register" className="btn-ice">
+      <Link href="/cadastro" className="btn-ice">
         Cadastrar
       </Link>
     </div>

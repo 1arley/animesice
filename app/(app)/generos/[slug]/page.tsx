@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { AnimeCard } from "@/components/common/AnimeCard";
 import type { GenreAnimesResponse } from "@/types";
 import { serverFetchJson } from "@/lib/api-server";
+import { parsePage } from "@/lib/page";
 import { SITE_URL } from "@/lib/site";
 import { escapeJsonLd } from "@/lib/url";
 
@@ -18,7 +19,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const sp = await searchParams;
-  const page = Math.max(1, Number(sp.page ?? "1") || 1);
+  const page = parsePage(sp.page);
   const genreName = slug.replace(/-/g, " ").replace(/\b\w/g, (l) => l.toUpperCase());
 
   const description = `Assistir animes do gênero ${genreName} online em HD. Catálogo completo com ${genreName} legendados e dublados no AnimesIce.`;
@@ -51,11 +52,11 @@ export default async function GenrePage({
 }) {
   const { slug } = await params;
   const sp = await searchParams;
-  const page = Math.max(1, Number(sp.page ?? "1") || 1);
+  const page = parsePage(sp.page);
   const limit = 24;
 
   const data = await serverFetchJson<GenreAnimesResponse>(
-    `/genre/${slug}/animes?page=${page}&limit=${limit}`,
+    `/genre/${slug}/animes?page=${page}&limit=${limit}${slug === "hentai" ? "&includeHentai=1" : ""}`,
   );
 
   // Gênero inexistente: gera 404 real. Um 200 com texto "não encontrado"
@@ -65,6 +66,12 @@ export default async function GenrePage({
 
   const { genre, data: animes, meta } = data;
   const genreName = genre.name;
+
+  // ?page=999 num gênero com conteúdo não é "não anime neste gênero": cai na
+  // última página válida (gêneros realmente vazios têm totalPages 0 e seguem).
+  if (page > meta.totalPages && meta.totalPages > 0) {
+    redirect(`/generos/${slug}?page=${meta.totalPages}`);
+  }
 
   const jsonLd = {
     "@context": "https://schema.org",

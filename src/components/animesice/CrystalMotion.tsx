@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
 
@@ -126,10 +127,12 @@ export function CrystalMotion({
         aria-hidden="true"
       >
         <div className="crystal-wrap">
-          <img
+          <Image
             className="crystal-logo"
             src={LOGO_URL}
             alt=""
+            width={220}
+            height={220}
             draggable={false}
             style={{ animation: "none", opacity: 1, filter: "none" }}
             aria-hidden="true"
@@ -157,10 +160,12 @@ export function CrystalMotion({
           ))}
         </div>
         {showFallback ? (
-          <img
+          <Image
             className="crystal-logo"
             src={LOGO_URL}
             alt=""
+            width={220}
+            height={220}
             draggable={false}
             aria-hidden="true"
           />
