@@ -173,7 +173,7 @@ export default async function WatchPage({
         initialEpisode={episode}
         initialSource={initialSource}
       />
-      <SponsoredSignal />
+      <SponsoredSignal href={process.env.MONETAG_SPONSOR_LINK} />
     </div>
   );
 }

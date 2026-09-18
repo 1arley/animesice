@@ -426,7 +426,7 @@ export default async function AnimeDetailPage({
         </div>
       </div>
 
-      <SponsoredSignal />
+      <SponsoredSignal href={process.env.MONETAG_SPONSOR_LINK} />
 
       {/* Avaliação */}
       <section className="mt-10 border-y border-hairline py-6">
