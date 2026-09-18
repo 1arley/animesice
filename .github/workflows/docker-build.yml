@@ -35,10 +35,11 @@ jobs:
         id: api
         run: |
           if [ "${{ github.ref_name }}" = "main" ]; then
-            echo "url=https://api.animesice.app/api" >> $GITHUB_OUTPUT
+            api_host="api.animesice.app"
           else
-            echo "url=https://api.dev.animesice.app/api" >> $GITHUB_OUTPUT
+            api_host="api.dev.animesice.app"
           fi
+          echo "url=https://${api_host}/api" >> $GITHUB_OUTPUT
 
       - name: Build and push
         uses: docker/build-push-action@v5
