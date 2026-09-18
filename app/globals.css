@@ -1514,11 +1514,15 @@
   inset: -12%;
   z-index: 5;
   pointer-events: none;
+  border-radius: 999px;
 }
 .card-burn-visual::before {
   background: radial-gradient(ellipse at 25% 90%, rgba(255, 214, 92, 0.95) 0 8%, rgba(255, 91, 31, 0.8) 18%, transparent 42%), radial-gradient(ellipse at 70% 85%, rgba(255, 236, 153, 0.9) 0 7%, rgba(239, 68, 68, 0.8) 20%, transparent 45%);
   mix-blend-mode: screen;
   transform-origin: 50% 100%;
+  filter: blur(6px);
+  -webkit-mask-image: radial-gradient(ellipse 85% 75% at 50% 85%, black 50%, transparent 75%);
+  mask-image: radial-gradient(ellipse 85% 75% at 50% 85%, black 50%, transparent 75%);
   animation: card-burn-flame 800ms ease-out forwards;
 }
 .card-burn-visual::after {
@@ -1529,6 +1533,8 @@
   background-size:
     38px 45px,
     31px 39px;
+  -webkit-mask-image: radial-gradient(ellipse 95% 95% at 50% 50%, black 55%, transparent 80%);
+  mask-image: radial-gradient(ellipse 95% 95% at 50% 50%, black 55%, transparent 80%);
   animation: card-burn-embers 900ms ease-out forwards;
 }
 
@@ -1583,6 +1589,89 @@
   }
   .card-burn-visual::before,
   .card-burn-visual::after {
+    display: none;
+  }
+}
+
+/* Feedback de ações do gacha: toast desliza, reroll embaralha e aterrissa, saldo pulsa. */
+.toast-item {
+  animation: toast-in 250ms ease-out;
+}
+.reroll-shuffle {
+  animation: reroll-shuffle 400ms linear infinite;
+}
+.reroll-landed {
+  animation: reroll-land 350ms ease-out;
+}
+.balance-pop {
+  display: inline-block;
+  transform-origin: left center;
+  animation: balance-pop 400ms ease-out;
+}
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes reroll-shuffle {
+  0%,
+  100% {
+    transform: translateX(0) rotate(0);
+  }
+  25% {
+    transform: translateX(-3px) rotate(-1deg);
+  }
+  75% {
+    transform: translateX(3px) rotate(1deg);
+  }
+}
+@keyframes reroll-land {
+  from {
+    opacity: 0.4;
+    transform: scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+@keyframes balance-pop {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.15);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toast-item,
+  .reroll-shuffle,
+  .reroll-landed,
+  .balance-pop {
+    animation: none;
+  }
+}
+
+/* Mobile (pointer coarse): corta custo GPU sem mudar o visual.
+   - backdrop-blur-sm some: os badges já têm bg-ink/85 quase opaco, então o
+     chip continua legível e some o maior custo de scroll (dezenas de regiões
+     de backdrop-filter por grid).
+   - metade dos motes do cristal: 7 pontos ainda parecem "poeira de gelo". */
+@media (pointer: coarse) {
+  .backdrop-blur-sm {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+  .crystal-mote:nth-child(even) {
     display: none;
   }
 }

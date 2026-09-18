@@ -1526,8 +1526,10 @@ export const api = {
 
   gachaSpin: () => request<GachaSpinPreview>(`/gacha/spin`, { method: "POST" }),
 
-  gachaSkins: (page = 1, limit = 48) =>
-    request<GachaSkinsResponse>(`/gacha/skins?page=${page}&limit=${limit}`),
+  gachaSkins: (page = 1, limit = 48, search = "") =>
+    request<GachaSkinsResponse>(
+      `/gacha/skins?page=${page}&limit=${limit}&search=${encodeURIComponent(search)}`,
+    ),
   gachaSkinSpin: () =>
     request<{
       skin: GachaSkin;
@@ -1540,6 +1542,20 @@ export const api = {
       method: "PATCH",
       body: JSON.stringify({ skinId }),
     }),
+  gachaCardSkins: (userCardId: string) =>
+    request<{
+      skins: Array<Pick<GachaSkin, "name" | "imageUrl"> & { skinId: string }>;
+      selectedSkinId: string | null;
+      baseImage: string | null;
+    }>(`/gacha/user-cards/${encodeURIComponent(userCardId)}/skins`),
+  gachaApplyCardSkin: (userCardId: string, skinId: string | null) =>
+    request<GachaPull>(
+      `/gacha/user-cards/${encodeURIComponent(userCardId)}/skin`,
+      {
+        method: "PATCH",
+        body: JSON.stringify({ skinId }),
+      },
+    ),
 
   gachaClaim: (body: { spinId: string }) =>
     request<GachaPullResponse>(`/gacha/claim`, {

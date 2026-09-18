@@ -9,8 +9,9 @@ import { RollStage } from "@/components/gacha/RollStage";
 import { SpinPreviewCard } from "@/components/gacha/SpinPreviewCard";
 import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
 import { isValidRemoteUrl } from "@/lib/url";
-import { GachaCard } from "@/components/gacha/GachaCard";
+import { GachaCard, gachaConditionLabel } from "@/components/gacha/GachaCard";
 import { ConfirmDialog } from "@/components/common/ConfirmDialog";
+import { useToast } from "@/components/common/ToastProvider";
 import { SectionLabel } from "@/components/common/SectionLabel";
 import { Avatar } from "@/components/common/Avatar";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -35,7 +36,8 @@ function formatCountdown(target: string | null, now: number): string | null {
 const BYPASS_POLL_MS = 3000;
 const BYPASS_POLL_MAX_MS = 31 * 60_000;
 const BYPASS_POLL_MAX_FAILURES = 5;
-const STALE_RE = /expir|claimed|já guardada|indisponível|already|completed|conflict/i;
+const STALE_RE =
+  /expir|claimed|já guardada|indisponível|already|completed|conflict/i;
 
 /** Adapta um preview de giro para o RollStage (sem edição, sem dono). */
 function spinToStagePull(spin: GachaSpinPreview): GachaPull {
@@ -107,6 +109,8 @@ function GachaPageContent() {
   const [bypassPending, setBypassPending] = useState(false);
   const [rerolling, setRerolling] = useState(false);
   const [listing, setListing] = useState(false);
+  const [rerollConfirm, setRerollConfirm] = useState(false);
+  const { toast } = useToast();
   const [bypassReference, setBypassReference] = useState<string | null>(null);
   const [checkoutUrl, setCheckoutUrl] = useState<string | null>(null);
   const [now, setNow] = useState(() => Date.now());
@@ -228,7 +232,12 @@ function GachaPageContent() {
   }
 
   async function handleClaim() {
-    if (!selectedSpin || claiming || new Date(selectedSpin.expiresAt).getTime() <= Date.now()) return;
+    if (
+      !selectedSpin ||
+      claiming ||
+      new Date(selectedSpin.expiresAt).getTime() <= Date.now()
+    )
+      return;
     setConfirmOpen(false);
     setError("");
     setClaiming(true);
@@ -240,7 +249,8 @@ function GachaPageContent() {
       setStageOpen(true);
       await refresh();
     } catch (err) {
-      const message = err instanceof ApiError ? err.message : "Erro ao guardar.";
+      const message =
+        err instanceof ApiError ? err.message : "Erro ao guardar.";
       setError(message);
       if (STALE_RE.test(message)) await refresh().catch(() => undefined);
     } finally {
@@ -250,11 +260,15 @@ function GachaPageContent() {
 
   async function handleReroll() {
     if (!preview || rerolling) return;
+    const before = `${preview.conditionLabel ?? gachaConditionLabel(preview.condition)}·${preview.foil}`;
     setRerolling(true);
     setError("");
     try {
       const updated = await api.gachaReroll({ userCardId: preview.id });
       setPreview(updated);
+      setRerollConfirm(false);
+      const after = `${updated.conditionLabel ?? gachaConditionLabel(updated.condition)}·${updated.foil}`;
+      toast(`Reroll: ${before} → ${after}.`, "success");
       await refresh();
     } catch (err) {
       setError(
@@ -272,6 +286,7 @@ function GachaPageContent() {
     try {
       await api.gachaListCreate({ userCardId: preview.id, price });
       closePreview();
+      toast("Carta anunciada no mercado.", "success");
       await refresh();
     } catch (err) {
       setError(
@@ -294,7 +309,8 @@ function GachaPageContent() {
         await refresh();
         return;
       }
-      if (!isValidRemoteUrl(res.checkoutUrl)) throw new Error("Checkout Pix inválido.");
+      if (!isValidRemoteUrl(res.checkoutUrl))
+        throw new Error("Checkout Pix inválido.");
       setCheckoutUrl(res.checkoutUrl);
       setBypassReference(res.reference);
       const started = Date.now();
@@ -336,7 +352,8 @@ function GachaPageContent() {
   }
 
   const selectedSpin = spins.find((s) => s.id === selectedSpinId) ?? null;
-  const selectedSpinExpired = selectedSpin != null && new Date(selectedSpin.expiresAt).getTime() <= now;
+  const selectedSpinExpired =
+    selectedSpin != null && new Date(selectedSpin.expiresAt).getTime() <= now;
   const spinCountdown = formatCountdown(status?.nextSpinAt ?? null, now);
   const claimCountdown = formatCountdown(status?.nextClaimAt ?? null, now);
   const canSpinNow = (status?.canSpin ?? status == null) && !spinning;
@@ -370,7 +387,8 @@ function GachaPageContent() {
           onClose={closePreview}
           canReroll={!!user && preview.user.id === user.id}
           rerolling={rerolling}
-          onReroll={() => void handleReroll()}
+          onReroll={() => setRerollConfirm(true)}
+          onChange={setPreview}
           listing={listing}
           onList={
             user && preview.user.id === user.id
@@ -398,6 +416,23 @@ function GachaPageContent() {
           </p>
         </ConfirmDialog>
       )}
+      {preview && (
+        <ConfirmDialog
+          open={rerollConfirm}
+          title="Rerrollar carta?"
+          confirmLabel="Rerrollar"
+          busyLabel="Rerrollando…"
+          busy={rerolling}
+          onCancel={() => setRerollConfirm(false)}
+          onConfirm={() => void handleReroll()}
+        >
+          <p className="mt-4 text-body-sm text-mist">
+            Sorteia nova condition e foil por{" "}
+            {Math.max(1, Math.round(preview.value * 1.1))} crystals. Pode
+            piorar.
+          </p>
+        </ConfirmDialog>
+      )}
 
       <section className="relative mt-4 overflow-hidden border border-hairline bg-panel">
         <div
@@ -418,8 +453,8 @@ function GachaPageContent() {
             Gacha
           </h1>
           <p className="mx-auto mt-2 max-w-2xl text-body-sm text-mist">
-            5 giros por hora para revelar cartas. Guarde cartas com cooldown
-            que varia por raridade — girar continua liberado durante o bloqueio.
+            5 giros por hora para revelar cartas. Guarde cartas com cooldown que
+            varia por raridade — girar continua liberado durante o bloqueio.
             Mesma carta, cópias únicas: condition, foil e edição definem o
             valor.
           </p>
@@ -447,7 +482,10 @@ function GachaPageContent() {
         {user &&
           (loading ? (
             <div className="relative px-6 pb-10 text-center">
-              <div className="skeleton mx-auto h-24 max-w-xl" aria-busy="true" />
+              <div
+                className="skeleton mx-auto h-24 max-w-xl"
+                aria-busy="true"
+              />
             </div>
           ) : statusError ? (
             <div className="relative px-6 pb-10 text-center">
@@ -501,12 +539,16 @@ function GachaPageContent() {
                     disabled={!canSpinNow}
                     className="btn-ice w-fit px-8 py-4 text-body transition-transform duration-150 active:scale-95 motion-reduce:transform-none disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    {spinning ? "Girando…" : `Girar (${status?.spinsLeft ?? 5})`}
+                    {spinning
+                      ? "Girando…"
+                      : `Girar (${status?.spinsLeft ?? 5})`}
                   </button>
                   <button
                     type="button"
                     onClick={() => setConfirmOpen(true)}
-                    disabled={claiming || !selectedSpin || selectedSpinExpired || locked}
+                    disabled={
+                      claiming || !selectedSpin || selectedSpinExpired || locked
+                    }
                     title={
                       locked
                         ? "Você já guardou uma carta. Aguarde o fim do bloqueio ou desbloqueie via Pix."
@@ -516,15 +558,6 @@ function GachaPageContent() {
                   >
                     {claiming ? "Guardando…" : "Pegar carta"}
                   </button>
-                  <Link href="/gacha/colecao" className="btn-ghost px-4 py-4">
-                    Minha coleção
-                  </Link>
-                  <Link href="/gacha/trocas" className="btn-ghost px-4 py-4">
-                    Trocas
-                  </Link>
-                  <Link href="/gacha/mercado" className="btn-ghost px-4 py-4">
-                    Mercado
-                  </Link>
                 </div>
 
                 {status?.claimWarning && (

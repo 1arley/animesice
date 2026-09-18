@@ -3,6 +3,9 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { api, ApiError } from "@/lib/api";
+import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
+import { useToast } from "@/components/common/ToastProvider";
+import { SkinReveal } from "@/components/gacha/SkinReveal";
 import type { GachaSkin, GachaSkinsResponse } from "@/types";
 
 const PAGE_LIMIT = 48;
@@ -17,38 +20,48 @@ function countdown(target: string | null): string | null {
 }
 
 export default function GachaSkinsPage() {
+  const reduceMotion = usePrefersReducedMotion();
   const [data, setData] = useState<GachaSkinsResponse | null>(null);
   const [catalog, setCatalog] = useState<GachaSkin[]>([]);
   const [busy, setBusy] = useState(false);
-  const [loadingMore, setLoadingMore] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [search, setSearch] = useState("");
+  const [revealedSkin, setRevealedSkin] = useState<GachaSkin | null>(null);
   const [error, setError] = useState("");
   const [tick, setTick] = useState(0);
+  const { toast } = useToast();
 
-  const load = useCallback(async (page: number, append: boolean) => {
-    if (append) setLoadingMore(true);
-    else setError("");
-    try {
-      const res = await api.gachaSkins(page, PAGE_LIMIT);
-      const owned = res.owned ?? res.skins.filter((s) => s.owned);
-      const meta = res.meta ?? {
-        total: res.skins.length,
-        page: 1,
-        limit: res.skins.length,
-        totalPages: 1,
-      };
-      setData({ ...res, owned, meta });
-      setCatalog((prev) => (append ? [...prev, ...res.skins] : res.skins));
-    } catch (e: unknown) {
-      setError(
-        e instanceof ApiError ? e.message : "Não foi possível carregar skins.",
-      );
-    } finally {
-      setLoadingMore(false);
-    }
-  }, []);
+  const load = useCallback(
+    async (page: number, term = search) => {
+      setLoading(true);
+      setError("");
+      try {
+        const res = await api.gachaSkins(page, PAGE_LIMIT, term);
+        const owned = res.owned ?? res.skins.filter((s) => s.owned);
+        const meta = res.meta ?? {
+          total: res.skins.length,
+          page: 1,
+          limit: res.skins.length,
+          totalPages: 1,
+        };
+        setData({ ...res, owned, meta });
+        setCatalog(res.skins);
+      } catch (e: unknown) {
+        setError(
+          e instanceof ApiError
+            ? e.message
+            : "Não foi possível carregar skins.",
+        );
+      } finally {
+        setLoading(false);
+      }
+    },
+    [search],
+  );
 
   useEffect(() => {
-    void load(1, false);
+    const timeout = window.setTimeout(() => void load(1), 300);
+    return () => window.clearTimeout(timeout);
   }, [load]);
   useEffect(() => {
     const id = window.setInterval(() => setTick((v) => v + 1), 30000);
@@ -59,7 +72,6 @@ export default function GachaSkinsPage() {
   const owned = data?.owned ?? [];
   const totalPages = data?.meta.totalPages ?? 1;
   const currentPage = data?.meta.page ?? 1;
-  const left = Math.max((data?.meta.total ?? 0) - catalog.length, 0);
 
   async function spin() {
     if (!data?.canSpin || busy) return;
@@ -75,16 +87,14 @@ export default function GachaSkinsPage() {
               crystalBalance: res.crystalBalance,
               canSpin: false,
               nextSpinAt: res.nextSpinAt,
-              owned: [
-                fresh,
-                ...prev.owned.filter((s) => s.id !== fresh.id),
-              ],
+              owned: [fresh, ...prev.owned.filter((s) => s.id !== fresh.id)],
             }
           : prev,
       );
       setCatalog((prev) =>
         prev.map((s) => (s.id === fresh.id ? { ...s, ...fresh } : s)),
       );
+      setRevealedSkin(fresh);
     } catch (e) {
       setError(e instanceof ApiError ? e.message : "Giro indisponível.");
     } finally {
@@ -113,6 +123,7 @@ export default function GachaSkinsPage() {
       setCatalog((prev) =>
         prev.map((s) => ({ ...s, equipped: s.id === res.equippedSkinId })),
       );
+      toast(skin ? "Skin equipada." : "Skin removida.", "success");
     } catch (e) {
       setError(
         e instanceof ApiError ? e.message : "Não foi possível equipar skin.",
@@ -136,19 +147,26 @@ export default function GachaSkinsPage() {
             <button
               type="button"
               className="btn-ice"
-              onClick={() => void load(1, false)}
+              onClick={() => void load(1)}
             >
               Tentar de novo
             </button>
           </div>
         ) : (
-          "Carregando skins..."
+          "Carregando skins…"
         )}
       </main>
     );
 
   return (
     <main id="body-content" className="mx-auto max-w-shelf px-4 py-10">
+      {revealedSkin && (
+        <SkinReveal
+          skin={revealedSkin}
+          reduceMotion={reduceMotion}
+          onClose={() => setRevealedSkin(null)}
+        />
+      )}
       <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="shelf-label">Gacha / Skins</p>
@@ -181,7 +199,7 @@ export default function GachaSkinsPage() {
           className="btn-ice disabled:cursor-not-allowed disabled:opacity-40"
         >
           {busy
-            ? "Girando..."
+            ? "Girando…"
             : data.canSpin
               ? "Girar agora"
               : `Disponível em ${remaining ?? "breve"}`}
@@ -221,30 +239,61 @@ export default function GachaSkinsPage() {
         </section>
       )}
       <section>
-        <h2 className="mb-4 font-display text-xl text-ice">
-          Catálogo ({data.meta.total.toLocaleString("pt-BR")})
-        </h2>
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-          {catalog.map((skin) => (
-            <SkinTile
-              key={skin.id}
-              skin={skin}
-              busy={busy}
-              onEquip={() => void equip(skin)}
+        <div className="mb-4 flex flex-wrap items-end justify-between gap-4">
+          <h2 className="font-display text-xl text-ice">
+            Catálogo ({data.meta.total.toLocaleString("pt-BR")})
+          </h2>
+          <label className="w-full sm:w-72">
+            <span className="sr-only">Buscar skin</span>
+            <input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              name="skin-search"
+              autoComplete="off"
+              placeholder="Buscar por nome…"
+              className="min-h-11 w-full border border-hairline bg-panel px-3 py-2 text-sm text-ice outline-none focus-visible:border-ice focus-visible:ring-2 focus-visible:ring-ice/40"
+              type="search"
             />
-          ))}
+          </label>
         </div>
-        {currentPage < totalPages && (
-          <div className="mt-6 text-center">
+        <div aria-live="polite" aria-busy={loading}>
+          {catalog.length === 0 ? (
+            <p className="border border-hairline bg-panel p-6 text-center text-sm text-mist">
+              Nenhuma skin encontrada. Tente outro nome.
+            </p>
+          ) : (
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+              {catalog.map((skin) => (
+                <SkinTile
+                  key={skin.id}
+                  skin={skin}
+                  busy={busy}
+                  onEquip={() => void equip(skin)}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+        {totalPages > 1 && (
+          <div className="mt-6 flex items-center justify-center gap-3">
             <button
               type="button"
-              disabled={loadingMore}
-              onClick={() => void load(currentPage + 1, true)}
-              className="btn-ghost disabled:cursor-wait disabled:opacity-40"
+              disabled={loading || currentPage === 1}
+              onClick={() => void load(currentPage - 1)}
+              className="btn-ghost disabled:opacity-40"
             >
-              {loadingMore
-                ? "Carregando..."
-                : `Carregar mais (${left.toLocaleString("pt-BR")} restantes)`}
+              Anterior
+            </button>
+            <span className="text-sm text-mist">
+              Página {currentPage} de {totalPages}
+            </span>
+            <button
+              type="button"
+              disabled={loading || currentPage === totalPages}
+              onClick={() => void load(currentPage + 1)}
+              className="btn-ghost disabled:opacity-40"
+            >
+              Próxima
             </button>
           </div>
         )}

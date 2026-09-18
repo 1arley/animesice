@@ -6,6 +6,7 @@ import { api, ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { SectionLabel } from "@/components/common/SectionLabel";
+import { useToast } from "@/components/common/ToastProvider";
 import type {
   CrystalEvent,
   CrystalEventType,
@@ -48,6 +49,7 @@ export default function GachaCrystalsPage() {
   const [activeBack, setActiveBack] = useState<string | null>(null);
   const [buying, setBuying] = useState<string | null>(null);
   const [claimingDaily, setClaimingDaily] = useState(false);
+  const { toast } = useToast();
 
   const loadShop = useCallback(async () => {
     try {
@@ -63,6 +65,7 @@ export default function GachaCrystalsPage() {
     try {
       await api.gachaBuyCosmetic({ key });
       await Promise.all([loadShop(), load(1, false)]);
+      toast("Cosmético comprado.", "success");
     } catch (e) {
       const msg =
         e instanceof Error ? e.message : "Não foi possível concluir a compra.";
@@ -85,6 +88,7 @@ export default function GachaCrystalsPage() {
     try {
       const res = await api.gachaDailyBonus();
       setBalance(res.balance);
+      toast(`Bônus diário: +${res.claimed} 💎.`, "success");
       await load(1, false);
     } catch (e) {
       const msg =
@@ -104,6 +108,10 @@ export default function GachaCrystalsPage() {
     try {
       const result = await api.gachaSetCardBack(key);
       setActiveBack(result.gachaCardBack);
+      toast(
+        result.gachaCardBack ? "Capa equipada." : "Capa removida.",
+        "success",
+      );
     } catch (e) {
       setError(e instanceof Error ? e.message : "Não foi possível trocar a capa.");
     }
@@ -163,7 +171,9 @@ export default function GachaCrystalsPage() {
       <div className="mt-6 border border-hairline bg-panel px-4 py-5">
         <p className="font-mono text-caption text-mist">SALDO</p>
         <p className="font-display text-display-lg text-snow">
-          {balance == null ? "—" : balance.toLocaleString("pt-BR")} 💎
+          <span key={balance} className="balance-pop">
+            {balance == null ? "—" : balance.toLocaleString("pt-BR")} 💎
+          </span>
         </p>
         <button
           type="button"

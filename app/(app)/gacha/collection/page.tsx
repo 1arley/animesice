@@ -4,10 +4,15 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
-import { GachaCard, GACHA_TIERS } from "@/components/gacha/GachaCard";
+import {
+  GachaCard,
+  GACHA_TIERS,
+  gachaConditionLabel,
+} from "@/components/gacha/GachaCard";
 import { CardPreview } from "@/components/gacha/CardPreview";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ConfirmDialog } from "@/components/common/ConfirmDialog";
+import { useToast } from "@/components/common/ToastProvider";
 import type { GachaPull } from "@/types";
 
 export default function GachaCollectionPage() {
@@ -28,6 +33,8 @@ export default function GachaCollectionPage() {
   const [listing, setListing] = useState(false);
   const [burning, setBurning] = useState(false);
   const [burnTarget, setBurnTarget] = useState<GachaPull | null>(null);
+  const [rerollConfirm, setRerollConfirm] = useState(false);
+  const { toast } = useToast();
   const [burnResult, setBurnResult] = useState<{
     pull: GachaPull;
     payout: number;
@@ -85,11 +92,15 @@ export default function GachaCollectionPage() {
 
   async function handleReroll() {
     if (!preview || rerolling) return;
+    const before = `${preview.conditionLabel ?? gachaConditionLabel(preview.condition)}·${preview.foil}`;
     setRerolling(true);
     try {
       const updated = await api.gachaReroll({ userCardId: preview.id });
       setPreview(updated);
       setItems((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
+      setRerollConfirm(false);
+      const after = `${updated.conditionLabel ?? gachaConditionLabel(updated.condition)}·${updated.foil}`;
+      toast(`Reroll: ${before} → ${after}.`, "success");
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Erro ao rerrollar a carta.",
@@ -105,6 +116,7 @@ export default function GachaCollectionPage() {
     try {
       await api.gachaListCreate({ userCardId: preview.id, price });
       setPreview(null);
+      toast("Carta anunciada no mercado.", "success");
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Erro ao anunciar a carta.",
@@ -149,7 +161,13 @@ export default function GachaCollectionPage() {
           onClose={() => setPreview(null)}
           canReroll={preview.user.id === user.id}
           rerolling={rerolling}
-          onReroll={() => void handleReroll()}
+          onReroll={() => setRerollConfirm(true)}
+          onChange={(updated) => {
+            setPreview(updated);
+            setItems((current) =>
+              current.map((item) => (item.id === updated.id ? updated : item)),
+            );
+          }}
           listing={listing}
           burning={burning}
           onBurn={
@@ -182,6 +200,21 @@ export default function GachaCollectionPage() {
           crystals. Ação irreversível.
         </p>
       </ConfirmDialog>
+      <ConfirmDialog
+        open={rerollConfirm && preview !== null}
+        title="Rerrollar carta?"
+        confirmLabel="Rerrollar"
+        busyLabel="Rerrollando…"
+        busy={rerolling}
+        onCancel={() => setRerollConfirm(false)}
+        onConfirm={() => void handleReroll()}
+      >
+        <p className="text-body-sm text-mist">
+          Sorteia nova condition e foil por{" "}
+          {preview ? Math.max(1, Math.round(preview.value * 1.1)) : 0} crystals.
+          Pode piorar.
+        </p>
+      </ConfirmDialog>
       {burnResult && (
         <div
           role="status"
@@ -189,8 +222,15 @@ export default function GachaCollectionPage() {
           className="pointer-events-none fixed inset-0 z-[140] flex items-center justify-center bg-ink/85 p-6"
         >
           <div className="text-center">
-            <div className="card-burn-visual mx-auto w-44 sm:w-52" aria-hidden="true">
-              <GachaCard pull={burnResult.pull} linkAnime={false} showInfo={false} />
+            <div
+              className="card-burn-visual mx-auto w-44 sm:w-52"
+              aria-hidden="true"
+            >
+              <GachaCard
+                pull={burnResult.pull}
+                linkAnime={false}
+                showInfo={false}
+              />
             </div>
             <p className="mt-5 font-display text-display-sm text-snow">
               Carta queimada
@@ -300,7 +340,10 @@ export default function GachaCollectionPage() {
                   setFeaturedError("");
                   void api
                     .setGachaFeatured(pull.id)
-                    .then(setFeatured)
+                    .then((next) => {
+                      setFeatured(next);
+                      toast("Carta em destaque no perfil.", "success");
+                    })
                     .catch(() => {
                       setFeaturedError("Não foi possível destacar a carta.");
                     });

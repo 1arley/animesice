@@ -33,7 +33,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
           <div
             key={t.id}
             role="alert"
-            className={`border px-4 py-3 text-body-sm ${
+            className={`toast-item border px-4 py-3 text-body-sm ${
               t.type === "error"
                 ? "border-signal/40 bg-signal/10 text-signal"
                 : "border-ice/40 bg-ice/10 text-ice"
