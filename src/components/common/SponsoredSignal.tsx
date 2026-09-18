@@ -1,13 +1,11 @@
-const sponsorUrl = process.env.NEXT_PUBLIC_MONETAG_SPONSOR_LINK;
+export function SponsoredSignal({ href }: { href?: string }) {
+  if (!href) return null;
 
-export function SponsoredSignal() {
-  if (!sponsorUrl) return null;
-
-  let href: string;
+  let url: string;
   try {
-    const url = new URL(sponsorUrl);
-    if (url.protocol !== "https:") return null;
-    href = url.toString();
+    const parsed = new URL(href);
+    if (parsed.protocol !== "https:") return null;
+    url = parsed.toString();
   } catch {
     return null;
   }
@@ -32,7 +30,7 @@ export function SponsoredSignal() {
         </p>
       </div>
       <a
-        href={href}
+        href={url}
         target="_blank"
         rel="sponsored noopener noreferrer"
         className="btn-ice mt-4 inline-flex min-h-11 shrink-0 items-center justify-center sm:mt-0"
