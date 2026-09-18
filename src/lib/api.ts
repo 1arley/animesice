@@ -49,6 +49,8 @@ import type {
   GachaBypassCheckout,
   GachaBypassStatus,
   GachaCollectionResponse,
+  GachaCollectionProgress,
+  GachaEngagementPilotDashboard,
   GachaRankingEntry,
   GachaEncyclopedia,
   GachaWishlistResponse,
@@ -628,7 +630,11 @@ export const api = {
   adminGetAnime: (slug: string) =>
     request<Anime & { _count: { episodes: number } }>(`/admin/anime/${slug}`),
 
-  adminCreateExternalAnime: (url: string, title?: string, coverImage?: string) =>
+  adminCreateExternalAnime: (
+    url: string,
+    title?: string,
+    coverImage?: string,
+  ) =>
     request<Anime & { externalUrl: string; externalSource: string }>(
       "/admin/anime/external",
       {
@@ -1599,6 +1605,25 @@ export const api = {
     ),
 
   gachaFeatured: () => request<GachaFeatured | null>(`/gacha/featured`),
+  gachaCollectionProgress: () =>
+    request<GachaCollectionProgress[]>(`/gacha/collections/progress`),
+  gachaEngagementPilot: () =>
+    request<{ enabled: boolean; percent: number }>(`/gacha/engagement-pilot`),
+  updateGachaCollectionPreferences: (body: {
+    favoriteCollectionId: string | null;
+    pinnedCollectionIds: string[];
+  }) =>
+    request<GachaCollectionProgress[]>(`/gacha/collections/preferences`, {
+      method: "PATCH",
+      body: JSON.stringify(body),
+    }),
+  adminGachaEngagementPilot: () =>
+    request<GachaEngagementPilotDashboard>(`/gacha/admin/engagement-pilot`),
+  adminUpdateGachaEngagementPilot: (percent: number) =>
+    request<GachaEngagementPilotDashboard>(`/gacha/admin/engagement-pilot`, {
+      method: "PATCH",
+      body: JSON.stringify({ percent }),
+    }),
   setGachaFeatured: (userCardId: string) =>
     request<GachaFeatured>(`/gacha/featured`, {
       method: "PATCH",
