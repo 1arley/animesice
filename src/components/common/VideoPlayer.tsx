@@ -243,6 +243,7 @@ function NativeVideoPlayer({
     const requestRecovery = () => {
       if (recoveryRequested) return;
       recoveryRequested = true;
+      setFatalError(true);
       onPlaybackErrorRef.current?.(video.currentTime || startAt || 0);
     };
 
