@@ -5,8 +5,6 @@ import { AuthProvider } from "@/lib/auth-context";
 import { ToastProvider } from "@/components/common/ToastProvider";
 import { SITE_URL } from "@/lib/site";
 import { escapeJsonLd } from "@/lib/url";
-import { SpeedInsights } from "@vercel/speed-insights/next";
-import { Analytics } from "@vercel/analytics/next";
 import { DeferredCrystalSplash } from "@/components/animesice/DeferredCrystalSplash";
 import { chunkRecoveryScript } from "@/lib/chunk-recovery-script";
 import { ServiceNotice } from "@/components/common/ServiceNotice";
@@ -158,8 +156,6 @@ export default function RootLayout({
         {/* Abertura da identidade de motion: cristal em foco puxado, uma vez
             por sessão, dispensável a qualquer toque/tecla. Nunca bloqueia. */}
         <DeferredCrystalSplash />
-        <SpeedInsights />
-        <Analytics />
       </body>
     </html>
   );
