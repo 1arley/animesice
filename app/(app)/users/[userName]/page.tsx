@@ -96,6 +96,9 @@ export default function PublicProfilePage({
   const [tabGacha, setTabGacha] = useState<GachaPull[]>([]);
   const [tabGachaTotal, setTabGachaTotal] = useState(0);
   const [tabGachaValue, setTabGachaValue] = useState(0);
+  const [tabGachaMedals, setTabGachaMedals] = useState<
+    Array<{ id: string; name: string; version: number }>
+  >([]);
   const [tabGachaPage, setTabGachaPage] = useState(1);
   const [tabGachaHasMore, setTabGachaHasMore] = useState(false);
   const [tabGachaPrivate, setTabGachaPrivate] = useState(false);
@@ -149,6 +152,7 @@ export default function PublicProfilePage({
       setTabGacha([]);
       setTabGachaTotal(0);
       setTabGachaValue(0);
+      setTabGachaMedals([]);
       setTabGachaPage(1);
       setTabGachaHasMore(false);
       setTabGachaPrivate(false);
@@ -351,6 +355,7 @@ export default function PublicProfilePage({
           setTabGacha(res.data ?? []);
           setTabGachaTotal(res.stats?.total ?? 0);
           setTabGachaValue(res.stats?.totalValue ?? 0);
+          setTabGachaMedals(res.stats?.medals ?? []);
           setTabGachaPage(1);
           setTabGachaHasMore(1 < (res.meta?.totalPages ?? 1));
         } catch (err) {
@@ -517,6 +522,7 @@ export default function PublicProfilePage({
                 items={tabGacha}
                 total={tabGachaTotal}
                 totalValue={tabGachaValue}
+                medals={tabGachaMedals}
                 isPrivate={tabGachaPrivate}
                 loading={tabLoading && tabGacha.length === 0}
               />
