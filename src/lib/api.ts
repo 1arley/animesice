@@ -49,6 +49,8 @@ import type {
   GachaBypassCheckout,
   GachaBypassStatus,
   GachaCollectionResponse,
+  GachaCollectionProgress,
+  GachaEngagementPilotDashboard,
   GachaRankingEntry,
   GachaEncyclopedia,
   GachaWishlistResponse,
@@ -170,7 +172,7 @@ async function ensureRefresh(): Promise<void> {
       });
       if (!res.ok) throw new ApiError(res.status, "Sessao expirada.");
     } catch (e) {
-      if (ac.signal.aborted) throw new ApiError(401, "Refresh timeout.");
+      if (ac.signal.aborted) throw new ApiError(503, "Refresh timeout.");
       throw e;
     } finally {
       clearTimeout(timer);
@@ -212,13 +214,14 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   }
 
   if (res.status === 401 && !path.startsWith("/auth/")) {
-    try {
-      await ensureRefresh();
-      res = await exec();
-    } catch (e) {
-      if (e instanceof ApiError) throw e;
+    const hasSession =
+      typeof document !== "undefined" &&
+      document.cookie.split(";").some((c) => c.trim().startsWith("role="));
+    if (!hasSession) {
       throw new ApiError(401, "Sessão expirada.");
     }
+    await ensureRefresh();
+    res = await exec();
   }
 
   const data = await res.json().catch(() => null);
@@ -627,7 +630,11 @@ export const api = {
   adminGetAnime: (slug: string) =>
     request<Anime & { _count: { episodes: number } }>(`/admin/anime/${slug}`),
 
-  adminCreateExternalAnime: (url: string, title?: string, coverImage?: string) =>
+  adminCreateExternalAnime: (
+    url: string,
+    title?: string,
+    coverImage?: string,
+  ) =>
     request<Anime & { externalUrl: string; externalSource: string }>(
       "/admin/anime/external",
       {
@@ -1598,6 +1605,25 @@ export const api = {
     ),
 
   gachaFeatured: () => request<GachaFeatured | null>(`/gacha/featured`),
+  gachaCollectionProgress: () =>
+    request<GachaCollectionProgress[]>(`/gacha/collections/progress`),
+  gachaEngagementPilot: () =>
+    request<{ enabled: boolean; percent: number }>(`/gacha/engagement-pilot`),
+  updateGachaCollectionPreferences: (body: {
+    favoriteCollectionId: string | null;
+    pinnedCollectionIds: string[];
+  }) =>
+    request<GachaCollectionProgress[]>(`/gacha/collections/preferences`, {
+      method: "PATCH",
+      body: JSON.stringify(body),
+    }),
+  adminGachaEngagementPilot: () =>
+    request<GachaEngagementPilotDashboard>(`/gacha/admin/engagement-pilot`),
+  adminUpdateGachaEngagementPilot: (percent: number) =>
+    request<GachaEngagementPilotDashboard>(`/gacha/admin/engagement-pilot`, {
+      method: "PATCH",
+      body: JSON.stringify({ percent }),
+    }),
   setGachaFeatured: (userCardId: string) =>
     request<GachaFeatured>(`/gacha/featured`, {
       method: "PATCH",

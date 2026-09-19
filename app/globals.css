@@ -1178,7 +1178,7 @@
 
 /* ===== Identidade de Motion: o cristal =====
    "Luz que atravessa gelo, não luz que explode na tela."
-   Porta o sistema do artefato animesice-motion-identity.html para a app:
+   Porta o sistema do artefato docs/animesice-motion-identity.html para a app:
    o mesmo gesto de varredura de luz recortado em 4 modos (reveal, loop,
    transition, micro) via data-mode. Cores em tokens `motion.*` do tailwind;
    a máscara da varredura é a alpha do próprio logo (cristal transparente). */

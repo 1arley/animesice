@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { serverStreamSourceAsync } from "@/lib/api-server";
+import { API_URL, serverStreamSourceAsync } from "@/lib/api-server";
 
 const ANIME_SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const RESOLVED_CACHE_CONTROL = "public, s-maxage=300, stale-while-revalidate=300";
@@ -9,15 +9,7 @@ export async function GET(request: NextRequest) {
   const animeSlug = request.nextUrl.searchParams.get("anime") ?? "";
   const episodeParam = request.nextUrl.searchParams.get("episode") ?? "";
   const episodeNumber = Number(episodeParam);
-  // Forced refresh is intentionally not exposed through this public
-  // same-origin route: without authentication it permits unbounded
-  // re-extraction loops. Use the protected backend operation instead.
-  if (request.nextUrl.searchParams.get("refresh") === "1") {
-    return NextResponse.json(
-      { message: "Refresh não disponível neste endpoint." },
-      { status: 400, headers: { "Cache-Control": NO_STORE } },
-    );
-  }
+  const refresh = request.nextUrl.searchParams.get("refresh") === "1";
 
   if (
     !ANIME_SLUG.test(animeSlug) ||
@@ -31,9 +23,20 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const result = await serverStreamSourceAsync(animeSlug, episodeNumber).catch(
-    () => null,
-  );
+  const result = refresh
+    ? await fetch(
+        `${API_URL}/stream/source?anime=${encodeURIComponent(animeSlug)}&episode=${episodeNumber}&refresh=1`,
+        {
+          headers: { cookie: request.headers.get("cookie") ?? "" },
+          cache: "no-store",
+        },
+      )
+        .then(async (res) => {
+          const data = await res.json().catch(() => null);
+          return res.ok ? data : null;
+        })
+        .catch(() => null)
+    : await serverStreamSourceAsync(animeSlug, episodeNumber).catch(() => null);
   if (!result) {
     return NextResponse.json(
       { message: "Não foi possível obter o vídeo deste episódio." },

@@ -10,12 +10,14 @@ export function ProfileGacha({
   items,
   total,
   totalValue,
+  medals,
   isPrivate,
   loading,
 }: {
   items: GachaPull[];
   total: number;
   totalValue: number;
+  medals: Array<{ id: string; name: string; version: number }>;
   isPrivate: boolean;
   loading: boolean;
 }) {
@@ -32,7 +34,10 @@ export function ProfileGacha({
     return (
       <section>
         <SectionLabel level={2}>Cartas</SectionLabel>
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6" aria-busy="true">
+        <div
+          className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"
+          aria-busy="true"
+        >
           {Array.from({ length: 6 }, (_, i) => (
             <div key={i} className="skeleton aspect-[3/4]" />
           ))}
@@ -45,9 +50,7 @@ export function ProfileGacha({
     return (
       <section>
         <SectionLabel level={2}>Cartas</SectionLabel>
-        <p className="text-body-sm text-mist-soft">
-          Nenhuma carta ainda.
-        </p>
+        <p className="text-body-sm text-mist-soft">Nenhuma carta ainda.</p>
       </section>
     );
   }
@@ -58,6 +61,21 @@ export function ProfileGacha({
         Cartas <span className="shelf-label-data">{total}</span>{" "}
         <span className="shelf-label-data">{totalValue} pts</span>
       </SectionLabel>
+      {medals.length > 0 && (
+        <ul
+          aria-label="Medalhas de coleção"
+          className="mb-4 flex flex-wrap gap-2"
+        >
+          {medals.map((medal) => (
+            <li
+              key={`${medal.id}:${medal.version}`}
+              className="border border-amber-300/40 px-3 py-2 font-mono text-caption text-amber-300"
+            >
+              {medal.name} · v{medal.version}
+            </li>
+          ))}
+        </ul>
+      )}
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
         {items.map((pull) => (
           <GachaCard key={pull.id} pull={pull} />
