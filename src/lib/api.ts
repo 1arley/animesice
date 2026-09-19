@@ -212,12 +212,6 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   }
 
   if (res.status === 401 && !path.startsWith("/auth/")) {
-    const hasSession =
-      typeof document !== "undefined" &&
-      document.cookie.split(";").some((c) => c.trim().startsWith("role="));
-    if (!hasSession) {
-      throw new ApiError(401, "Sessão expirada.");
-    }
     try {
       await ensureRefresh();
       res = await exec();

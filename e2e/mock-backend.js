@@ -216,9 +216,11 @@ const server = http.createServer((req, res) => {
     p && (p.match(/^\/api\/social\/following\/([^/]+)$/) || p.match(/^\/social\/following\/([^/]+)$/));
   if (req.method === 'GET' && socialFollowingMatch) return json(res, emptyPage());
 
-  // --- Sessão: /user/me (AuthProvider chama quando há cookie role) ---
+  // --- Sessão: /user/me ---
   const userMeMatch = p && (p === '/api/user/me' || p === '/user/me');
   if (req.method === 'GET' && userMeMatch) {
+    if (!req.headers.cookie?.includes('role='))
+      return json(res, { message: 'Unauthorized' }, 401);
     return json(res, {
       id: 'viewer-1', email: 'viewer@test.dev', name: 'Viewer', userName: 'viewer',
       avatar: null, bio: null, myAnimeList: null, role: 'USER',
