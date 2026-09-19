@@ -163,7 +163,7 @@ export function WatchClient({
     } finally {
       if (id === loadSourceId.current) setLoadingSource(false);
     }
-  }, [slug, number, loadSource, initialSourceProp]);
+  }, [slug, number, initialSourceProp]);
 
   const recoverPlayback = useCallback(
     (currentTime: number) => {
