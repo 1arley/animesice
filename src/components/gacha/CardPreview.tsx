@@ -7,8 +7,9 @@ import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import { useFinePointer } from "@/lib/use-fine-pointer";
 import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
 import { GachaCard, gachaConditionLabel } from "@/components/gacha/GachaCard";
+import { CardBackSvg } from "@/components/gacha/CardBackSvg";
 import { api, ApiError } from "@/lib/api";
-import type { GachaPull } from "@/types";
+import type { GachaPull, GachaShopItem } from "@/types";
 
 export function CardPreview({
   pull,
@@ -70,6 +71,11 @@ export function CardPreview({
   const [skinLoading, setSkinLoading] = useState(false);
   const [skinError, setSkinError] = useState("");
   const [shareStatus, setShareStatus] = useState("");
+  const [cardBacks, setCardBacks] = useState<GachaShopItem[]>([]);
+  const [activeBack, setActiveBack] = useState<string | null>(
+    pull.user?.gachaCardBack ?? null,
+  );
+  const [backLoading, setBackLoading] = useState(false);
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -88,7 +94,8 @@ export function CardPreview({
     setFlipped(false);
     setShowDetails(false);
     setSelectedSkinId(pull.skin?.id ?? null);
-  }, [pull.id, pull.skin?.id]);
+    setActiveBack(pull.user?.gachaCardBack ?? null);
+  }, [pull.id, pull.skin?.id, pull.user?.gachaCardBack]);
 
   useEffect(() => {
     if (!canReroll) return;
@@ -117,6 +124,33 @@ export function CardPreview({
       cancelled = true;
     };
   }, [canReroll, pull.id]);
+
+  useEffect(() => {
+    let cancelled = false;
+    api
+      .gachaShop()
+      .then((s) => {
+        if (!cancelled) {
+          setCardBacks(s.cosmetics.filter((c) => c.key.startsWith("BACK_") && c.owned));
+          setActiveBack(s.activeCardBack ?? null);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  async function toggleCardBack(key: string | null) {
+    if (backLoading) return;
+    setBackLoading(true);
+    try {
+      const next = activeBack === key ? null : key;
+      const result = await api.gachaSetCardBack(next);
+      setActiveBack(result.gachaCardBack);
+    } catch {}
+    setBackLoading(false);
+  }
 
   async function share() {
     const url = `${window.location.origin}/gacha?card=${pull.id}`;
@@ -420,6 +454,70 @@ export function CardPreview({
                   Nenhuma skin desbloqueada para esta carta.
                 </p>
               )}
+            </section>
+          )}
+          {cardBacks.length > 0 && (
+            <section className="mt-4 border border-hairline bg-ink p-3">
+              <div className="flex items-baseline justify-between gap-3">
+                <h3 className="font-display text-sm text-snow">Capa</h3>
+                <span className="font-mono text-caption text-mist-soft">
+                  {cardBacks.length} capas
+                </span>
+              </div>
+              <p className="mt-1 text-xs text-mist">
+                Escolha o verso desta carta.
+              </p>
+              <div
+                className="mt-3 flex gap-2 overflow-x-auto pb-2"
+                aria-label="Escolher capa da carta"
+              >
+                <button
+                  type="button"
+                  onClick={() => void toggleCardBack(null)}
+                  disabled={backLoading || activeBack === null}
+                  aria-pressed={activeBack === null}
+                  className={`w-20 shrink-0 border p-1 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-ice ${
+                    activeBack === null
+                      ? "border-ice bg-ice/10"
+                      : "border-hairline hover:border-ice/60"
+                  }`}
+                >
+                  <span className="flex aspect-[3/4] items-center justify-center overflow-hidden bg-panel text-center text-[10px] text-mist">
+                    Padrão
+                  </span>
+                  <span className="mt-1 block truncate text-[11px] text-snow">
+                    Original
+                  </span>
+                </button>
+                {cardBacks.map((cb) => (
+                  <button
+                    key={cb.key}
+                    type="button"
+                    onClick={() => void toggleCardBack(cb.key)}
+                    disabled={backLoading}
+                    aria-pressed={activeBack === cb.key}
+                    className={`w-20 shrink-0 border p-1 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-ice ${
+                      activeBack === cb.key
+                        ? "border-ice bg-ice/10"
+                        : "border-hairline hover:border-ice/60"
+                    }`}
+                  >
+                    <span className="flex aspect-[3/4] items-center justify-center overflow-hidden bg-panel">
+                      {cb.svg ? (
+                        <CardBackSvg
+                          backKey={cb.key}
+                          className="h-full w-full"
+                        />
+                      ) : (
+                        <span className="text-[10px] text-mist">Sem preview</span>
+                      )}
+                    </span>
+                    <span className="mt-1 block truncate text-[11px] text-snow">
+                      {cb.label}
+                    </span>
+                  </button>
+                ))}
+              </div>
             </section>
           )}
         </div>
