@@ -388,6 +388,9 @@ function GachaPageContent() {
           canReroll={!!user && preview.user.id === user.id}
           rerolling={rerolling}
           onReroll={() => setRerollConfirm(true)}
+          rerollConfirm={rerollConfirm}
+          onRerollConfirm={() => void handleReroll()}
+          onRerollCancel={() => setRerollConfirm(false)}
           onChange={setPreview}
           listing={listing}
           onList={
@@ -413,23 +416,6 @@ function GachaPageContent() {
             Guardar {selectedSpin.card.name} ({selectedSpin.card.rarity} ·{" "}
             {selectedSpin.foil}) consome o preview e inicia o cooldown de
             guarda.
-          </p>
-        </ConfirmDialog>
-      )}
-      {preview && (
-        <ConfirmDialog
-          open={rerollConfirm}
-          title="Rerrollar carta?"
-          confirmLabel="Rerrollar"
-          busyLabel="Rerrollando…"
-          busy={rerolling}
-          onCancel={() => setRerollConfirm(false)}
-          onConfirm={() => void handleReroll()}
-        >
-          <p className="mt-4 text-body-sm text-mist">
-            Sorteia nova condition e foil por{" "}
-            {Math.max(1, Math.round(preview.value * 0.1))} crystals. Pode
-            piorar.
           </p>
         </ConfirmDialog>
       )}
