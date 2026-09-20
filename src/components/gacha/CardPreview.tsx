@@ -39,7 +39,7 @@ export function CardPreview({
   const cosmetics = pull.user?.gachaCosmetics ?? [];
   const aurora = cosmetics.includes("FRAME_AURORA");
   const destaque = cosmetics.includes("DESTAQUE_CARTA");
-  const rerollCost = Math.max(1, Math.round(pull.value * 1.1));
+  const rerollCost = Math.max(1, Math.round(pull.value * 0.1));
   const condition = pull.conditionLabel ?? gachaConditionLabel(pull.condition);
   const obtainedAt = new Date(pull.obtainedAt).toLocaleDateString("pt-BR", {
     day: "2-digit",

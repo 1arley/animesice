@@ -271,7 +271,7 @@ export default function GachaCollectionPage() {
       >
         <p className="text-body-sm text-mist">
           Sorteia nova condition e foil por{" "}
-          {preview ? Math.max(1, Math.round(preview.value * 1.1)) : 0} crystals.
+          {preview ? Math.max(1, Math.round(preview.value * 0.1)) : 0} crystals.
           Pode piorar.
         </p>
       </ConfirmDialog>

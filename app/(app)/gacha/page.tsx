@@ -428,7 +428,7 @@ function GachaPageContent() {
         >
           <p className="mt-4 text-body-sm text-mist">
             Sorteia nova condition e foil por{" "}
-            {Math.max(1, Math.round(preview.value * 1.1))} crystals. Pode
+            {Math.max(1, Math.round(preview.value * 0.1))} crystals. Pode
             piorar.
           </p>
         </ConfirmDialog>
