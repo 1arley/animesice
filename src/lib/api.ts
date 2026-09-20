@@ -1446,6 +1446,12 @@ export const api = {
       method: "PATCH",
       body: JSON.stringify({ key }),
     }),
+
+  gachaCardBackSvg: (key: string) =>
+    request<{ key: string; name: string; svg: string; previewUrl: string | null }>(
+      `/gacha/card-backs/${encodeURIComponent(key)}`,
+    ),
+
   adminCardBacks: () =>
     request<
       Array<{
