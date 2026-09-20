@@ -4,78 +4,96 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import { api, ApiError } from "@/lib/api";
 
+type Layer = {
+  id: string;
+  type: "rect" | "text";
+  x: number;
+  y: number;
+  width?: number;
+  height?: number;
+  fill: string;
+  text?: string;
+  hidden?: boolean;
+};
+
 const blank = {
   key: "BACK_",
   name: "",
   description: "",
+  type: "BACK",
   svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 750 1050"><rect width="750" height="1050" fill="#142d4c"/><path d="M0 0h750v1050H0z" fill="none" stroke="#8de7ff" stroke-width="18"/></svg>',
   previewUrl: "",
   price: 1200,
-  status: "DRAFT",
+  status: "PUBLISHED",
 };
+
+const DEFAULT_LAYERS: Layer[] = [
+  { id: "bg", type: "rect", x: 0, y: 0, width: 750, height: 1050, fill: "#142d4c" },
+];
+
+function unescapeXml(s: string) {
+  return s.replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&apos;/g, "'");
+}
+
+function deserialize(svg: string): Layer[] {
+  const doc = new DOMParser().parseFromString(svg, "image/svg+xml");
+  const root = doc.querySelector("svg");
+  if (!root) return DEFAULT_LAYERS;
+  const layers: Layer[] = [];
+  for (const child of Array.from(root.children)) {
+    if (child.tagName === "rect") {
+      layers.push({
+        id: crypto.randomUUID(),
+        type: "rect",
+        x: Number(child.getAttribute("x") ?? 0),
+        y: Number(child.getAttribute("y") ?? 0),
+        width: Number(child.getAttribute("width") ?? 0),
+        height: Number(child.getAttribute("height") ?? 0),
+        fill: child.getAttribute("fill") ?? "#000000",
+      });
+    } else if (child.tagName === "text") {
+      layers.push({
+        id: crypto.randomUUID(),
+        type: "text",
+        x: Number(child.getAttribute("x") ?? 0),
+        y: Number(child.getAttribute("y") ?? 0),
+        fill: child.getAttribute("fill") ?? "#ffffff",
+        text: unescapeXml(child.textContent ?? ""),
+      });
+    }
+  }
+  return layers.length ? layers : DEFAULT_LAYERS;
+}
+
+function serialize(layers: Layer[]) {
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 750 1050">${layers
+    .filter((l) => !l.hidden)
+    .map((l) =>
+      l.type === "rect"
+        ? `<rect x="${l.x}" y="${l.y}" width="${l.width}" height="${l.height}" fill="${l.fill}"/>`
+        : `<text x="${l.x}" y="${l.y}" fill="${l.fill}" font-size="48" font-family="sans-serif">${(l.text ?? "").replace(/[<&>]/g, "")}</text>`,
+    )
+    .join("")}</svg>`;
+}
 
 export default function AdminCapasPage() {
   const [items, setItems] = useState<any[]>([]);
   const [form, setForm] = useState(blank);
   const [editing, setEditing] = useState<string | null>(null);
   const [error, setError] = useState("");
-  const [layers, setLayers] = useState<
-    Array<{
-      id: string;
-      type: "rect" | "text";
-      x: number;
-      y: number;
-      width?: number;
-      height?: number;
-      fill: string;
-      text?: string;
-      hidden?: boolean;
-      locked?: boolean;
-    }>
-  >([
-    {
-      id: "bg",
-      type: "rect",
-      x: 0,
-      y: 0,
-      width: 750,
-      height: 1050,
-      fill: "#142d4c",
-    },
-  ]);
+  const [layers, setLayers] = useState<Layer[]>(DEFAULT_LAYERS);
   const [selected, setSelected] = useState("bg");
-  function serialize(next = layers) {
-    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 750 1050">${next
-      .filter((l) => !l.hidden)
-      .map((l) => (l.type === "rect" ? `<rect x="${l.x}" y="${l.y}" width="${l.width}" height="${l.height}" fill="${l.fill}"/>` : `<text x="${l.x}" y="${l.y}" fill="${l.fill}" font-size="48" font-family="sans-serif">${(l.text ?? "").replace(/[<&>]/g, "")}</text>`))
-      .join("")}</svg>`;
-  }
-  function updateLayer(patch: Partial<(typeof layers)[number]>) {
+  function updateLayer(patch: Partial<Layer>) {
     const next = layers.map((l) => (l.id === selected ? { ...l, ...patch } : l));
     setLayers(next);
     setForm((f) => ({ ...f, svg: serialize(next) }));
   }
   function addLayer(type: "rect" | "text") {
-    const layer =
+    const layer: Layer =
       type === "rect"
-        ? {
-            id: crypto.randomUUID(),
-            type,
-            x: 50,
-            y: 50,
-            width: 650,
-            height: 120,
-            fill: "#8de7ff",
-          }
-        : {
-            id: crypto.randomUUID(),
-            type,
-            x: 80,
-            y: 180,
-            fill: "#ffffff",
-            text: "Nova camada",
-          };
-    const next = [...layers, layer] as typeof layers;
+        ? { id: crypto.randomUUID(), type, x: 50, y: 50, width: 650, height: 120, fill: "#8de7ff" }
+        : { id: crypto.randomUUID(), type, x: 80, y: 180, fill: "#ffffff", text: "Nova camada" };
+    const next = [...layers, layer];
     setLayers(next);
     setSelected(layer.id);
     setForm((f) => ({ ...f, svg: serialize(next) }));
@@ -88,13 +106,26 @@ export default function AdminCapasPage() {
   useEffect(() => {
     void load();
   }, []);
+  function startEditing(item: any) {
+    setEditing(item.id);
+    const { id: _id, createdAt: _c, updatedAt: _u, createdById: _cb, version: _v, ...fields } = item;
+    setForm({ ...fields, description: fields.description ?? "", previewUrl: fields.previewUrl ?? "" });
+    const parsed = deserialize(item.svg ?? "");
+    setLayers(parsed);
+    setSelected(parsed[0]?.id ?? "");
+  }
+  function cancelEditing() {
+    setEditing(null);
+    setForm(blank);
+    setLayers(DEFAULT_LAYERS);
+    setSelected("bg");
+  }
   async function save(event: React.FormEvent) {
     event.preventDefault();
     setError("");
     try {
       editing ? await api.adminUpdateCardBack(editing, form) : await api.adminCreateCardBack(form);
-      setForm(blank);
-      setEditing(null);
+      cancelEditing();
       await load();
     } catch (e) {
       setError(e instanceof ApiError ? e.message : "Erro ao salvar capa.");
@@ -102,7 +133,7 @@ export default function AdminCapasPage() {
   }
   return (
     <div className="mx-auto max-w-6xl">
-      <h1 className="font-display text-display-xl text-snow">Editor de capas</h1>
+      <h1 className="font-display text-display-xl text-snow">Cosméticos</h1>
       {error && (
         <p role="alert" className="mt-3 text-signal">
           {error}
@@ -113,7 +144,12 @@ export default function AdminCapasPage() {
           <input className="field" required placeholder="Chave" value={form.key} onChange={(e) => setForm({ ...form, key: e.target.value })} />
           <input className="field" required placeholder="Nome" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
           <input className="field" placeholder="Descrição" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-3 gap-3">
+            <select className="field" value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })}>
+              <option value="BACK">Verso (capa)</option>
+              <option value="FRAME">Moldura</option>
+              <option value="HIGHLIGHT">Destaque</option>
+            </select>
             <input className="field" type="number" min="0" placeholder="Preço" value={form.price} onChange={(e) => setForm({ ...form, price: Number(e.target.value) })} />
             <select className="field" value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
               <option>DRAFT</option>
@@ -131,10 +167,7 @@ export default function AdminCapasPage() {
               <button
                 className="btn-ghost px-4 py-3"
                 type="button"
-                onClick={() => {
-                  setEditing(null);
-                  setForm(blank);
-                }}
+                onClick={cancelEditing}
               >
                 Cancelar
               </button>
@@ -192,24 +225,6 @@ export default function AdminCapasPage() {
               <input className="field h-10" type="color" value={layers.find((l) => l.id === selected)?.fill ?? "#ffffff"} onChange={(e) => updateLayer({ fill: e.target.value })} />
             </label>
           </div>
-          <textarea className="field min-h-40 font-mono text-xs" aria-label="SVG avançado" value={form.svg} onChange={(e) => setForm({ ...form, svg: e.target.value })} />
-          <div className="flex gap-2">
-            <button className="btn-ice px-4 py-3" type="submit">
-              {editing ? "Salvar versão" : "Criar capa"}
-            </button>
-            {editing && (
-              <button
-                className="btn-ghost px-4 py-3"
-                type="button"
-                onClick={() => {
-                  setEditing(null);
-                  setForm(blank);
-                }}
-              >
-                Cancelar
-              </button>
-            )}
-          </div>
         </form>
         <aside>
           <h2 className="font-display text-body-lg text-snow">Preview</h2>
@@ -226,18 +241,11 @@ export default function AdminCapasPage() {
             <button
               key={item.id}
               className="border border-hairline bg-panel p-3 text-left"
-              onClick={() => {
-                setEditing(item.id);
-                setForm({
-                  ...item,
-                  description: item.description ?? "",
-                  previewUrl: item.previewUrl ?? "",
-                });
-              }}
+              onClick={() => startEditing(item)}
             >
               <strong className="text-snow">{item.name}</strong>
               <span className="block text-caption text-mist">
-                {item.status} · {item.price} Crystals
+                {item.type} · {item.status} · {item.price} Crystals
               </span>
             </button>
           ))}
