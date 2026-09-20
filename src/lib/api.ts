@@ -184,8 +184,10 @@ async function ensureRefresh(): Promise<void> {
 }
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
+  const isFormData =
+    typeof FormData !== "undefined" && options.body instanceof FormData;
   const headers: Record<string, string> = {
-    "Content-Type": "application/json",
+    ...(isFormData ? {} : { "Content-Type": "application/json" }),
     ...((options.headers as Record<string, string>) || {}),
   };
 
@@ -923,22 +925,13 @@ export const api = {
       body: JSON.stringify(data),
     }),
 
-  uploadAvatar: async (file: File): Promise<User> => {
+  uploadAvatar: (file: File) => {
     const formData = new FormData();
     formData.append("file", file);
-
-    const res = await fetch(`${API_URL}/user/me/avatar`, {
+    return request<User>(`/user/me/avatar`, {
       method: "POST",
-      credentials: "include",
       body: formData,
     });
-
-    if (!res.ok) {
-      const data = await res.json().catch(() => null);
-      throw new ApiError(res.status, readErrorMessage(data));
-    }
-
-    return (await res.json()) as User;
   },
 
   deleteAvatar: () => request<User>(`/user/me/avatar`, { method: "DELETE" }),

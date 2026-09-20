@@ -15,8 +15,50 @@ import { passwordError } from "@/lib/password";
 import { displayName } from "@/lib/displayName";
 import { Avatar } from "@/components/common/Avatar";
 
-const AVATAR_MAX_BYTES = 50 * 1024;
-const AVATAR_ACCEPT = ["image/jpeg", "image/jpg", "image/png"];
+const AVATAR_MAX_BYTES = 1024 * 1024;
+const AVATAR_SOURCE_MAX_BYTES = 20 * 1024 * 1024;
+const AVATAR_SIZE = 512;
+const AVATAR_ACCEPT = ["image/jpeg", "image/png"];
+
+async function prepareAvatar(file: File): Promise<File> {
+  if (file.size <= AVATAR_MAX_BYTES) return file;
+
+  const image = await createImageBitmap(file);
+  const canvas = document.createElement("canvas");
+  canvas.width = AVATAR_SIZE;
+  canvas.height = AVATAR_SIZE;
+  const context = canvas.getContext("2d");
+  if (!context) {
+    image.close();
+    throw new Error("Não foi possível processar a imagem.");
+  }
+
+  const scale = Math.max(AVATAR_SIZE / image.width, AVATAR_SIZE / image.height);
+  const width = image.width * scale;
+  const height = image.height * scale;
+  context.fillStyle = "#ffffff";
+  context.fillRect(0, 0, AVATAR_SIZE, AVATAR_SIZE);
+  context.drawImage(
+    image,
+    (AVATAR_SIZE - width) / 2,
+    (AVATAR_SIZE - height) / 2,
+    width,
+    height,
+  );
+  image.close();
+
+  const blob = await new Promise<Blob | null>((resolve) =>
+    canvas.toBlob(resolve, "image/jpeg", 0.85),
+  );
+  if (!blob || blob.size > AVATAR_MAX_BYTES) {
+    throw new Error("Não foi possível reduzir a imagem para 1MB.");
+  }
+
+  return new File([blob], file.name.replace(/\.[^.]+$/, ".jpg"), {
+    type: "image/jpeg",
+    lastModified: file.lastModified,
+  });
+}
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -112,7 +154,7 @@ export default function SettingsPage() {
     }
   }
 
-  function handleFilePicked(e: React.ChangeEvent<HTMLInputElement>) {
+  async function handleFilePicked(e: React.ChangeEvent<HTMLInputElement>) {
     setAvatarMsg("");
     setAvatarErr("");
     const file = e.target.files?.[0];
@@ -123,13 +165,20 @@ export default function SettingsPage() {
       setAvatarErr("Formato inválido. Aceitos: JPG ou PNG.");
       return;
     }
-    if (file.size > AVATAR_MAX_BYTES) {
-      setAvatarErr("Imagem muito grande. Máximo: 50KB.");
+    if (file.size > AVATAR_SOURCE_MAX_BYTES) {
+      setAvatarErr("Imagem muito grande. Máximo: 20MB.");
       return;
     }
 
-    setAvatarFile(file);
-    setAvatarPreview(URL.createObjectURL(file));
+    try {
+      const prepared = await prepareAvatar(file);
+      setAvatarFile(prepared);
+      setAvatarPreview(URL.createObjectURL(prepared));
+    } catch (err) {
+      setAvatarErr(
+        err instanceof Error ? err.message : "Não foi possível processar a imagem.",
+      );
+    }
   }
 
   async function handleAvatarUpload(e: React.FormEvent) {
@@ -325,8 +374,8 @@ export default function SettingsPage() {
               <div className="mb-4">
                 <h2 className="font-display text-display-lg text-snow">Avatar</h2>
                 <p className="text-body-sm text-mist">
-                  JPG ou PNG, até 50KB. Sem foto, usamos a inicial do seu
-                  nome.
+                  JPG ou PNG, até 20MB. Fotos grandes são reduzidas
+                  automaticamente. Sem foto, usamos a inicial do seu nome.
                 </p>
               </div>
 
