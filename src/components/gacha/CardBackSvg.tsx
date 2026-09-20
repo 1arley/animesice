@@ -5,6 +5,10 @@ import { api } from "@/lib/api";
 
 const cache = new Map<string, string>();
 
+function toDataUrl(svg: string) {
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+}
+
 export const CardBackSvg = memo(function CardBackSvg({
   backKey,
   className,
@@ -12,35 +16,36 @@ export const CardBackSvg = memo(function CardBackSvg({
   backKey: string;
   className?: string;
 }) {
-  const [svg, setSvg] = useState(() => cache.get(backKey) ?? null);
+  const [src, setSrc] = useState(() => cache.get(backKey) ?? null);
 
   useEffect(() => {
-    if (svg || cache.has(backKey)) {
-      if (cache.has(backKey)) setSvg(cache.get(backKey)!);
+    const cached = cache.get(backKey);
+    if (cached) {
+      setSrc(cached);
       return;
     }
+    setSrc(null);
     let cancelled = false;
     api
       .gachaCardBackSvg(backKey)
       .then((res) => {
         if (!cancelled) {
-          cache.set(backKey, res.svg);
-          setSvg(res.svg);
+          const nextSrc = toDataUrl(res.svg);
+          cache.set(backKey, nextSrc);
+          setSrc(nextSrc);
         }
       })
       .catch(() => {});
     return () => {
       cancelled = true;
     };
-  }, [backKey, svg]);
+  }, [backKey]);
 
-  if (!svg) return null;
+  if (!src) return null;
 
   return (
-    <div
-      className={className}
-      aria-hidden="true"
-      dangerouslySetInnerHTML={{ __html: svg }}
-    />
+    // SVG stays in an image document instead of executing in the page DOM.
+    // eslint-disable-next-line @next/next/no-img-element
+    <img src={src} alt="" className={className} aria-hidden="true" />
   );
 });

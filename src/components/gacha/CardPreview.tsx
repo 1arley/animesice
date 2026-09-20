@@ -76,6 +76,7 @@ export function CardPreview({
     pull.user?.gachaCardBack ?? null,
   );
   const [backLoading, setBackLoading] = useState(false);
+  const [backError, setBackError] = useState("");
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -131,7 +132,9 @@ export function CardPreview({
       .gachaShop()
       .then((s) => {
         if (!cancelled) {
-          setCardBacks(s.cosmetics.filter((c) => c.key.startsWith("BACK_") && c.owned));
+          setCardBacks(
+            s.cosmetics.filter((c) => c.key.startsWith("BACK_") && c.owned),
+          );
           setActiveBack(s.activeCardBack ?? null);
         }
       })
@@ -144,12 +147,20 @@ export function CardPreview({
   async function toggleCardBack(key: string | null) {
     if (backLoading) return;
     setBackLoading(true);
+    setBackError("");
     try {
       const next = activeBack === key ? null : key;
       const result = await api.gachaSetCardBack(next);
       setActiveBack(result.gachaCardBack);
-    } catch {}
-    setBackLoading(false);
+    } catch (error: unknown) {
+      setBackError(
+        error instanceof ApiError
+          ? error.message
+          : "Não foi possível trocar a capa.",
+      );
+    } finally {
+      setBackLoading(false);
+    }
   }
 
   async function share() {
@@ -275,6 +286,7 @@ export function CardPreview({
                   linkAnime={false}
                   showInfo={false}
                   side="back"
+                  cardBack={activeBack}
                 />
               </div>
             </div>
@@ -509,7 +521,9 @@ export function CardPreview({
                           className="h-full w-full"
                         />
                       ) : (
-                        <span className="text-[10px] text-mist">Sem preview</span>
+                        <span className="text-[10px] text-mist">
+                          Sem preview
+                        </span>
                       )}
                     </span>
                     <span className="mt-1 block truncate text-[11px] text-snow">
@@ -518,6 +532,11 @@ export function CardPreview({
                   </button>
                 ))}
               </div>
+              {backError && (
+                <p role="alert" className="mt-2 text-xs text-signal">
+                  {backError} Tente novamente.
+                </p>
+              )}
             </section>
           )}
         </div>
