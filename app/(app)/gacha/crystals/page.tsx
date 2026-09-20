@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { api, ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
@@ -27,16 +27,6 @@ const TYPE_LABEL: Record<CrystalEventType, string> = {
   BURN: "Carta queimada",
 };
 
-function isToday(createdAt: string): boolean {
-  const d = new Date(createdAt);
-  const now = new Date();
-  return (
-    d.getFullYear() === now.getFullYear() &&
-    d.getMonth() === now.getMonth() &&
-    d.getDate() === now.getDate()
-  );
-}
-
 export default function GachaCrystalsPage() {
   const { user } = useAuth();
   const [balance, setBalance] = useState<number | null>(null);
@@ -49,6 +39,7 @@ export default function GachaCrystalsPage() {
   const [activeBack, setActiveBack] = useState<string | null>(null);
   const [buying, setBuying] = useState<string | null>(null);
   const [claimingDaily, setClaimingDaily] = useState(false);
+  const [dailyClaimedToday, setDailyClaimedToday] = useState(false);
   const { toast } = useToast();
 
   const loadShop = useCallback(async () => {
@@ -65,7 +56,7 @@ export default function GachaCrystalsPage() {
     try {
       await api.gachaBuyCosmetic({ key });
       await Promise.all([loadShop(), load(1, false)]);
-      toast("Cosmético comprado.", "success");
+      toast("Cosmético comprado. Clique em Usar para equipar.", "success");
     } catch (e) {
       const msg =
         e instanceof Error ? e.message : "Não foi possível concluir a compra.";
@@ -88,12 +79,14 @@ export default function GachaCrystalsPage() {
     try {
       const res = await api.gachaDailyBonus();
       setBalance(res.balance);
+      setDailyClaimedToday(true);
       toast(`Bônus diário: +${res.claimed} 💎.`, "success");
       await load(1, false);
     } catch (e) {
       const msg =
         e instanceof ApiError ? e.message : "Não foi possível resgatar o bônus.";
       if (/resgatado|claimed|already/i.test(msg)) {
+        setDailyClaimedToday(true);
         await load(1, false);
       } else {
         setError(msg);
@@ -121,6 +114,7 @@ export default function GachaCrystalsPage() {
     try {
       const data = await api.gachaCrystals(target, PAGE_SIZE);
       setBalance(data.balance);
+      setDailyClaimedToday(data.dailyClaimedToday);
       setTotal(data.meta.total);
       setEvents((prev) =>
         append ? [...prev, ...data.events] : data.events,
@@ -138,12 +132,6 @@ export default function GachaCrystalsPage() {
     void load(1, false);
     void loadShop();
   }, [user, load, loadShop]);
-
-  // ponytail: heurística página 1 (PAGE_SIZE=20); backend não expõe status diário, upgrade quando API retornar flag
-  const dailyClaimed = useMemo(
-    () => events.some((e) => e.type === "DAILY" && isToday(e.createdAt)),
-    [events],
-  );
 
   if (!user)
     return (
@@ -178,15 +166,15 @@ export default function GachaCrystalsPage() {
         <button
           type="button"
           onClick={() => void handleDailyBonus()}
-          disabled={claimingDaily || dailyClaimed}
-          title={dailyClaimed ? "Bônus diário já resgatado hoje" : undefined}
+          disabled={claimingDaily || dailyClaimedToday}
+          title={dailyClaimedToday ? "Bônus diário já resgatado hoje" : undefined}
           className="btn-ghost mt-3 px-4 py-2 font-mono text-caption disabled:opacity-50"
         >
-          {dailyClaimed
+          {dailyClaimedToday
             ? "Bônus diário resgatado ✓"
             : claimingDaily
               ? "Resgatando…"
-              : "Bônus diário · 100 💎"}
+              : "Bônus diário · 200 💎"}
         </button>
       </div>
 
@@ -205,12 +193,20 @@ export default function GachaCrystalsPage() {
           <ul className="mt-3 grid gap-3 sm:grid-cols-2">
             {shop.map((item) => {
               const insufficient = balance != null && balance < item.price;
+              const isBack = item.key.startsWith("BACK_");
               return (
                 <li
                   key={item.key}
-                  className="flex items-start justify-between gap-3 border border-hairline bg-panel p-4"
+                  className="flex items-start gap-3 border border-hairline bg-panel p-4"
                 >
-                  <div className="min-w-0">
+                  {isBack && item.svg && (
+                    <div
+                      className="pointer-events-none aspect-[3/4] w-16 shrink-0 overflow-hidden border border-white/10"
+                      aria-hidden="true"
+                      dangerouslySetInnerHTML={{ __html: item.svg }}
+                    />
+                  )}
+                  <div className="min-w-0 flex-1">
                     <p className="font-display text-body-sm text-snow">
                       {item.label}
                     </p>
@@ -221,7 +217,7 @@ export default function GachaCrystalsPage() {
                   {item.owned ? (
                     <div className="flex shrink-0 flex-col items-end gap-1">
                       <span className="font-mono text-caption text-ice">SEU</span>
-                      {item.key.startsWith("BACK_") && (
+                      {isBack && (
                         <button
                           type="button"
                           onClick={() => void handleBack(activeBack === item.key ? null : item.key)}

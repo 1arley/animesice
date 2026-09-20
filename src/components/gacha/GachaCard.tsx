@@ -3,6 +3,7 @@ import Link from "next/link";
 import { memo, type CSSProperties } from "react";
 import { safeImageSrc } from "@/lib/url";
 import { blur } from "@/lib/blur";
+import { CardBackSvg } from "@/components/gacha/CardBackSvg";
 import { HoloTilt } from "@/components/core/HoloTilt";
 import type { GachaPull } from "@/types";
 
@@ -118,7 +119,7 @@ function scratchVars(id: string): CSSProperties {
   } as CSSProperties;
 }
 
-export const GachaCard = memo(function GachaCard({ pull, preview = false, linkAnime = true, showInfo = true, side = "front" }: { pull: GachaPull; linkAnime?: boolean; /** Preview de giro: sem edição definitiva nem valor final. */ preview?: boolean; /** Preview modal: usa só a arte. */ showInfo?: boolean; side?: "front" | "back" }) {
+export const GachaCard = memo(function GachaCard({ pull, preview = false, linkAnime = true, showInfo = true, side = "front", cardBack }: { pull: GachaPull; linkAnime?: boolean; /** Preview de giro: sem edição definitiva nem valor final. */ preview?: boolean; /** Preview modal: usa só a arte. */ showInfo?: boolean; side?: "front" | "back"; cardBack?: string | null }) {
   const { card } = pull;
   const art = safeImageSrc(card.image);
   const label = pull.conditionLabel ?? gachaConditionLabel(pull.condition);
@@ -129,7 +130,7 @@ export const GachaCard = memo(function GachaCard({ pull, preview = false, linkAn
   const foilText = FOIL_TEXT[pull.foil];
   const cosmetics = pull.user?.gachaCosmetics ?? [];
   const hasAurora = cosmetics.includes("FRAME_AURORA");
-  const backKey = pull.user?.gachaCardBack;
+  const backKey = cardBack === undefined ? pull.user?.gachaCardBack : cardBack;
   const destaqueRing = cosmetics.includes("DESTAQUE_CARTA")
     ? " shadow-[0_0_18px_rgba(252,211,77,0.45)]"
     : "";
@@ -149,10 +150,19 @@ export const GachaCard = memo(function GachaCard({ pull, preview = false, linkAn
             role="img"
             aria-label="Verso personalizado da carta"
           >
-            <div className="absolute inset-3 border border-ice/40" aria-hidden="true" />
-            <div className="relative flex h-full w-full items-center justify-center border border-white/10 bg-ink/30">
-              <span className="font-display text-center text-display-md text-ice/90">ANIMESICE</span>
-            </div>
+            {backKey && backKey !== "BACK_ICE" ? (
+              <CardBackSvg
+                backKey={backKey}
+                className="absolute inset-0 h-full w-full object-cover"
+              />
+            ) : (
+              <>
+                <div className="absolute inset-3 border border-ice/40" aria-hidden="true" />
+                <div className="relative flex h-full w-full items-center justify-center border border-white/10 bg-ink/30">
+                  <span className="font-display text-center text-display-md text-ice/90">ANIMESICE</span>
+                </div>
+              </>
+            )}
           </div>
         ) : <>
         <div className="group relative" style={{ aspectRatio: "3 / 4" }}>
