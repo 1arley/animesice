@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { SpotlightCard } from "@/components/core/SpotlightCard";
+import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import { useFinePointer } from "@/lib/use-fine-pointer";
 import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
 import { GachaCard, gachaConditionLabel } from "@/components/gacha/GachaCard";
@@ -15,6 +16,9 @@ export function CardPreview({
   canReroll = false,
   rerolling = false,
   onReroll,
+  rerollConfirm = false,
+  onRerollConfirm,
+  onRerollCancel,
   onList,
   listing = false,
   burning = false,
@@ -26,6 +30,9 @@ export function CardPreview({
   canReroll?: boolean;
   rerolling?: boolean;
   onReroll?: () => void;
+  rerollConfirm?: boolean;
+  onRerollConfirm?: () => void;
+  onRerollCancel?: () => void;
   onList?: (price: number) => void;
   listing?: boolean;
   burning?: boolean;
@@ -39,7 +46,7 @@ export function CardPreview({
   const cosmetics = pull.user?.gachaCosmetics ?? [];
   const aurora = cosmetics.includes("FRAME_AURORA");
   const destaque = cosmetics.includes("DESTAQUE_CARTA");
-  const rerollCost = Math.max(1, Math.round(pull.value * 1.1));
+  const rerollCost = Math.max(1, Math.round(pull.value * 0.1));
   const condition = pull.conditionLabel ?? gachaConditionLabel(pull.condition);
   const obtainedAt = new Date(pull.obtainedAt).toLocaleDateString("pt-BR", {
     day: "2-digit",
@@ -513,6 +520,22 @@ export function CardPreview({
         <SpotlightCard className="mx-auto max-w-3xl">{content}</SpotlightCard>
       ) : (
         content
+      )}
+      {canReroll && onRerollConfirm && onRerollCancel && (
+        <ConfirmDialog
+          open={rerollConfirm}
+          title="Rerrollar carta?"
+          confirmLabel="Rerrollar"
+          busyLabel="Rerrollando…"
+          busy={rerolling}
+          onCancel={onRerollCancel}
+          onConfirm={onRerollConfirm}
+        >
+          <p className="mt-4 text-body-sm text-mist">
+            Sorteia nova condition e foil por {rerollCost} crystals. Pode
+            piorar.
+          </p>
+        </ConfirmDialog>
       )}
     </dialog>
   );
