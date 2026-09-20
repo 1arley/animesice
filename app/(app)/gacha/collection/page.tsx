@@ -222,6 +222,9 @@ export default function GachaCollectionPage() {
           canReroll={preview.user.id === user.id}
           rerolling={rerolling}
           onReroll={() => setRerollConfirm(true)}
+          rerollConfirm={rerollConfirm}
+          onRerollConfirm={() => void handleReroll()}
+          onRerollCancel={() => setRerollConfirm(false)}
           onChange={(updated) => {
             setPreview(updated);
             setItems((current) =>
@@ -258,21 +261,6 @@ export default function GachaCollectionPage() {
           Você receberá{" "}
           {burnTarget ? Math.max(1, Math.floor(burnTarget.value * 0.4)) : 0}{" "}
           crystals. Ação irreversível.
-        </p>
-      </ConfirmDialog>
-      <ConfirmDialog
-        open={rerollConfirm && preview !== null}
-        title="Rerrollar carta?"
-        confirmLabel="Rerrollar"
-        busyLabel="Rerrollando…"
-        busy={rerolling}
-        onCancel={() => setRerollConfirm(false)}
-        onConfirm={() => void handleReroll()}
-      >
-        <p className="text-body-sm text-mist">
-          Sorteia nova condition e foil por{" "}
-          {preview ? Math.max(1, Math.round(preview.value * 1.1)) : 0} crystals.
-          Pode piorar.
         </p>
       </ConfirmDialog>
       {burnResult && (
