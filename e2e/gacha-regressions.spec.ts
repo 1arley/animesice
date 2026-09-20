@@ -25,7 +25,7 @@ test("conservação distingue as cinco qualidades sem mudar a raridade", async (
     })),
     meta: { ...meta, total: 5 }, stats: { total: 5, totalValue: 500 },
   } }));
-  await page.goto("/gacha/collection");
+  await page.goto("/gacha/colecao");
   const surfaces = [];
   for (const label of labels) {
     const owned = page.getByRole("button", { name: new RegExp(`Conservação ${label}`) });
@@ -86,7 +86,7 @@ test("preview e coleção não aninham controles interativos", async ({ page }) 
   await expect(page.locator("button a")).toHaveCount(0);
   await preview.click();
   await expect(page.getByRole("dialog")).toBeVisible();
-  await page.goto("/gacha/collection");
+  await page.goto("/gacha/colecao");
   const owned = page.getByRole("button", { name: /Carta A/ });
   await expect(owned).toBeVisible();
   await expect(owned.locator("a")).toHaveCount(0);
@@ -144,8 +144,8 @@ for (const staleFails of [false, true]) {
         meta: { ...meta, totalPages: rarity === "COMUM" ? 2 : 1 },
       } });
     });
-    await page.goto("/gacha/collection");
-    await expect(page.getByRole("button", { name: /Inicial/ })).toBeVisible();
+  await page.goto("/gacha/colecao");
+  await expect(page.getByRole("button", { name: /Inicial/ })).toBeVisible();
     await page.getByLabel("Raridade", { exact: true }).selectOption("COMUM");
     await started;
     await page.getByLabel("Raridade", { exact: true }).selectOption("RARA");
@@ -173,7 +173,7 @@ test("destacar carta mostra erro e permite tentar novamente", async ({ page }) =
       ? route.fulfill({ status: 500, json: { message: "Falha no destaque" } })
       : route.fulfill({ json: card });
   });
-  await page.goto("/gacha/collection");
+  await page.goto("/gacha/colecao");
   const feature = page.getByRole("button", { name: "Destacar no perfil" });
   await feature.click();
   await expect(page.locator('p[role="alert"]')).toContainText("Não foi possível destacar a carta.");
@@ -310,7 +310,7 @@ test("navegação entre perfis zera abas (cartas não vazam do perfil anterior)"
     return route.fulfill({ json: { data: id === "u-ana" ? [anaCard] : id === "u-bruno" ? [brunoCard] : [], meta } });
   });
 
-  await page.goto("/users/ana");
+  await page.goto("/usuarios/ana");
   await expect(page.getByRole("heading", { name: "Ana" })).toBeVisible();
   await page.getByRole("button", { name: "Cartas" }).click();
   await expect(page.getByText("Carta A")).toBeVisible();

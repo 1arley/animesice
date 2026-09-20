@@ -21,8 +21,8 @@ test.describe('Public profile - report & tabs', () => {
       });
     }
 
-    // Profile: /perfil/:id redireciona (server-side) para /users/:id e a
-    // página /users canonicaliza para /users/:userName.
+    // Profile: /perfil/:id redireciona (server-side) para /usuarios/:userName e a
+    // página /usuarios canonicaliza para /usuarios/:userName.
     // Os mocks escopam ao backend (porta 3001) — nunca à navegação do Next (3000).
     const usersApi = (path: string) =>
       new RegExp(`//localhost:3001/(?:api/)?${path}$`);
@@ -200,9 +200,9 @@ test.describe('Public profile - report & tabs', () => {
       await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ id: 'rpt1', ...reportPayload }) });
     });
 
-    // Rota legada redireciona para o novo sistema de perfis.
+    // Rota legada redireciona para /usuarios/:userName.
     await page.goto(`/perfil/${userId}`);
-    await page.waitForURL(`**/users/${canonicalUserName}`);
+    await page.waitForURL(`**/usuarios/${canonicalUserName}`);
 
     // Wait for overview (either bio or name)
     try {
@@ -272,7 +272,7 @@ test.describe('Public profile - report & tabs', () => {
     // Sem page.route: o mock-backend (porta 3001) responde o perfil padrão
     // ("mock") e `GET /gacha/featured/:userId` com null — já é o caminho
     // "sem carta destaque" do hero.
-    await page.goto('/users/mock');
+    await page.goto('/usuarios/mock');
 
     // Perfil resolvido; depois do loading, o slot some por completo ---
     // não ficam fantasma nem CLS residual de um slot vazio.

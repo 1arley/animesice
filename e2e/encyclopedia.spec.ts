@@ -17,7 +17,7 @@ test("paginação, filtros e histórico preservam estado; falha permite tentar n
       meta: { page: current, limit: 24, total: 25, totalPages: 2 },
     } });
   });
-  await page.goto("/gacha/encyclopedia");
+  await page.goto("/gacha/enciclopedia");
   await expect(page.getByRole("heading", { name: "Carta página 1" })).toBeVisible();
   await page.getByRole("link", { name: "Próxima" }).click();
   await expect(page.getByRole("heading", { name: "Carta página 2" })).toBeVisible();
