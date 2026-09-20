@@ -302,9 +302,14 @@ export default function AdminGachaPage() {
     <div>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="font-display text-display-xl text-snow">Gacha</h1>
-        <Link href="/admin/gacha/capas" className="admin-tab">
-          Editar capas
-        </Link>
+        <div className="flex gap-2">
+          <Link href="/admin/gacha/config" className="admin-tab">
+            Configuração
+          </Link>
+          <Link href="/admin/gacha/capas" className="admin-tab">
+            Editar capas
+          </Link>
+        </div>
       </div>
       {error && (
         <div
