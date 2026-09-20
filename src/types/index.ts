@@ -644,6 +644,8 @@ export interface GachaShopItem {
   description: string;
   price: number;
   owned: boolean;
+  svg?: string;
+  previewUrl?: string;
 }
 
 export interface GachaShop {
@@ -716,6 +718,7 @@ export interface CrystalEvent {
 
 export interface CrystalPage {
   balance: number;
+  dailyClaimedToday: boolean;
   events: CrystalEvent[];
   meta: { page: number; limit: number; total: number; totalPages: number };
 }
