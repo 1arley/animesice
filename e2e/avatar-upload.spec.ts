@@ -42,7 +42,7 @@ test("comprime avatar grande e renova a sessao antes de enviar", async ({
     route.fulfill({ status: 200, contentType: "application/json", body: "{}" }),
   );
 
-  await page.goto("/settings");
+  await page.goto("/configuracoes");
   await page.locator('input[type="file"]').setInputFiles(
     path.join(process.cwd(), "public/aeliana/Aeliana.png"),
   );

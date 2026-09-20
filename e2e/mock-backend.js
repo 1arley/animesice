@@ -119,6 +119,21 @@ const server = http.createServer((req, res) => {
     return response();
   }
 
+  if (req.method === 'GET' && (p === '/api/stream/source' || p === '/stream/source')) {
+    const hasAuth = (req.headers.cookie || '').includes('role=');
+    if (parsed.query.refresh === '1' && !hasAuth) {
+      return json(res, { message: 'Não autenticado.' }, 400);
+    }
+    if (parsed.query.anime === 'slow-stream') {
+      return json(res, { jobId: 'slow-job', status: 'pending' }, 202);
+    }
+    return json(res, {
+      animeSlug: parsed.query.anime || 'test', episodeNumber: Number(parsed.query.episode) || 1,
+      src: 'https://video.example/episode.m3u8', rawVideoUrl: null,
+      embedUrl: null, reextracted: false, thumbnailUrl: null,
+    });
+  }
+
   // Perfil público — o frontend usa /users/:identifier (userName ou id).
   const userProfileMatch = p && (p.match(/^\/api\/users\/([^/]+)$/) || p.match(/^\/users\/([^/]+)$/));
   if (req.method === 'GET' && userProfileMatch) {

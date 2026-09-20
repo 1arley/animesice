@@ -9,6 +9,11 @@ test.describe("Homepage & Shelf Navigation", () => {
 
     await page.context().addCookies([
       {
+        name: "role",
+        value: "USER",
+        url: "http://localhost:3000",
+      },
+      {
         name: "refresh_token",
         value: "valid-refresh-token",
         url: "http://localhost:3001",
