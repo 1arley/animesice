@@ -40,6 +40,19 @@ function itemName(listing: GachaEconomyListingItem): string {
   );
 }
 
+function rewardLabel(reward: Record<string, unknown> | null): string {
+  if (!reward) return "";
+  const cat = reward.category;
+  if (cat === "CRYSTAL") return `${String(reward.amount ?? 0)} 💎`;
+  if (cat === "KEY") return `${String(reward.amount ?? 1)} chave`;
+  if (cat === "SPIN_RESET") return `${String(reward.amount ?? 1)} reset`;
+  if (cat === "SKIN") return `Skin: ${String(reward.name ?? "?")}`;
+  if (cat === "CARD")
+    return `Carta ${String(reward.name ?? "?")}${reward.foil ? ` · ${String(reward.foil)}` : ""}`;
+  if (cat === "CARD_BACK") return `Capa: ${String(reward.name ?? "?")}`;
+  return cat ? String(cat) : "";
+}
+
 function timeLeft(expiresAt: string): string {
   const hours = Math.ceil(
     (new Date(expiresAt).getTime() - Date.now()) / 3_600_000,
@@ -66,6 +79,9 @@ export default function GachaMarketPage() {
     name: string;
     data: GachaMarketHistory;
   } | null>(null);
+  const [openedReward, setOpenedReward] = useState<Record<string, unknown> | null>(
+    null,
+  );
   const [orderTarget, setOrderTarget] =
     useState<GachaEconomyListingItem | null>(null);
   const [orderPrice, setOrderPrice] = useState("");
@@ -74,6 +90,43 @@ export default function GachaMarketPage() {
   const [busy, setBusy] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  const refresh = useCallback(async () => {
+    if (!user) return;
+    try {
+      const [wallet, myListings, myOrders, shop, weekly, copies] =
+        await Promise.all([
+          api.gachaEconomyInventory(),
+          api.gachaEconomyMyListings().catch(() => ({
+            items: [],
+            page: 1,
+            limit: 50,
+            total: 0,
+          })),
+          api.gachaEconomyMyOrders().catch(() => ({
+            items: [],
+            page: 1,
+            limit: 50,
+            total: 0,
+          })),
+          api.gachaEconomyShop(),
+          api.gachaEconomyMission(),
+          api.gachaEconomyOwnedSkins(),
+        ]);
+      setInventory(wallet);
+      setMine(myListings.items);
+      setOrders(myOrders.items);
+      setOffers(shop);
+      setMission(weekly);
+      setOwnedSkins(copies.filter((copy) => copy.status === "ACTIVE"));
+    } catch (cause) {
+      setError(
+        cause instanceof ApiError
+          ? cause.message
+          : "Mercado indisponível. Tente carregar novamente.",
+      );
+    }
+  }, [user]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -87,33 +140,8 @@ export default function GachaMarketPage() {
       setCards(cardPage.items);
       setSkins(skinPage.items);
       setOdds(publicOdds);
-      if (user) {
-        const [wallet, myListings, myOrders, shop, weekly, copies] =
-          await Promise.all([
-            api.gachaEconomyInventory(),
-            api.gachaEconomyMyListings().catch(() => ({
-              items: [],
-              page: 1,
-              limit: 50,
-              total: 0,
-            })),
-            api.gachaEconomyMyOrders().catch(() => ({
-              items: [],
-              page: 1,
-              limit: 50,
-              total: 0,
-            })),
-            api.gachaEconomyShop(),
-            api.gachaEconomyVisitMarket().catch(() => null),
-            api.gachaEconomyOwnedSkins(),
-          ]);
-        setInventory(wallet);
-        setMine(myListings.items);
-        setOrders(myOrders.items);
-        setOffers(shop);
-        setMission(weekly);
-        setOwnedSkins(copies.filter((copy) => copy.status === "ACTIVE"));
-      }
+      if (user) await api.gachaEconomyVisitMarket().catch(() => null);
+      await refresh();
     } catch (cause) {
       setError(
         cause instanceof ApiError
@@ -123,7 +151,7 @@ export default function GachaMarketPage() {
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user, refresh]);
 
   useEffect(() => {
     void load();
@@ -133,13 +161,40 @@ export default function GachaMarketPage() {
     key: string,
     action: () => Promise<unknown>,
     message: string,
+    refreshBoard = false,
   ) {
     setBusy(key);
     setError("");
     try {
       await action();
       toast(message, "success");
-      await load();
+      await refresh();
+      if (refreshBoard) {
+        const [cardPage, skinPage] = await Promise.all([
+          api.gachaEconomyListings("CARD"),
+          api.gachaEconomyListings("SKIN"),
+        ]);
+        setCards(cardPage.items);
+        setSkins(skinPage.items);
+      }
+    } catch (cause) {
+      setError(
+        cause instanceof ApiError ? cause.message : "Ação não concluída.",
+      );
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function openBox(tier: GachaBoxTier) {
+    const key = `open-${tier}`;
+    setBusy(key);
+    setError("");
+    try {
+      const result = await api.gachaEconomyOpenBox(tier);
+      setOpenedReward(result.reward);
+      toast(`${BOX_LABEL[tier]} aberta.`, "success");
+      await refresh();
     } catch (cause) {
       setError(
         cause instanceof ApiError ? cause.message : "Ação não concluída.",
@@ -185,6 +240,7 @@ export default function GachaMarketPage() {
       `skin-${skinCopyId}`,
       () => api.gachaEconomyCreateSkinListing(skinCopyId, price),
       "Skin anunciada por 7 dias.",
+      true,
     );
     setSkinCopyId("");
     setSkinPrice("");
@@ -246,6 +302,30 @@ export default function GachaMarketPage() {
         >
           {error}
         </div>
+      )}
+
+      {openedReward && (
+        <aside
+          role="status"
+          aria-live="polite"
+          className="mt-5 flex flex-wrap items-center justify-between gap-4 border border-ice/40 bg-panel p-4"
+        >
+          <div>
+            <h2 className="font-display text-body-sm text-ice">
+              Recompensa da caixa
+            </h2>
+            <p className="mt-1 font-display text-xl text-snow">
+              {rewardLabel(openedReward)}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setOpenedReward(null)}
+            className="btn-ghost min-h-11 px-3"
+          >
+            Fechar
+          </button>
+        </aside>
       )}
 
       {loading ? (
@@ -319,13 +399,7 @@ export default function GachaMarketPage() {
                         <button
                           type="button"
                           disabled={busy !== null || !canOpen}
-                          onClick={() =>
-                            void act(
-                              `open-${tier}`,
-                              () => api.gachaEconomyOpenBox(tier),
-                              `${BOX_LABEL[tier]} aberta.`,
-                            )
-                          }
+                          onClick={() => void openBox(tier)}
                           className="btn-ice min-h-11 disabled:opacity-40"
                         >
                           {busy === `open-${tier}` ? "Abrindo…" : "Abrir"}
@@ -391,14 +465,14 @@ export default function GachaMarketPage() {
                       void act(
                         "daily",
                         api.gachaEconomyDaily,
-                        "+350 Crystal resgatados.",
+                        `+${odds?.dailyBonus ?? 350} Crystal resgatados.`,
                       )
                     }
                     className="btn-ghost min-h-11 px-4"
                   >
                     {inventory?.dailyClaimedToday
                       ? "Resgatado hoje"
-                      : "Resgatar 350"}
+                      : `Resgatar ${odds?.dailyBonus ?? 350}`}
                   </button>
                   <button
                     type="button"
@@ -474,11 +548,12 @@ export default function GachaMarketPage() {
                         (inventory?.available ?? 0) < offer.price
                       }
                       onClick={() =>
-                        void act(
-                          `offer-${offer.id}`,
-                          () => api.gachaEconomyBuyOffer(offer.id),
-                          "Oferta comprada.",
-                        )
+            void act(
+              `offer-${offer.id}`,
+              () => api.gachaEconomyBuyOffer(offer.id),
+              "Oferta comprada.",
+              true,
+            )
                       }
                       className="btn-ghost min-h-11 shrink-0 px-3 disabled:opacity-40"
                     >
@@ -500,6 +575,7 @@ export default function GachaMarketPage() {
                 `buy-${listing.id}`,
                 () => api.gachaEconomyBuyListing("CARD", listing.id),
                 "Carta comprada.",
+                true,
               )
             }
             onOrder={setOrderTarget}
@@ -515,6 +591,7 @@ export default function GachaMarketPage() {
                 `buy-${listing.id}`,
                 () => api.gachaEconomyBuyListing("SKIN", listing.id),
                 "Skin comprada.",
+                true,
               )
             }
             onOrder={setOrderTarget}
