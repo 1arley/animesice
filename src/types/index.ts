@@ -818,6 +818,7 @@ export interface GachaEconomyOdds {
   version: number | null;
   boxPrices: Record<GachaBoxTier, number>;
   keyPrice: number;
+  dailyBonus: number;
   categories: Record<GachaBoxTier, Record<string, number>>;
   qualities: Record<GachaBoxTier, Record<string, number>>;
   foilWeights: Record<string, number>;
