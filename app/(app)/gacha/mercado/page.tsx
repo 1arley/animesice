@@ -59,8 +59,21 @@ function timeLeft(expiresAt: string): string {
   const hours = Math.ceil(
     (new Date(expiresAt).getTime() - Date.now()) / 3_600_000,
   );
-  if (hours <= 0) return "Expirado";
+  if (hours <= 0) {
+    return new Date(expiresAt).getTime() > Date.now() ? "<1 h" : "Expirado";
+  }
   return hours >= 24 ? `${Math.ceil(hours / 24)} dias` : `${hours} h`;
+}
+
+function timeUntilReset(): string {
+  const now = new Date();
+  const reset = new Date(now);
+  reset.setHours(24, 0, 0, 0);
+  const minutes = Math.max(
+    0,
+    Math.ceil((reset.getTime() - now.getTime()) / 60_000),
+  );
+  return `${Math.floor(minutes / 60)}h ${minutes % 60}min`;
 }
 
 export default function GachaMarketPage() {
@@ -71,6 +84,10 @@ export default function GachaMarketPage() {
   );
   const [cards, setCards] = useState<GachaEconomyListingItem[]>([]);
   const [skins, setSkins] = useState<GachaEconomyListingItem[]>([]);
+  const [cardTotal, setCardTotal] = useState(0);
+  const [skinTotal, setSkinTotal] = useState(0);
+  const [cardPage, setCardPage] = useState(1);
+  const [skinPage, setSkinPage] = useState(1);
   const [mine, setMine] = useState<GachaEconomyListingItem[]>([]);
   const [orders, setOrders] = useState<GachaEconomyOrder[]>([]);
   const [offers, setOffers] = useState<GachaEconomyOffer[]>([]);
@@ -94,6 +111,7 @@ export default function GachaMarketPage() {
   const [busy, setBusy] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [resetCountdown, setResetCountdown] = useState(timeUntilReset);
 
   const refresh = useCallback(async () => {
     if (!user) return;
@@ -143,6 +161,10 @@ export default function GachaMarketPage() {
       ]);
       setCards(cardPage.items);
       setSkins(skinPage.items);
+      setCardTotal(cardPage.total);
+      setSkinTotal(skinPage.total);
+      setCardPage(cardPage.page);
+      setSkinPage(skinPage.page);
       setOdds(publicOdds);
       if (user) await api.gachaEconomyVisitMarket().catch(() => null);
       await refresh();
@@ -160,6 +182,14 @@ export default function GachaMarketPage() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(() => {
+    const timer = window.setInterval(
+      () => setResetCountdown(timeUntilReset()),
+      60_000,
+    );
+    return () => window.clearInterval(timer);
+  }, []);
 
   async function act(
     key: string,
@@ -180,6 +210,10 @@ export default function GachaMarketPage() {
         ]);
         setCards(cardPage.items);
         setSkins(skinPage.items);
+        setCardTotal(cardPage.total);
+        setSkinTotal(skinPage.total);
+        setCardPage(cardPage.page);
+        setSkinPage(skinPage.page);
       }
     } catch (cause) {
       setError(
@@ -273,6 +307,31 @@ export default function GachaMarketPage() {
     }
   }
 
+  async function loadMore(type: "CARD" | "SKIN") {
+    const nextPage = type === "CARD" ? cardPage + 1 : skinPage + 1;
+    setBusy(`more-${type}`);
+    try {
+      const page = await api.gachaEconomyListings(type, nextPage);
+      if (type === "CARD") {
+        setCards((current) => [...current, ...page.items]);
+        setCardPage(page.page);
+        setCardTotal(page.total);
+      } else {
+        setSkins((current) => [...current, ...page.items]);
+        setSkinPage(page.page);
+        setSkinTotal(page.total);
+      }
+    } catch (cause) {
+      setError(
+        cause instanceof ApiError
+          ? cause.message
+          : "Não foi possível carregar mais anúncios.",
+      );
+    } finally {
+      setBusy(null);
+    }
+  }
+
   return (
     <main id="body-content" className="mx-auto max-w-shelf px-4 pb-20 pt-8">
       <header className="border-b border-hairline pb-7">
@@ -292,6 +351,7 @@ export default function GachaMarketPage() {
             <p className="font-display text-3xl tabular-nums text-ice">
               {inventory ? inventory.available.toLocaleString("pt-BR") : "—"}
             </p>
+            <p className="text-caption text-mist">Crystal disponível</p>
             {inventory && inventory.reserved > 0 && (
               <p className="text-caption tabular-nums text-mist">
                 {inventory.reserved.toLocaleString("pt-BR")} reservado
@@ -304,9 +364,21 @@ export default function GachaMarketPage() {
       {error && (
         <div
           role="alert"
+          aria-live="polite"
           className="mt-5 border border-signal/50 bg-signal/10 p-4 text-body-sm text-signal"
         >
-          {error}
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <span>{error}</span>
+            {!loading && (
+              <button
+                type="button"
+                onClick={() => void load()}
+                className="btn-ghost min-h-11 shrink-0 px-3 text-snow"
+              >
+                Tentar novamente
+              </button>
+            )}
+          </div>
         </div>
       )}
 
@@ -323,7 +395,7 @@ export default function GachaMarketPage() {
               src={safeImageSrc(
                 String(openedReward.imageUrl ?? openedReward.image),
               )!}
-              alt=""
+              alt={rewardLabel(openedReward)}
               width={72}
               height={96}
               className="market-reward-image object-cover"
@@ -348,7 +420,18 @@ export default function GachaMarketPage() {
       )}
 
       {loading ? (
-        <div className="skeleton mt-8 h-72" aria-busy="true" />
+        <div
+          className="mt-8 space-y-5"
+          aria-busy="true"
+          aria-label="Carregando mercado"
+        >
+          <div className="skeleton h-28" />
+          <div className="grid gap-4 md:grid-cols-3">
+            <div className="skeleton h-56" />
+            <div className="skeleton h-56" />
+            <div className="skeleton h-56" />
+          </div>
+        </div>
       ) : (
         <>
           {user && inventory && odds && (
@@ -543,7 +626,9 @@ export default function GachaMarketPage() {
                     Ofertas pessoais. Cada vaga permite 1 compra.
                   </p>
                 </div>
-                <span className="text-caption text-mist">Renova 00:00 BRT</span>
+                <span className="text-caption tabular-nums text-mist">
+                  Renova em {resetCountdown} BRT
+                </span>
               </div>
               <ul className="mt-4 grid gap-px bg-hairline sm:grid-cols-2 lg:grid-cols-3">
                 {offers.map((offer) => (
@@ -551,6 +636,25 @@ export default function GachaMarketPage() {
                     key={offer.id}
                     className="flex min-w-0 items-center justify-between gap-3 bg-panel p-4"
                   >
+                    {(() => {
+                      const image = safeImageSrc(
+                        offer.card?.image ?? offer.skin?.imageUrl,
+                      );
+                      return image ? (
+                        <Image
+                          src={image}
+                          alt=""
+                          width={48}
+                          height={64}
+                          className="h-16 w-12 shrink-0 rounded object-cover"
+                        />
+                      ) : (
+                        <div
+                          aria-hidden="true"
+                          className="h-16 w-12 shrink-0 rounded bg-ink"
+                        />
+                      );
+                    })()}
                     <div className="min-w-0">
                       <p className="truncate font-display text-body-sm text-snow">
                         {offer.card?.name ??
@@ -590,8 +694,11 @@ export default function GachaMarketPage() {
           <MarketSection
             title="Cartas"
             listings={cards}
+            total={cardTotal}
+            canLoadMore={cards.length < cardTotal}
             userReady={!!user}
             busy={busy}
+            onLoadMore={() => void loadMore("CARD")}
             onBuy={(listing) =>
               void act(
                 `buy-${listing.id}`,
@@ -606,8 +713,11 @@ export default function GachaMarketPage() {
           <MarketSection
             title="Skins"
             listings={skins}
+            total={skinTotal}
+            canLoadMore={skins.length < skinTotal}
             userReady={!!user}
             busy={busy}
+            onLoadMore={() => void loadMore("SKIN")}
             onBuy={(listing) =>
               void act(
                 `buy-${listing.id}`,
@@ -622,6 +732,7 @@ export default function GachaMarketPage() {
 
           {history && (
             <aside
+              role="status"
               aria-live="polite"
               className="mt-5 flex flex-wrap items-center justify-between gap-4 border border-hairline bg-panel p-4"
             >
@@ -653,6 +764,9 @@ export default function GachaMarketPage() {
             >
               <label className="min-w-48 flex-1 text-body-sm text-mist">
                 Oferta por {itemName(orderTarget)}
+                <span className="mt-1 block text-caption text-mist">
+                  Crystal fica reservado até preencher, expirar ou cancelar a ordem.
+                </span>
                 <input
                   name="order-price"
                   type="number"
@@ -727,7 +841,7 @@ export default function GachaMarketPage() {
             </form>
           )}
 
-          {user && (mine.length > 0 || orders.length > 0) && (
+          {user && (
             <section aria-labelledby="positions-title" className="mt-10">
               <h2
                 id="positions-title"
@@ -747,10 +861,9 @@ export default function GachaMarketPage() {
                       act(
                         `cancel-${listing.id}`,
                         () =>
-                          api.gachaEconomyCancelListing(
-                            listing.itemType,
-                            listing.id,
-                          ),
+                          window.confirm("Cancelar este anúncio e liberar Crystal?")
+                            ? api.gachaEconomyCancelListing(listing.itemType, listing.id)
+                            : Promise.resolve(),
                         "Anúncio cancelado.",
                       ),
                   }))}
@@ -767,7 +880,10 @@ export default function GachaMarketPage() {
                     cancel: () =>
                       act(
                         `cancel-${order.id}`,
-                        () => api.gachaEconomyCancelOrder(order.id),
+                        () =>
+                          window.confirm("Cancelar esta ordem e liberar Crystal?")
+                            ? api.gachaEconomyCancelOrder(order.id)
+                            : Promise.resolve(),
                         "Ordem cancelada.",
                       ),
                   }))}
@@ -824,38 +940,78 @@ export default function GachaMarketPage() {
 function MarketSection({
   title,
   listings,
+  total,
+  canLoadMore,
   userReady,
   busy,
+  onLoadMore,
   onBuy,
   onOrder,
   onHistory,
 }: {
   title: string;
   listings: GachaEconomyListingItem[];
+  total: number;
+  canLoadMore: boolean;
   userReady: boolean;
   busy: string | null;
+  onLoadMore: () => void;
   onBuy: (listing: GachaEconomyListingItem) => void;
   onOrder: (listing: GachaEconomyListingItem) => void;
   onHistory: (listing: GachaEconomyListingItem) => void;
 }) {
+  const [query, setQuery] = useState("");
+  const normalizedQuery = query.trim().toLocaleLowerCase("pt-BR");
+  const visibleListings = normalizedQuery
+    ? listings.filter((listing) =>
+        [
+          itemName(listing),
+          listing.item.animeTitle,
+          listing.item.card?.animeTitle,
+          listing.item.rarity,
+          listing.item.card?.rarity,
+          listing.item.foil,
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .toLocaleLowerCase("pt-BR")
+          .includes(normalizedQuery),
+      )
+    : listings;
+
   return (
     <section className="mt-10" aria-labelledby={`market-${title}`}>
-      <div className="flex items-baseline justify-between gap-3">
-        <h2 id={`market-${title}`} className="font-display text-2xl text-snow">
-          {title} no mercado
-        </h2>
-        <span className="text-caption tabular-nums text-mist">
-          {listings.length} ativos
-        </span>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h2 id={`market-${title}`} className="font-display text-2xl text-snow">
+            {title} no mercado
+          </h2>
+          <span className="text-caption tabular-nums text-mist">
+            {normalizedQuery ? `${visibleListings.length} de ` : ""}{total} ativos
+          </span>
+        </div>
+        <label className="text-caption text-mist">
+          Buscar {title.toLocaleLowerCase("pt-BR")}
+          <input
+            type="search"
+            name={`market-search-${title}`}
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Nome ou anime…"
+            autoComplete="off"
+            className="field mt-1 min-h-11 w-full sm:w-56"
+          />
+        </label>
       </div>
-      {listings.length === 0 ? (
+      {visibleListings.length === 0 ? (
         <p className="mt-4 border border-dashed border-hairline p-5 text-body-sm text-mist">
-          Nenhum anúncio. Ordem de compra pode iniciar liquidez quando item
-          aparecer.
+          {normalizedQuery
+            ? "Nenhum anúncio corresponde à busca."
+            : "Nenhum anúncio. Ordem de compra pode iniciar liquidez quando item aparecer."}
         </p>
       ) : (
         <ul className="mt-4 grid gap-px bg-hairline sm:grid-cols-2 lg:grid-cols-3">
-          {listings.map((listing) => (
+          {visibleListings.map((listing) => (
             <li key={listing.id} className="min-w-0 bg-panel p-4">
               {(() => {
                 const image = safeImageSrc(
@@ -874,7 +1030,12 @@ function MarketSection({
                       sizes="(max-width: 640px) 45vw, (max-width: 1024px) 30vw, 220px"
                     />
                   </div>
-                ) : null;
+                ) : (
+                  <div
+                    aria-hidden="true"
+                    className="market-card-art mb-4 aspect-[3/4] bg-ink"
+                  />
+                );
               })()}
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
@@ -898,7 +1059,7 @@ function MarketSection({
               <p className="mt-3 text-caption text-mist">
                 Expira em {timeLeft(listing.expiresAt)}
               </p>
-              <div className="mt-3 grid grid-cols-3 gap-2">
+              <div className="mt-3 grid gap-2 sm:grid-cols-3">
                 <button
                   type="button"
                   disabled={busy !== null}
@@ -926,7 +1087,19 @@ function MarketSection({
               </div>
             </li>
           ))}
-        </ul>
+          </ul>
+      )}
+      {canLoadMore && (
+        <button
+          type="button"
+          disabled={busy !== null}
+          onClick={onLoadMore}
+          className="btn-ghost mt-4 min-h-11 w-full disabled:opacity-40 sm:w-auto sm:px-5"
+        >
+          {busy === `more-${title === "Cartas" ? "CARD" : "SKIN"}`
+            ? "Carregando…"
+            : "Carregar mais"}
+        </button>
       )}
     </section>
   );
