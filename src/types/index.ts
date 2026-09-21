@@ -794,8 +794,18 @@ export interface GachaEconomyOffer {
   price: number;
   discount: number;
   purchasedAt: string | null;
-  card?: { id: string; name: string; rarity?: string } | null;
-  skin?: { id: string; name: string; rarity?: string } | null;
+  card?: {
+    id: string;
+    name: string;
+    image?: string | null;
+    rarity?: string;
+  } | null;
+  skin?: {
+    id: string;
+    name: string;
+    imageUrl?: string | null;
+    rarity?: string;
+  } | null;
 }
 
 export interface GachaMarketMission {
