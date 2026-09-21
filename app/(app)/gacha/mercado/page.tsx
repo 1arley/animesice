@@ -91,6 +91,43 @@ export default function GachaMarketPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  const refresh = useCallback(async () => {
+    if (!user) return;
+    try {
+      const [wallet, myListings, myOrders, shop, weekly, copies] =
+        await Promise.all([
+          api.gachaEconomyInventory(),
+          api.gachaEconomyMyListings().catch(() => ({
+            items: [],
+            page: 1,
+            limit: 50,
+            total: 0,
+          })),
+          api.gachaEconomyMyOrders().catch(() => ({
+            items: [],
+            page: 1,
+            limit: 50,
+            total: 0,
+          })),
+          api.gachaEconomyShop(),
+          api.gachaEconomyMission(),
+          api.gachaEconomyOwnedSkins(),
+        ]);
+      setInventory(wallet);
+      setMine(myListings.items);
+      setOrders(myOrders.items);
+      setOffers(shop);
+      setMission(weekly);
+      setOwnedSkins(copies.filter((copy) => copy.status === "ACTIVE"));
+    } catch (cause) {
+      setError(
+        cause instanceof ApiError
+          ? cause.message
+          : "Mercado indisponível. Tente carregar novamente.",
+      );
+    }
+  }, [user]);
+
   const load = useCallback(async () => {
     setLoading(true);
     setError("");
@@ -103,33 +140,8 @@ export default function GachaMarketPage() {
       setCards(cardPage.items);
       setSkins(skinPage.items);
       setOdds(publicOdds);
-      if (user) {
-        const [wallet, myListings, myOrders, shop, weekly, copies] =
-          await Promise.all([
-            api.gachaEconomyInventory(),
-            api.gachaEconomyMyListings().catch(() => ({
-              items: [],
-              page: 1,
-              limit: 50,
-              total: 0,
-            })),
-            api.gachaEconomyMyOrders().catch(() => ({
-              items: [],
-              page: 1,
-              limit: 50,
-              total: 0,
-            })),
-            api.gachaEconomyShop(),
-            api.gachaEconomyVisitMarket().catch(() => null),
-            api.gachaEconomyOwnedSkins(),
-          ]);
-        setInventory(wallet);
-        setMine(myListings.items);
-        setOrders(myOrders.items);
-        setOffers(shop);
-        setMission(weekly);
-        setOwnedSkins(copies.filter((copy) => copy.status === "ACTIVE"));
-      }
+      if (user) await api.gachaEconomyVisitMarket().catch(() => null);
+      await refresh();
     } catch (cause) {
       setError(
         cause instanceof ApiError
@@ -139,7 +151,7 @@ export default function GachaMarketPage() {
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user, refresh]);
 
   useEffect(() => {
     void load();
@@ -155,7 +167,7 @@ export default function GachaMarketPage() {
     try {
       await action();
       toast(message, "success");
-      await load();
+      await refresh();
     } catch (cause) {
       setError(
         cause instanceof ApiError ? cause.message : "Ação não concluída.",
@@ -173,7 +185,7 @@ export default function GachaMarketPage() {
       const result = await api.gachaEconomyOpenBox(tier);
       setOpenedReward(result.reward);
       toast(`${BOX_LABEL[tier]} aberta.`, "success");
-      await load();
+      await refresh();
     } catch (cause) {
       setError(
         cause instanceof ApiError ? cause.message : "Ação não concluída.",
