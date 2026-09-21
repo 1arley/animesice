@@ -59,7 +59,7 @@ function MiniPair({
           <div key={p.id} className="w-28 shrink-0">
             <GachaCard pull={p} linkAnime={false} />
             <p className="mt-1 truncate text-caption text-mist">
-              {p.user.name?.trim() || p.user.userName || "o outro"} desse
+              {p.user?.name?.trim() || p.user?.userName || "o outro"} desse
             </p>
             <button type="button" aria-label={`Visualizar ${p.card.name}`} onClick={() => onPreview(p)} className="mt-1 min-h-11 w-full text-left font-mono text-caption text-ice hover:text-snow focus-visible:outline focus-visible:outline-2 focus-visible:outline-ice">
               Ver carta
@@ -102,8 +102,9 @@ function TradeRow({
         {incoming ? (
           <>
             <p className="text-body-sm text-snow">
-              {trade.offeredUserCard.user.name?.trim() ||
-                trade.offeredUserCard.user.userName}{" "}
+              {trade.offeredUserCard.user?.name?.trim() ||
+                trade.offeredUserCard.user?.userName ||
+                "Outro usuário"}{" "}
               quer trocar {trade.offeredUserCards?.length ?? 1} carta{(trade.offeredUserCards?.length ?? 1) > 1 ? "s" : ""} pela(s) sua(s):
             </p>
             <div className="mt-3">
@@ -114,8 +115,9 @@ function TradeRow({
           <>
             <p className="text-body-sm text-snow">
               Você quer trocar {trade.offeredUserCards?.length ?? 1} carta{(trade.offeredUserCards?.length ?? 1) > 1 ? "s" : ""} pela(s) de{" "}
-              {trade.requestedUserCard.user.name?.trim() ||
-                trade.requestedUserCard.user.userName}:
+              {trade.requestedUserCard.user?.name?.trim() ||
+                trade.requestedUserCard.user?.userName ||
+                "outro usuário"}:
             </p>
             <div className="mt-3">
               <MiniPair mine={trade.offeredUserCards?.length ? trade.offeredUserCards : [trade.offeredUserCard]} theirs={trade.requestedUserCards?.length ? trade.requestedUserCards : [trade.requestedUserCard]} onPreview={onPreview} />

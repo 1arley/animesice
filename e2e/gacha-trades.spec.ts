@@ -54,6 +54,28 @@ function trade(
 }
 
 test.describe("Gacha trading — fluxo de propostas", () => {
+  test("renderiza troca quando snapshot não inclui usuário", async ({ page }) => {
+    await blockAds(page);
+    await mockGeneric(page);
+    await loginAs(page);
+
+    await page.route(A("gacha/trades/mine$"), (route) =>
+      route.fulfill({
+        json: [
+          {
+            ...trade("t-ownerless", "PENDING", ZOE_BERU, MY_A),
+            offeredUserCard: { ...ZOE_BERU, user: undefined },
+          },
+        ],
+      }),
+    );
+
+    await page.goto("/gacha/trocas");
+
+    await expect(page.getByText("Outro usuário quer trocar")).toBeVisible();
+    await expect(page.getByText("Sinal interrompido")).toHaveCount(0);
+  });
+
   test("receber, aceitar, recusar e cancelar segregam para o histórico", async ({ page }) => {
     await blockAds(page);
     await mockGeneric(page);
