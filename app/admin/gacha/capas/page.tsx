@@ -116,7 +116,7 @@ export default function AdminCapasPage() {
   function startEditing(item: any) {
     setEditing(item.id);
     const { id: _id, createdAt: _c, updatedAt: _u, createdById: _cb, version: _v, ...fields } = item;
-    setForm({ ...fields, description: fields.description ?? "", previewUrl: fields.previewUrl ?? "" });
+    setForm({ ...fields, svg: fields.svg ?? "", description: fields.description ?? "", previewUrl: fields.previewUrl ?? "" });
     const parsed = deserialize(item.svg ?? "");
     setLayers(parsed.layers);
     setExtra(parsed.extra);
@@ -238,7 +238,7 @@ export default function AdminCapasPage() {
         <aside>
           <h2 className="font-display text-body-lg text-snow">Preview</h2>
           <div className="relative mt-3 aspect-[5/7] overflow-hidden border border-hairline bg-ink">
-            <Image fill unoptimized className="object-contain" alt="Preview da capa" src={`data:image/svg+xml;charset=utf-8,${encodeURIComponent(form.svg.replace(/<script[\s\S]*?<\/script>/gi, ""))}`} />
+            <Image fill unoptimized className="object-contain" alt="Preview da capa" src={`data:image/svg+xml;charset=utf-8,${encodeURIComponent((form.svg ?? "").replace(/<script[\s\S]*?<\/script>/gi, ""))}`} />
           </div>
           <p className="mt-2 text-caption text-mist">Selecione camada para ajustar posição e cor.</p>
         </aside>
