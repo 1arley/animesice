@@ -99,6 +99,7 @@ function GachaPageContent() {
   const [error, setError] = useState("");
   const [preview, setPreview] = useState<GachaPull | null>(null);
   const [spins, setSpins] = useState<GachaSpinPreview[]>([]);
+  const [spinResets, setSpinResets] = useState(0);
   const [selectedSpinId, setSelectedSpinId] = useState<string | null>(null);
   const [spinning, setSpinning] = useState(false);
   const [spinResult, setSpinResult] = useState<GachaSpinPreview | null>(null);
@@ -155,13 +156,19 @@ function GachaPageContent() {
           api.gachaRecent(12).catch(() => []),
           api.gachaRanking(10).catch(() => []),
         ]);
-        const sp = user ? await api.gachaSpins().catch(() => []) : [];
+        const [sp, economy] = user
+          ? await Promise.all([
+              api.gachaSpins().catch(() => []),
+              api.gachaEconomyInventory().catch(() => null),
+            ])
+          : [[], null];
         if (cancelled) return;
         setStatus(s);
         setStatusError(!!user && s === null);
         setRecent(r);
         setRanking(k);
         setSpins(sp);
+        setSpinResets(economy?.spinResets ?? 0);
         if (sp.length > 0) setSelectedSpinId(sp[sp.length - 1]?.id ?? null);
       } finally {
         if (!cancelled) setLoading(false);
@@ -200,11 +207,15 @@ function GachaPageContent() {
         api.gachaStatus().catch(() => null),
         api.gachaRecent(12).catch(() => []),
       ]);
-      const sp = await api.gachaSpins().catch(() => []);
+      const [sp, economy] = await Promise.all([
+        api.gachaSpins().catch(() => []),
+        api.gachaEconomyInventory().catch(() => null),
+      ]);
       setStatus(s);
       setStatusError(s === null);
       setRecent(r);
       setSpins(sp);
+      setSpinResets(economy?.spinResets ?? 0);
     } catch {}
   }
 
@@ -228,6 +239,18 @@ function GachaPageContent() {
       setError(err instanceof ApiError ? err.message : "Erro ao girar.");
     } finally {
       setSpinning(false);
+    }
+  }
+
+  async function handleSpinReset() {
+    if (spinResets < 1 || (status?.spinsLeft ?? 5) > 0) return;
+    setError("");
+    try {
+      await api.gachaEconomyUseReset();
+      toast("Reset usado. Mais 5 previews liberados.", "success");
+      await refresh();
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Erro ao usar reset.");
     }
   }
 
@@ -529,6 +552,17 @@ function GachaPageContent() {
                       ? "Girando…"
                       : `Girar (${status?.spinsLeft ?? 5})`}
                   </button>
+                  {spinResets > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => void handleSpinReset()}
+                      disabled={(status?.spinsLeft ?? 5) > 0}
+                      title="Libera mais 5 previews depois que os 5 giros atuais acabam"
+                      className="btn-ghost w-fit px-5 py-4 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      Usar reset ({spinResets})
+                    </button>
+                  )}
                   <button
                     type="button"
                     onClick={() => setConfirmOpen(true)}

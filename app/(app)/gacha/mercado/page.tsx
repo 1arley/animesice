@@ -47,7 +47,8 @@ function rewardLabel(reward: Record<string, unknown> | null): string {
   const cat = reward.category;
   if (cat === "CRYSTAL") return `${String(reward.amount ?? 0)} 💎`;
   if (cat === "KEY") return `${String(reward.amount ?? 1)} chave`;
-  if (cat === "SPIN_RESET") return `${String(reward.amount ?? 1)} reset`;
+  if (cat === "SPIN_RESET")
+    return `${String(reward.amount ?? 1)} reset de giro (5 previews)`;
   if (cat === "SKIN") return `Skin: ${String(reward.name ?? "?")}`;
   if (cat === "CARD")
     return `Carta ${String(reward.name ?? "?")}${reward.foil ? ` · ${String(reward.foil)}` : ""}`;
@@ -408,6 +409,12 @@ export default function GachaMarketPage() {
             <p className="mt-1 font-display text-xl text-snow">
               {rewardLabel(openedReward)}
             </p>
+            {openedReward.category === "SPIN_RESET" && (
+              <p className="mt-1 max-w-md text-caption text-mist">
+                Reset guardado no inventário. Use após gastar os 5 previews da
+                hora para liberar mais 5.
+              </p>
+            )}
           </div>
           <button
             type="button"
