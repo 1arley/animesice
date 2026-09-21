@@ -25,7 +25,18 @@
   /* Atmosfera cinematográfica: iluminação superior sutil e difusa */
   body {
     font-family: theme("fontFamily.sans");
-    background: radial-gradient(1200px 500px at 50% -50px, rgba(56, 232, 218, 0.045), transparent 70%), radial-gradient(800px 400px at 85% 15%, rgba(0, 140, 218, 0.025), transparent 65%), theme("colors.ink");
+    background:
+      radial-gradient(
+        1200px 500px at 50% -50px,
+        rgba(56, 232, 218, 0.045),
+        transparent 70%
+      ),
+      radial-gradient(
+        800px 400px at 85% 15%,
+        rgba(0, 140, 218, 0.025),
+        transparent 65%
+      ),
+      theme("colors.ink");
     min-height: 100vh;
   }
 
@@ -74,7 +85,11 @@
       inset: 0;
       z-index: 20;
       pointer-events: none;
-      background: radial-gradient(140% 100% at 50% 50%, transparent 70%, rgba(4, 7, 12, 0.45) 100%);
+      background: radial-gradient(
+        140% 100% at 50% 50%,
+        transparent 70%,
+        rgba(4, 7, 12, 0.45) 100%
+      );
     }
   }
 
@@ -348,7 +363,12 @@
     position: absolute;
     inset: 0;
     pointer-events: none;
-    background: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.1) 60%, rgba(8, 12, 18, 0.8) 100%);
+    background: linear-gradient(
+      180deg,
+      transparent 0%,
+      rgba(0, 0, 0, 0.1) 60%,
+      rgba(8, 12, 18, 0.8) 100%
+    );
   }
 
   /* Subida de página suave */
@@ -369,7 +389,18 @@
   .profile-cover {
     position: relative;
     overflow: hidden;
-    background: radial-gradient(1000px 420px at 50% -20%, rgba(56, 232, 218, 0.08), transparent 65%), linear-gradient(180deg, rgba(22, 32, 47, 0.9) 0%, rgba(14, 20, 29, 0.95) 50%, theme("colors.ink") 100%);
+    background:
+      radial-gradient(
+        1000px 420px at 50% -20%,
+        rgba(56, 232, 218, 0.08),
+        transparent 65%
+      ),
+      linear-gradient(
+        180deg,
+        rgba(22, 32, 47, 0.9) 0%,
+        rgba(14, 20, 29, 0.95) 50%,
+        theme("colors.ink") 100%
+      );
   }
 
   .profile-cover::before {
@@ -379,7 +410,13 @@
     right: 0;
     bottom: 0;
     height: 1px;
-    background: linear-gradient(90deg, transparent, rgba(56, 232, 218, 0.4) 35%, rgba(56, 232, 218, 0.1) 70%, transparent);
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(56, 232, 218, 0.4) 35%,
+      rgba(56, 232, 218, 0.1) 70%,
+      transparent
+    );
   }
 
   .btn-ice,
@@ -701,7 +738,12 @@
     position: absolute;
     inset: 0;
     transform: translateX(-100%);
-    background: linear-gradient(90deg, transparent 0%, theme("colors.slate") 50%, transparent 100%);
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      theme("colors.slate") 50%,
+      transparent 100%
+    );
     animation: skeleton-sweep 1.5s ease-in-out infinite;
   }
 
@@ -735,12 +777,34 @@
      sujeira nas bordas. Overlay CSS puro; angulo (--sc1/--sc2) e espacamento
      (--scg) vem de seed do pull.id, com fallback p/ quando nao houver. */
   .card-scratches {
-    background-image: repeating-linear-gradient(var(--sc1, 115deg), transparent 0 calc(var(--scg, 47px) - 1px), rgba(255, 255, 255, 0.06) calc(var(--scg, 47px)) calc(var(--scg, 47px) + 1px), transparent calc(var(--scg, 47px) + 1px) calc(var(--scg, 47px) * 2), rgba(0, 0, 0, 0.1) calc(var(--scg, 47px) * 2) calc(var(--scg, 47px) * 2 + 1px));
+    background-image: repeating-linear-gradient(
+      var(--sc1, 115deg),
+      transparent 0 calc(var(--scg, 47px) - 1px),
+      rgba(255, 255, 255, 0.06) calc(var(--scg, 47px))
+        calc(var(--scg, 47px) + 1px),
+      transparent calc(var(--scg, 47px) + 1px) calc(var(--scg, 47px) * 2),
+      rgba(0, 0, 0, 0.1) calc(var(--scg, 47px) * 2)
+        calc(var(--scg, 47px) * 2 + 1px)
+    );
   }
   .card-scratches-poor {
     background-image:
-      repeating-linear-gradient(var(--sc1, 115deg), transparent 0 calc(var(--scg, 47px) / 2 - 1px), rgba(255, 255, 255, 0.08) calc(var(--scg, 47px) / 2) calc(var(--scg, 47px) / 2 + 1px), transparent calc(var(--scg, 47px) / 2 + 1px) var(--scg, 47px), rgba(0, 0, 0, 0.14) var(--scg, 47px) calc(var(--scg, 47px) + 1px)),
-      repeating-linear-gradient(var(--sc2, -70deg), transparent 0 calc(var(--scg, 47px) * 0.7 - 1px), rgba(0, 0, 0, 0.1) calc(var(--scg, 47px) * 0.7) calc(var(--scg, 47px) * 0.7 + 1px), transparent calc(var(--scg, 47px) * 0.7 + 1px) calc(var(--scg, 47px) * 1.4));
+      repeating-linear-gradient(
+        var(--sc1, 115deg),
+        transparent 0 calc(var(--scg, 47px) / 2 - 1px),
+        rgba(255, 255, 255, 0.08) calc(var(--scg, 47px) / 2)
+          calc(var(--scg, 47px) / 2 + 1px),
+        transparent calc(var(--scg, 47px) / 2 + 1px) var(--scg, 47px),
+        rgba(0, 0, 0, 0.14) var(--scg, 47px) calc(var(--scg, 47px) + 1px)
+      ),
+      repeating-linear-gradient(
+        var(--sc2, -70deg),
+        transparent 0 calc(var(--scg, 47px) * 0.7 - 1px),
+        rgba(0, 0, 0, 0.1) calc(var(--scg, 47px) * 0.7)
+          calc(var(--scg, 47px) * 0.7 + 1px),
+        transparent calc(var(--scg, 47px) * 0.7 + 1px)
+          calc(var(--scg, 47px) * 1.4)
+      );
     box-shadow: inset 0 0 48px 18px rgba(0, 0, 0, 0.35);
   }
 
@@ -755,13 +819,30 @@
     box-shadow: inset 0 0 0 1px rgba(241, 245, 249, 0.2);
   }
   .condition-surface-ex {
-    background: linear-gradient(126deg, rgba(255, 255, 255, 0.1), transparent 16% 82%, rgba(0, 0, 0, 0.16)), repeating-linear-gradient(112deg, transparent 0 38px, rgba(255, 255, 255, 0.13) 39px 40px, transparent 41px 76px);
+    background:
+      linear-gradient(
+        126deg,
+        rgba(255, 255, 255, 0.1),
+        transparent 16% 82%,
+        rgba(0, 0, 0, 0.16)
+      ),
+      repeating-linear-gradient(
+        112deg,
+        transparent 0 38px,
+        rgba(255, 255, 255, 0.13) 39px 40px,
+        transparent 41px 76px
+      );
     box-shadow:
       inset 0 0 0 1px rgba(251, 191, 36, 0.25),
       inset 0 0 28px 6px rgba(0, 0, 0, 0.14);
   }
   .condition-mint-glare {
-    background: linear-gradient(115deg, transparent 28%, rgba(255, 255, 255, 0.3) 47%, transparent 64%);
+    background: linear-gradient(
+      115deg,
+      transparent 28%,
+      rgba(255, 255, 255, 0.3) 47%,
+      transparent 64%
+    );
     background-size: 240% 100%;
     opacity: 0;
   }
@@ -1149,7 +1230,12 @@
 /* z-3: partículas de poeira emCSS — leve (apenas background-position).
    Não é Canvas/WebGL: não compete com a Aurora na GPU. */
 .hero-dust {
-  background-image: radial-gradient(1px 1px at 20% 30%, rgba(56, 232, 218, 0.3), transparent), radial-gradient(1px 1px at 60% 70%, rgba(233, 239, 245, 0.2), transparent), radial-gradient(2px 2px at 80% 40%, rgba(56, 232, 218, 0.15), transparent), radial-gradient(1px 1px at 40% 80%, rgba(233, 239, 245, 0.1), transparent), radial-gradient(1px 1px at 90% 20%, rgba(56, 232, 218, 0.2), transparent);
+  background-image:
+    radial-gradient(1px 1px at 20% 30%, rgba(56, 232, 218, 0.3), transparent),
+    radial-gradient(1px 1px at 60% 70%, rgba(233, 239, 245, 0.2), transparent),
+    radial-gradient(2px 2px at 80% 40%, rgba(56, 232, 218, 0.15), transparent),
+    radial-gradient(1px 1px at 40% 80%, rgba(233, 239, 245, 0.1), transparent),
+    radial-gradient(1px 1px at 90% 20%, rgba(56, 232, 218, 0.2), transparent);
   background-size: 800px 600px;
   animation: hero-dust-drift 20s linear infinite;
   opacity: 0.5;
@@ -1200,7 +1286,12 @@
 .crystal-motion .crystal-glow {
   position: absolute;
   inset: -55%;
-  background: radial-gradient(circle at 50% 46%, rgba(0, 229, 255, 0.9) 0%, rgba(0, 140, 218, 0.28) 38%, rgba(0, 140, 218, 0) 68%);
+  background: radial-gradient(
+    circle at 50% 46%,
+    rgba(0, 229, 255, 0.9) 0%,
+    rgba(0, 140, 218, 0.28) 38%,
+    rgba(0, 140, 218, 0) 68%
+  );
   filter: blur(22px);
   opacity: 0;
   pointer-events: none;
@@ -1517,24 +1608,54 @@
   border-radius: 999px;
 }
 .card-burn-visual::before {
-  background: radial-gradient(ellipse at 25% 90%, rgba(255, 214, 92, 0.95) 0 8%, rgba(255, 91, 31, 0.8) 18%, transparent 42%), radial-gradient(ellipse at 70% 85%, rgba(255, 236, 153, 0.9) 0 7%, rgba(239, 68, 68, 0.8) 20%, transparent 45%);
+  background:
+    radial-gradient(
+      ellipse at 25% 90%,
+      rgba(255, 214, 92, 0.95) 0 8%,
+      rgba(255, 91, 31, 0.8) 18%,
+      transparent 42%
+    ),
+    radial-gradient(
+      ellipse at 70% 85%,
+      rgba(255, 236, 153, 0.9) 0 7%,
+      rgba(239, 68, 68, 0.8) 20%,
+      transparent 45%
+    );
   mix-blend-mode: screen;
   transform-origin: 50% 100%;
   filter: blur(6px);
-  -webkit-mask-image: radial-gradient(ellipse 85% 75% at 50% 85%, black 50%, transparent 75%);
-  mask-image: radial-gradient(ellipse 85% 75% at 50% 85%, black 50%, transparent 75%);
+  -webkit-mask-image: radial-gradient(
+    ellipse 85% 75% at 50% 85%,
+    black 50%,
+    transparent 75%
+  );
+  mask-image: radial-gradient(
+    ellipse 85% 75% at 50% 85%,
+    black 50%,
+    transparent 75%
+  );
   animation: card-burn-flame 800ms ease-out forwards;
 }
 .card-burn-visual::after {
-  background-image: radial-gradient(circle, rgba(255, 214, 92, 0.95) 0 2px, transparent 3px), radial-gradient(circle, rgba(248, 113, 113, 0.9) 0 1px, transparent 2px);
+  background-image:
+    radial-gradient(circle, rgba(255, 214, 92, 0.95) 0 2px, transparent 3px),
+    radial-gradient(circle, rgba(248, 113, 113, 0.9) 0 1px, transparent 2px);
   background-position:
     20% 80%,
     75% 65%;
   background-size:
     38px 45px,
     31px 39px;
-  -webkit-mask-image: radial-gradient(ellipse 95% 95% at 50% 50%, black 55%, transparent 80%);
-  mask-image: radial-gradient(ellipse 95% 95% at 50% 50%, black 55%, transparent 80%);
+  -webkit-mask-image: radial-gradient(
+    ellipse 95% 95% at 50% 50%,
+    black 55%,
+    transparent 80%
+  );
+  mask-image: radial-gradient(
+    ellipse 95% 95% at 50% 50%,
+    black 55%,
+    transparent 80%
+  );
   animation: card-burn-embers 900ms ease-out forwards;
 }
 
@@ -1652,11 +1773,55 @@
   }
 }
 
+@keyframes market-box-open {
+  0% {
+    transform: translateY(8px) scale(0.96);
+    opacity: 0.55;
+  }
+  100% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes market-reveal {
+  0% {
+    transform: translateY(12px);
+    opacity: 0;
+    clip-path: inset(0 0 100% 0);
+  }
+  60% {
+    clip-path: inset(0 0 0 0);
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.market-box-opening {
+  animation: market-box-open 600ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  transform-origin: center bottom;
+  will-change: transform, opacity;
+}
+
+.market-reveal {
+  animation: market-reveal 500ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.market-card-art,
+.market-reward-image {
+  border: 1px solid rgba(126, 224, 255, 0.25);
+  box-shadow: 0 0 24px rgba(56, 189, 248, 0.12);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .toast-item,
   .reroll-shuffle,
   .reroll-landed,
-  .balance-pop {
+  .balance-pop,
+  .market-box-opening,
+  .market-reveal {
     animation: none;
   }
 }

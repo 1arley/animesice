@@ -2,7 +2,9 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { api, ApiError } from "@/lib/api";
+import { safeImageSrc } from "@/lib/url";
 import { useAuth } from "@/lib/auth-context";
 import { useToast } from "@/components/common/ToastProvider";
 import type {
@@ -79,9 +81,11 @@ export default function GachaMarketPage() {
     name: string;
     data: GachaMarketHistory;
   } | null>(null);
-  const [openedReward, setOpenedReward] = useState<Record<string, unknown> | null>(
-    null,
-  );
+  const [openedReward, setOpenedReward] = useState<Record<
+    string,
+    unknown
+  > | null>(null);
+  const [openingTier, setOpeningTier] = useState<GachaBoxTier | null>(null);
   const [orderTarget, setOrderTarget] =
     useState<GachaEconomyListingItem | null>(null);
   const [orderPrice, setOrderPrice] = useState("");
@@ -190,6 +194,7 @@ export default function GachaMarketPage() {
     const key = `open-${tier}`;
     setBusy(key);
     setError("");
+    setOpeningTier(tier);
     try {
       const result = await api.gachaEconomyOpenBox(tier);
       setOpenedReward(result.reward);
@@ -201,6 +206,7 @@ export default function GachaMarketPage() {
       );
     } finally {
       setBusy(null);
+      setOpeningTier(null);
     }
   }
 
@@ -308,8 +314,21 @@ export default function GachaMarketPage() {
         <aside
           role="status"
           aria-live="polite"
-          className="mt-5 flex flex-wrap items-center justify-between gap-4 border border-ice/40 bg-panel p-4"
+          className="market-reveal mt-5 flex flex-wrap items-center justify-between gap-4 border border-ice/40 bg-panel p-4"
         >
+          {safeImageSrc(
+            String(openedReward.imageUrl ?? openedReward.image ?? ""),
+          ) && (
+            <Image
+              src={safeImageSrc(
+                String(openedReward.imageUrl ?? openedReward.image),
+              )!}
+              alt=""
+              width={72}
+              height={96}
+              className="market-reward-image object-cover"
+            />
+          )}
           <div>
             <h2 className="font-display text-body-sm text-ice">
               Recompensa da caixa
@@ -366,7 +385,10 @@ export default function GachaMarketPage() {
                   const count = inventory[BOX_FIELD[tier]];
                   const canOpen = count > 0 && inventory.keys > 0;
                   return (
-                    <article key={tier} className="bg-panel p-5">
+                    <article
+                      key={tier}
+                      className={`market-box bg-panel p-5 ${openingTier === tier ? "market-box-opening" : ""}`}
+                    >
                       <div className="flex items-baseline justify-between gap-3">
                         <h3 className="font-display text-xl text-snow">
                           {BOX_LABEL[tier]}
@@ -548,12 +570,12 @@ export default function GachaMarketPage() {
                         (inventory?.available ?? 0) < offer.price
                       }
                       onClick={() =>
-            void act(
-              `offer-${offer.id}`,
-              () => api.gachaEconomyBuyOffer(offer.id),
-              "Oferta comprada.",
-              true,
-            )
+                        void act(
+                          `offer-${offer.id}`,
+                          () => api.gachaEconomyBuyOffer(offer.id),
+                          "Oferta comprada.",
+                          true,
+                        )
                       }
                       className="btn-ghost min-h-11 shrink-0 px-3 disabled:opacity-40"
                     >
@@ -835,6 +857,25 @@ function MarketSection({
         <ul className="mt-4 grid gap-px bg-hairline sm:grid-cols-2 lg:grid-cols-3">
           {listings.map((listing) => (
             <li key={listing.id} className="min-w-0 bg-panel p-4">
+              {(() => {
+                const image = safeImageSrc(
+                  listing.item.image ??
+                    listing.item.imageUrl ??
+                    listing.item.card?.image,
+                );
+                return image ? (
+                  <div className="market-card-art mb-4 aspect-[3/4] overflow-hidden bg-ink">
+                    <Image
+                      src={image}
+                      alt={itemName(listing)}
+                      width={240}
+                      height={320}
+                      className="h-full w-full object-cover"
+                      sizes="(max-width: 640px) 45vw, (max-width: 1024px) 30vw, 220px"
+                    />
+                  </div>
+                ) : null;
+              })()}
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <h3 className="truncate font-display text-body-sm text-snow">
