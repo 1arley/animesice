@@ -53,7 +53,7 @@ function MiniPair({
       <div className="w-28 shrink-0">
         <GachaCard pull={theirs} linkAnime={false} />
         <p className="mt-1 truncate text-caption text-mist">
-          {theirs.user.name?.trim() || theirs.user.userName || "o outro"} desse
+          {theirs.user?.name?.trim() || theirs.user?.userName || "o outro"} desse
         </p>
         <button type="button" aria-label={`Visualizar ${theirs.card.name}`} onClick={() => onPreview(theirs)} className="mt-1 min-h-11 w-full text-left font-mono text-caption text-ice hover:text-snow focus-visible:outline focus-visible:outline-2 focus-visible:outline-ice">
           Ver carta
@@ -94,8 +94,9 @@ function TradeRow({
         {incoming ? (
           <>
             <p className="text-body-sm text-snow">
-              {trade.offeredUserCard.user.name?.trim() ||
-                trade.offeredUserCard.user.userName}{" "}
+              {trade.offeredUserCard.user?.name?.trim() ||
+                trade.offeredUserCard.user?.userName ||
+                "Outro usuário"}{" "}
               quer trocar a carta dele pela sua:
             </p>
             <div className="mt-3">
@@ -106,8 +107,9 @@ function TradeRow({
           <>
             <p className="text-body-sm text-snow">
               Você quer trocar a sua carta pela de{" "}
-              {trade.requestedUserCard.user.name?.trim() ||
-                trade.requestedUserCard.user.userName}:
+              {trade.requestedUserCard.user?.name?.trim() ||
+                trade.requestedUserCard.user?.userName ||
+                "outro usuário"}:
             </p>
             <div className="mt-3">
               <MiniPair mine={trade.offeredUserCard} theirs={trade.requestedUserCard} onPreview={onPreview} />
