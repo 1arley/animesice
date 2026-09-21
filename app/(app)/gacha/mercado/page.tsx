@@ -40,6 +40,19 @@ function itemName(listing: GachaEconomyListingItem): string {
   );
 }
 
+function rewardLabel(reward: Record<string, unknown> | null): string {
+  if (!reward) return "";
+  const cat = reward.category;
+  if (cat === "CRYSTAL") return `${String(reward.amount ?? 0)} 💎`;
+  if (cat === "KEY") return `${String(reward.amount ?? 1)} chave`;
+  if (cat === "SPIN_RESET") return `${String(reward.amount ?? 1)} reset`;
+  if (cat === "SKIN") return `Skin: ${String(reward.name ?? "?")}`;
+  if (cat === "CARD")
+    return `Carta ${String(reward.name ?? "?")}${reward.foil ? ` · ${String(reward.foil)}` : ""}`;
+  if (cat === "CARD_BACK") return `Capa: ${String(reward.name ?? "?")}`;
+  return cat ? String(cat) : "";
+}
+
 function timeLeft(expiresAt: string): string {
   const hours = Math.ceil(
     (new Date(expiresAt).getTime() - Date.now()) / 3_600_000,
@@ -66,6 +79,9 @@ export default function GachaMarketPage() {
     name: string;
     data: GachaMarketHistory;
   } | null>(null);
+  const [openedReward, setOpenedReward] = useState<Record<string, unknown> | null>(
+    null,
+  );
   const [orderTarget, setOrderTarget] =
     useState<GachaEconomyListingItem | null>(null);
   const [orderPrice, setOrderPrice] = useState("");
@@ -139,6 +155,24 @@ export default function GachaMarketPage() {
     try {
       await action();
       toast(message, "success");
+      await load();
+    } catch (cause) {
+      setError(
+        cause instanceof ApiError ? cause.message : "Ação não concluída.",
+      );
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function openBox(tier: GachaBoxTier) {
+    const key = `open-${tier}`;
+    setBusy(key);
+    setError("");
+    try {
+      const result = await api.gachaEconomyOpenBox(tier);
+      setOpenedReward(result.reward);
+      toast(`${BOX_LABEL[tier]} aberta.`, "success");
       await load();
     } catch (cause) {
       setError(
@@ -248,6 +282,30 @@ export default function GachaMarketPage() {
         </div>
       )}
 
+      {openedReward && (
+        <aside
+          role="status"
+          aria-live="polite"
+          className="mt-5 flex flex-wrap items-center justify-between gap-4 border border-ice/40 bg-panel p-4"
+        >
+          <div>
+            <h2 className="font-display text-body-sm text-ice">
+              Recompensa da caixa
+            </h2>
+            <p className="mt-1 font-display text-xl text-snow">
+              {rewardLabel(openedReward)}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setOpenedReward(null)}
+            className="btn-ghost min-h-11 px-3"
+          >
+            Fechar
+          </button>
+        </aside>
+      )}
+
       {loading ? (
         <div className="skeleton mt-8 h-72" aria-busy="true" />
       ) : (
@@ -319,13 +377,7 @@ export default function GachaMarketPage() {
                         <button
                           type="button"
                           disabled={busy !== null || !canOpen}
-                          onClick={() =>
-                            void act(
-                              `open-${tier}`,
-                              () => api.gachaEconomyOpenBox(tier),
-                              `${BOX_LABEL[tier]} aberta.`,
-                            )
-                          }
+                          onClick={() => void openBox(tier)}
                           className="btn-ice min-h-11 disabled:opacity-40"
                         >
                           {busy === `open-${tier}` ? "Abrindo…" : "Abrir"}
@@ -391,14 +443,14 @@ export default function GachaMarketPage() {
                       void act(
                         "daily",
                         api.gachaEconomyDaily,
-                        "+350 Crystal resgatados.",
+                        `+${odds?.dailyBonus ?? 350} Crystal resgatados.`,
                       )
                     }
                     className="btn-ghost min-h-11 px-4"
                   >
                     {inventory?.dailyClaimedToday
                       ? "Resgatado hoje"
-                      : "Resgatar 350"}
+                      : `Resgatar ${odds?.dailyBonus ?? 350}`}
                   </button>
                   <button
                     type="button"

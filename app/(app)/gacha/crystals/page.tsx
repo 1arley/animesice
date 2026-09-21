@@ -49,6 +49,7 @@ export default function GachaCrystalsPage() {
   const [packages, setPackages] = useState<
     Array<{ id: string; cents: number; crystals: number }>
   >([...CRYSTAL_PACKAGES]);
+  const [dailyBonus, setDailyBonus] = useState(350);
   const purchaseKeys = useRef<Record<string, string>>({});
   const { toast } = useToast();
 
@@ -64,6 +65,7 @@ export default function GachaCrystalsPage() {
     try {
       const odds = await api.gachaEconomyOdds();
       setPackages(odds.crystalPackages);
+      setDailyBonus(odds.dailyBonus);
     } catch {}
   }, []);
 
@@ -231,7 +233,7 @@ export default function GachaCrystalsPage() {
             ? "Bônus diário resgatado ✓"
             : claimingDaily
               ? "Resgatando…"
-              : "Bônus diário · 350 💎"}
+              : `Bônus diário · ${dailyBonus} 💎`}
         </button>
       </div>
 

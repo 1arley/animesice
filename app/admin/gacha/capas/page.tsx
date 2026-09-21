@@ -35,11 +35,12 @@ function unescapeXml(s: string) {
   return s.replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&apos;/g, "'");
 }
 
-function deserialize(svg: string): Layer[] {
+function deserialize(svg: string): { layers: Layer[]; extra: string } {
   const doc = new DOMParser().parseFromString(svg, "image/svg+xml");
   const root = doc.querySelector("svg");
-  if (!root) return DEFAULT_LAYERS;
+  if (!root) return { layers: DEFAULT_LAYERS, extra: "" };
   const layers: Layer[] = [];
+  const extra: string[] = [];
   for (const child of Array.from(root.children)) {
     if (child.tagName === "rect") {
       layers.push({
@@ -60,13 +61,18 @@ function deserialize(svg: string): Layer[] {
         fill: child.getAttribute("fill") ?? "#ffffff",
         text: unescapeXml(child.textContent ?? ""),
       });
+    } else {
+      extra.push(child.outerHTML);
     }
   }
-  return layers.length ? layers : DEFAULT_LAYERS;
+  return {
+    layers: layers.length ? layers : DEFAULT_LAYERS,
+    extra: extra.join(""),
+  };
 }
 
-function serialize(layers: Layer[]) {
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 750 1050">${layers
+function serialize(layers: Layer[], extra: string) {
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 750 1050">${extra}${layers
     .filter((l) => !l.hidden)
     .map((l) =>
       l.type === "rect"
@@ -82,11 +88,12 @@ export default function AdminCapasPage() {
   const [editing, setEditing] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [layers, setLayers] = useState<Layer[]>(DEFAULT_LAYERS);
+  const [extra, setExtra] = useState("");
   const [selected, setSelected] = useState("bg");
   function updateLayer(patch: Partial<Layer>) {
     const next = layers.map((l) => (l.id === selected ? { ...l, ...patch } : l));
     setLayers(next);
-    setForm((f) => ({ ...f, svg: serialize(next) }));
+    setForm((f) => ({ ...f, svg: serialize(next, extra) }));
   }
   function addLayer(type: "rect" | "text") {
     const layer: Layer =
@@ -96,7 +103,7 @@ export default function AdminCapasPage() {
     const next = [...layers, layer];
     setLayers(next);
     setSelected(layer.id);
-    setForm((f) => ({ ...f, svg: serialize(next) }));
+    setForm((f) => ({ ...f, svg: serialize(next, extra) }));
   }
   const load = () =>
     api
@@ -111,13 +118,15 @@ export default function AdminCapasPage() {
     const { id: _id, createdAt: _c, updatedAt: _u, createdById: _cb, version: _v, ...fields } = item;
     setForm({ ...fields, description: fields.description ?? "", previewUrl: fields.previewUrl ?? "" });
     const parsed = deserialize(item.svg ?? "");
-    setLayers(parsed);
-    setSelected(parsed[0]?.id ?? "");
+    setLayers(parsed.layers);
+    setExtra(parsed.extra);
+    setSelected(parsed.layers[0]?.id ?? "");
   }
   function cancelEditing() {
     setEditing(null);
     setForm(blank);
     setLayers(DEFAULT_LAYERS);
+    setExtra("");
     setSelected("bg");
   }
   async function save(event: React.FormEvent) {
@@ -198,7 +207,7 @@ export default function AdminCapasPage() {
                 const next = layers.filter((l) => l.id !== selected);
                 setLayers(next);
                 setSelected(next[0]?.id ?? "");
-                setForm((f) => ({ ...f, svg: serialize(next) }));
+                setForm((f) => ({ ...f, svg: serialize(next, extra) }));
               }}
             >
               Excluir camada
