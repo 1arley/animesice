@@ -50,6 +50,8 @@ export default function GachaCrystalsPage() {
     Array<{ id: string; cents: number; crystals: number }>
   >([...CRYSTAL_PACKAGES]);
   const [dailyBonus, setDailyBonus] = useState(350);
+  const [redeemCode, setRedeemCode] = useState("");
+  const [redeeming, setRedeeming] = useState(false);
   const purchaseKeys = useRef<Record<string, string>>({});
   const { toast } = useToast();
 
@@ -114,6 +116,21 @@ export default function GachaCrystalsPage() {
     } finally {
       setClaimingDaily(false);
     }
+  }
+
+  async function handleRedeemCode(e: React.FormEvent) {
+    e.preventDefault();
+    setRedeeming(true);
+    setError("");
+    try {
+      const result = await api.gachaRedeemCode(redeemCode);
+      setRedeemCode("");
+      setBalance(result.balance);
+      toast(`Código resgatado: +${result.crystals.toLocaleString("pt-BR")} 💎.`, "success");
+      await load(1, false);
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : "Não foi possível resgatar o código.");
+    } finally { setRedeeming(false); }
   }
 
   async function handleCrystalPurchase(packageId: string) {
@@ -236,6 +253,14 @@ export default function GachaCrystalsPage() {
               : `Bônus diário · ${dailyBonus} 💎`}
         </button>
       </div>
+
+      <form onSubmit={handleRedeemCode} className="mt-4 border border-hairline bg-panel p-4">
+        <p className="font-mono text-caption text-mist">CÓDIGO PROMOCIONAL</p>
+        <div className="mt-2 flex flex-wrap gap-2">
+          <input value={redeemCode} onChange={(e) => setRedeemCode(e.target.value.toUpperCase())} placeholder="Ex.: ICE-2500" className="input min-w-56 flex-1" maxLength={64} required />
+          <button type="submit" disabled={redeeming} className="btn-primary px-4 py-2">{redeeming ? "Resgatando…" : "Resgatar"}</button>
+        </div>
+      </form>
 
       {error && (
         <div

@@ -1437,7 +1437,16 @@ export const api = {
     }),
 
   gachaCrystals: (page = 1, limit = 20) =>
-    request<CrystalPage>(`/gacha/crystals?page=${page}&limit=${limit}`),
+      request<CrystalPage>(`/gacha/crystals?page=${page}&limit=${limit}`),
+  gachaRedeemCode: (code: string) =>
+    request<{ crystals: number; balance: number }>(`/gacha/crystals/redeem`, {
+      method: "POST", body: JSON.stringify({ code }),
+    }),
+  adminCrystalCodes: () => request(`/gacha/admin/crystal-codes`),
+  adminCreateCrystalCode: (body: { code?: string; crystals: number; maxUses?: number; expiresAt?: string }) =>
+    request(`/gacha/admin/crystal-codes`, { method: "POST", body: JSON.stringify(body) }),
+  adminToggleCrystalCode: (id: string, active: boolean) =>
+    request(`/gacha/admin/crystal-codes/${id}`, { method: "PATCH", body: JSON.stringify({ active }) }),
 
   gachaDailyBonus: () =>
     request<{ balance: number; claimed: number }>(`/gacha/crystals/daily`, {
