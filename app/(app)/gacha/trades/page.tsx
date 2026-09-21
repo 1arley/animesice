@@ -32,32 +32,40 @@ function MiniPair({
   theirs,
   onPreview,
 }: {
-  mine: GachaPull;
-  theirs: GachaPull;
+  mine: GachaPull[];
+  theirs: GachaPull[];
   onPreview: (pull: GachaPull) => void;
 }) {
   return (
     <div className="flex items-stretch gap-4">
-      <div className="w-28 shrink-0">
-        <GachaCard pull={mine} linkAnime={false} />
-        <p className="mt-1 truncate text-caption text-mist">
-          Sua {mine.card.name}
-        </p>
-        <button type="button" aria-label={`Visualizar ${mine.card.name}`} onClick={() => onPreview(mine)} className="mt-1 min-h-11 w-full text-left font-mono text-caption text-ice hover:text-snow focus-visible:outline focus-visible:outline-2 focus-visible:outline-ice">
-          Ver carta
-        </button>
+      <div className="flex flex-wrap gap-2">
+        {mine.map((p) => (
+          <div key={p.id} className="w-28 shrink-0">
+            <GachaCard pull={p} linkAnime={false} />
+            <p className="mt-1 truncate text-caption text-mist">
+              Sua {p.card.name}
+            </p>
+            <button type="button" aria-label={`Visualizar ${p.card.name}`} onClick={() => onPreview(p)} className="mt-1 min-h-11 w-full text-left font-mono text-caption text-ice hover:text-snow focus-visible:outline focus-visible:outline-2 focus-visible:outline-ice">
+              Ver carta
+            </button>
+          </div>
+        ))}
       </div>
       <div className="flex items-center font-mono text-caption text-mist">
         ⇄
       </div>
-      <div className="w-28 shrink-0">
-        <GachaCard pull={theirs} linkAnime={false} />
-        <p className="mt-1 truncate text-caption text-mist">
-          {theirs.user.name?.trim() || theirs.user.userName || "o outro"} desse
-        </p>
-        <button type="button" aria-label={`Visualizar ${theirs.card.name}`} onClick={() => onPreview(theirs)} className="mt-1 min-h-11 w-full text-left font-mono text-caption text-ice hover:text-snow focus-visible:outline focus-visible:outline-2 focus-visible:outline-ice">
-          Ver carta
-        </button>
+      <div className="flex flex-wrap gap-2">
+        {theirs.map((p) => (
+          <div key={p.id} className="w-28 shrink-0">
+            <GachaCard pull={p} linkAnime={false} />
+            <p className="mt-1 truncate text-caption text-mist">
+              {p.user.name?.trim() || p.user.userName || "o outro"} desse
+            </p>
+            <button type="button" aria-label={`Visualizar ${p.card.name}`} onClick={() => onPreview(p)} className="mt-1 min-h-11 w-full text-left font-mono text-caption text-ice hover:text-snow focus-visible:outline focus-visible:outline-2 focus-visible:outline-ice">
+              Ver carta
+            </button>
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -96,21 +104,21 @@ function TradeRow({
             <p className="text-body-sm text-snow">
               {trade.offeredUserCard.user.name?.trim() ||
                 trade.offeredUserCard.user.userName}{" "}
-              quer trocar a carta dele pela sua:
+              quer trocar {trade.offeredUserCards?.length ?? 1} carta{(trade.offeredUserCards?.length ?? 1) > 1 ? "s" : ""} pela(s) sua(s):
             </p>
             <div className="mt-3">
-              <MiniPair mine={trade.requestedUserCard} theirs={trade.offeredUserCard} onPreview={onPreview} />
+              <MiniPair mine={trade.requestedUserCards?.length ? trade.requestedUserCards : [trade.requestedUserCard]} theirs={trade.offeredUserCards?.length ? trade.offeredUserCards : [trade.offeredUserCard]} onPreview={onPreview} />
             </div>
           </>
         ) : (
           <>
             <p className="text-body-sm text-snow">
-              Você quer trocar a sua carta pela de{" "}
+              Você quer trocar {trade.offeredUserCards?.length ?? 1} carta{(trade.offeredUserCards?.length ?? 1) > 1 ? "s" : ""} pela(s) de{" "}
               {trade.requestedUserCard.user.name?.trim() ||
                 trade.requestedUserCard.user.userName}:
             </p>
             <div className="mt-3">
-              <MiniPair mine={trade.offeredUserCard} theirs={trade.requestedUserCard} onPreview={onPreview} />
+              <MiniPair mine={trade.offeredUserCards?.length ? trade.offeredUserCards : [trade.offeredUserCard]} theirs={trade.requestedUserCards?.length ? trade.requestedUserCards : [trade.requestedUserCard]} onPreview={onPreview} />
             </div>
           </>
         )}
@@ -166,8 +174,12 @@ function TradeRow({
       </p>
       <div className="mt-3">
         <MiniPair
-          mine={incoming ? trade.requestedUserCard : trade.offeredUserCard}
-          theirs={incoming ? trade.offeredUserCard : trade.requestedUserCard}
+          mine={incoming
+            ? (trade.requestedUserCards?.length ? trade.requestedUserCards : [trade.requestedUserCard])
+            : (trade.offeredUserCards?.length ? trade.offeredUserCards : [trade.offeredUserCard])}
+          theirs={incoming
+            ? (trade.offeredUserCards?.length ? trade.offeredUserCards : [trade.offeredUserCard])
+            : (trade.requestedUserCards?.length ? trade.requestedUserCards : [trade.requestedUserCard])}
           onPreview={onPreview}
         />
       </div>
@@ -251,7 +263,7 @@ export default function GachaTradesPage() {
         <div>
           <h1 className="font-display text-display-lg text-snow">Trocas</h1>
           <p className="text-body-sm text-mist">
-            Troque cartas 1:1 — quem receber a proposta confirma.
+            Troque até 5 cartas por jogador — quem receber a proposta confirma.
           </p>
         </div>
         <div className="flex gap-3">
@@ -416,7 +428,7 @@ function ProposalComposer({
 
   const submit = async () => {
     if (!targetCardIds.length || !myCardIds.length) {
-      setError("Escolha as duas cartas da troca.");
+      setError("Escolha pelo menos uma carta de cada lado.");
       return;
     }
     const targetCard = targetCards.find((c) => c.id === targetCardIds[0]);
@@ -494,7 +506,7 @@ function ProposalComposer({
             <div className="mt-1 grid gap-2">
               {targetCards.map((c) => (
                 <div key={c.id} className="flex items-center gap-2 border border-hairline p-2 text-snow">
-                  <label className="flex min-h-11 min-w-0 flex-1 items-center gap-2"><input type="checkbox" checked={targetCardIds.includes(c.id)} disabled={!targetCardIds.includes(c.id) && targetCardIds.length >= 3} onChange={() => setTargetCardIds((ids) => ids.includes(c.id) ? ids.filter((id) => id !== c.id) : [...ids, c.id])} /><span className="min-w-0 break-words">{c.card.name} · {c.card.rarity} · {c.foil} · {c.conditionLabel} · {c.value} pts</span></label>
+                  <label className="flex min-h-11 min-w-0 flex-1 items-center gap-2"><input type="checkbox" checked={targetCardIds.includes(c.id)} disabled={!targetCardIds.includes(c.id) && targetCardIds.length >= 5} onChange={() => setTargetCardIds((ids) => ids.includes(c.id) ? ids.filter((id) => id !== c.id) : [...ids, c.id])} /><span className="min-w-0 break-words">{c.card.name} · {c.card.rarity} · {c.foil} · {c.conditionLabel} · {c.value} pts</span></label>
                   <button type="button" aria-label={`Visualizar ${c.card.name}`} onClick={() => setPreview(c)} className="btn-ghost min-h-11 shrink-0 px-3 py-2">Visualizar</button>
                 </div>
               ))}
@@ -516,7 +528,7 @@ function ProposalComposer({
         >
           {myCards.map((c) => (
             <div key={c.id} className="flex items-center gap-2 border border-hairline p-2 text-snow">
-              <label className="flex min-h-11 min-w-0 flex-1 items-center gap-2"><input type="checkbox" checked={myCardIds.includes(c.id)} disabled={!myCardIds.includes(c.id) && myCardIds.length >= 3} onChange={() => setMyCardIds((ids) => ids.includes(c.id) ? ids.filter((id) => id !== c.id) : [...ids, c.id])} /><span className="min-w-0 break-words">{c.card.name} · {c.card.rarity} · {c.foil} · {c.conditionLabel} · {c.value} pts</span></label>
+              <label className="flex min-h-11 min-w-0 flex-1 items-center gap-2"><input type="checkbox" checked={myCardIds.includes(c.id)} disabled={!myCardIds.includes(c.id) && myCardIds.length >= 5} onChange={() => setMyCardIds((ids) => ids.includes(c.id) ? ids.filter((id) => id !== c.id) : [...ids, c.id])} /><span className="min-w-0 break-words">{c.card.name} · {c.card.rarity} · {c.foil} · {c.conditionLabel} · {c.value} pts</span></label>
               <button type="button" aria-label={`Visualizar ${c.card.name}`} onClick={() => setPreview(c)} className="btn-ghost min-h-11 shrink-0 px-3 py-2">Visualizar</button>
             </div>
           ))}
