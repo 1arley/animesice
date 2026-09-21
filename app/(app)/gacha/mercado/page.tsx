@@ -161,6 +161,7 @@ export default function GachaMarketPage() {
     key: string,
     action: () => Promise<unknown>,
     message: string,
+    refreshBoard = false,
   ) {
     setBusy(key);
     setError("");
@@ -168,6 +169,14 @@ export default function GachaMarketPage() {
       await action();
       toast(message, "success");
       await refresh();
+      if (refreshBoard) {
+        const [cardPage, skinPage] = await Promise.all([
+          api.gachaEconomyListings("CARD"),
+          api.gachaEconomyListings("SKIN"),
+        ]);
+        setCards(cardPage.items);
+        setSkins(skinPage.items);
+      }
     } catch (cause) {
       setError(
         cause instanceof ApiError ? cause.message : "Ação não concluída.",
@@ -231,6 +240,7 @@ export default function GachaMarketPage() {
       `skin-${skinCopyId}`,
       () => api.gachaEconomyCreateSkinListing(skinCopyId, price),
       "Skin anunciada por 7 dias.",
+      true,
     );
     setSkinCopyId("");
     setSkinPrice("");
@@ -538,11 +548,12 @@ export default function GachaMarketPage() {
                         (inventory?.available ?? 0) < offer.price
                       }
                       onClick={() =>
-                        void act(
-                          `offer-${offer.id}`,
-                          () => api.gachaEconomyBuyOffer(offer.id),
-                          "Oferta comprada.",
-                        )
+            void act(
+              `offer-${offer.id}`,
+              () => api.gachaEconomyBuyOffer(offer.id),
+              "Oferta comprada.",
+              true,
+            )
                       }
                       className="btn-ghost min-h-11 shrink-0 px-3 disabled:opacity-40"
                     >
@@ -564,6 +575,7 @@ export default function GachaMarketPage() {
                 `buy-${listing.id}`,
                 () => api.gachaEconomyBuyListing("CARD", listing.id),
                 "Carta comprada.",
+                true,
               )
             }
             onOrder={setOrderTarget}
@@ -579,6 +591,7 @@ export default function GachaMarketPage() {
                 `buy-${listing.id}`,
                 () => api.gachaEconomyBuyListing("SKIN", listing.id),
                 "Skin comprada.",
+                true,
               )
             }
             onOrder={setOrderTarget}
