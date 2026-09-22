@@ -641,6 +641,7 @@ export interface GachaSkinsResponse {
 
 export interface GachaShopItem {
   key: string;
+  type?: "BACK" | "FRAME" | "HIGHLIGHT";
   label: string;
   description: string;
   price: number;

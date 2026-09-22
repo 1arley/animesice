@@ -5,6 +5,7 @@ import Link from "next/link";
 import { api, ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { CardBackSvg } from "@/components/gacha/CardBackSvg";
 import { SectionLabel } from "@/components/common/SectionLabel";
 import { useToast } from "@/components/common/ToastProvider";
 import type { CrystalEvent, CrystalEventType, GachaShopItem } from "@/types";
@@ -33,7 +34,7 @@ const TYPE_LABEL: Record<CrystalEventType, string> = {
 };
 
 export default function GachaCrystalsPage() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [balance, setBalance] = useState<number | null>(null);
   const [events, setEvents] = useState<CrystalEvent[]>([]);
   const [page, setPage] = useState(1);
@@ -42,6 +43,9 @@ export default function GachaCrystalsPage() {
   const [error, setError] = useState("");
   const [shop, setShop] = useState<GachaShopItem[]>([]);
   const [activeBack, setActiveBack] = useState<string | null>(null);
+  const [equipping, setEquipping] = useState(false);
+  const [shopLoading, setShopLoading] = useState(true);
+  const [shopError, setShopError] = useState("");
   const [buying, setBuying] = useState<string | null>(null);
   const [claimingDaily, setClaimingDaily] = useState(false);
   const [dailyClaimedToday, setDailyClaimedToday] = useState(false);
@@ -56,11 +60,17 @@ export default function GachaCrystalsPage() {
   const { toast } = useToast();
 
   const loadShop = useCallback(async () => {
+    setShopLoading(true);
+    setShopError("");
     try {
       const s = await api.gachaShop();
       setShop(s.cosmetics);
       setActiveBack(s.activeCardBack ?? null);
-    } catch {}
+    } catch {
+      setShopError("Não foi possível carregar a loja.");
+    } finally {
+      setShopLoading(false);
+    }
   }, []);
 
   const loadPackages = useCallback(async () => {
@@ -72,6 +82,7 @@ export default function GachaCrystalsPage() {
   }, []);
 
   async function handleBuy(key: string) {
+    if (buying !== null) return;
     setBuying(key);
     setError("");
     try {
@@ -100,7 +111,7 @@ export default function GachaCrystalsPage() {
     try {
       const res = await api.gachaEconomyDaily();
       setDailyClaimedToday(true);
-      toast(`Bônus diário: +${res.claimed} 💎.`, "success");
+      toast(`Bônus diário: +${res.claimed} cristais.`, "success");
       await load(1, false);
     } catch (e) {
       const msg =
@@ -126,11 +137,20 @@ export default function GachaCrystalsPage() {
       const result = await api.gachaRedeemCode(redeemCode);
       setRedeemCode("");
       setBalance(result.balance);
-      toast(`Código resgatado: +${result.crystals.toLocaleString("pt-BR")} 💎.`, "success");
+      toast(
+        `Código resgatado: +${result.crystals.toLocaleString("pt-BR")} cristais.`,
+        "success",
+      );
       await load(1, false);
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : "Não foi possível resgatar o código.");
-    } finally { setRedeeming(false); }
+      setError(
+        e instanceof ApiError
+          ? e.message
+          : "Não foi possível resgatar o código.",
+      );
+    } finally {
+      setRedeeming(false);
+    }
   }
 
   async function handleCrystalPurchase(packageId: string) {
@@ -157,6 +177,8 @@ export default function GachaCrystalsPage() {
   }
 
   async function handleBack(key: string | null) {
+    if (equipping) return;
+    setEquipping(true);
     setError("");
     try {
       const result = await api.gachaSetCardBack(key);
@@ -169,6 +191,8 @@ export default function GachaCrystalsPage() {
       setError(
         e instanceof Error ? e.message : "Não foi possível trocar a capa.",
       );
+    } finally {
+      setEquipping(false);
     }
   }
 
@@ -181,7 +205,7 @@ export default function GachaCrystalsPage() {
       setEvents((prev) => (append ? [...prev, ...data.events] : data.events));
       setPage(target);
     } catch {
-      setError("Não foi possível carregar seus Crystais.");
+      setError("Não foi possível carregar seus cristais.");
     } finally {
       setLoading(false);
     }
@@ -207,60 +231,140 @@ export default function GachaCrystalsPage() {
     };
   }, [checkoutUrl, load]);
 
+  if (authLoading)
+    return (
+      <main
+        className="mx-auto max-w-shelf px-4 py-12"
+        aria-label="Carregando carteira"
+        aria-busy="true"
+      >
+        <div className="skeleton h-48" />
+      </main>
+    );
+
   if (!user)
     return (
       <main className="mx-auto max-w-shelf px-4 py-16">
         <Link href="/login" className="text-ice">
-          Entre para ver seus Crystais.
+          Entre para ver seus cristais.
         </Link>
       </main>
     );
 
   return (
     <main className="mx-auto max-w-shelf px-4 pb-16 pt-8">
-      <div className="flex flex-wrap items-end justify-between gap-4">
+      <header className="flex flex-wrap items-end justify-between gap-4 border-b border-hairline pb-6">
         <div>
-          <h1 className="font-display text-display-lg text-snow">Crystais</h1>
-          <p className="text-body-sm text-mist">
-            Moeda do gacha — use para reroll, mercado e loja.
+          <p className="shelf-label">Gacha / Sua carteira</p>
+          <h1 className="font-display text-3xl text-snow sm:text-4xl">
+            Cristais
+          </h1>
+          <p className="mt-2 max-w-xl text-body-sm text-mist">
+            Cuide do saldo, resgate recompensas e personalize sua coleção.
           </p>
         </div>
-        <Link href="/gacha" className="btn-ghost px-4 py-2">
-          Voltar ao gacha
+        <Link href="/gacha/mercado" className="btn-ghost min-h-11 px-4">
+          Ir ao mercado
         </Link>
-      </div>
+      </header>
 
-      <div className="mt-6 border border-hairline bg-panel px-4 py-5">
-        <p className="font-mono text-caption text-mist">SALDO</p>
-        <p className="font-display text-display-lg text-snow">
-          <span key={balance} className="balance-pop">
-            {balance == null ? "—" : balance.toLocaleString("pt-BR")} 💎
-          </span>
-        </p>
-        <button
-          type="button"
-          onClick={() => void handleDailyBonus()}
-          disabled={claimingDaily || dailyClaimedToday}
-          title={
-            dailyClaimedToday ? "Bônus diário já resgatado hoje" : undefined
-          }
-          className="btn-ghost mt-3 px-4 py-2 font-mono text-caption disabled:opacity-50"
+      <div className="mt-6 grid gap-4 lg:grid-cols-[1.3fr_1fr]">
+        <section
+          aria-labelledby="wallet-title"
+          className="border border-ice/30 bg-panel p-5 sm:p-7"
         >
-          {dailyClaimedToday
-            ? "Bônus diário resgatado ✓"
-            : claimingDaily
-              ? "Resgatando…"
-              : `Bônus diário · ${dailyBonus} 💎`}
-        </button>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 id="wallet-title" className="text-body-sm text-mist">
+              Seu saldo
+            </h2>
+            <a
+              href="#crystal-packages"
+              className="inline-flex min-h-11 items-center text-body-sm text-ice hover:underline"
+            >
+              Adicionar cristais
+            </a>
+          </div>
+          <p
+            className="mt-2 font-display text-4xl tabular-nums text-snow sm:text-5xl"
+            aria-live="polite"
+          >
+            {balance == null ? "—" : balance.toLocaleString("pt-BR")}
+            <span className="ml-2 text-base font-normal text-mist">
+              cristais
+            </span>
+          </p>
+          <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-hairline pt-4">
+            <div>
+              <p className="text-body-sm text-snow">Bônus diário</p>
+              <p className="mt-1 text-caption text-mist">
+                {dailyClaimedToday
+                  ? "Tudo certo. Volte amanhã para resgatar novamente."
+                  : `Mais ${dailyBonus.toLocaleString("pt-BR")} cristais para sua coleção.`}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => void handleDailyBonus()}
+              disabled={loading || claimingDaily || dailyClaimedToday}
+              className="btn-ice min-h-11 px-4 disabled:opacity-50"
+            >
+              {dailyClaimedToday
+                ? "Resgatado hoje"
+                : claimingDaily
+                  ? "Resgatando…"
+                  : "Resgatar bônus"}
+            </button>
+          </div>
+        </section>
+        <form
+          onSubmit={handleRedeemCode}
+          className="flex flex-col justify-center border border-hairline bg-panel p-5 sm:p-7"
+        >
+          <label
+            htmlFor="crystal-code"
+            className="font-display text-xl text-snow"
+          >
+            Tem um código?
+          </label>
+          <p id="crystal-code-hint" className="mt-2 text-body-sm text-mist">
+            Resgate aqui os cristais de um código promocional.
+          </p>
+          <div className="mt-5 flex flex-wrap gap-2">
+            <input
+              id="crystal-code"
+              aria-describedby="crystal-code-hint"
+              value={redeemCode}
+              onChange={(e) => setRedeemCode(e.target.value.toUpperCase())}
+              placeholder="Ex.: ICE-2500"
+              className="field min-h-11 min-w-0 flex-[1_1_10rem]"
+              autoComplete="off"
+              maxLength={64}
+              required
+            />
+            <button
+              type="submit"
+              disabled={redeeming || !redeemCode.trim()}
+              className="btn-ghost min-h-11 px-4 disabled:opacity-50"
+            >
+              {redeeming ? "Resgatando…" : "Resgatar código"}
+            </button>
+          </div>
+        </form>
       </div>
-
-      <form onSubmit={handleRedeemCode} className="mt-4 border border-hairline bg-panel p-4">
-        <p className="font-mono text-caption text-mist">CÓDIGO PROMOCIONAL</p>
-        <div className="mt-2 flex flex-wrap gap-2">
-          <input value={redeemCode} onChange={(e) => setRedeemCode(e.target.value.toUpperCase())} placeholder="Ex.: ICE-2500" className="input min-w-56 flex-1" maxLength={64} required />
-          <button type="submit" disabled={redeeming} className="btn-primary px-4 py-2">{redeeming ? "Resgatando…" : "Resgatar"}</button>
-        </div>
-      </form>
+      <nav
+        aria-label="Nesta página"
+        className="mt-6 flex flex-wrap gap-2 border-b border-hairline pb-4"
+      >
+        <a href="#crystal-packages" className="btn-ghost min-h-11 px-4">
+          Comprar cristais
+        </a>
+        <a href="#cosmetics" className="btn-ghost min-h-11 px-4">
+          Capas e cosméticos
+        </a>
+        <a href="#statement" className="btn-ghost min-h-11 px-4">
+          Extrato
+        </a>
+      </nav>
 
       {error && (
         <div
@@ -276,25 +380,33 @@ export default function GachaCrystalsPage() {
           <div>
             <h2
               id="crystal-packages"
+              tabIndex={-1}
               className="font-display text-2xl text-snow"
             >
-              Comprar Crystal
+              Comprar cristais
             </h2>
             <p className="mt-1 text-body-sm text-mist">
-              Pagamento via LivePix. Crédito confirmado pelo processador.
+              Escolha um pacote e pague via Pix. O saldo é atualizado após a
+              confirmação.
             </p>
           </div>
           <Link href="/gacha/mercado" className="btn-ghost min-h-11 px-4">
             Abrir Mercado
           </Link>
         </div>
-        <ul className="mt-4 grid gap-px bg-hairline sm:grid-cols-2 lg:grid-cols-5">
+        <ul className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
           {packages.map((pack) => (
-            <li key={pack.id} className="bg-panel p-4">
+            <li
+              key={pack.id}
+              className="flex flex-col border border-hairline bg-panel p-5"
+            >
               <p className="font-display text-xl tabular-nums text-ice">
-                {pack.crystals.toLocaleString("pt-BR")} 💎
+                {pack.crystals.toLocaleString("pt-BR")}
+                <span className="mt-1 block text-caption font-normal text-mist">
+                  cristais
+                </span>
               </p>
-              <p className="mt-1 text-caption tabular-nums text-mist">
+              <p className="mt-4 text-lg tabular-nums text-snow">
                 {(pack.cents / 100).toLocaleString("pt-BR", {
                   style: "currency",
                   currency: "BRL",
@@ -306,7 +418,7 @@ export default function GachaCrystalsPage() {
                 onClick={() => void handleCrystalPurchase(pack.id)}
                 className="btn-ice mt-4 min-h-11 w-full disabled:opacity-40"
               >
-                {buying === pack.id ? "Criando…" : "Comprar"}
+                {buying === pack.id ? "Criando Pix…" : "Comprar via Pix"}
               </button>
             </li>
           ))}
@@ -323,83 +435,166 @@ export default function GachaCrystalsPage() {
         )}
       </section>
 
-      {shop.length > 0 && (
-        <>
-          <SectionLabel level={2}>Loja</SectionLabel>
-          <ul className="mt-3 grid gap-3 sm:grid-cols-2">
+      <section
+        id="cosmetics"
+        aria-labelledby="cosmetics-title"
+        className="mt-10 scroll-mt-24"
+      >
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h2
+              id="cosmetics-title"
+              className="font-display text-2xl text-snow"
+            >
+              Capas e cosméticos
+            </h2>
+            <p className="mt-1 text-body-sm text-mist">
+              A capa escolhida será usada no verso de todas as suas cartas.
+            </p>
+          </div>
+          <Link
+            href="/gacha/colecao"
+            className="inline-flex min-h-11 items-center text-body-sm text-ice hover:underline"
+          >
+            Ver minha coleção
+          </Link>
+        </div>
+        {shopError && (
+          <div
+            role="alert"
+            className="mt-4 flex flex-wrap items-center gap-3 border border-signal/40 p-4 text-body-sm text-signal"
+          >
+            {shopError}
+            <button
+              type="button"
+              onClick={() => void loadShop()}
+              className="btn-ghost min-h-11 px-3"
+            >
+              Tentar novamente
+            </button>
+          </div>
+        )}
+        {shopLoading ? (
+          <div
+            className="skeleton mt-4 h-56"
+            aria-label="Carregando cosméticos"
+            aria-busy="true"
+          />
+        ) : shop.length === 0 && !shopError ? (
+          <p className="mt-4 border border-dashed border-hairline p-5 text-body-sm text-mist">
+            Nenhum cosmético disponível no momento.
+          </p>
+        ) : (
+          <ul className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {shop.map((item) => {
               const insufficient = balance != null && balance < item.price;
-              const isBack = item.key.startsWith("BACK_");
+              const isBack =
+                item.type === "BACK" ||
+                (!item.type && item.key.startsWith("BACK_"));
+              const active = activeBack === item.key;
               return (
                 <li
                   key={item.key}
-                  className="flex items-start gap-3 border border-hairline bg-panel p-4"
+                  className={`flex min-w-0 flex-col border bg-panel ${active ? "border-ice/60" : "border-hairline"}`}
                 >
-                  {isBack && item.svg && (
-                    <div
-                      className="pointer-events-none aspect-[3/4] w-16 shrink-0 overflow-hidden border border-white/10"
-                      aria-hidden="true"
-                      dangerouslySetInnerHTML={{ __html: item.svg }}
-                    />
+                  {isBack && (
+                    <div className="flex h-52 items-center justify-center border-b border-hairline bg-ink p-5">
+                      <CardBackSvg
+                        backKey={item.key}
+                        className="aspect-[3/4] h-full object-contain"
+                      />
+                    </div>
                   )}
-                  <div className="min-w-0 flex-1">
-                    <p className="font-display text-body-sm text-snow">
-                      {item.label}
-                    </p>
-                    <p className="mt-1 text-caption text-mist">
-                      {item.description}
-                    </p>
-                  </div>
-                  {item.owned ? (
-                    <div className="flex shrink-0 flex-col items-end gap-1">
-                      <span className="font-mono text-caption text-ice">
-                        SEU
+                  <div className="flex flex-1 flex-col p-5">
+                    <div className="flex flex-wrap items-center justify-between gap-2 text-caption">
+                      <span className="text-mist">
+                        {isBack
+                          ? "Capa de carta"
+                          : item.type === "FRAME"
+                            ? "Moldura"
+                            : "Cosmético"}
                       </span>
-                      {isBack && (
-                        <button
-                          type="button"
-                          onClick={() =>
-                            void handleBack(
-                              activeBack === item.key ? null : item.key,
-                            )
-                          }
-                          className="btn-ghost min-h-11 px-3 py-2 font-mono text-caption"
-                        >
-                          {activeBack === item.key ? "Capa ativa" : "Usar capa"}
-                        </button>
+                      {item.owned && (
+                        <span className="font-mono text-ice">SEU</span>
                       )}
                     </div>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => void handleBuy(item.key)}
-                      disabled={
-                        balance == null ||
-                        (buying !== null && buying !== item.key) ||
-                        insufficient
-                      }
-                      title={
-                        balance == null
-                          ? "Carregando saldo…"
-                          : insufficient
-                            ? "Saldo insuficiente"
-                            : undefined
-                      }
-                      className="btn-ghost shrink-0 px-3 py-2 font-mono text-caption disabled:opacity-50"
-                    >
-                      {buying === item.key
-                        ? "…"
-                        : `Comprar · ${item.price.toLocaleString("pt-BR")} 💎`}
-                    </button>
-                  )}
+                    <h3 className="mt-2 font-display text-xl text-snow">
+                      {item.label}
+                    </h3>
+                    <p className="mt-2 text-body-sm text-mist">
+                      {item.description}
+                    </p>
+                    <div className="mt-auto pt-5">
+                      {item.owned ? (
+                        isBack ? (
+                          <>
+                            <p
+                              className="mb-2 text-caption text-mist"
+                              role="status"
+                            >
+                              {active
+                                ? "Equipada em todas as suas cartas"
+                                : "Pronta para usar na sua coleção"}
+                            </p>
+                            <button
+                              type="button"
+                              disabled={equipping}
+                              onClick={() =>
+                                void handleBack(active ? null : item.key)
+                              }
+                              className={`${active ? "btn-ghost" : "btn-ice"} min-h-11 w-full px-3 disabled:opacity-50`}
+                            >
+                              {equipping
+                                ? "Atualizando…"
+                                : active
+                                  ? "Remover capa"
+                                  : "Usar capa"}
+                            </button>
+                          </>
+                        ) : (
+                          <p className="text-body-sm text-ice">
+                            Na sua coleção
+                          </p>
+                        )
+                      ) : (
+                        <>
+                          <p className="mb-3 font-display text-lg tabular-nums text-snow">
+                            {item.price.toLocaleString("pt-BR")}{" "}
+                            <span className="text-caption text-mist">
+                              cristais
+                            </span>
+                          </p>
+                          <button
+                            type="button"
+                            onClick={() => void handleBuy(item.key)}
+                            disabled={
+                              balance == null || buying !== null || insufficient
+                            }
+                            className="btn-ice min-h-11 w-full px-3 disabled:opacity-50"
+                          >
+                            {buying === item.key
+                              ? "Comprando…"
+                              : balance == null
+                                ? "Carregando saldo…"
+                                : insufficient
+                                  ? "Saldo insuficiente"
+                                  : "Comprar cosmético"}
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </div>
                 </li>
               );
             })}
           </ul>
-        </>
-      )}
+        )}
+      </section>
 
-      <SectionLabel level={2}>Extrato</SectionLabel>
+      <div id="statement" className="scroll-mt-24">
+        <SectionLabel level={2}>Extrato</SectionLabel>
+      </div>
+
       {loading ? (
         <div className="skeleton mt-3 h-32" aria-busy="true" />
       ) : events.length === 0 ? (
@@ -438,7 +633,7 @@ export default function GachaCrystalsPage() {
                 }`}
               >
                 {event.delta >= 0 ? "+" : ""}
-                {event.delta.toLocaleString("pt-BR")} 💎
+                {event.delta.toLocaleString("pt-BR")} cristais
               </span>
             </li>
           ))}
@@ -449,7 +644,7 @@ export default function GachaCrystalsPage() {
         <button
           type="button"
           onClick={() => void load(page + 1, true)}
-          className="btn-ghost mt-4 px-4 py-2"
+          className="btn-ghost mt-4 min-h-11 px-4"
         >
           Carregar mais ({events.length}/{total})
         </button>
