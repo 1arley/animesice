@@ -126,7 +126,7 @@ test.describe("Gacha harden — cerimônia", () => {
     await expect(page.getByText(/Pity ÉPICA\+ em 14d/)).toBeVisible();
     await expect(page.getByRole("button", { name: /^Girar \(5\)$/ })).toBeEnabled();
     await expect(page.getByRole("button", { name: "Pegar carta" })).toBeEnabled();
-    await expect(page.getByRole("link", { name: "Minha coleção" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Coleção" })).toBeVisible();
     await expect(page.getByText("Previews desta hora (2/5)")).toBeVisible();
     await expect(page.getByText(/Selecionada: Cha Hae-In/)).toBeVisible();
     await noHorizontalOverflow(page);
@@ -151,7 +151,7 @@ test.describe("Gacha harden — enciclopédia paginada", () => {
     page.on("request", request => {
       if (request.url().includes("localhost:3001/gacha/encyclopedia")) requests.push(request.url());
     });
-    await page.goto("/gacha/collection");
+    await page.goto("/gacha/colecao");
     await expect(page.getByRole("button", { name: "Em destaque" })).toBeVisible();
     expect(requests).toHaveLength(0);
     await page.getByRole("link", { name: "Explorar enciclopédia" }).click();
@@ -167,7 +167,7 @@ test.describe("Gacha harden — enciclopédia paginada", () => {
     await mockGeneric(page);
     await loginAs(page);
     await collectionFixture(page);
-    await page.goto("/gacha/encyclopedia?view=sets");
+    await page.goto("/gacha/enciclopedia?view=sets");
     await expect(page.getByText("Sensei & Aluno")).toHaveCount(0);
     await page.getByRole("link", { name: /Gachiakuta.*Ver cartas/ }).click();
     await expect(page.getByText("Sensei & Aluno")).toBeVisible();
@@ -187,7 +187,7 @@ test.describe("Gacha harden — prestígio no perfil", () => {
     await mockGeneric(page);
     await loginAs(page);
     await profileFixture(page);
-    await page.goto("/users/viewer");
+    await page.goto("/usuarios/viewer");
 
     const ribbon = page.getByText("CONJUNTO COMPLETO");
     await ribbon.waitFor({ timeout: 10000 });

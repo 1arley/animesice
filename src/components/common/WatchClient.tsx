@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import dynamic from "next/dynamic";
-import { api, ApiError, isProxyEmbed, type StreamSource } from "@/lib/api";
+import { api, ApiError, type StreamSource } from "@/lib/api";
 import { resolveAsyncSource } from "@/lib/resolve-async-source";
 import type { Episode, Anime } from "@/types";
 import { CommentSection } from "@/components/common/CommentSection";
@@ -225,16 +225,7 @@ export function WatchClient({
       </p>
 
       <div className="mt-4">
-        {episode.embedUrl && isProxyEmbed(episode.embedUrl) ? (
-          <VideoPlayer
-            src=""
-            embedUrl={episode.embedUrl}
-            posterUrl={episode.thumbnailUrl ?? undefined}
-            animeSlug={slug}
-            episodeNumber={episode.number}
-            animeTitle={episode.anime.title}
-          />
-        ) : sourceError ? (
+        {sourceError ? (
           <div
             className="flex aspect-video flex-col items-center justify-center gap-3 rounded-md border border-signal/30 bg-panel px-6 text-center"
             data-testid="episode-player-error"

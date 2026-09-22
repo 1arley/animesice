@@ -166,7 +166,7 @@ export default function PublicProfilePage({
         setProfile(prof);
         // URL canônica: /users/:userName.
         if (prof.userName && prof.userName !== userName) {
-          router.replace(`/users/${prof.userName}`);
+          router.replace(`/usuarios/${prof.userName}`);
         }
 
         // Visão geral em paralelo — sem cascata de requests.

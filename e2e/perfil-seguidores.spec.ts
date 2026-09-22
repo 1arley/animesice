@@ -112,7 +112,7 @@ test.describe("Perfil público / seguidores e seguindo", () => {
     ];
     const { requests } = await mockFollowLists(page, followers, following);
 
-    await page.goto("/users/ana");
+    await page.goto("/usuarios/ana");
 
     // Hero carregado + contadores de follow nas stats (label + valor juntos).
     await expect(page.getByText("Ana Teste").first()).toBeVisible();
@@ -186,7 +186,7 @@ test.describe("Perfil público / seguidores e seguindo", () => {
       });
     });
 
-await page.goto("/users/ana");
+await page.goto("/usuarios/ana");
     await page.getByRole("button", { name: "Seguidores", exact: true }).click();
 
     // Estado inicial: Zoe já aparece como "Seguindo ✓", Bruno como "Seguir".
@@ -253,7 +253,7 @@ await page.goto("/users/ana");
       },
     );
 
-    await page.goto("/users/viewer");
+    await page.goto("/usuarios/viewer");
 
     // No próprio perfil o hero não oferece "Seguir" (isOwnProfile).
     await expect(

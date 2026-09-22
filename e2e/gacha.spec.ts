@@ -68,7 +68,7 @@ test.describe("Gacha", () => {
   test("perfil: aba Cartas mostra estado vazio", async ({ page }) => {
     await blockAds(page);
     await mockGeneric(page);
-    await page.goto("/users/mock");
+    await page.goto("/usuarios/mock");
     await page.getByRole("button", { name: "Cartas" }).click();
     await expect(page.getByText("Nenhuma carta ainda.")).toBeVisible();
   });
@@ -129,7 +129,7 @@ test.describe("Gacha", () => {
         },
       }),
     );
-    await page.goto("/gacha/collection");
+    await page.goto("/gacha/colecao");
     await expect(
       page.getByRole("button", { name: "Destacar no perfil" }),
     ).toBeVisible();
