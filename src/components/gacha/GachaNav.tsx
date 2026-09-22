@@ -18,9 +18,12 @@ export function GachaNav() {
   const pathname = usePathname();
 
   return (
-    <nav aria-label="Áreas do gacha" className="mx-auto mt-4 max-w-shelf px-4">
-      <div className="overflow-x-auto border-y border-hairline bg-panel/80">
-        <div className="grid min-w-max grid-flow-col auto-cols-[9rem] lg:min-w-0 lg:grid-flow-row lg:grid-cols-8">
+    <nav
+      aria-label="Áreas do gacha"
+      className="mx-auto mt-3 max-w-shelf px-4 sm:mt-4"
+    >
+      <div className="overflow-x-auto border-y border-hairline bg-panel/80 shadow-[0_8px_30px_rgba(0,0,0,0.12)]">
+        <div className="grid min-w-max grid-flow-col auto-cols-[8.5rem] lg:min-w-0 lg:grid-flow-row lg:grid-cols-8">
           {items.map(([href, label, description]) => {
             const active =
               href === "/gacha" ? pathname === href : pathname.startsWith(href);
@@ -31,7 +34,7 @@ export function GachaNav() {
                 aria-current={active ? "page" : undefined}
                 className={`group min-h-16 border-r border-hairline px-3 py-3 outline-none transition-colors last:border-r-0 focus-visible:bg-ice/10 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ice ${
                   active
-                    ? "bg-ice/10 text-snow"
+                    ? "bg-ice/10 text-snow shadow-[inset_0_-2px_0_rgba(56,189,248,0.9)]"
                     : "text-mist hover:bg-ink/60 hover:text-snow"
                 }`}
               >
