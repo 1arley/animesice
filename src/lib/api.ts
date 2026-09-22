@@ -1568,7 +1568,7 @@ export const api = {
     request<{
       key: string;
       name: string;
-      svg: string;
+      svg: string | null;
       previewUrl: string | null;
     }>(`/gacha/card-backs/${encodeURIComponent(key)}`),
 

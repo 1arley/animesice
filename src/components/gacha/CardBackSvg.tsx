@@ -1,6 +1,7 @@
 "use client";
 
 import { memo, useEffect, useState } from "react";
+import { safeImageSrc } from "@/lib/url";
 import { api } from "@/lib/api";
 
 const cache = new Map<string, string>();
@@ -30,7 +31,8 @@ export const CardBackSvg = memo(function CardBackSvg({
       .gachaCardBackSvg(backKey)
       .then((res) => {
         if (!cancelled) {
-          const nextSrc = toDataUrl(res.svg);
+          const nextSrc = res.svg ? toDataUrl(res.svg) : safeImageSrc(res.previewUrl);
+          if (!nextSrc) return;
           cache.set(backKey, nextSrc);
           setSrc(nextSrc);
         }

@@ -142,7 +142,9 @@ export function CardPreview({
       .then((s) => {
         if (!cancelled) {
           setCardBacks(
-            s.cosmetics.filter((c) => c.key.startsWith("BACK_") && c.owned),
+            s.cosmetics.filter(
+              (c) => c.owned && (c.type === "BACK" || (!c.type && c.key.startsWith("BACK_"))),
+            ),
           );
           setActiveBack(s.activeCardBack ?? null);
         }
@@ -486,7 +488,7 @@ export function CardPreview({
                 </span>
               </div>
               <p className="mt-1 text-xs text-mist">
-                Escolha o verso desta carta.
+                A capa escolhida será usada em todas as suas cartas.
               </p>
               <div
                 className="mt-3 flex gap-2 overflow-x-auto pb-2"
@@ -524,7 +526,7 @@ export function CardPreview({
                     }`}
                   >
                     <span className="flex aspect-[3/4] items-center justify-center overflow-hidden bg-panel">
-                      {cb.svg ? (
+                      {cb.svg || cb.previewUrl ? (
                         <CardBackSvg
                           backKey={cb.key}
                           className="h-full w-full"

@@ -6,6 +6,7 @@ import Image from "next/image";
 import { api, ApiError } from "@/lib/api";
 import { safeImageSrc } from "@/lib/url";
 import { useAuth } from "@/lib/auth-context";
+import { Modal } from "@/components/common/Modal";
 import { useToast } from "@/components/common/ToastProvider";
 import type {
   GachaBoxTier,
@@ -45,7 +46,7 @@ function itemName(listing: GachaEconomyListingItem): string {
 function rewardLabel(reward: Record<string, unknown> | null): string {
   if (!reward) return "";
   const cat = reward.category;
-  if (cat === "CRYSTAL") return `${String(reward.amount ?? 0)} 💎`;
+  if (cat === "CRYSTAL") return `${String(reward.amount ?? 0)} cristais`;
   if (cat === "KEY") return `${String(reward.amount ?? 1)} chave`;
   if (cat === "SPIN_RESET")
     return `${String(reward.amount ?? 1)} reset de giro (5 previews)`;
@@ -198,6 +199,7 @@ export default function GachaMarketPage() {
     message: string,
     refreshBoard = false,
   ) {
+    if (busy !== null) return false;
     setBusy(key);
     setError("");
     try {
@@ -216,10 +218,12 @@ export default function GachaMarketPage() {
         setCardPage(cardPage.page);
         setSkinPage(skinPage.page);
       }
+      return true;
     } catch (cause) {
       setError(
         cause instanceof ApiError ? cause.message : "Ação não concluída.",
       );
+      return false;
     } finally {
       setBusy(null);
     }
@@ -253,7 +257,7 @@ export default function GachaMarketPage() {
       setError("Informe oferta em Crystal usando número inteiro positivo.");
       return;
     }
-    await act(
+    const completed = await act(
       `order-${orderTarget.id}`,
       () =>
         api.gachaEconomyCreateOrder({
@@ -266,8 +270,10 @@ export default function GachaMarketPage() {
         }),
       "Ordem criada. Crystal reservado.",
     );
-    setOrderTarget(null);
-    setOrderPrice("");
+    if (completed) {
+      setOrderTarget(null);
+      setOrderPrice("");
+    }
   }
 
   async function listSkin(event: React.FormEvent<HTMLFormElement>) {
@@ -277,14 +283,16 @@ export default function GachaMarketPage() {
       setError("Escolha cópia e informe preço inteiro positivo.");
       return;
     }
-    await act(
+    const completed = await act(
       `skin-${skinCopyId}`,
       () => api.gachaEconomyCreateSkinListing(skinCopyId, price),
       "Skin anunciada por 7 dias.",
       true,
     );
-    setSkinCopyId("");
-    setSkinPrice("");
+    if (completed) {
+      setSkinCopyId("");
+      setSkinPrice("");
+    }
   }
 
   async function showHistory(listing: GachaEconomyListingItem) {
@@ -338,29 +346,62 @@ export default function GachaMarketPage() {
       <header className="border-b border-hairline pb-7">
         <div className="flex flex-wrap items-end justify-between gap-5">
           <div className="max-w-2xl">
-            <p className="shelf-label">Gacha / Economia</p>
-            <h1 className="text-balance font-display text-display-lg text-snow">
+            <p className="shelf-label">Gacha / Mercado</p>
+            <h1 className="text-balance font-display text-3xl text-snow sm:text-4xl">
               Mercado de colecionador
             </h1>
             <p className="mt-2 max-w-xl text-pretty text-body-sm text-mist">
-              Caixas, ofertas oficiais e negociações entre jogadores usam uma
-              carteira única de Crystal.
+              Encontre sua próxima carta, abra caixas e negocie com outros
+              colecionadores.
             </p>
           </div>
-          <div className="text-right">
-            <p className="text-caption text-mist">Disponível</p>
+          <div className="w-full border border-hairline bg-panel px-5 py-4 sm:w-auto sm:min-w-56">
+            <p className="text-caption text-mist">Seu saldo disponível</p>
             <p className="font-display text-3xl tabular-nums text-ice">
               {inventory ? inventory.available.toLocaleString("pt-BR") : "—"}
             </p>
-            <p className="text-caption text-mist">Crystal disponível</p>
+            <p className="text-caption text-mist">cristais</p>
             {inventory && inventory.reserved > 0 && (
               <p className="text-caption tabular-nums text-mist">
                 {inventory.reserved.toLocaleString("pt-BR")} reservado
               </p>
             )}
+            <Link
+              href="/gacha/cristais"
+              className="mt-2 inline-flex min-h-11 items-center text-body-sm text-ice hover:underline"
+            >
+              Adicionar cristais
+            </Link>
           </div>
         </div>
       </header>
+      <nav
+        aria-label="Seções do mercado"
+        className="mt-4 flex flex-wrap gap-2 border-b border-hairline pb-4"
+      >
+        <a href="#market-Cartas" className="btn-ghost min-h-11 px-4">
+          Cartas
+        </a>
+        <a href="#market-Skins" className="btn-ghost min-h-11 px-4">
+          Skins
+        </a>
+        {user && (
+          <>
+            <a href="#boxes-title" className="btn-ghost min-h-11 px-4">
+              Caixas
+            </a>
+            <a href="#positions-title" className="btn-ghost min-h-11 px-4">
+              Meus anúncios e ofertas
+            </a>
+          </>
+        )}
+        <Link
+          href="/gacha/cristais#cosmetics"
+          className="btn-ghost min-h-11 px-4"
+        >
+          Loja de capas
+        </Link>
+      </nav>
 
       {error && (
         <div
@@ -447,7 +488,7 @@ export default function GachaMarketPage() {
                 <div>
                   <h2
                     id="boxes-title"
-                    className="font-display text-2xl text-snow"
+                    className="scroll-mt-24 font-display text-2xl text-snow"
                   >
                     Caixas
                   </h2>
@@ -467,18 +508,37 @@ export default function GachaMarketPage() {
                 >
                   {busy === "key"
                     ? "Comprando…"
-                    : `Comprar chave · ${odds.keyPrice.toLocaleString("pt-BR")} 💎`}
+                    : `Comprar chave · ${odds.keyPrice.toLocaleString("pt-BR")} cristais`}
                 </button>
               </div>
-              <div className="mt-4 grid border border-hairline md:grid-cols-3 md:divide-x md:divide-hairline">
+              <div className="mt-5 grid gap-4 md:grid-cols-3">
                 {(["COMMON", "RARE", "PREMIUM"] as const).map((tier) => {
                   const count = inventory[BOX_FIELD[tier]];
                   const canOpen = count > 0 && inventory.keys > 0;
                   return (
                     <article
                       key={tier}
-                      className={`market-box bg-panel p-5 ${openingTier === tier ? "market-box-opening" : ""}`}
+                      className={`market-box border border-hairline bg-panel p-5 ${openingTier === tier ? "market-box-opening" : ""}`}
                     >
+                      <svg
+                        viewBox="0 0 120 96"
+                        fill="none"
+                        aria-hidden="true"
+                        className={`mx-auto mb-5 h-24 w-32 ${tier === "PREMIUM" ? "text-amber-300" : tier === "RARE" ? "text-ice" : "text-mist"}`}
+                      >
+                        <path
+                          d="M16 34 60 12l44 22v40L60 94 16 74Z"
+                          fill="currentColor"
+                          fillOpacity=".06"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                        />
+                        <path
+                          d="m16 34 44 22 44-22M60 56v38M38 23l44 22v18L60 74"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                        />
+                      </svg>
                       <div className="flex items-baseline justify-between gap-3">
                         <h3 className="font-display text-xl text-snow">
                           {BOX_LABEL[tier]}
@@ -488,7 +548,14 @@ export default function GachaMarketPage() {
                         </span>
                       </div>
                       <p className="mt-5 font-display text-2xl tabular-nums text-ice">
-                        {odds.boxPrices[tier].toLocaleString("pt-BR")} 💎
+                        {odds.boxPrices[tier].toLocaleString("pt-BR")} cristais
+                      </p>
+                      <p className="mt-2 min-h-10 text-caption text-mist">
+                        {count === 0
+                          ? "Compre uma caixa para começar."
+                          : inventory.keys === 0
+                            ? "Você tem a caixa. Falta uma chave para abrir."
+                            : "Pronta para abrir com uma das suas chaves."}
                       </p>
                       <div className="mt-4 grid grid-cols-2 gap-2">
                         <button
@@ -506,7 +573,9 @@ export default function GachaMarketPage() {
                           }
                           className="btn-ghost min-h-11 disabled:opacity-40"
                         >
-                          Comprar
+                          {busy === `buy-${tier}`
+                            ? "Comprando…"
+                            : "Comprar caixa"}
                         </button>
                         <button
                           type="button"
@@ -625,7 +694,7 @@ export default function GachaMarketPage() {
                 <div>
                   <h2
                     id="shop-title"
-                    className="font-display text-2xl text-snow"
+                    className="scroll-mt-24 font-display text-2xl text-snow"
                   >
                     Seleção de hoje
                   </h2>
@@ -637,7 +706,7 @@ export default function GachaMarketPage() {
                   Renova em {resetCountdown} BRT
                 </span>
               </div>
-              <ul className="mt-4 grid gap-px bg-hairline sm:grid-cols-2 lg:grid-cols-3">
+              <ul className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {offers.map((offer) => (
                   <li
                     key={offer.id}
@@ -669,7 +738,7 @@ export default function GachaMarketPage() {
                           (offer.itemType === "KEY" ? "Chave" : "Caixa Comum")}
                       </p>
                       <p className="mt-1 text-caption tabular-nums text-mist">
-                        {offer.price.toLocaleString("pt-BR")} 💎
+                        {offer.price.toLocaleString("pt-BR")} cristais
                         {offer.discount > 0 ? ` · -${offer.discount}%` : ""}
                       </p>
                     </div>
@@ -714,7 +783,10 @@ export default function GachaMarketPage() {
                 true,
               )
             }
-            onOrder={setOrderTarget}
+            onOrder={(listing) => {
+              setError("");
+              setOrderTarget(listing);
+            }}
             onHistory={(listing) => void showHistory(listing)}
           />
           <MarketSection
@@ -733,74 +805,101 @@ export default function GachaMarketPage() {
                 true,
               )
             }
-            onOrder={setOrderTarget}
+            onOrder={(listing) => {
+              setError("");
+              setOrderTarget(listing);
+            }}
             onHistory={(listing) => void showHistory(listing)}
           />
 
           {history && (
-            <aside
-              role="status"
-              aria-live="polite"
-              className="mt-5 flex flex-wrap items-center justify-between gap-4 border border-hairline bg-panel p-4"
+            <Modal
+              open
+              onClose={() => setHistory(null)}
+              title={`Histórico de ${history.name}`}
             >
-              <div>
-                <h3 className="font-display text-body-sm text-snow">
-                  Histórico de {history.name}
-                </h3>
-                <p className="mt-1 text-caption tabular-nums text-mist">
-                  30 dias · {history.data.volume} vendas · mediana{" "}
-                  {history.data.median?.toLocaleString("pt-BR") ?? "—"} 💎 ·
-                  faixa {history.data.min?.toLocaleString("pt-BR") ?? "—"}–
-                  {history.data.max?.toLocaleString("pt-BR") ?? "—"} 💎
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setHistory(null)}
-                className="btn-ghost min-h-11 px-3"
-              >
-                Fechar
-              </button>
-            </aside>
+              <p className="text-body-sm text-mist">
+                Vendas dos últimos 30 dias
+              </p>
+              <dl className="mt-4 divide-y divide-hairline text-body-sm">
+                <div className="flex justify-between py-3">
+                  <dt className="text-mist">Vendas concluídas</dt>
+                  <dd className="tabular-nums text-snow">
+                    {history.data.volume}
+                  </dd>
+                </div>
+                <div className="flex justify-between py-3">
+                  <dt className="text-mist">Preço mediano</dt>
+                  <dd className="tabular-nums text-ice">
+                    {history.data.median?.toLocaleString("pt-BR") ?? "—"}{" "}
+                    cristais
+                  </dd>
+                </div>
+                <div className="flex justify-between py-3">
+                  <dt className="text-mist">Menor / maior preço</dt>
+                  <dd className="tabular-nums text-snow">
+                    {history.data.min?.toLocaleString("pt-BR") ?? "—"} /{" "}
+                    {history.data.max?.toLocaleString("pt-BR") ?? "—"}
+                  </dd>
+                </div>
+              </dl>
+            </Modal>
           )}
 
           {orderTarget && (
-            <form
-              onSubmit={(event) => void createOrder(event)}
-              className="mt-5 flex flex-wrap items-end gap-3 border border-ice/40 bg-panel p-4"
+            <Modal
+              open
+              onClose={() => {
+                if (!busy) setOrderTarget(null);
+              }}
+              title={`Ofertar por ${itemName(orderTarget)}`}
+              footer={
+                <button
+                  type="button"
+                  disabled={busy !== null}
+                  onClick={() => setOrderTarget(null)}
+                  className="btn-ghost min-h-11 px-4"
+                >
+                  Cancelar
+                </button>
+              }
             >
-              <label className="min-w-48 flex-1 text-body-sm text-mist">
-                Oferta por {itemName(orderTarget)}
-                <span className="mt-1 block text-caption text-mist">
-                  Crystal fica reservado até preencher, expirar ou cancelar a ordem.
-                </span>
-                <input
-                  name="order-price"
-                  type="number"
-                  min={1}
-                  step={1}
-                  inputMode="numeric"
-                  autoComplete="off"
-                  value={orderPrice}
-                  onChange={(event) => setOrderPrice(event.target.value)}
-                  className="field mt-2 min-h-11 w-full"
-                />
-              </label>
-              <button
-                type="submit"
-                disabled={busy !== null}
-                className="btn-ice min-h-11 px-4"
-              >
-                Reservar Crystal
-              </button>
-              <button
-                type="button"
-                onClick={() => setOrderTarget(null)}
-                className="btn-ghost min-h-11 px-4"
-              >
-                Cancelar
-              </button>
-            </form>
+              <form onSubmit={(event) => void createOrder(event)}>
+                <p id="order-hint" className="text-body-sm text-mist">
+                  Os cristais ficam reservados até a compra acontecer, a oferta
+                  expirar ou você cancelar.
+                </p>
+                <label className="mt-5 block text-body-sm text-snow">
+                  Sua oferta em cristais
+                  <input
+                    name="order-price"
+                    type="number"
+                    min={1}
+                    max={inventory?.available}
+                    step={1}
+                    inputMode="numeric"
+                    autoComplete="off"
+                    required
+                    aria-describedby="order-hint"
+                    value={orderPrice}
+                    onChange={(event) => setOrderPrice(event.target.value)}
+                    className="field mt-2 min-h-11 w-full"
+                  />
+                </label>
+                {error && (
+                  <p role="alert" className="mt-3 text-body-sm text-signal">
+                    {error}
+                  </p>
+                )}
+                <button
+                  type="submit"
+                  disabled={busy !== null}
+                  className="btn-ice mt-4 min-h-11 w-full px-4"
+                >
+                  {busy ? "Reservando…" : "Reservar cristais"}
+                </button>
+              </form>
+            </Modal>
           )}
 
           {user && ownedSkins.length > 0 && (
@@ -852,9 +951,9 @@ export default function GachaMarketPage() {
             <section aria-labelledby="positions-title" className="mt-10">
               <h2
                 id="positions-title"
-                className="font-display text-2xl text-snow"
+                className="scroll-mt-24 font-display text-2xl text-snow"
               >
-                Suas posições
+                Meus anúncios e ofertas
               </h2>
               <div className="mt-4 grid gap-5 lg:grid-cols-2">
                 <PositionList
@@ -863,36 +962,49 @@ export default function GachaMarketPage() {
                   items={mine.map((listing) => ({
                     id: listing.id,
                     name: itemName(listing),
-                    detail: `${listing.price.toLocaleString("pt-BR")} 💎 · ${timeLeft(listing.expiresAt)}`,
-                    cancel: () =>
-                      act(
+                    detail: `${listing.price.toLocaleString("pt-BR")} cristais · ${timeLeft(listing.expiresAt)}`,
+                    cancel: async () => {
+                      if (
+                        !window.confirm(
+                          "Cancelar este anúncio e devolver o item à coleção?",
+                        )
+                      )
+                        return;
+                      await act(
                         `cancel-${listing.id}`,
                         () =>
-                          window.confirm("Cancelar este anúncio e liberar Crystal?")
-                            ? api.gachaEconomyCancelListing(listing.itemType, listing.id)
-                            : Promise.resolve(),
+                          api.gachaEconomyCancelListing(
+                            listing.itemType,
+                            listing.id,
+                          ),
                         "Anúncio cancelado.",
-                      ),
+                        true,
+                      );
+                    },
                   }))}
                   busy={busy}
                 />
                 <PositionList
-                  title="Ordens"
-                  empty="Nenhuma ordem ativa."
+                  title="Ofertas de compra"
+                  empty="Nenhuma oferta de compra ativa."
                   items={orders.map((order) => ({
                     id: order.id,
                     name:
                       order.card?.name ?? order.skin?.name ?? order.itemType,
-                    detail: `${order.price.toLocaleString("pt-BR")} 💎 · ${timeLeft(order.expiresAt)}`,
-                    cancel: () =>
-                      act(
+                    detail: `${order.price.toLocaleString("pt-BR")} cristais · ${timeLeft(order.expiresAt)}`,
+                    cancel: async () => {
+                      if (
+                        !window.confirm(
+                          "Cancelar esta oferta e liberar os cristais?",
+                        )
+                      )
+                        return;
+                      await act(
                         `cancel-${order.id}`,
-                        () =>
-                          window.confirm("Cancelar esta ordem e liberar Crystal?")
-                            ? api.gachaEconomyCancelOrder(order.id)
-                            : Promise.resolve(),
-                        "Ordem cancelada.",
-                      ),
+                        () => api.gachaEconomyCancelOrder(order.id),
+                        "Oferta cancelada.",
+                      );
+                    },
                   }))}
                   busy={busy}
                 />
@@ -903,7 +1015,7 @@ export default function GachaMarketPage() {
           {odds && (
             <details className="mt-10 border border-hairline bg-panel p-5">
               <summary className="cursor-pointer font-display text-xl text-snow focus-visible:ring-2 focus-visible:ring-ice">
-                Odds públicas · versão {odds.version ?? "inicial"}
+                Probabilidades das caixas · versão {odds.version ?? "inicial"}
               </summary>
               <div className="mt-5 grid gap-5 lg:grid-cols-3">
                 {(["COMMON", "RARE", "PREMIUM"] as const).map((tier) => (
@@ -990,11 +1102,15 @@ function MarketSection({
     <section className="mt-10" aria-labelledby={`market-${title}`}>
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h2 id={`market-${title}`} className="font-display text-2xl text-snow">
+          <h2
+            id={`market-${title}`}
+            className="scroll-mt-24 font-display text-2xl text-snow"
+          >
             {title} no mercado
           </h2>
           <span className="text-caption tabular-nums text-mist">
-            {normalizedQuery ? `${visibleListings.length} de ` : ""}{total} ativos
+            {normalizedQuery ? `${visibleListings.length} de ` : ""}
+            {total} ativos
           </span>
         </div>
         <label className="text-caption text-mist">
@@ -1014,12 +1130,15 @@ function MarketSection({
         <p className="mt-4 border border-dashed border-hairline p-5 text-body-sm text-mist">
           {normalizedQuery
             ? "Nenhum anúncio corresponde à busca."
-            : "Nenhum anúncio. Ordem de compra pode iniciar liquidez quando item aparecer."}
+            : "Ainda não há anúncios nesta categoria. Volte mais tarde para ver novas ofertas."}
         </p>
       ) : (
-        <ul className="mt-4 grid gap-px bg-hairline sm:grid-cols-2 lg:grid-cols-3">
+        <ul className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {visibleListings.map((listing) => (
-            <li key={listing.id} className="min-w-0 bg-panel p-4">
+            <li
+              key={listing.id}
+              className="min-w-0 border border-hairline bg-panel p-4"
+            >
               {(() => {
                 const image = safeImageSrc(
                   listing.item.image ??
@@ -1027,7 +1146,7 @@ function MarketSection({
                     listing.item.card?.image,
                 );
                 return image ? (
-                  <div className="market-card-art mb-4 aspect-[3/4] overflow-hidden bg-ink">
+                  <div className="market-card-art mx-auto mb-4 aspect-[3/4] w-full max-w-56 overflow-hidden bg-ink">
                     <Image
                       src={image}
                       alt={itemName(listing)}
@@ -1040,8 +1159,10 @@ function MarketSection({
                 ) : (
                   <div
                     aria-hidden="true"
-                    className="market-card-art mb-4 aspect-[3/4] bg-ink"
-                  />
+                    className="market-card-art mx-auto mb-4 flex aspect-[3/4] w-full max-w-56 items-center justify-center bg-ink text-caption text-mist"
+                  >
+                    Sem imagem
+                  </div>
                 );
               })()}
               <div className="flex items-start justify-between gap-3">
@@ -1059,14 +1180,14 @@ function MarketSection({
                       .join(" · ") || listing.itemType}
                   </p>
                 </div>
-                <span className="shrink-0 font-display tabular-nums text-ice">
-                  {listing.price.toLocaleString("pt-BR")} 💎
+                <span className="shrink-0 text-right font-display text-body-sm tabular-nums text-ice">
+                  {listing.price.toLocaleString("pt-BR")} cristais
                 </span>
               </div>
               <p className="mt-3 text-caption text-mist">
                 Expira em {timeLeft(listing.expiresAt)}
               </p>
-              <div className="mt-3 grid gap-2 sm:grid-cols-3">
+              <div className="mt-3 grid grid-cols-2 gap-2">
                 <button
                   type="button"
                   disabled={busy !== null}
@@ -1081,20 +1202,20 @@ function MarketSection({
                   onClick={() => onOrder(listing)}
                   className="btn-ghost min-h-11 disabled:opacity-40"
                 >
-                  Criar ordem
+                  Fazer oferta
                 </button>
                 <button
                   type="button"
                   disabled={!userReady || busy !== null}
                   onClick={() => onBuy(listing)}
-                  className="btn-ice min-h-11 disabled:opacity-40"
+                  className="btn-ice col-span-2 min-h-11 disabled:opacity-40"
                 >
-                  Comprar
+                  {busy === `buy-${listing.id}` ? "Comprando…" : "Comprar"}
                 </button>
               </div>
             </li>
           ))}
-          </ul>
+        </ul>
       )}
       {canLoadMore && (
         <button
