@@ -1430,6 +1430,12 @@ export const api = {
       body: JSON.stringify(body),
     }),
 
+  gachaApplyRanking: (body: { userCardId: string }) =>
+    request<GachaPull>(`/gacha/apply-ranking`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+
   gachaBurn: (body: { userCardId: string }) =>
     request<{ burned: string; payout: number }>(`/gacha/burn`, {
       method: "POST",

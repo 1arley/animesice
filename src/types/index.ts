@@ -583,6 +583,7 @@ export interface GachaPull {
   foil: string;
   edition: number;
   value: number;
+  rankedValue?: number;
   valueOverride?: number | null;
   obtainedAt: string;
   user: SocialUser;

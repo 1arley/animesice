@@ -24,6 +24,8 @@ export function CardPreview({
   listing = false,
   burning = false,
   onBurn,
+  applyingRanking = false,
+  onApplyRanking,
   onChange,
 }: {
   pull: GachaPull;
@@ -38,6 +40,8 @@ export function CardPreview({
   listing?: boolean;
   burning?: boolean;
   onBurn?: () => void;
+  applyingRanking?: boolean;
+  onApplyRanking?: () => void;
   onChange?: (pull: GachaPull) => void;
 }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
@@ -48,6 +52,11 @@ export function CardPreview({
   const aurora = cosmetics.includes("FRAME_AURORA");
   const destaque = cosmetics.includes("DESTAQUE_CARTA");
   const rerollCost = Math.max(1, pull.value + Math.round(pull.value * 0.15));
+  const applyCost =
+    pull.rankedValue !== undefined && pull.value > pull.rankedValue
+      ? Math.max(1, Math.round((pull.value - pull.rankedValue) * 0.10))
+      : 0;
+  const canApply = applyCost > 0;
   const condition = pull.conditionLabel ?? gachaConditionLabel(pull.condition);
   const obtainedAt = new Date(pull.obtainedAt).toLocaleDateString("pt-BR", {
     day: "2-digit",
@@ -566,6 +575,19 @@ export function CardPreview({
             {rerolling
               ? "Rerrollando…"
               : `Rerrollar condition/foil · ${rerollCost} pts`}
+          </button>
+        )}
+        {canApply && onApplyRanking && (
+          <button
+            type="button"
+            onClick={onApplyRanking}
+            disabled={applyingRanking}
+            title="Aplica os novos pontos da carta ao ranking."
+            className="mt-3 w-full border border-ice/60 px-4 py-3 font-mono text-caption text-ice disabled:opacity-50"
+          >
+            {applyingRanking
+              ? "Aplicando…"
+              : `Aplicar ao Ranking · ${applyCost} crystals`}
           </button>
         )}
         {onList && (
