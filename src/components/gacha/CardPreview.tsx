@@ -54,7 +54,7 @@ export function CardPreview({
     month: "short",
     year: "numeric",
   });
-  const ownerName = pull.user.name || pull.user.userName || "Usuário";
+  const ownerName = pull.user?.name || pull.user?.userName || "Usuário";
   const originalOwnerName =
     pull.originalUser?.name || pull.originalUser?.userName || "Desconhecido";
   const animeTitle = pull.card.animeTitle ?? pull.card.anime?.title ?? null;
@@ -368,7 +368,7 @@ export function CardPreview({
             <p className="font-mono text-caption uppercase tracking-wide text-mist-soft">
               Dono
             </p>
-            {pull.user.userName ? (
+            {pull.user?.userName ? (
               <Link
                 href={`/users/${pull.user.userName}`}
                 className="mt-1 block truncate text-body-sm font-medium text-snow hover:text-ice"

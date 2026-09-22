@@ -54,6 +54,28 @@ function trade(
 }
 
 test.describe("Gacha trading — fluxo de propostas", () => {
+  test("renderiza troca quando snapshot não inclui usuário", async ({ page }) => {
+    await blockAds(page);
+    await mockGeneric(page);
+    await loginAs(page);
+
+    await page.route(A("gacha/trades/mine$"), (route) =>
+      route.fulfill({
+        json: [
+          {
+            ...trade("t-ownerless", "PENDING", ZOE_BERU, MY_A),
+            offeredUserCard: { ...ZOE_BERU, user: undefined },
+          },
+        ],
+      }),
+    );
+
+    await page.goto("/gacha/trocas");
+
+    await expect(page.getByText("Outro usuário quer trocar")).toBeVisible();
+    await expect(page.getByText("Sinal interrompido")).toHaveCount(0);
+  });
+
   test("receber, aceitar, recusar e cancelar segregam para o histórico", async ({ page }) => {
     await blockAds(page);
     await mockGeneric(page);
@@ -80,7 +102,7 @@ test.describe("Gacha trading — fluxo de propostas", () => {
       return r.fulfill({ json: { ...tr } });
     });
 
-    await page.goto("/gacha/trades");
+    await page.goto("/gacha/trocas");
 
     await expect(page.getByRole("heading", { name: /Recebidas \(2\)/ })).toBeVisible();
     await expect(page.getByRole("heading", { name: /Enviadas \(1\)/ })).toBeVisible();
@@ -153,7 +175,7 @@ test.describe("Gacha trading — composer", () => {
       return r.fulfill({ status: 201, json: { ...tr } });
     });
 
-    await page.goto("/gacha/trades");
+    await page.goto("/gacha/trocas");
     await page.getByRole("button", { name: "Nova proposta" }).click();
     const dialog = page.getByRole("dialog");
     await page.getByLabel("userName da outra pessoa").fill("zoe");
@@ -198,7 +220,7 @@ test.describe("Gacha trading — composer", () => {
       r.fulfill({ status: 409, json: { message: "Essa carta já está em uma troca ativa." } }),
     );
 
-    await page.goto("/gacha/trades");
+    await page.goto("/gacha/trocas");
     await page.getByRole("button", { name: "Nova proposta" }).click();
     await page.getByLabel("userName da outra pessoa").fill("zoe");
     await page.getByRole("dialog")

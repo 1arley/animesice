@@ -1,19 +1,23 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { api, ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { SectionLabel } from "@/components/common/SectionLabel";
 import { useToast } from "@/components/common/ToastProvider";
-import type {
-  CrystalEvent,
-  CrystalEventType,
-  GachaShopItem,
-} from "@/types";
+import type { CrystalEvent, CrystalEventType, GachaShopItem } from "@/types";
 
 const PAGE_SIZE = 20;
+
+const CRYSTAL_PACKAGES = [
+  { id: "BRL_490", cents: 490, crystals: 950 },
+  { id: "BRL_990", cents: 990, crystals: 2_000 },
+  { id: "BRL_1990", cents: 1_990, crystals: 4_200 },
+  { id: "BRL_2990", cents: 2_990, crystals: 6_500 },
+  { id: "BRL_4990", cents: 4_990, crystals: 11_250 },
+] as const;
 
 const TYPE_LABEL: Record<CrystalEventType, string> = {
   INITIAL: "Saldo inicial",
@@ -25,6 +29,7 @@ const TYPE_LABEL: Record<CrystalEventType, string> = {
   TAX: "Taxa do mercado",
   ADMIN: "Ajuste da equipe",
   BURN: "Carta queimada",
+  CHARGEBACK: "Reversão de pagamento",
 };
 
 export default function GachaCrystalsPage() {
@@ -40,6 +45,14 @@ export default function GachaCrystalsPage() {
   const [buying, setBuying] = useState<string | null>(null);
   const [claimingDaily, setClaimingDaily] = useState(false);
   const [dailyClaimedToday, setDailyClaimedToday] = useState(false);
+  const [checkoutUrl, setCheckoutUrl] = useState<string | null>(null);
+  const [packages, setPackages] = useState<
+    Array<{ id: string; cents: number; crystals: number }>
+  >([...CRYSTAL_PACKAGES]);
+  const [dailyBonus, setDailyBonus] = useState(350);
+  const [redeemCode, setRedeemCode] = useState("");
+  const [redeeming, setRedeeming] = useState(false);
+  const purchaseKeys = useRef<Record<string, string>>({});
   const { toast } = useToast();
 
   const loadShop = useCallback(async () => {
@@ -47,6 +60,14 @@ export default function GachaCrystalsPage() {
       const s = await api.gachaShop();
       setShop(s.cosmetics);
       setActiveBack(s.activeCardBack ?? null);
+    } catch {}
+  }, []);
+
+  const loadPackages = useCallback(async () => {
+    try {
+      const odds = await api.gachaEconomyOdds();
+      setPackages(odds.crystalPackages);
+      setDailyBonus(odds.dailyBonus);
     } catch {}
   }, []);
 
@@ -77,14 +98,15 @@ export default function GachaCrystalsPage() {
     setClaimingDaily(true);
     setError("");
     try {
-      const res = await api.gachaDailyBonus();
-      setBalance(res.balance);
+      const res = await api.gachaEconomyDaily();
       setDailyClaimedToday(true);
       toast(`Bônus diário: +${res.claimed} 💎.`, "success");
       await load(1, false);
     } catch (e) {
       const msg =
-        e instanceof ApiError ? e.message : "Não foi possível resgatar o bônus.";
+        e instanceof ApiError
+          ? e.message
+          : "Não foi possível resgatar o bônus.";
       if (/resgatado|claimed|already/i.test(msg)) {
         setDailyClaimedToday(true);
         await load(1, false);
@@ -93,6 +115,44 @@ export default function GachaCrystalsPage() {
       }
     } finally {
       setClaimingDaily(false);
+    }
+  }
+
+  async function handleRedeemCode(e: React.FormEvent) {
+    e.preventDefault();
+    setRedeeming(true);
+    setError("");
+    try {
+      const result = await api.gachaRedeemCode(redeemCode);
+      setRedeemCode("");
+      setBalance(result.balance);
+      toast(`Código resgatado: +${result.crystals.toLocaleString("pt-BR")} 💎.`, "success");
+      await load(1, false);
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : "Não foi possível resgatar o código.");
+    } finally { setRedeeming(false); }
+  }
+
+  async function handleCrystalPurchase(packageId: string) {
+    setBuying(packageId);
+    setCheckoutUrl(null);
+    setError("");
+    try {
+      const idempotencyKey =
+        purchaseKeys.current[packageId] ?? crypto.randomUUID();
+      purchaseKeys.current[packageId] = idempotencyKey;
+      const result = await api.crystalCheckout(packageId, idempotencyKey);
+      if (!result.checkoutUrl)
+        throw new Error("Checkout ainda não disponível.");
+      delete purchaseKeys.current[packageId];
+      setCheckoutUrl(result.checkoutUrl);
+      toast("Checkout Pix criado. Abra o link para pagar.", "success");
+    } catch (e) {
+      setError(
+        e instanceof ApiError ? e.message : "Não foi possível criar checkout.",
+      );
+    } finally {
+      setBuying(null);
     }
   }
 
@@ -106,7 +166,9 @@ export default function GachaCrystalsPage() {
         "success",
       );
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Não foi possível trocar a capa.");
+      setError(
+        e instanceof Error ? e.message : "Não foi possível trocar a capa.",
+      );
     }
   }
 
@@ -116,9 +178,7 @@ export default function GachaCrystalsPage() {
       setBalance(data.balance);
       setDailyClaimedToday(data.dailyClaimedToday);
       setTotal(data.meta.total);
-      setEvents((prev) =>
-        append ? [...prev, ...data.events] : data.events,
-      );
+      setEvents((prev) => (append ? [...prev, ...data.events] : data.events));
       setPage(target);
     } catch {
       setError("Não foi possível carregar seus Crystais.");
@@ -131,7 +191,21 @@ export default function GachaCrystalsPage() {
     if (!user) return;
     void load(1, false);
     void loadShop();
-  }, [user, load, loadShop]);
+    void loadPackages();
+  }, [user, load, loadShop, loadPackages]);
+
+  useEffect(() => {
+    if (!checkoutUrl) return;
+    const interval = window.setInterval(() => void load(1, false), 5_000);
+    const timeout = window.setTimeout(
+      () => window.clearInterval(interval),
+      10 * 60_000,
+    );
+    return () => {
+      window.clearInterval(interval);
+      window.clearTimeout(timeout);
+    };
+  }, [checkoutUrl, load]);
 
   if (!user)
     return (
@@ -167,16 +241,26 @@ export default function GachaCrystalsPage() {
           type="button"
           onClick={() => void handleDailyBonus()}
           disabled={claimingDaily || dailyClaimedToday}
-          title={dailyClaimedToday ? "Bônus diário já resgatado hoje" : undefined}
+          title={
+            dailyClaimedToday ? "Bônus diário já resgatado hoje" : undefined
+          }
           className="btn-ghost mt-3 px-4 py-2 font-mono text-caption disabled:opacity-50"
         >
           {dailyClaimedToday
             ? "Bônus diário resgatado ✓"
             : claimingDaily
               ? "Resgatando…"
-              : "Bônus diário · 200 💎"}
+              : `Bônus diário · ${dailyBonus} 💎`}
         </button>
       </div>
+
+      <form onSubmit={handleRedeemCode} className="mt-4 border border-hairline bg-panel p-4">
+        <p className="font-mono text-caption text-mist">CÓDIGO PROMOCIONAL</p>
+        <div className="mt-2 flex flex-wrap gap-2">
+          <input value={redeemCode} onChange={(e) => setRedeemCode(e.target.value.toUpperCase())} placeholder="Ex.: ICE-2500" className="input min-w-56 flex-1" maxLength={64} required />
+          <button type="submit" disabled={redeeming} className="btn-primary px-4 py-2">{redeeming ? "Resgatando…" : "Resgatar"}</button>
+        </div>
+      </form>
 
       {error && (
         <div
@@ -186,6 +270,58 @@ export default function GachaCrystalsPage() {
           {error}
         </div>
       )}
+
+      <section aria-labelledby="crystal-packages" className="mt-8">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h2
+              id="crystal-packages"
+              className="font-display text-2xl text-snow"
+            >
+              Comprar Crystal
+            </h2>
+            <p className="mt-1 text-body-sm text-mist">
+              Pagamento via LivePix. Crédito confirmado pelo processador.
+            </p>
+          </div>
+          <Link href="/gacha/mercado" className="btn-ghost min-h-11 px-4">
+            Abrir Mercado
+          </Link>
+        </div>
+        <ul className="mt-4 grid gap-px bg-hairline sm:grid-cols-2 lg:grid-cols-5">
+          {packages.map((pack) => (
+            <li key={pack.id} className="bg-panel p-4">
+              <p className="font-display text-xl tabular-nums text-ice">
+                {pack.crystals.toLocaleString("pt-BR")} 💎
+              </p>
+              <p className="mt-1 text-caption tabular-nums text-mist">
+                {(pack.cents / 100).toLocaleString("pt-BR", {
+                  style: "currency",
+                  currency: "BRL",
+                })}
+              </p>
+              <button
+                type="button"
+                disabled={buying !== null}
+                onClick={() => void handleCrystalPurchase(pack.id)}
+                className="btn-ice mt-4 min-h-11 w-full disabled:opacity-40"
+              >
+                {buying === pack.id ? "Criando…" : "Comprar"}
+              </button>
+            </li>
+          ))}
+        </ul>
+        {checkoutUrl && (
+          <a
+            href={checkoutUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn-ice mt-4 inline-flex min-h-11 items-center px-5"
+          >
+            Abrir checkout Pix
+          </a>
+        )}
+      </section>
 
       {shop.length > 0 && (
         <>
@@ -216,11 +352,17 @@ export default function GachaCrystalsPage() {
                   </div>
                   {item.owned ? (
                     <div className="flex shrink-0 flex-col items-end gap-1">
-                      <span className="font-mono text-caption text-ice">SEU</span>
+                      <span className="font-mono text-caption text-ice">
+                        SEU
+                      </span>
                       {isBack && (
                         <button
                           type="button"
-                          onClick={() => void handleBack(activeBack === item.key ? null : item.key)}
+                          onClick={() =>
+                            void handleBack(
+                              activeBack === item.key ? null : item.key,
+                            )
+                          }
                           className="btn-ghost min-h-11 px-3 py-2 font-mono text-caption"
                         >
                           {activeBack === item.key ? "Capa ativa" : "Usar capa"}

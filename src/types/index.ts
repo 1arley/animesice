@@ -705,7 +705,8 @@ export type CrystalEventType =
   | "SALE"
   | "TAX"
   | "ADMIN"
-  | "BURN";
+  | "BURN"
+  | "CHARGEBACK";
 
 export interface CrystalEvent {
   id: string;
@@ -721,6 +722,126 @@ export interface CrystalPage {
   dailyClaimedToday: boolean;
   events: CrystalEvent[];
   meta: { page: number; limit: number; total: number; totalPages: number };
+}
+
+export type GachaBoxTier = "COMMON" | "RARE" | "PREMIUM";
+
+export interface GachaEconomyInventory {
+  commonBoxes: number;
+  rareBoxes: number;
+  premiumBoxes: number;
+  keys: number;
+  spinResets: number;
+  weeklyRewardReady: boolean;
+  loyaltyDays: number;
+  loyaltyRarePlusReady: boolean;
+  balance: number;
+  reserved: number;
+  available: number;
+  dailyClaimedToday: boolean;
+}
+
+export interface GachaEconomyListingItem {
+  id: string;
+  itemType: "CARD" | "SKIN";
+  price: number;
+  status: "ACTIVE" | "SOLD" | "FILLED" | "CANCELLED" | "EXPIRED";
+  createdAt: string;
+  expiresAt: string;
+  item: {
+    id: string;
+    cardId?: string;
+    skinId?: string;
+    name?: string;
+    image?: string | null;
+    imageUrl?: string | null;
+    rarity?: string;
+    foil?: string;
+    condition?: number;
+    edition?: number;
+    animeTitle?: string | null;
+    card?: {
+      id: string;
+      name: string;
+      image?: string | null;
+      rarity: string;
+      animeTitle?: string | null;
+    };
+  };
+}
+
+export interface GachaEconomyOrder {
+  id: string;
+  itemType: "CARD" | "SKIN";
+  price: number;
+  status: "ACTIVE" | "FILLED" | "CANCELLED" | "EXPIRED";
+  expiresAt: string;
+  card?: { id: string; name: string; rarity: string } | null;
+  skin?: { id: string; name: string; rarity?: string } | null;
+}
+
+export interface GachaEconomyPage<T> {
+  items: T[];
+  page: number;
+  limit: number;
+  total: number;
+}
+
+export interface GachaEconomyOffer {
+  id: string;
+  slot: number;
+  itemType: "CARD" | "SKIN" | "KEY" | "COMMON_BOX";
+  price: number;
+  discount: number;
+  purchasedAt: string | null;
+  card?: {
+    id: string;
+    name: string;
+    image?: string | null;
+    rarity?: string;
+  } | null;
+  skin?: {
+    id: string;
+    name: string;
+    imageUrl?: string | null;
+    rarity?: string;
+  } | null;
+}
+
+export interface GachaMarketMission {
+  periodStart: string;
+  visits: number;
+  listingQualified: boolean;
+  ready: boolean;
+  claimedAt: string | null;
+}
+
+export interface GachaMarketHistory {
+  median: number | null;
+  min: number | null;
+  max: number | null;
+  volume: number;
+}
+
+export interface GachaEconomyOdds {
+  versionId: string | null;
+  version: number | null;
+  boxPrices: Record<GachaBoxTier, number>;
+  keyPrice: number;
+  dailyBonus: number;
+  categories: Record<GachaBoxTier, Record<string, number>>;
+  qualities: Record<GachaBoxTier, Record<string, number>>;
+  foilWeights: Record<string, number>;
+  crystalPackages: Array<{ id: string; cents: number; crystals: number }>;
+}
+
+export interface GachaOwnedSkinCopy {
+  id: string;
+  skinId: string;
+  name: string;
+  imageUrl: string;
+  rarity: string;
+  status: "ACTIVE" | "ESCROW" | "SOLD" | "REMOVED";
 }
 
 /** Preview de giro — sorteio sem ownership (sem edition, sem dono). */

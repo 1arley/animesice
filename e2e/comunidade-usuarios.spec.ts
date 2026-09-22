@@ -69,7 +69,7 @@ test.describe("Comunidade / usuários", () => {
     // Primeira página: 24 cards (limit 24) + botão carregar mais
     await expect(page.getByText("Zoe Lima")).toBeVisible();
     await expect(page.getByText("User 24")).toBeVisible();
-    const cards = page.locator('a[href^="/users/"]');
+    const cards = page.locator('a[href^="/usuarios/"]');
     await expect(cards).toHaveCount(24);
     await expect(
       page.getByRole("button", { name: "Carregar mais" }),
