@@ -227,7 +227,7 @@ function NativeVideoPlayer({
 
   const safeSrc = safeImageSrc(src) ?? src;
   const safePoster = safeImageSrc(posterUrl);
-  const isM3u8 = safeSrc.toLowerCase().endsWith(".m3u8");
+  const isM3u8 = safeSrc.toLowerCase().includes(".m3u8");
 
   const onPlaybackErrorRef = useRef(onPlaybackError);
   useEffect(() => {
