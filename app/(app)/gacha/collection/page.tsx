@@ -39,6 +39,7 @@ export default function GachaCollectionPage() {
   const [rerolling, setRerolling] = useState(false);
   const [listing, setListing] = useState(false);
   const [burning, setBurning] = useState(false);
+  const [applyingRanking, setApplyingRanking] = useState(false);
   const [burnTarget, setBurnTarget] = useState<GachaPull | null>(null);
   const [rerollConfirm, setRerollConfirm] = useState(false);
   const { toast } = useToast();
@@ -170,6 +171,28 @@ export default function GachaCollectionPage() {
     }
   }
 
+  async function handleApplyRanking() {
+    if (!preview || applyingRanking) return;
+    const diff = preview.value - (preview.rankedValue ?? preview.value);
+    setApplyingRanking(true);
+    try {
+      const updated = await api.gachaApplyRanking({
+        userCardId: preview.id,
+      });
+      setPreview(updated);
+      setItems((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
+      toast(`Ranking atualizado: +${diff} pts.`, "success");
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Erro ao aplicar ao ranking.",
+      );
+    } finally {
+      setApplyingRanking(false);
+    }
+  }
+
   async function handleList(price: number) {
     if (!preview || listing) return;
     setListing(true);
@@ -244,6 +267,12 @@ export default function GachaCollectionPage() {
           onList={
             preview.user.id === user.id
               ? (price) => void handleList(price)
+              : undefined
+          }
+          applyingRanking={applyingRanking}
+          onApplyRanking={
+            preview.user.id === user.id
+              ? () => void handleApplyRanking()
               : undefined
           }
         />
