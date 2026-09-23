@@ -18,8 +18,8 @@ export function MonetagVignette() {
       window.setTimeout(() => {
         const script = document.createElement("script");
         script.id = "monetag-vignette";
-        script.dataset.zone = "11528359";
-        script.src = "https://al5sm.com/tag.min.js";
+        script.dataset.zone = "11871321";
+        script.src = "https://n6wxm.com/vignette.min.js";
         script.async = true;
         document.body.appendChild(script);
       }, 300);
