@@ -9,6 +9,7 @@ import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
 import { GachaCard, gachaConditionLabel } from "@/components/gacha/GachaCard";
 import { CardBackSvg } from "@/components/gacha/CardBackSvg";
 import { api, ApiError } from "@/lib/api";
+import { useAuth } from "@/lib/auth-context";
 import type { GachaPull, GachaShopItem } from "@/types";
 
 export function CardPreview({
@@ -45,6 +46,8 @@ export function CardPreview({
   onChange?: (pull: GachaPull) => void;
 }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
+  const { user } = useAuth();
+  const isOwner = !!user && !!pull.user?.id && user.id === pull.user.id;
   const fine = useFinePointer();
   const reduced = usePrefersReducedMotion();
   const priceRef = useRef<HTMLInputElement>(null);
@@ -136,6 +139,7 @@ export function CardPreview({
   }, [canReroll, pull.id]);
 
   useEffect(() => {
+    if (!isOwner) return;
     let cancelled = false;
     api
       .gachaShop()
@@ -153,10 +157,10 @@ export function CardPreview({
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [isOwner, pull.id]);
 
   async function toggleCardBack(key: string | null) {
-    if (backLoading) return;
+    if (!isOwner || backLoading) return;
     setBackLoading(true);
     setBackError("");
     try {
@@ -479,7 +483,7 @@ export function CardPreview({
               )}
             </section>
           )}
-          {cardBacks.length > 0 && (
+          {isOwner && cardBacks.length > 0 && (
             <section className="mt-4 border border-hairline bg-ink p-3">
               <div className="flex items-baseline justify-between gap-3">
                 <h3 className="font-display text-sm text-snow">Capa</h3>
