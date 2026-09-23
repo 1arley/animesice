@@ -1449,10 +1449,15 @@ export const api = {
       method: "POST", body: JSON.stringify({ code }),
     }),
   adminCrystalCodes: () => request(`/gacha/admin/crystal-codes`),
+  adminGetCrystalCode: (id: string) => request(`/gacha/admin/crystal-codes/${id}`),
   adminCreateCrystalCode: (body: { code?: string; crystals: number; maxUses?: number; expiresAt?: string }) =>
     request(`/gacha/admin/crystal-codes`, { method: "POST", body: JSON.stringify(body) }),
+  adminUpdateCrystalCode: (id: string, body: { code?: string; crystals?: number; maxUses?: number; active?: boolean; expiresAt?: string }) =>
+    request(`/gacha/admin/crystal-codes/${id}`, { method: "PUT", body: JSON.stringify(body) }),
   adminToggleCrystalCode: (id: string, active: boolean) =>
     request(`/gacha/admin/crystal-codes/${id}`, { method: "PATCH", body: JSON.stringify({ active }) }),
+  adminDeleteCrystalCode: (id: string) =>
+    request(`/gacha/admin/crystal-codes/${id}`, { method: "DELETE" }),
 
   gachaDailyBonus: () =>
     request<{ balance: number; claimed: number }>(`/gacha/crystals/daily`, {
