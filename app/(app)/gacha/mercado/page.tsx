@@ -69,12 +69,17 @@ function timeLeft(expiresAt: string): string {
 
 function timeUntilReset(): string {
   const now = new Date();
-  const reset = new Date(now);
-  reset.setHours(24, 0, 0, 0);
-  const minutes = Math.max(
-    0,
-    Math.ceil((reset.getTime() - now.getTime()) / 60_000),
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "America/Sao_Paulo",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(now);
+  const hour = Number(parts.find((part) => part.type === "hour")?.value ?? 0);
+  const minute = Number(
+    parts.find((part) => part.type === "minute")?.value ?? 0,
   );
+  const minutes = 24 * 60 - hour * 60 - minute;
   return `${Math.floor(minutes / 60)}h ${minutes % 60}min`;
 }
 
@@ -113,6 +118,11 @@ export default function GachaMarketPage() {
   const [busy, setBusy] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [purchase, setPurchase] = useState<{
+    name: string;
+    price: number;
+    run: () => Promise<boolean>;
+  } | null>(null);
   const [resetCountdown, setResetCountdown] = useState(timeUntilReset);
 
   const refresh = useCallback(async () => {
@@ -121,18 +131,8 @@ export default function GachaMarketPage() {
       const [wallet, myListings, myOrders, shop, weekly, copies] =
         await Promise.all([
           api.gachaEconomyInventory(),
-          api.gachaEconomyMyListings().catch(() => ({
-            items: [],
-            page: 1,
-            limit: 50,
-            total: 0,
-          })),
-          api.gachaEconomyMyOrders().catch(() => ({
-            items: [],
-            page: 1,
-            limit: 50,
-            total: 0,
-          })),
+          api.gachaEconomyMyListings(),
+          api.gachaEconomyMyOrders(),
           api.gachaEconomyShop(),
           api.gachaEconomyMission(),
           api.gachaEconomyOwnedSkins(),
@@ -387,6 +387,9 @@ export default function GachaMarketPage() {
         </a>
         {user && (
           <>
+            <a href="#shop-title" className="btn-ghost min-h-11 px-4">
+              Seleção de hoje
+            </a>
             <a href="#boxes-title" className="btn-ghost min-h-11 px-4">
               Caixas
             </a>
@@ -482,6 +485,124 @@ export default function GachaMarketPage() {
         </div>
       ) : (
         <>
+          {user && offers.length > 0 && (
+            <section aria-labelledby="shop-title" className="mt-10">
+              <div className="flex flex-wrap items-end justify-between gap-3">
+                <div>
+                  <h2
+                    id="shop-title"
+                    className="scroll-mt-24 font-display text-2xl text-snow"
+                  >
+                    Seleção de hoje
+                  </h2>
+                  <p className="mt-1 text-body-sm text-mist">
+                    Ofertas pessoais. Confira a arte e os detalhes antes de
+                    comprar.
+                  </p>
+                </div>
+                <span className="text-caption tabular-nums text-mist">
+                  Renova em {resetCountdown} BRT
+                </span>
+              </div>
+              <ul className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {offers.map((offer) => {
+                  const name =
+                    offer.card?.name ??
+                    offer.skin?.name ??
+                    (offer.itemType === "KEY" ? "Chave" : "Caixa Comum");
+                  const rarity = offer.skin?.rarity ?? offer.card?.rarity;
+                  const shortfall = Math.max(
+                    0,
+                    offer.price - (inventory?.available ?? 0),
+                  );
+                  return (
+                    <li
+                      key={offer.id}
+                      className="flex min-w-0 flex-col border border-hairline bg-panel p-4"
+                    >
+                      <MarketArtwork
+                        name={name}
+                        image={offer.card?.image ?? offer.skin?.imageUrl}
+                        details={[
+                          offer.itemType === "SKIN"
+                            ? "Skin"
+                            : offer.itemType === "CARD"
+                              ? "Carta"
+                              : name,
+                          rarity,
+                        ]
+                          .filter(Boolean)
+                          .join(" · ")}
+                      />
+                      <p className="mt-4 text-caption text-ice">
+                        {offer.itemType === "SKIN"
+                          ? "Skin"
+                          : offer.itemType === "CARD"
+                            ? "Carta"
+                            : "Consumível"}
+                        {rarity ? ` · ${rarity}` : ""}
+                      </p>
+                      <h3 className="mt-1 break-words font-display text-xl text-snow">
+                        {name}
+                      </h3>
+                      <p className="mt-2 text-body-sm text-mist">
+                        {offer.itemType === "SKIN"
+                          ? "Uma cópia de skin para sua coleção."
+                          : offer.itemType === "KEY"
+                            ? "Abre uma caixa do seu inventário. A caixa é adquirida separadamente."
+                            : offer.itemType === "COMMON_BOX"
+                              ? "Recompensa aleatória. Precisa de 1 chave para abrir."
+                              : "Uma carta para sua coleção."}
+                      </p>
+                      <div className="mt-auto pt-4">
+                        <p className="font-display text-xl tabular-nums text-ice">
+                          {offer.price.toLocaleString("pt-BR")} cristais{" "}
+                          {offer.discount > 0 && (
+                            <span className="text-caption text-snow">
+                              · {offer.discount}% de desconto
+                            </span>
+                          )}
+                        </p>
+                        <p className="mt-2 text-caption text-mist">
+                          {offer.purchasedAt
+                            ? "Você já comprou esta oferta hoje."
+                            : shortfall > 0
+                              ? `Faltam ${shortfall.toLocaleString("pt-BR")} cristais.`
+                              : "Disponível · 1 compra nesta oferta"}
+                        </p>
+                        <button
+                          type="button"
+                          disabled={
+                            busy !== null ||
+                            !!offer.purchasedAt ||
+                            shortfall > 0
+                          }
+                          onClick={() => {
+                            setError("");
+                            setPurchase({
+                              name,
+                              price: offer.price,
+                              run: () =>
+                                act(
+                                  `offer-${offer.id}`,
+                                  () => api.gachaEconomyBuyOffer(offer.id),
+                                  "Oferta comprada.",
+                                  true,
+                                ),
+                            });
+                          }}
+                          className="btn-ice mt-3 min-h-11 w-full px-3 disabled:opacity-40"
+                        >
+                          {offer.purchasedAt ? "Comprado" : "Comprar"}
+                        </button>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+          )}
+
           {user && inventory && odds && (
             <section aria-labelledby="boxes-title" className="mt-9">
               <div className="flex flex-wrap items-end justify-between gap-3">
@@ -688,101 +809,29 @@ export default function GachaMarketPage() {
             </section>
           )}
 
-          {user && offers.length > 0 && (
-            <section aria-labelledby="shop-title" className="mt-10">
-              <div className="flex items-end justify-between gap-3">
-                <div>
-                  <h2
-                    id="shop-title"
-                    className="scroll-mt-24 font-display text-2xl text-snow"
-                  >
-                    Seleção de hoje
-                  </h2>
-                  <p className="mt-1 text-body-sm text-mist">
-                    Ofertas pessoais. Cada vaga permite 1 compra.
-                  </p>
-                </div>
-                <span className="text-caption tabular-nums text-mist">
-                  Renova em {resetCountdown} BRT
-                </span>
-              </div>
-              <ul className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {offers.map((offer) => (
-                  <li
-                    key={offer.id}
-                    className="flex min-w-0 items-center justify-between gap-3 bg-panel p-4"
-                  >
-                    {(() => {
-                      const image = safeImageSrc(
-                        offer.card?.image ?? offer.skin?.imageUrl,
-                      );
-                      return image ? (
-                        <Image
-                          src={image}
-                          alt=""
-                          width={48}
-                          height={64}
-                          className="h-16 w-12 shrink-0 rounded object-cover"
-                        />
-                      ) : (
-                        <div
-                          aria-hidden="true"
-                          className="h-16 w-12 shrink-0 rounded bg-ink"
-                        />
-                      );
-                    })()}
-                    <div className="min-w-0">
-                      <p className="truncate font-display text-body-sm text-snow">
-                        {offer.card?.name ??
-                          offer.skin?.name ??
-                          (offer.itemType === "KEY" ? "Chave" : "Caixa Comum")}
-                      </p>
-                      <p className="mt-1 text-caption tabular-nums text-mist">
-                        {offer.price.toLocaleString("pt-BR")} cristais
-                        {offer.discount > 0 ? ` · -${offer.discount}%` : ""}
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      disabled={
-                        busy !== null ||
-                        !!offer.purchasedAt ||
-                        (inventory?.available ?? 0) < offer.price
-                      }
-                      onClick={() =>
-                        void act(
-                          `offer-${offer.id}`,
-                          () => api.gachaEconomyBuyOffer(offer.id),
-                          "Oferta comprada.",
-                          true,
-                        )
-                      }
-                      className="btn-ghost min-h-11 shrink-0 px-3 disabled:opacity-40"
-                    >
-                      {offer.purchasedAt ? "Comprado" : "Comprar"}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          )}
-
           <MarketSection
             title="Cartas"
             listings={cards}
             total={cardTotal}
             canLoadMore={cards.length < cardTotal}
             userReady={!!user}
+            available={inventory?.available ?? 0}
             busy={busy}
             onLoadMore={() => void loadMore("CARD")}
-            onBuy={(listing) =>
-              void act(
-                `buy-${listing.id}`,
-                () => api.gachaEconomyBuyListing("CARD", listing.id),
-                "Carta comprada.",
-                true,
-              )
-            }
+            onBuy={(listing) => {
+              setError("");
+              setPurchase({
+                name: itemName(listing),
+                price: listing.price,
+                run: () =>
+                  act(
+                    `buy-${listing.id}`,
+                    () => api.gachaEconomyBuyListing("CARD", listing.id),
+                    "Carta comprada.",
+                    true,
+                  ),
+              });
+            }}
             onOrder={(listing) => {
               setError("");
               setOrderTarget(listing);
@@ -795,22 +844,88 @@ export default function GachaMarketPage() {
             total={skinTotal}
             canLoadMore={skins.length < skinTotal}
             userReady={!!user}
+            available={inventory?.available ?? 0}
             busy={busy}
             onLoadMore={() => void loadMore("SKIN")}
-            onBuy={(listing) =>
-              void act(
-                `buy-${listing.id}`,
-                () => api.gachaEconomyBuyListing("SKIN", listing.id),
-                "Skin comprada.",
-                true,
-              )
-            }
+            onBuy={(listing) => {
+              setError("");
+              setPurchase({
+                name: itemName(listing),
+                price: listing.price,
+                run: () =>
+                  act(
+                    `buy-${listing.id}`,
+                    () => api.gachaEconomyBuyListing("SKIN", listing.id),
+                    "Skin comprada.",
+                    true,
+                  ),
+              });
+            }}
             onOrder={(listing) => {
               setError("");
               setOrderTarget(listing);
             }}
             onHistory={(listing) => void showHistory(listing)}
           />
+
+          {purchase && (
+            <Modal
+              open
+              title={`Comprar ${purchase.name}`}
+              onClose={() => {
+                if (!busy) setPurchase(null);
+              }}
+              footer={
+                <button
+                  type="button"
+                  disabled={busy !== null}
+                  onClick={() => setPurchase(null)}
+                  className="btn-ghost min-h-11 px-4"
+                >
+                  Cancelar
+                </button>
+              }
+            >
+              <p className="text-body-sm text-mist">
+                Confira o valor antes de confirmar a compra.
+              </p>
+              <dl className="my-4 space-y-3 text-body-sm">
+                <div className="flex justify-between gap-3">
+                  <dt>Preço</dt>
+                  <dd className="text-ice">
+                    {purchase.price.toLocaleString("pt-BR")} cristais
+                  </dd>
+                </div>
+                <div className="flex justify-between gap-3">
+                  <dt>Saldo após a compra</dt>
+                  <dd>
+                    {Math.max(
+                      0,
+                      (inventory?.available ?? 0) - purchase.price,
+                    ).toLocaleString("pt-BR")}{" "}
+                    cristais
+                  </dd>
+                </div>
+              </dl>
+              {error && (
+                <p role="alert" className="mb-3 text-body-sm text-signal">
+                  {error}
+                </p>
+              )}
+              <button
+                type="button"
+                disabled={
+                  busy !== null || (inventory?.available ?? 0) < purchase.price
+                }
+                onClick={async () => {
+                  if (await purchase.run()) setPurchase(null);
+                }}
+                className="btn-ice min-h-11 w-full disabled:opacity-40"
+              >
+                {busy ? "Comprando…" : "Confirmar compra"}
+              </button>
+            </Modal>
+          )}
 
           {history && (
             <Modal
@@ -1014,7 +1129,7 @@ export default function GachaMarketPage() {
 
           {odds && (
             <details className="mt-10 border border-hairline bg-panel p-5">
-              <summary className="cursor-pointer font-display text-xl text-snow focus-visible:ring-2 focus-visible:ring-ice">
+              <summary className="min-h-11 cursor-pointer font-display text-xl text-snow focus-visible:ring-2 focus-visible:ring-ice">
                 Probabilidades das caixas · versão {odds.version ?? "inicial"}
               </summary>
               <div className="mt-5 grid gap-5 lg:grid-cols-3">
@@ -1062,6 +1177,7 @@ function MarketSection({
   total,
   canLoadMore,
   userReady,
+  available,
   busy,
   onLoadMore,
   onBuy,
@@ -1073,6 +1189,7 @@ function MarketSection({
   total: number;
   canLoadMore: boolean;
   userReady: boolean;
+  available: number;
   busy: string | null;
   onLoadMore: () => void;
   onBuy: (listing: GachaEconomyListingItem) => void;
@@ -1113,7 +1230,7 @@ function MarketSection({
             {total} ativos
           </span>
         </div>
-        <label className="text-caption text-mist">
+        <label className="w-full text-caption text-mist sm:w-auto">
           Buscar {title.toLocaleLowerCase("pt-BR")}
           <input
             type="search"
@@ -1126,6 +1243,19 @@ function MarketSection({
           />
         </label>
       </div>
+      <p className="mt-3 text-caption text-mist" role="status">
+        Busca nos {listings.length} anúncios carregados
+        {canLoadMore ? "; carregue mais para ampliar os resultados." : "."}
+      </p>
+      {query && (
+        <button
+          type="button"
+          onClick={() => setQuery("")}
+          className="btn-ghost mt-2 min-h-11 px-3"
+        >
+          Limpar busca
+        </button>
+      )}
       {visibleListings.length === 0 ? (
         <p className="mt-4 border border-dashed border-hairline p-5 text-body-sm text-mist">
           {normalizedQuery
@@ -1139,38 +1269,27 @@ function MarketSection({
               key={listing.id}
               className="min-w-0 border border-hairline bg-panel p-4"
             >
-              {(() => {
-                const image = safeImageSrc(
+              <MarketArtwork
+                name={itemName(listing)}
+                image={
                   listing.item.image ??
-                    listing.item.imageUrl ??
-                    listing.item.card?.image,
-                );
-                return image ? (
-                  <div className="market-card-art mx-auto mb-4 aspect-[3/4] w-full max-w-56 overflow-hidden bg-ink">
-                    <Image
-                      src={image}
-                      alt={itemName(listing)}
-                      width={240}
-                      height={320}
-                      className="h-full w-full object-cover"
-                      sizes="(max-width: 640px) 45vw, (max-width: 1024px) 30vw, 220px"
-                    />
-                  </div>
-                ) : (
-                  <div
-                    aria-hidden="true"
-                    className="market-card-art mx-auto mb-4 flex aspect-[3/4] w-full max-w-56 items-center justify-center bg-ink text-caption text-mist"
-                  >
-                    Sem imagem
-                  </div>
-                );
-              })()}
-              <div className="flex items-start justify-between gap-3">
+                  listing.item.imageUrl ??
+                  listing.item.card?.image
+                }
+                details={[
+                  listing.item.rarity ?? listing.item.card?.rarity,
+                  listing.item.foil,
+                  listing.item.animeTitle ?? listing.item.card?.animeTitle,
+                ]
+                  .filter(Boolean)
+                  .join(" · ")}
+              />
+              <div className="mt-4 flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <h3 className="truncate font-display text-body-sm text-snow">
+                  <h3 className="break-words font-display text-lg text-snow">
                     {itemName(listing)}
                   </h3>
-                  <p className="mt-1 truncate text-caption text-mist">
+                  <p className="mt-1 break-words text-body-sm text-mist">
                     {[
                       listing.item.rarity ?? listing.item.card?.rarity,
                       listing.item.foil,
@@ -1184,6 +1303,20 @@ function MarketSection({
                   {listing.price.toLocaleString("pt-BR")} cristais
                 </span>
               </div>
+              {listing.item.edition != null && (
+                <p className="mt-2 text-caption text-mist">
+                  Edição #{listing.item.edition}
+                  {listing.item.condition != null
+                    ? ` · Desgaste ${listing.item.condition.toLocaleString("pt-BR", { maximumFractionDigits: 4 })}`
+                    : ""}
+                </p>
+              )}
+              {userReady && available < listing.price && (
+                <p className="mt-2 text-caption text-mist">
+                  Faltam {(listing.price - available).toLocaleString("pt-BR")}{" "}
+                  cristais.
+                </p>
+              )}
               <p className="mt-3 text-caption text-mist">
                 Expira em {timeLeft(listing.expiresAt)}
               </p>
@@ -1206,7 +1339,9 @@ function MarketSection({
                 </button>
                 <button
                   type="button"
-                  disabled={!userReady || busy !== null}
+                  disabled={
+                    !userReady || busy !== null || available < listing.price
+                  }
                   onClick={() => onBuy(listing)}
                   className="btn-ice col-span-2 min-h-11 disabled:opacity-40"
                 >
@@ -1280,5 +1415,111 @@ function PositionList({
         </ul>
       )}
     </div>
+  );
+}
+
+function MarketArtwork({
+  name,
+  image,
+  details,
+}: {
+  name: string;
+  image?: string | null;
+  details: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const [zoom, setZoom] = useState(false);
+  const [failed, setFailed] = useState(false);
+  const src = safeImageSrc(image);
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => {
+          setZoom(false);
+          setOpen(true);
+        }}
+        aria-label={`Ver detalhes de ${name}`}
+        className="group block w-full text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ice"
+      >
+        <span className="flex h-64 items-center justify-center overflow-hidden bg-ink sm:h-72">
+          {src && !failed ? (
+            <Image
+              src={src}
+              alt={name}
+              width={480}
+              height={640}
+              sizes="(max-width: 479px) 90vw, (max-width: 1023px) 45vw, 400px"
+              onError={() => setFailed(true)}
+              className="h-full w-full object-contain"
+            />
+          ) : (
+            <span className="text-body-sm text-mist">Imagem indisponível</span>
+          )}
+        </span>
+        <span className="flex min-h-11 items-center justify-center border-b border-hairline text-body-sm text-ice group-hover:text-snow">
+          Ver arte e detalhes
+        </span>
+      </button>
+      {open && (
+        <Modal
+          open
+          size="wide"
+          onClose={() => setOpen(false)}
+          title={name}
+          footer={
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              className="btn-ghost min-h-11 px-4"
+            >
+              Fechar prévia
+            </button>
+          }
+        >
+          <p className="mb-4 break-words text-body-sm text-mist">{details}</p>
+          {src && !failed ? (
+            <>
+              <button
+                type="button"
+                aria-pressed={zoom}
+                onClick={() => setZoom(!zoom)}
+                className="btn-ghost mb-3 min-h-11 px-4"
+              >
+                {zoom ? "Ajustar à tela" : "Ampliar 2×"}
+              </button>
+              <div
+                tabIndex={0}
+                role="region"
+                aria-label="Arte ampliada; use a rolagem para explorar"
+                className="max-h-[60dvh] overflow-auto overscroll-contain bg-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-ice"
+              >
+                <Image
+                  src={src}
+                  alt={name}
+                  width={960}
+                  height={1280}
+                  sizes={zoom ? "1600px" : "800px"}
+                  className={
+                    zoom
+                      ? "h-auto w-[200%] max-w-none"
+                      : "mx-auto h-auto max-h-[60dvh] w-full object-contain"
+                  }
+                />
+              </div>
+              {zoom && (
+                <p className="mt-2 text-caption text-mist">
+                  Deslize ou role para explorar a imagem ampliada.
+                </p>
+              )}
+            </>
+          ) : (
+            <p className="py-10 text-center text-mist">
+              Imagem indisponível para este item.
+            </p>
+          )}
+        </Modal>
+      )}
+    </>
   );
 }
