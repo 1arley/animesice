@@ -17,6 +17,39 @@ test.describe("Gacha", () => {
   });
 
   for (const rarity of ["COMUM", "EPICA", "LENDARIA"]) {
+    test(`reveal ${rarity}: Continuar aguarda a carta se acomodar`, async ({ page }) => {
+      await page.emulateMedia({ reducedMotion: "no-preference" });
+      await blockAds(page);
+      await mockGeneric(page);
+      await loginAs(page);
+      await page.route("**/gacha/spin", async route => {
+        const response = await route.fetch();
+        const pull = await response.json();
+        pull.card.rarity = rarity;
+        await route.fulfill({ response, json: pull });
+      });
+      await page.goto("/gacha");
+      await page.getByRole("button", { name: /^Girar/ }).click();
+      const dialog = page.getByRole("dialog");
+      // Sample the first rendered frame with Continuar, before polling can
+      // conceal a button that appeared while the card was still rotating.
+      const transform = await dialog.evaluate(el => new Promise<number[]>(resolve => {
+        const sample = () => {
+          if (el.querySelector("button")?.textContent === "Continuar") {
+            const flip = el.querySelector("[data-flip]")!;
+            const matrix = new DOMMatrixReadOnly(getComputedStyle(flip).transform);
+            resolve([matrix.m11, matrix.m13, matrix.m22]);
+          } else requestAnimationFrame(sample);
+        };
+        sample();
+      }));
+      expect(transform[0]).toBeCloseTo(-1, 2);
+      expect(transform[1]).toBeCloseTo(0, 2);
+      expect(transform[2]).toBeCloseTo(1, 2);
+      await dialog.getByRole("button", { name: "Continuar" }).click();
+      await expect(dialog).toHaveCount(0);
+    });
+
     test(`reveal animado ${rarity}: espera API, Esc pula e backdrop fecha`, async ({
       page,
     }) => {
