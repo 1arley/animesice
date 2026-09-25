@@ -35,7 +35,9 @@ const card = {
 test.beforeEach(async ({ page }) => {
   await blockAds(page);
   await loginAs(page);
-  await page.route("**/gacha/engagement-pilot", route => route.fulfill({ json: { enabled: false, percent: 0 } }));
+  await page.route("**/gacha/engagement-pilot", (route) =>
+    route.fulfill({ json: { enabled: false, percent: 0 } }),
+  );
   await page.route("**/gacha/collections/progress", (route) =>
     route.fulfill({ json: [] }),
   );
@@ -183,7 +185,23 @@ test("mercado preserva oferta com erro e só confirma cancelamento concluído", 
     route.fulfill({ json: { items: [], total: 0 } }),
   );
   await page.route("**/gacha/economy/shop", (route) =>
-    route.fulfill({ json: [] }),
+    route.fulfill({
+      json: [
+        {
+          id: "offer-skin",
+          itemType: "SKIN",
+          price: 800,
+          discount: 20,
+          purchasedAt: null,
+          skin: {
+            id: "skin-a",
+            name: "Skin de teste com nome completo",
+            rarity: "EPICA",
+            imageUrl: "https://cdn.myanimelist.net/images/test-market.png",
+          },
+        },
+      ],
+    }),
   );
   await page.route("**/gacha/economy/skins/mine", (route) =>
     route.fulfill({ json: [] }),
@@ -194,6 +212,7 @@ test("mercado preserva oferta com erro e só confirma cancelamento concluído", 
   await page.route("**/gacha/economy/market/visit", (route) =>
     route.fulfill({ json: {} }),
   );
+  await page.route(/test-market|\/_next\/image/, route => route.fulfill({ path: "public/images/logo.png", contentType: "image/png" }));
   await page.goto("/gacha/mercado");
   await expect(
     page.getByRole("heading", { name: "Cartas no mercado" }),
@@ -210,6 +229,44 @@ test("mercado preserva oferta com erro e só confirma cancelamento concluído", 
       () => document.documentElement.scrollWidth <= window.innerWidth,
     ),
   ).toBe(true);
+  const shop = page.getByRole("region", { name: "Seleção de hoje" });
+  await expect(shop.getByText("Skin · EPICA", { exact: true })).toBeVisible();
+  const preview = shop.getByRole("button", {
+    name: "Ver detalhes de Skin de teste com nome completo",
+  });
+  await preview.click();
+  const art = page.getByRole("dialog", {
+    name: "Skin de teste com nome completo",
+  });
+  await expect(art.getByRole("img")).toBeVisible();
+  await art.getByRole("button", { name: "Ampliar 2×" }).click();
+  await expect(
+    art.getByRole("button", { name: "Ajustar à tela" }),
+  ).toHaveAttribute("aria-pressed", "true");
+  await page.screenshot({ path: testInfo.outputPath("mercado-zoom.png") });
+  await page.keyboard.press("Escape");
+  await expect(art).toHaveCount(0);
+  await expect(preview).toBeFocused();
+  let purchases = 0;
+  await page.route("**/gacha/economy/shop/offer-skin/buy", (route) => {
+    purchases += 1;
+    return route.fulfill({
+      status: 400,
+      json: { message: "Oferta indisponível. Atualize o mercado." },
+    });
+  });
+  await shop.getByRole("button", { name: "Comprar", exact: true }).click();
+  expect(purchases).toBe(0);
+  const purchase = page.getByRole("dialog");
+  await expect(
+    purchase.getByText("1.000 cristais", { exact: true }),
+  ).toBeVisible();
+  await purchase.getByRole("button", { name: "Confirmar compra" }).click();
+  await expect(purchase.getByRole("alert")).toHaveText(
+    "Oferta indisponível. Atualize o mercado.",
+  );
+  expect(purchases).toBe(1);
+  await purchase.getByRole("button", { name: "Cancelar" }).click();
   await page.route("**/gacha/economy/market/orders", (route) =>
     route.fulfill({
       status: 400,
