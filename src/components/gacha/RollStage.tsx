@@ -70,22 +70,44 @@ export function RollStage({ pull, reduceMotion, onClose, preview = false }: {
     const tl = gsap.timeline();
     timeline.current = tl;
     if (pull) tl.timeScale(revealSpeed(tierIndex));
+    const select = gsap.utils.selector(dialog);
+    let reveal: gsap.core.Timeline | null = null;
     const buildFlip = (idx: number) => {
-      const el = dialog.current?.querySelector("[data-flip]");
-      if (!el) return;
-      tl.killTweensOf(el);
-      if (idx >= 4) {
-        tl.to(el, { rotationY: 90, scale: 0.88, duration: 0.42, ease: "power2.in" }, "reveal+=0.3")
-          .to(el, { rotationY: 180, duration: 0.42, ease: "power3.out" }, "reveal+=0.88")
-          .to(el, { scale: 1, duration: 0.5, ease: "back.out(3)" }, "<");
-      } else {
-        tl.to(el, { rotationY: 180, scale: 0.9, duration: 0.6, ease: "power2.in" }, "reveal+=0.3")
-          .to(el, { scale: 1, duration: 0.5, ease: "back.out(3)" }, ">");
-      }
+      reveal?.kill();
+      const rare = idx >= 4;
+      const frontAt = rare ? 0.88 : 0.6;
+      const settledAt = frontAt + 0.5;
+      reveal = gsap.timeline();
+      reveal.to(select("[data-flip]"), {
+        rotationY: 90, scale: rare ? 0.88 : 0.94,
+        duration: rare ? 0.42 : 0.3, ease: "power2.in",
+      }, 0.3)
+        .to(select("[data-flip]"), { rotationY: 180, duration: 0.42, ease: "power3.out" }, frontAt)
+        .to(select("[data-flip]"), { scale: 1, duration: 0.5, ease: "back.out(1.4)" }, frontAt)
+        .to(select("[data-crystal]"), { scale: 0, opacity: 0, duration: 0.25, ease: "back.in(2)" }, 0)
+        .fromTo(select("[data-ring]"), { scale: 0.4, opacity: 0.8 }, {
+          scale: 2, opacity: 0, duration: 0.55, stagger: 0.12, immediateRender: false,
+        }, frontAt)
+        .fromTo(select("[data-particle]"), { x: 0, y: 0, opacity: 1 }, {
+          x: (i) => Math.cos(i * Math.PI * 2 / PARTICLE_SLOTS) * 180,
+          y: (i) => Math.sin(i * Math.PI * 2 / PARTICLE_SLOTS) * 230,
+          opacity: 0, duration: 0.65, immediateRender: false, ease: "power2.out",
+        }, frontAt)
+        .fromTo(select("[data-flash]"), { opacity: 0.4 }, {
+          opacity: 0, duration: 0.4, immediateRender: false,
+        }, frontAt)
+        .to(select("[data-stage]"), { x: shakeAmp(idx), yoyo: true, repeat: 7, duration: 0.06 }, frontAt)
+        .fromTo(select("[data-sweep]"), { x: "-150%" }, {
+          x: "150%", duration: 0.6, ease: "power1.inOut", immediateRender: false,
+        }, frontAt + 0.15)
+        .fromTo(select("[data-badge]"), { scale: 0.9, opacity: 0 }, {
+          scale: 1, opacity: 1, ease: "power2.out", duration: 0.25, immediateRender: false,
+        }, settledAt)
+        .call(() => setRevealed(true), [], settledAt);
+      tl.add(reveal, "reveal");
     };
     flipBuilder.current = buildFlip;
     tl.addLabel("reveal", 1.8);
-    buildFlip(tierIndex);
     tl.from("[data-stage]", { scale: 0.94, opacity: 0, duration: 0.15 }, 0)
       .to("[data-crystal]", { rotation: 405, scale: 1.2, duration: 1.2, ease: "power2.in" }, 0.2)
       .fromTo("[data-glow]", { opacity: 0.25, scale: 1 }, { opacity: 0.8, scale: 1.25, duration: 1.3, ease: "power2.in", immediateRender: false }, 0.3)
@@ -94,20 +116,8 @@ export function RollStage({ pull, reduceMotion, onClose, preview = false }: {
         waiting.current = true;
         if (!latestPull.current) tl.pause();
         else tl.timeScale(revealSpeed(tierOf(latestPull.current)));
-      }, [], 1.8)
-      .to("[data-crystal]", { scale: 0, opacity: 0, duration: 0.25, ease: "back.in(2)" }, "reveal")
-      .fromTo("[data-ring]", { scale: 0.4, opacity: 0.8 }, { scale: 2, opacity: 0, duration: 0.55, stagger: 0.12, immediateRender: false }, "reveal")
-      .fromTo("[data-particle]", { x: 0, y: 0, opacity: 1 }, {
-        x: (i) => Math.cos(i * Math.PI * 2 / PARTICLE_SLOTS) * 180,
-        y: (i) => Math.sin(i * Math.PI * 2 / PARTICLE_SLOTS) * 230,
-        opacity: 0, duration: 0.65, immediateRender: false, ease: "power2.out",
-      }, "reveal")
-      .fromTo("[data-flash]", { opacity: 0.3 }, { opacity: 0, duration: 0.4, immediateRender: false }, "reveal")
-      .to("[data-stage]", { x: () => shakeAmp(tierOf(latestPull.current)), yoyo: true, repeat: 7, duration: 0.06 }, "reveal")
-      .fromTo("[data-sweep]", { x: "-150%" }, { x: "150%", duration: 0.6, ease: "power1.inOut", immediateRender: false }, "reveal+=0.75")
-      .fromTo("[data-flash]", { opacity: 0.4 }, { opacity: 0, duration: 0.4, immediateRender: false }, "reveal+=0.85")
-      .fromTo("[data-badge]", { scale: 0.3, opacity: 0 }, { scale: 1, opacity: 1, ease: "back.out(2)", duration: 0.3, immediateRender: false }, "reveal+=0.9")
-      .call(() => setRevealed(true), [], "reveal+=0.9");
+      }, [], 1.8);
+    buildFlip(tierIndex);
     return () => { timeline.current = null; };
   }, { scope: dialog, dependencies: [reduceMotion], revertOnUpdate: true });
 
@@ -119,7 +129,7 @@ export function RollStage({ pull, reduceMotion, onClose, preview = false }: {
       setRevealed(true);
     } else if (waiting.current) {
       flipBuilder.current(tierIndex);
-      tl?.play("reveal");
+      tl?.timeScale(revealSpeed(tierIndex)).play("reveal");
     } else {
       flipBuilder.current(tierIndex);
       tl?.timeScale(revealSpeed(tierIndex));

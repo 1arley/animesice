@@ -111,6 +111,7 @@ function GachaPageContent() {
   const [rerolling, setRerolling] = useState(false);
   const [listing, setListing] = useState(false);
   const [rerollConfirm, setRerollConfirm] = useState(false);
+  const [applyingRanking, setApplyingRanking] = useState(false);
   const { toast } = useToast();
   const [bypassReference, setBypassReference] = useState<string | null>(null);
   const [checkoutUrl, setCheckoutUrl] = useState<string | null>(null);
@@ -302,6 +303,27 @@ function GachaPageContent() {
     }
   }
 
+  async function handleApplyRanking() {
+    if (!preview || applyingRanking) return;
+    const diff = preview.value - (preview.rankedValue ?? preview.value);
+    setApplyingRanking(true);
+    setError("");
+    try {
+      const updated = await api.gachaApplyRanking({
+        userCardId: preview.id,
+      });
+      setPreview(updated);
+      toast(`Ranking atualizado: +${diff} pts.`, "success");
+      await refresh();
+    } catch (err) {
+      setError(
+        err instanceof ApiError ? err.message : "Erro ao aplicar ao ranking.",
+      );
+    } finally {
+      setApplyingRanking(false);
+    }
+  }
+
   async function handleList(price: number) {
     if (!preview || listing) return;
     setListing(true);
@@ -392,7 +414,7 @@ function GachaPageContent() {
   );
 
   return (
-    <div className="mx-auto max-w-shelf px-4 pb-16 pt-8">
+    <div className="mx-auto max-w-shelf px-4 pb-16 pt-5 sm:pt-8">
       {stageOpen && (!reduceMotion || stagePull) && (
         <RollStage
           pull={stagePull}
@@ -421,6 +443,12 @@ function GachaPageContent() {
               ? (price) => void handleList(price)
               : undefined
           }
+          applyingRanking={applyingRanking}
+          onApplyRanking={
+            user && preview.user.id === user.id
+              ? () => void handleApplyRanking()
+              : undefined
+          }
         />
       )}
       {selectedSpin && (
@@ -443,7 +471,7 @@ function GachaPageContent() {
         </ConfirmDialog>
       )}
 
-      <section className="relative mt-4 overflow-hidden border border-hairline bg-panel">
+      <section className="relative mt-3 overflow-hidden border border-hairline bg-panel shadow-[0_18px_60px_rgba(0,0,0,0.22)] sm:mt-4">
         <div
           aria-hidden="true"
           className="pointer-events-none absolute inset-0 [background:radial-gradient(60%_90%_at_50%_0%,rgba(56,189,248,0.13),transparent_70%)]"
@@ -453,15 +481,15 @@ function GachaPageContent() {
           className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-ice/50 to-transparent"
         />
 
-        <div className="relative px-5 pb-6 pt-10 text-center sm:pb-8 sm:pt-12">
+        <div className="relative px-5 pb-7 pt-8 text-center sm:px-8 sm:pb-9 sm:pt-12">
           <p className="font-mono text-caption uppercase tracking-[0.25em] text-ice">
             Sinal no ar · Sala do Gacha
           </p>
-          <h1 className="mt-3 flex items-center justify-center gap-3 font-display text-display-lg text-snow">
-            <CrystalIcon className="h-7 w-7 text-ice/80" />
-            Gacha
+          <h1 className="mt-3 flex items-center justify-center gap-3 font-display text-display-lg text-snow sm:text-[3.25rem]">
+            <CrystalIcon className="h-7 w-7 text-ice/80 sm:h-9 sm:w-9" />
+            <span>Gacha</span>
           </h1>
-          <p className="mx-auto mt-2 max-w-2xl text-body-sm text-mist">
+          <p className="mx-auto mt-3 max-w-2xl text-body-sm leading-relaxed text-mist">
             5 giros por hora para revelar cartas. Guarde cartas com cooldown que
             varia por raridade — girar continua liberado durante o bloqueio.
             Mesma carta, cópias únicas: condition, foil e edição definem o
@@ -513,31 +541,51 @@ function GachaPageContent() {
                     {error}
                   </div>
                 )}
-                <div className="mx-auto flex max-w-3xl flex-wrap items-center justify-center gap-x-6 gap-y-2 border border-hairline bg-ink/60 px-4 py-3 font-mono text-caption text-mist">
-                  <span>
-                    {status?.spinsLeft != null
-                      ? `${status.spinsLeft}/5 giros nesta hora${spinCountdown && status.spinsLeft === 0 ? ` · volta em ${spinCountdown}` : ""}`
-                      : status?.canRoll
-                        ? "Roll de hoje disponível"
-                        : `Volte ${status?.nextRollAt ? new Date(status.nextRollAt).toLocaleString("pt-BR") : "amanhã"}`}
+                <div className="mx-auto grid max-w-3xl grid-cols-2 divide-x divide-hairline border border-hairline bg-ink/60 text-left sm:grid-cols-4">
+                  <span className="px-3 py-3 sm:px-4">
+                    <span className="block font-mono text-[10px] uppercase tracking-wider text-mist-soft">
+                      Giros
+                    </span>
+                    <span className="mt-1 block font-display text-sm text-snow">
+                      {status?.spinsLeft != null
+                        ? `${status.spinsLeft}/5 giros nesta hora${spinCountdown && status.spinsLeft === 0 ? ` · volta em ${spinCountdown}` : ""}`
+                        : status?.canRoll
+                          ? "Roll de hoje disponível"
+                          : `Volte ${status?.nextRollAt ? new Date(status.nextRollAt).toLocaleString("pt-BR") : "amanhã"}`}
+                    </span>
                   </span>
-                  <span>
-                    {status?.pityDue
-                      ? "ÉPICA+ garantida neste giro"
-                      : `Pity ÉPICA+ em ${status?.pityDaysLeft ?? 30}d`}
+                  <span className="px-3 py-3 sm:px-4">
+                    <span className="block font-mono text-[10px] uppercase tracking-wider text-mist-soft">
+                      Pity
+                    </span>
+                    <span className="mt-1 block font-display text-sm text-snow">
+                      {status?.pityDue
+                        ? "ÉPICA+ garantida neste giro"
+                        : `Pity ÉPICA+ em ${status?.pityDaysLeft ?? 30}d`}
+                    </span>
                   </span>
                   {locked && (
-                    <span>
-                      Próxima carta guardável em {claimCountdown ?? "…"}
+                    <span className="col-span-2 px-3 py-3 sm:col-span-1 sm:px-4">
+                      <span className="block font-mono text-[10px] uppercase tracking-wider text-mist-soft">
+                        Cooldown
+                      </span>
+                      <span className="mt-1 block font-display text-sm text-snow">
+                        Próxima carta guardável em {claimCountdown ?? "…"}
+                      </span>
                     </span>
                   )}
-                  <span>
-                    <Link
-                      href="/gacha/cristais"
-                      className="text-snow decoration-hairline underline-offset-4 hover:underline"
-                    >
-                      {status?.crystalBalance?.toLocaleString("pt-BR") ?? 0} 💎
-                    </Link>
+                  <span className="px-3 py-3 sm:px-4">
+                    <span className="block font-mono text-[10px] uppercase tracking-wider text-mist-soft">
+                      Cristais
+                    </span>
+                    <span className="mt-1 block font-display text-sm text-snow">
+                      <Link
+                        href="/gacha/cristais"
+                        className="text-ice decoration-hairline underline-offset-4 hover:text-snow hover:underline"
+                      >
+                        {status?.crystalBalance?.toLocaleString("pt-BR") ?? 0}
+                      </Link>
+                    </span>
                   </span>
                 </div>
 
@@ -546,7 +594,7 @@ function GachaPageContent() {
                     type="button"
                     onClick={() => void handleSpin()}
                     disabled={!canSpinNow}
-                    className="btn-ice w-fit px-8 py-4 text-body transition-transform duration-150 active:scale-95 motion-reduce:transform-none disabled:cursor-not-allowed disabled:opacity-50"
+                    className="btn-ice min-w-44 px-8 py-4 text-body transition-transform duration-150 active:scale-95 motion-reduce:transform-none disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {spinning
                       ? "Girando…"
@@ -678,7 +726,7 @@ function GachaPageContent() {
           ))}
       </section>
 
-      <section className="mt-10">
+      <section className="mt-12">
         <SectionLabel level={2}>Últimos pulls</SectionLabel>
         {recent.length === 0 ? (
           <EmptyState
@@ -704,82 +752,84 @@ function GachaPageContent() {
         )}
       </section>
 
-      <section className="mt-10">
-        <SectionLabel level={2}>Como funciona</SectionLabel>
-        <div className="grid gap-3 md:grid-cols-2">
-          <div className="border border-hairline bg-panel p-4 text-body-sm text-mist">
-            <p className="font-medium text-snow">Raridade</p>
-            <ul className="mt-2 space-y-1 font-mono text-caption">
-              <li className="text-mist">COMUM — 55%</li>
-              <li className="text-emerald-400">INCOMUM — 25%</li>
-              <li className="text-sky-400">RARA — 12%</li>
-              <li className="text-violet-400">ÉPICA — 5,5%</li>
-              <li className="text-amber-300">LENDÁRIA — 2%</li>
-              <li className="text-rose-400">MÍTICA — 0,4%</li>
-              <li className="bg-gradient-to-r from-violet-400 via-pink-400 to-sky-400 bg-clip-text text-transparent">
-                GALÁCTICA — 0,1%
-              </li>
-            </ul>
-            <p className="mt-3">
-              30 dias sem ÉPICA+ ativa o pity: próximo roll garante ÉPICA ou
-              melhor — com 2% de chance de GALÁCTICA.
-            </p>
-          </div>
-          <div className="border border-hairline bg-panel p-4 text-body-sm text-mist">
-            <p className="font-medium text-snow">Sua cópia é única</p>
-            <ul className="mt-2 space-y-1 font-mono text-caption">
-              <li>
-                Foil: NORMAL 85% · <span className="text-ice">HOLO 12%</span> ·{" "}
-                <span className="text-amber-300">GOLD 3%</span>
-              </li>
-              <li>
-                Condition: <span className="text-ice">◆◆◆ MINT</span> &gt;{" "}
-                <span className="text-snow">◆◆ NM</span> &gt;{" "}
-                <span className="text-amber-300">◆ EX</span> &gt;{" "}
-                <span className="text-orange-500">▽ PLAYED</span> &gt;{" "}
-                <span className="text-red-500">✕ POOR</span>
-              </li>
-              <li>
-                Edição: #1 a #10 valem bônus alto — quanto menor, mais rara
-              </li>
-            </ul>
-            <p className="mt-3">
-              Value = base da raridade × condition × foil + bônus de edição
-              baixa. Sua coleção vale a soma.
-            </p>
+      <section className="mt-12 grid gap-8 lg:grid-cols-[1.35fr_0.65fr]">
+        <div>
+          <SectionLabel level={2}>Como funciona</SectionLabel>
+          <div className="grid gap-3 md:grid-cols-2">
+            <div className="border border-hairline bg-panel p-4 text-body-sm text-mist">
+              <p className="font-medium text-snow">Raridade</p>
+              <ul className="mt-2 space-y-1 font-mono text-caption">
+                <li className="text-mist">COMUM — 55%</li>
+                <li className="text-emerald-400">INCOMUM — 25%</li>
+                <li className="text-sky-400">RARA — 12%</li>
+                <li className="text-violet-400">ÉPICA — 5,5%</li>
+                <li className="text-amber-300">LENDÁRIA — 2%</li>
+                <li className="text-rose-400">MÍTICA — 0,4%</li>
+                <li className="bg-gradient-to-r from-violet-400 via-pink-400 to-sky-400 bg-clip-text text-transparent">
+                  GALÁCTICA — 0,1%
+                </li>
+              </ul>
+              <p className="mt-3">
+                30 dias sem ÉPICA+ ativa o pity: próximo roll garante ÉPICA ou
+                melhor — com 2% de chance de GALÁCTICA.
+              </p>
+            </div>
+            <div className="border border-hairline bg-panel p-4 text-body-sm text-mist">
+              <p className="font-medium text-snow">Sua cópia é única</p>
+              <ul className="mt-2 space-y-1 font-mono text-caption">
+                <li>
+                  Foil: NORMAL 85% · <span className="text-ice">HOLO 12%</span>{" "}
+                  · <span className="text-amber-300">GOLD 3%</span>
+                </li>
+                <li>
+                  Condition: <span className="text-ice">◆◆◆ MINT</span> &gt;{" "}
+                  <span className="text-snow">◆◆ NM</span> &gt;{" "}
+                  <span className="text-amber-300">◆ EX</span> &gt;{" "}
+                  <span className="text-orange-500">▽ PLAYED</span> &gt;{" "}
+                  <span className="text-red-500">✕ POOR</span>
+                </li>
+                <li>
+                  Edição: #1 a #10 valem bônus alto — quanto menor, mais rara
+                </li>
+              </ul>
+              <p className="mt-3">
+                Value = base da raridade × condition × foil + bônus de edição
+                baixa. Sua coleção vale a soma.
+              </p>
+            </div>
           </div>
         </div>
-      </section>
 
-      <section className="mt-10">
-        <SectionLabel level={2}>Ranking</SectionLabel>
-        {ranking.length === 0 ? (
-          <EmptyState text="Ranking vazio por enquanto." variant="compact" />
-        ) : (
-          <ol className="divide-y divide-hairline border border-hairline bg-panel">
-            {ranking.map((entry, i) => (
-              <li key={entry.user.id} className="flex items-center gap-3 p-3">
-                <span className="w-6 shrink-0 font-mono text-caption text-mist">
-                  {i + 1}
-                </span>
-                <Avatar
-                  name={entry.user.name || entry.user.userName}
-                  src={entry.user.avatar}
-                  size={28}
-                />
-                <Link
-                  href={`/usuarios/${entry.user.userName ?? entry.user.id}`}
-                  className="min-w-0 flex-1 truncate text-body-sm text-snow hover:text-ice"
-                >
-                  {entry.user.name || entry.user.userName || "Usuário"}
-                </Link>
-                <span className="shrink-0 font-mono text-caption text-mist-soft">
-                  {entry.pulls} cartas · {entry.totalValue} pts
-                </span>
-              </li>
-            ))}
-          </ol>
-        )}
+        <div>
+          <SectionLabel level={2}>Ranking</SectionLabel>
+          {ranking.length === 0 ? (
+            <EmptyState text="Ranking vazio por enquanto." variant="compact" />
+          ) : (
+            <ol className="divide-y divide-hairline border border-hairline bg-panel">
+              {ranking.map((entry, i) => (
+                <li key={entry.user.id} className="flex items-center gap-3 p-3">
+                  <span className="w-6 shrink-0 font-mono text-caption text-mist">
+                    {i + 1}
+                  </span>
+                  <Avatar
+                    name={entry.user.name || entry.user.userName}
+                    src={entry.user.avatar}
+                    size={28}
+                  />
+                  <Link
+                    href={`/usuarios/${entry.user.userName ?? entry.user.id}`}
+                    className="min-w-0 flex-1 truncate text-body-sm text-snow hover:text-ice"
+                  >
+                    {entry.user.name || entry.user.userName || "Usuário"}
+                  </Link>
+                  <span className="shrink-0 font-mono text-caption text-mist-soft">
+                    {entry.totalValue} pts
+                  </span>
+                </li>
+              ))}
+            </ol>
+          )}
+        </div>
       </section>
     </div>
   );

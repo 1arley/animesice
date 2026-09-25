@@ -9,6 +9,7 @@ import { DeferredCrystalSplash } from "@/components/animesice/DeferredCrystalSpl
 import { chunkRecoveryScript } from "@/lib/chunk-recovery-script";
 import { ServiceNotice } from "@/components/common/ServiceNotice";
 import { CompensationModal } from "@/components/common/CompensationModal";
+import { MonetagVignette } from "@/components/common/MonetagVignette";
 
 // Tipografia do "sinal da madrugada": Barlow Condensed traz a linguagem de
 // cartaz e grade de programação sem transformar toda a interface em terminal.
@@ -158,6 +159,7 @@ export default function RootLayout({
         {/* Abertura da identidade de motion: cristal em foco puxado, uma vez
             por sessão, dispensável a qualquer toque/tecla. Nunca bloqueia. */}
         <DeferredCrystalSplash />
+        <MonetagVignette />
       </body>
     </html>
   );

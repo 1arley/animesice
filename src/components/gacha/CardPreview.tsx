@@ -9,6 +9,7 @@ import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
 import { GachaCard, gachaConditionLabel } from "@/components/gacha/GachaCard";
 import { CardBackSvg } from "@/components/gacha/CardBackSvg";
 import { api, ApiError } from "@/lib/api";
+import { useAuth } from "@/lib/auth-context";
 import type { GachaPull, GachaShopItem } from "@/types";
 
 export function CardPreview({
@@ -24,6 +25,8 @@ export function CardPreview({
   listing = false,
   burning = false,
   onBurn,
+  applyingRanking = false,
+  onApplyRanking,
   onChange,
 }: {
   pull: GachaPull;
@@ -38,9 +41,13 @@ export function CardPreview({
   listing?: boolean;
   burning?: boolean;
   onBurn?: () => void;
+  applyingRanking?: boolean;
+  onApplyRanking?: () => void;
   onChange?: (pull: GachaPull) => void;
 }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
+  const { user } = useAuth();
+  const isOwner = !!user && !!pull.user?.id && user.id === pull.user.id;
   const fine = useFinePointer();
   const reduced = usePrefersReducedMotion();
   const priceRef = useRef<HTMLInputElement>(null);
@@ -48,6 +55,11 @@ export function CardPreview({
   const aurora = cosmetics.includes("FRAME_AURORA");
   const destaque = cosmetics.includes("DESTAQUE_CARTA");
   const rerollCost = Math.max(1, pull.value + Math.round(pull.value * 0.15));
+  const applyCost =
+    pull.rankedValue !== undefined && pull.value > pull.rankedValue
+      ? Math.max(1, Math.round((pull.value - pull.rankedValue) * 0.10))
+      : 0;
+  const canApply = applyCost > 0;
   const condition = pull.conditionLabel ?? gachaConditionLabel(pull.condition);
   const obtainedAt = new Date(pull.obtainedAt).toLocaleDateString("pt-BR", {
     day: "2-digit",
@@ -127,13 +139,16 @@ export function CardPreview({
   }, [canReroll, pull.id]);
 
   useEffect(() => {
+    if (!isOwner) return;
     let cancelled = false;
     api
       .gachaShop()
       .then((s) => {
         if (!cancelled) {
           setCardBacks(
-            s.cosmetics.filter((c) => c.key.startsWith("BACK_") && c.owned),
+            s.cosmetics.filter(
+              (c) => c.owned && (c.type === "BACK" || (!c.type && c.key.startsWith("BACK_"))),
+            ),
           );
           setActiveBack(s.activeCardBack ?? null);
         }
@@ -142,10 +157,10 @@ export function CardPreview({
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [isOwner, pull.id]);
 
   async function toggleCardBack(key: string | null) {
-    if (backLoading) return;
+    if (!isOwner || backLoading) return;
     setBackLoading(true);
     setBackError("");
     try {
@@ -468,7 +483,7 @@ export function CardPreview({
               )}
             </section>
           )}
-          {cardBacks.length > 0 && (
+          {isOwner && cardBacks.length > 0 && (
             <section className="mt-4 border border-hairline bg-ink p-3">
               <div className="flex items-baseline justify-between gap-3">
                 <h3 className="font-display text-sm text-snow">Capa</h3>
@@ -477,7 +492,7 @@ export function CardPreview({
                 </span>
               </div>
               <p className="mt-1 text-xs text-mist">
-                Escolha o verso desta carta.
+                A capa escolhida será usada em todas as suas cartas.
               </p>
               <div
                 className="mt-3 flex gap-2 overflow-x-auto pb-2"
@@ -515,7 +530,7 @@ export function CardPreview({
                     }`}
                   >
                     <span className="flex aspect-[3/4] items-center justify-center overflow-hidden bg-panel">
-                      {cb.svg ? (
+                      {cb.svg || cb.previewUrl ? (
                         <CardBackSvg
                           backKey={cb.key}
                           className="h-full w-full"
@@ -566,6 +581,19 @@ export function CardPreview({
             {rerolling
               ? "Rerrollando…"
               : `Rerrollar condition/foil · ${rerollCost} pts`}
+          </button>
+        )}
+        {canApply && onApplyRanking && (
+          <button
+            type="button"
+            onClick={onApplyRanking}
+            disabled={applyingRanking}
+            title="Aplica os novos pontos da carta ao ranking."
+            className="mt-3 w-full border border-ice/60 px-4 py-3 font-mono text-caption text-ice disabled:opacity-50"
+          >
+            {applyingRanking
+              ? "Aplicando…"
+              : `Aplicar ao Ranking · ${applyCost} crystals`}
           </button>
         )}
         {onList && (

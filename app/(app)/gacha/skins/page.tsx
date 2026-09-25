@@ -186,10 +186,9 @@ export default function GachaSkinsPage() {
       </div>
       <section className="mb-10 flex flex-wrap items-center justify-between gap-4 border border-hairline bg-panel p-5">
         <div>
-          <p className="font-semibold text-ice">1 giro a cada 12 horas</p>
+          <p className="font-semibold text-ice">1 giro grátis por semana</p>
           <p className="text-sm text-mist">
-            Giro imediato custa {data.spinPrice.toLocaleString("pt-BR")}{" "}
-            cristais.
+            O giro é gratuito e volta a ficar disponível após o tempo indicado.
           </p>
         </div>
         <button
