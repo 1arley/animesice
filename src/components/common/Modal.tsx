@@ -4,7 +4,7 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 
 const FOCUSABLE = "input:not([disabled]):not([type='hidden']), textarea:not([disabled]), select:not([disabled]), button:not([disabled]), a[href], [tabindex]:not([tabindex='-1'])";
 
-export function Modal({ open, onClose, title, children, footer }: { open: boolean; onClose: () => void; title?: string; children: React.ReactNode; footer?: React.ReactNode }) {
+export function Modal({ open, onClose, title, children, footer, size = "default" }: { open: boolean; onClose: () => void; title?: string; children: React.ReactNode; footer?: React.ReactNode; size?: "default" | "wide" }) {
   const [mounted, setMounted] = useState(false);
   const dialogRef = useRef<HTMLDivElement | null>(null);
   const onCloseRef = useRef(onClose);
@@ -92,7 +92,7 @@ export function Modal({ open, onClose, title, children, footer }: { open: boolea
           }
         }}
       />
-      <div role="dialog" aria-modal="true" aria-label={title ?? "Diálogo"} ref={dialogRef} className="relative z-10 max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto overscroll-contain border border-hairline bg-panel p-4 pb-[max(1rem,env(safe-area-inset-bottom))] transition-opacity duration-200 sm:rounded sm:p-6" style={{ animation: open ? "fadeIn 160ms" : "fadeOut 120ms" }}>
+      <div role="dialog" aria-modal="true" aria-label={title ?? "Diálogo"} ref={dialogRef} style={{ maxWidth: size === "wide" ? "64rem" : undefined, animation: open ? "fadeIn 160ms" : "fadeOut 120ms" }} className="relative z-10 max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto overscroll-contain border border-hairline bg-panel p-4 pb-[max(1rem,env(safe-area-inset-bottom))] transition-opacity duration-200 sm:rounded sm:p-6">
         {title && <h3 className="font-display text-lg text-ice mb-3">{title}</h3>}
         <div>{children}</div>
         <div className="mt-4 flex justify-end gap-2">

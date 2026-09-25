@@ -8,13 +8,13 @@ import type { Locator, Page } from "@playwright/test";
 
 // Redes de anúncio bloqueadas para iframes não interceptarem cliques
 // ("<div></div> intercepts pointer events") e tornarem o teste flaky.
-// Monetag (al5sm) e demais redes são abortadas; sem AdSense/AdBlockNotice
+// Monetag (n6wxm) e demais redes são abortadas; sem AdSense/AdBlockNotice
 // não há mais sonda de rede a responder.
 const AD_PATTERNS = [
   "**/pagead2.googlesyndication.com/**",
   "**/*.doubleclick.net/**",
   "**/fundingchoicesmessages.google.com/**",
-  "**/al5sm.com/**",
+  "**/n6wxm.com/**",
   "**/my.rtmark.net/**",
   "**/255md.com/**",
   "**/ep1.adtrafficquality.google/**",

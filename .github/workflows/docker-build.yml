@@ -51,5 +51,6 @@ jobs:
           build-args: |
             NEXT_PUBLIC_API_URL=${{ steps.api.outputs.url }}
             NEXT_PUBLIC_SITE_URL=https://${{ github.ref_name == 'main' && 'animesice.app' || 'dev.animesice.app' }}
+            NEXT_PUBLIC_ENABLE_MONETAG=${{ secrets.NEXT_PUBLIC_ENABLE_MONETAG || '' }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
