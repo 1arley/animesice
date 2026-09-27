@@ -37,7 +37,12 @@ export function RollStage({ pull, reduceMotion, onClose, preview = false }: {
   const flipBuilder = useRef<(idx: number) => void>(() => {});
   const latestPull = useRef(pull);
   latestPull.current = pull;
-  const skipped = useRef(false);
+  const [skipped, setSkipped] = useState(false);
+  const [videoFailed, setVideoFailed] = useState(false);
+  // Capture before the opening commit disables the trigger and moves focus.
+  const [previousFocus] = useState(() =>
+    typeof document === "undefined" ? null : document.activeElement as HTMLElement | null,
+  );
   const waiting = useRef(false);
   const [revealed, setRevealed] = useState(reduceMotion);
   const [canSkip, setCanSkip] = useState(false);
@@ -51,16 +56,15 @@ export function RollStage({ pull, reduceMotion, onClose, preview = false }: {
 
   useEffect(() => {
     const el = dialog.current!;
-    const previous = document.activeElement as HTMLElement | null;
     const overflow = document.body.style.overflow;
     el.showModal();
     document.body.style.overflow = "hidden";
     return () => {
       el.close();
       document.body.style.overflow = overflow;
-      previous?.focus();
+      previousFocus?.focus();
     };
-  }, []);
+  }, [previousFocus]);
 
   useGSAP(() => {
     if (reduceMotion) {
@@ -109,7 +113,7 @@ export function RollStage({ pull, reduceMotion, onClose, preview = false }: {
     flipBuilder.current = buildFlip;
     tl.addLabel("reveal", 1.8);
     tl.from("[data-stage]", { scale: 0.94, opacity: 0, duration: 0.15 }, 0)
-      .to("[data-crystal]", { rotation: 405, scale: 1.2, duration: 1.2, ease: "power2.in" }, 0.2)
+      .to("[data-crystal]", { scale: 1.08, duration: 1.2, ease: "power2.in" }, 0.2)
       .fromTo("[data-glow]", { opacity: 0.25, scale: 1 }, { opacity: 0.8, scale: 1.25, duration: 1.3, ease: "power2.in", immediateRender: false }, 0.3)
       .call(() => setCanSkip(true), [], 0.6)
       .call(() => {
@@ -124,7 +128,7 @@ export function RollStage({ pull, reduceMotion, onClose, preview = false }: {
   useEffect(() => {
     if (!pull || reduceMotion) return;
     const tl = timeline.current;
-    if (skipped.current) {
+    if (skipped) {
       tl?.progress(1, true).pause();
       setRevealed(true);
     } else if (waiting.current) {
@@ -134,11 +138,13 @@ export function RollStage({ pull, reduceMotion, onClose, preview = false }: {
       flipBuilder.current(tierIndex);
       tl?.timeScale(revealSpeed(tierIndex));
     }
-  }, [pull, reduceMotion, tierIndex]);
+  }, [pull, reduceMotion, tierIndex, skipped]);
 
   function skipOrClose() {
     if (ready) return onClose();
-    skipped.current = true;
+    setSkipped(true);
+    setCanSkip(true);
+    timeline.current?.pause();
     if (pull) {
       timeline.current?.progress(1, true).pause();
       setRevealed(true);
@@ -154,7 +160,7 @@ export function RollStage({ pull, reduceMotion, onClose, preview = false }: {
         <h2 id="roll-title" className="font-display text-display-lg" aria-live="polite">
           {ready ? (preview ? "Prévia revelada" : "Sua carta") : "Invocando sua carta…"}
         </h2>
-        <div data-stage className={`pointer-events-auto relative w-56 max-w-[65vw] ${tierText || "text-ice"}`} style={{ perspective: 1000 }}>
+        <div data-stage className={`pointer-events-auto relative flex min-h-[min(90vw,26rem)] w-56 max-w-[65vw] items-center ${tierText || "text-ice"}`} style={{ perspective: 1000 }}>
           {!reduceMotion && <>
             <div data-flash aria-hidden="true" className="pointer-events-none absolute -inset-8 bg-current opacity-0 blur-2xl" />
             <div data-glow aria-hidden="true" className="absolute inset-0 rounded-full bg-current opacity-20 blur-3xl" />
@@ -170,11 +176,18 @@ export function RollStage({ pull, reduceMotion, onClose, preview = false }: {
                 className={`absolute left-1/2 top-1/2 h-2 w-1 bg-current opacity-0 ${visible ? "" : "hidden"}`} />;
             })}
           </>}
-          <div data-flip className="relative" style={{ transformStyle: "preserve-3d", transform: reduceMotion ? "rotateY(180deg)" : undefined }}>
-            <div aria-hidden="true" className="absolute inset-0 flex items-center justify-center overflow-hidden border border-ice/40 bg-panel" style={{ backfaceVisibility: "hidden" }}>
-              <div data-crystal className="h-28 w-28 rotate-45 border border-ice/70 bg-gradient-to-tr from-transparent via-ice/30 to-ice/5 shadow-glow-ice" />
-              <div className="absolute inset-0 animate-rollShine bg-gradient-to-r from-transparent via-snow/15 to-transparent" />
+          {!reduceMotion && <div aria-hidden="true" className="pointer-events-none absolute inset-0 flex items-center justify-center">
+            <div data-crystal className="aspect-square w-[min(90vw,26rem)] shrink-0 bg-cover bg-center mix-blend-screen"
+              style={{ backgroundImage: "url(/gacha/crystal.webp)", maskImage: "radial-gradient(closest-side, black 75%, transparent 100%)" }}>
+              {!videoFailed && !revealed && !skipped && <video
+                src="/gacha/crystal.mp4" poster="/gacha/crystal.webp"
+                autoPlay muted loop playsInline preload="auto" tabIndex={-1}
+                width={720} height={720} className="h-full w-full"
+                onError={() => setVideoFailed(true)}
+              />}
             </div>
+          </div>}
+          <div data-flip className="relative w-full" style={{ transformStyle: "preserve-3d", transform: reduceMotion ? "rotateY(180deg)" : undefined }}>
             <div inert={!ready} aria-hidden={!ready} className="relative min-h-80" style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg)" }}>
               {pull && <GachaCard pull={pull} preview={preview} />}
               <div aria-hidden="true" className={`pointer-events-none absolute inset-0 overflow-hidden ${pull && pull.foil !== "NORMAL" ? "" : "invisible"}`}>
@@ -192,7 +205,7 @@ export function RollStage({ pull, reduceMotion, onClose, preview = false }: {
           className={`pointer-events-auto min-h-11 px-6 py-3 focus-visible:outline focus-visible:outline-ice ${ready ? "btn-ice" : "text-mist"}`}
           aria-disabled={!ready && !canSkip && !reduceMotion}
           style={{ opacity: ready || canSkip || reduceMotion ? 1 : 0 }}>
-          {ready ? "Continuar" : skipped.current || reduceMotion ? "Aguardando carta…" : "Pular"}
+          {ready ? "Continuar" : skipped || reduceMotion ? "Aguardando carta…" : "Pular"}
         </button>
       </div>
     </dialog>
