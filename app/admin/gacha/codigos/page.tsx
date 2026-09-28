@@ -139,7 +139,7 @@ export default function AdminCrystalCodesPage() {
       )}
 
       <form
-        onSubmit={void save}
+        onSubmit={save}
         className="mt-6 grid gap-3 border border-hairline bg-panel p-4 md:grid-cols-4"
       >
         <input
