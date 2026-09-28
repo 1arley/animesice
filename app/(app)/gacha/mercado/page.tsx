@@ -148,10 +148,9 @@ export default function GachaMarketPage() {
     setLoading(true);
     setError("");
     try {
-      const [cardPage, skinPage, publicOdds] = await Promise.all([
+      const [cardPage, skinPage] = await Promise.all([
         api.gachaEconomyListings("CARD"),
         api.gachaEconomyListings("SKIN"),
-        api.gachaEconomyOdds(),
       ]);
       setCards(cardPage.items);
       setSkins(skinPage.items);
@@ -159,9 +158,11 @@ export default function GachaMarketPage() {
       setSkinTotal(skinPage.total);
       setCardPage(cardPage.page);
       setSkinPage(skinPage.page);
-      setOdds(publicOdds);
-      if (user) await api.gachaEconomyVisitMarket().catch(() => null);
-      await refresh();
+      void api.gachaEconomyOdds().then(setOdds).catch(() => undefined);
+      if (user) {
+        void api.gachaEconomyVisitMarket().catch(() => null);
+        void refresh();
+      }
     } catch (cause) {
       setError(
         cause instanceof ApiError
