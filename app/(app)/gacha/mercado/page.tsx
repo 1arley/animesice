@@ -1,11 +1,16 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { api, ApiError } from "@/lib/api";
 import { safeImageSrc } from "@/lib/url";
 import { useAuth } from "@/lib/auth-context";
+import {
+  BoxReveal,
+  BOX_LABEL,
+  boxRewardLabel,
+} from "@/components/gacha/BoxReveal";
 import { Modal } from "@/components/common/Modal";
 import { useToast } from "@/components/common/ToastProvider";
 import type {
@@ -19,12 +24,6 @@ import type {
   GachaMarketHistory,
   GachaOwnedSkinCopy,
 } from "@/types";
-
-const BOX_LABEL: Record<GachaBoxTier, string> = {
-  COMMON: "Comum",
-  RARE: "Rara",
-  PREMIUM: "Premium",
-};
 
 const BOX_FIELD: Record<
   GachaBoxTier,
@@ -41,20 +40,6 @@ function itemName(listing: GachaEconomyListingItem): string {
     listing.item.card?.name ??
     (listing.itemType === "CARD" ? "Carta" : "Skin")
   );
-}
-
-function rewardLabel(reward: Record<string, unknown> | null): string {
-  if (!reward) return "";
-  const cat = reward.category;
-  if (cat === "CRYSTAL") return `${String(reward.amount ?? 0)} cristais`;
-  if (cat === "KEY") return `${String(reward.amount ?? 1)} chave`;
-  if (cat === "SPIN_RESET")
-    return `${String(reward.amount ?? 1)} reset de giro (5 previews)`;
-  if (cat === "SKIN") return `Skin: ${String(reward.name ?? "?")}`;
-  if (cat === "CARD")
-    return `Carta ${String(reward.name ?? "?")}${reward.foil ? ` · ${String(reward.foil)}` : ""}`;
-  if (cat === "CARD_BACK") return `Capa: ${String(reward.name ?? "?")}`;
-  return cat ? String(cat) : "";
 }
 
 function timeLeft(expiresAt: string): string {
@@ -105,11 +90,18 @@ export default function GachaMarketPage() {
     name: string;
     data: GachaMarketHistory;
   } | null>(null);
-  const [openedReward, setOpenedReward] = useState<Record<
-    string,
-    unknown
-  > | null>(null);
-  const [openingTier, setOpeningTier] = useState<GachaBoxTier | null>(null);
+  const [openedBox, setOpenedBox] = useState<{
+    // Cada abertura é uma montagem nova: sem isso o estado interno do
+    // diálogo (filme já finalizado, arte que falhou) vazaria para a
+    // próxima caixa e a segunda abriria sem animação.
+    seq: number;
+    reward: Record<string, unknown> | null;
+    tier: GachaBoxTier;
+    error: string;
+    visible: boolean;
+  } | null>(null);
+  const openingRequest = useRef(false);
+  const revealSeq = useRef(0);
   const [orderTarget, setOrderTarget] =
     useState<GachaEconomyListingItem | null>(null);
   const [orderPrice, setOrderPrice] = useState("");
@@ -230,22 +222,34 @@ export default function GachaMarketPage() {
   }
 
   async function openBox(tier: GachaBoxTier) {
-    const key = `open-${tier}`;
-    setBusy(key);
+    if (openingRequest.current || busy !== null) return;
+    openingRequest.current = true;
+    setBusy(`open-${tier}`);
     setError("");
-    setOpeningTier(tier);
+    revealSeq.current += 1;
+    setOpenedBox({
+      seq: revealSeq.current,
+      tier,
+      reward: null,
+      error: "",
+      visible: true,
+    });
     try {
       const result = await api.gachaEconomyOpenBox(tier);
-      setOpenedReward(result.reward);
-      toast(`${BOX_LABEL[tier]} aberta.`, "success");
-      await refresh();
-    } catch (cause) {
-      setError(
-        cause instanceof ApiError ? cause.message : "Ação não concluída.",
+      setOpenedBox(
+        (current) => current && { ...current, reward: result.reward },
       );
+      // Refresh is independent of the reveal and cannot turn a granted prize into an error.
+      void refresh();
+    } catch (cause) {
+      const message =
+        cause instanceof ApiError
+          ? cause.message
+          : "Não foi possível confirmar a abertura.";
+      setOpenedBox((current) => current && { ...current, error: message });
     } finally {
+      openingRequest.current = false;
       setBusy(null);
-      setOpeningTier(null);
     }
   }
 
@@ -427,45 +431,38 @@ export default function GachaMarketPage() {
         </div>
       )}
 
-      {openedReward && (
-        <aside
-          role="status"
-          aria-live="polite"
-          className="market-reveal mt-5 flex flex-wrap items-center justify-between gap-4 border border-ice/40 bg-panel p-4"
-        >
-          {safeImageSrc(
-            String(openedReward.imageUrl ?? openedReward.image ?? ""),
-          ) && (
-            <Image
-              src={safeImageSrc(
-                String(openedReward.imageUrl ?? openedReward.image),
-              )!}
-              alt={rewardLabel(openedReward)}
-              width={72}
-              height={96}
-              className="market-reward-image object-cover"
-            />
-          )}
-          <div>
-            <h2 className="font-display text-body-sm text-ice">
-              Recompensa da caixa
-            </h2>
-            <p className="mt-1 font-display text-xl text-snow">
-              {rewardLabel(openedReward)}
-            </p>
-            {openedReward.category === "SPIN_RESET" && (
-              <p className="mt-1 max-w-md text-caption text-mist">
-                Reset guardado no inventário. Use após gastar os 5 previews da
-                hora para liberar mais 5.
-              </p>
-            )}
-          </div>
+      {openedBox?.visible && (
+        <BoxReveal
+          key={openedBox.seq}
+          tier={openedBox.tier}
+          reward={openedBox.reward}
+          error={openedBox.error}
+          onClose={() =>
+            setOpenedBox((current) => current && { ...current, visible: false })
+          }
+        />
+      )}
+      {openedBox && !openedBox.visible && (
+        <aside className="mt-5 flex flex-wrap items-center justify-between gap-3 border border-ice/30 bg-panel p-4">
+          <p role="status" className="text-body-sm text-snow">
+            {openedBox.error ||
+              (openedBox.reward
+                ? boxRewardLabel(openedBox.reward)
+                : "Confirmando a abertura da caixa…")}
+          </p>
           <button
+            data-box-result
             type="button"
-            onClick={() => setOpenedReward(null)}
-            className="btn-ghost min-h-11 px-3"
+            className="btn-ghost min-h-11 px-4"
+            onClick={() =>
+              setOpenedBox(
+                (current) => current && { ...current, visible: true },
+              )
+            }
           >
-            Fechar
+            {openedBox.reward || openedBox.error
+              ? "Ver resultado da caixa"
+              : "Ver abertura"}
           </button>
         </aside>
       )}
@@ -639,7 +636,7 @@ export default function GachaMarketPage() {
                   return (
                     <article
                       key={tier}
-                      className={`market-box border border-hairline bg-panel p-5 ${openingTier === tier ? "market-box-opening" : ""}`}
+                      className={`market-box border border-hairline bg-panel p-5 ${busy === `open-${tier}` ? "market-box-opening" : ""}`}
                     >
                       <svg
                         viewBox="0 0 120 96"
