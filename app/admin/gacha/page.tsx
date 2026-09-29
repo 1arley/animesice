@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { api, ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
+import { useToast } from "@/components/common/ToastProvider";
 import type {
   AdminGachaCard,
   Anime,
@@ -22,9 +23,26 @@ const TIERS = [
 ] as const;
 
 const PAGE_SIZE = 48;
+const ANIME_SUGGEST_LIMIT = 25;
+const ANIME_MIN_QUERY = 2;
+const SEARCH_DEBOUNCE_MS = 250;
+const REASON_MIN = 10;
+
+/** Rótulo legível da opção: título + ano + id externo (títulos duplicam no catálogo). */
+function animeLabel(anime: Anime) {
+  return [
+    anime.title,
+    anime.year ? String(anime.year) : null,
+    anime.malId ? `MAL ${anime.malId}` : null,
+    anime.published === false ? "rascunho" : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+}
 
 export default function AdminGachaPage() {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [cards, setCards] = useState<AdminGachaCard[]>([]);
   const [cardMeta, setCardMeta] = useState({
     page: 1,
@@ -34,8 +52,13 @@ export default function AdminGachaPage() {
   const [cardSearch, setCardSearch] = useState("");
   const [rarity, setRarity] = useState("");
   const [status, setStatus] = useState("");
-  const [animeId, setAnimeId] = useState("");
-  const [animes, setAnimes] = useState<Anime[]>([]);
+  const [animeFilter, setAnimeFilter] = useState("");
+  const [animeQuery, setAnimeQuery] = useState("");
+  const [animeResults, setAnimeResults] = useState<Anime[]>([]);
+  const [animeSearching, setAnimeSearching] = useState(false);
+  const [selectedAnime, setSelectedAnime] = useState<Anime | null>(null);
+  const [animeSearch, setAnimeSearch] = useState("");
+  const [searchingAnimes, setSearchingAnimes] = useState(false);
   const [users, setUsers] = useState<
     {
       id: string;
@@ -71,33 +94,68 @@ export default function AdminGachaPage() {
   const [savingPilot, setSavingPilot] = useState(false);
   const [pilotMessage, setPilotMessage] = useState("");
   const debounce = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const userSearchDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const cardsRequest = useRef(0);
+  const animeSearchRequest = useRef(0);
+  const userSearchRequest = useRef(0);
 
-  async function loadCards(
-    page = 1,
-    name = cardSearch,
-    rar = rarity,
-    anime = animeId,
-    state = status,
-  ) {
-    try {
-      const res = await api.adminListGachaCards(
-        page,
-        PAGE_SIZE,
-        name || undefined,
-        rar || undefined,
-        anime || undefined,
-        state || undefined,
-      );
-      setCards(res.data);
-      setCardMeta({
-        page: res.meta.page,
-        totalPages: res.meta.totalPages,
-        total: res.meta.total,
-      });
-    } catch (e) {
-      setError(e instanceof ApiError ? e.message : "Erro ao carregar pool.");
-    }
-  }
+  const editingCard = useMemo(
+    () =>
+      editing ? (cards.find((card) => card.id === editing) ?? null) : null,
+    [editing, cards],
+  );
+  /** O anime escolhido nunca sai das opções — evita o select voltar a vazio. */
+  const animeOptions = useMemo(
+    () =>
+      selectedAnime &&
+      !animeResults.some((anime) => anime.id === selectedAnime.id)
+        ? [selectedAnime, ...animeResults]
+        : animeResults,
+    [animeResults, selectedAnime],
+  );
+  /** Backend exige motivo ≥10 caracteres quando anime ou raridade mudam. */
+  const needsReason = Boolean(
+    editingCard &&
+      (editingCard.rarity !== form.rarity ||
+        (editingCard.animeId ?? "") !== form.animeId),
+  );
+  /** Carta com animeTitle mas sem vínculo: o select não tem onde casar. */
+  const detachedAnime = Boolean(
+    editingCard && !editingCard.animeId && editingCard.animeTitle,
+  );
+
+  const loadCards = useCallback(
+    async (
+      page = 1,
+      name = cardSearch,
+      rar = rarity,
+      anime = animeFilter,
+      state = status,
+    ) => {
+      const requestId = ++cardsRequest.current;
+      try {
+        const res = await api.adminListGachaCards(
+          page,
+          PAGE_SIZE,
+          name || undefined,
+          rar || undefined,
+          anime || undefined,
+          state || undefined,
+        );
+        if (requestId !== cardsRequest.current) return;
+        setCards(res.data);
+        setCardMeta({
+          page: res.meta.page,
+          totalPages: res.meta.totalPages,
+          total: res.meta.total,
+        });
+      } catch (e) {
+        if (requestId !== cardsRequest.current) return;
+        setError(e instanceof ApiError ? e.message : "Erro ao carregar pool.");
+      }
+    },
+    [cardSearch, rarity, animeFilter, status],
+  );
 
   useEffect(() => {
     api
@@ -148,67 +206,187 @@ export default function AdminGachaPage() {
   function onCardSearch(value: string) {
     setCardSearch(value);
     if (debounce.current) clearTimeout(debounce.current);
-    debounce.current = setTimeout(() => void loadCards(1, value, rarity), 350);
+    debounce.current = setTimeout(
+      () => void loadCards(1, value, rarity, animeFilter, status),
+      350,
+    );
   }
 
   function onRarityChange(value: string) {
     setRarity(value);
-    void loadCards(1, cardSearch, value);
+    void loadCards(1, cardSearch, value, animeFilter, status);
+  }
+
+  function onStatusChange(value: string) {
+    setStatus(value);
+    void loadCards(1, cardSearch, rarity, animeFilter, value);
+  }
+
+  function onAnimeFilterChange(value: string) {
+    setAnimeFilter(value);
+    void loadCards(1, cardSearch, rarity, value, status);
   }
 
   function gotoCardPage(page: number) {
     void loadCards(page);
   }
 
-  async function searchUsers(value: string) {
+  function onUserSearch(value: string) {
     setSearch(value);
-    if (value.length < 2) {
+    if (userSearchDebounce.current)
+      clearTimeout(userSearchDebounce.current);
+    if (value.trim().length < ANIME_MIN_QUERY) {
       setUsers([]);
       return;
     }
-    try {
-      setUsers((await api.adminListUsers(1, 10, value)).data);
-    } catch (e) {
-      setError(e instanceof ApiError ? e.message : "Erro ao buscar usuários.");
-    }
+    const requestId = ++userSearchRequest.current;
+    userSearchDebounce.current = setTimeout(() => {
+      api
+        .adminListUsers(1, 10, value.trim())
+        .then((res) => {
+          if (requestId === userSearchRequest.current) setUsers(res.data);
+        })
+        .catch((e) => {
+          if (requestId !== userSearchRequest.current) return;
+          setError(
+            e instanceof ApiError ? e.message : "Erro ao buscar usuários.",
+          );
+        });
+    }, SEARCH_DEBOUNCE_MS);
   }
 
-  async function searchAnimes(value: string) {
-    if (value.length < 2) {
-      setAnimes([]);
+  /**
+   * Autocomplete de anime com debounce e guarda de sequência: sem isso, uma
+   * resposta lenta de um prefixo antigo sobrescrevia a lista e o anime correto
+   * "desaparecia" da busca.
+   */
+  useEffect(() => {
+    const requestId = ++animeSearchRequest.current;
+    const query = animeQuery.trim();
+    if (query.length < ANIME_MIN_QUERY) {
+      setAnimeResults([]);
+      setAnimeSearching(false);
       return;
     }
-    try {
-      setAnimes((await api.adminListAnimes(1, 10, value)).data);
-    } catch (e) {
-      setError(e instanceof ApiError ? e.message : "Erro ao buscar animes.");
-    }
+    setAnimeSearching(true);
+    const timer = setTimeout(() => {
+      api
+        .adminListAnimes(1, ANIME_SUGGEST_LIMIT, query, false)
+        .then((res) => {
+          if (requestId !== animeSearchRequest.current) return;
+          setAnimeResults(res.data);
+        })
+        .catch((e) => {
+          if (requestId !== animeSearchRequest.current) return;
+          setError(e instanceof ApiError ? e.message : "Erro ao buscar animes.");
+        })
+        .finally(() => {
+          if (requestId === animeSearchRequest.current)
+            setAnimeSearching(false);
+        });
+    }, SEARCH_DEBOUNCE_MS);
+    return () => clearTimeout(timer);
+  }, [animeQuery]);
+
+  function selectAnime(id: string) {
+    const anime = animeOptions.find((option) => option.id === id) ?? null;
+    setSelectedAnime(anime);
+    setForm((current) => ({
+      ...current,
+      animeId: id,
+      image: current.image || anime?.coverImage || "",
+    }));
+  }
+
+  function clearAnime() {
+    setSelectedAnime(null);
+    setAnimeQuery("");
+    setAnimeResults([]);
+    setForm((current) => ({ ...current, animeId: "" }));
+  }
+
+  function startEdit(card: AdminGachaCard) {
+    setEditing(card.id);
+    setError(null);
+    setSelectedAnime(card.anime ?? null);
+    setAnimeQuery("");
+    setAnimeResults([]);
+    setForm({
+      name: card.name,
+      image: card.image ?? "",
+      imageHidden: card.imageHidden,
+      rarity: card.rarity,
+      animeId: card.animeId ?? "",
+      reason: "",
+    });
+  }
+
+  function resetForm() {
+    setForm({
+      name: "",
+      image: "",
+      imageHidden: false,
+      rarity: "COMUM",
+      animeId: "",
+      reason: "",
+    });
+    setEditing(null);
+    setSelectedAnime(null);
+    setAnimeQuery("");
+    setAnimeResults([]);
+  }
+
+  function cancelEdit() {
+    resetForm();
+    setError(null);
   }
 
   async function saveCard(e: React.FormEvent) {
     e.preventDefault();
+    setError(null);
+    if (!form.animeId) {
+      setError("Escolha o anime da carta antes de salvar.");
+      return;
+    }
+    const payload = {
+      name: form.name.trim(),
+      imageHidden: form.imageHidden,
+      animeId: form.animeId,
+      ...(form.image.trim() ? { image: form.image.trim() } : {}),
+    };
     try {
-      if (editing) {
-        const current = cards.find((card) => card.id === editing);
+      if (editing && editingCard) {
+        const rarityChanged = editingCard.rarity !== form.rarity;
+        const animeChanged = (editingCard.animeId ?? "") !== form.animeId;
         if (
-          current?.rarity !== form.rarity &&
+          rarityChanged &&
           !window.confirm(
             "Alterar raridade recalculará todas as cópias sem override. Continuar?",
           )
         )
           return;
-        await api.adminUpdateGachaCard(editing, form);
-      } else await api.adminCreateGachaCard(form);
-      setForm({
-        name: "",
-        image: "",
-        imageHidden: false,
-        rarity: "COMUM",
-        animeId: "",
-        reason: "",
-      });
-      setEditing(null);
-      await loadCards();
+        if (rarityChanged || animeChanged) {
+          if (form.reason.trim().length < REASON_MIN) {
+            setError(
+              `Motivo obrigatório (mínimo ${REASON_MIN} caracteres) para mudar anime ou raridade.`,
+            );
+            return;
+          }
+          await api.adminUpdateGachaCard(editing, {
+            ...payload,
+            rarity: form.rarity,
+            reason: form.reason.trim(),
+          });
+        } else {
+          await api.adminUpdateGachaCard(editing, payload);
+        }
+      } else {
+        await api.adminCreateGachaCard({ ...payload, rarity: form.rarity });
+      }
+      const page = cardMeta.page;
+      resetForm();
+      toast("Carta salva.", "success");
+      await loadCards(page);
     } catch (e) {
       setError(e instanceof ApiError ? e.message : "Erro ao salvar carta.");
     }
@@ -460,11 +638,23 @@ export default function AdminGachaPage() {
             </label>
             <input
               className="field"
-              required
               placeholder="Buscar anime"
               aria-label="Buscar anime"
+              value={animeSearch}
               onChange={(e) => void searchAnimes(e.target.value)}
             />
+            <p
+              className="-mt-2 text-caption text-mist-soft"
+              role="status"
+              aria-live="polite"
+            >
+              {searchingAnimes
+                ? "Buscando animes…"
+                : animeSearch.trim().length >= 2 &&
+                    animes.every((anime) => anime.id === form.animeId)
+                  ? "Nenhum outro anime encontrado. Tente o título alternativo ou japonês."
+                  : "Busque pelo título, título alternativo, título japonês ou slug."}
+            </p>
             <select
               className="field"
               required
@@ -592,6 +782,9 @@ export default function AdminGachaPage() {
                         animeId: card.animeId ?? "",
                         reason: "",
                       });
+                      setAnimeSearch(
+                        card.anime?.title ?? card.animeTitle ?? "",
+                      );
                     }}
                   >
                     Editar
