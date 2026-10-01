@@ -1826,6 +1826,117 @@
   }
 }
 
+.night-market-hero {
+  display: grid;
+  align-items: center;
+  gap: 2rem;
+  border-bottom: 1px solid theme("colors.hairline");
+  padding-bottom: 2rem;
+}
+
+.night-market-hero__copy {
+  position: relative;
+  z-index: 1;
+}
+
+.night-market-hero__art {
+  position: relative;
+  min-height: 16rem;
+  overflow: hidden;
+  border: 1px solid theme("colors.hairline");
+  background: theme("colors.ink-deep");
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.32);
+}
+
+.night-market-hero__veil {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, rgba(5, 7, 11, 0.16), transparent 55%),
+    linear-gradient(0deg, rgba(5, 7, 11, 0.48), transparent 48%);
+}
+
+.night-offer-card {
+  min-width: 0;
+  perspective: 1400px;
+}
+
+.night-offer-card__flipper {
+  position: relative;
+  aspect-ratio: 3 / 4;
+  transform-style: preserve-3d;
+}
+
+.night-offer-card__face {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.night-offer-card__back {
+  transform: rotateY(0deg);
+  background-image:
+    radial-gradient(ellipse at 50% 48%, rgba(56, 232, 218, 0.07), transparent 52%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.018), transparent 42%);
+}
+
+.night-offer-card__front {
+  transform: rotateY(180deg);
+}
+
+.night-offer-card__sigil {
+  position: relative;
+  display: grid;
+  width: 9rem;
+  aspect-ratio: 1;
+  margin: auto;
+  place-items: center;
+  border: 1px solid rgba(56, 232, 218, 0.3);
+  transform: rotate(45deg);
+}
+
+.night-offer-card__sigil::before,
+.night-offer-card__sigil::after {
+  position: absolute;
+  content: "";
+  border: 1px solid rgba(56, 232, 218, 0.22);
+}
+
+.night-offer-card__sigil::before {
+  inset: 0.75rem;
+}
+
+.night-offer-card__sigil::after {
+  width: 2.4rem;
+  aspect-ratio: 1;
+  background: rgba(56, 232, 218, 0.1);
+}
+
+.night-offer-card__sigil-inner {
+  z-index: 1;
+  width: 0.55rem;
+  aspect-ratio: 1;
+  border: 1px solid rgba(56, 232, 218, 0.7);
+}
+
+@media (min-width: 768px) {
+  .night-market-hero {
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+    gap: 3rem;
+    min-height: 25rem;
+    padding-bottom: 2.5rem;
+  }
+
+  .night-market-hero__art {
+    min-height: 21rem;
+  }
+}
+
 /* Mobile (pointer coarse): corta custo GPU sem mudar o visual.
    - backdrop-blur-sm some: os badges já têm bg-ink/85 quase opaco, então o
      chip continua legível e some o maior custo de scroll (dezenas de regiões

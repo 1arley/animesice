@@ -427,6 +427,23 @@ export default function GachaMarketPage() {
         </div>
       )}
 
+      {user && offers.some((offer) => offer.slot >= 7) && (
+        <Link
+          href="/gacha/mercado-noturno"
+          className="mt-6 flex min-h-20 flex-wrap items-center justify-between gap-4 border border-ice/40 bg-[radial-gradient(ellipse_at_top_right,rgba(56,232,218,0.12),transparent_55%)] px-5 py-4 transition-colors hover:border-ice/70 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ice"
+        >
+          <span>
+            <span className="block font-display text-xl text-snow">
+              O Mercado Noturno abriu
+            </span>
+            <span className="mt-1 block text-body-sm text-mist">
+              Seis ofertas pessoais com descontos de 10% a 30%.
+            </span>
+          </span>
+          <span className="text-body-sm text-ice">Revelar seleção</span>
+        </Link>
+      )}
+
       {openedReward && (
         <aside
           role="status"
@@ -485,7 +502,7 @@ export default function GachaMarketPage() {
         </div>
       ) : (
         <>
-          {user && offers.length > 0 && (
+          {user && offers.some((offer) => offer.slot < 7) && (
             <section aria-labelledby="shop-title" className="mt-10">
               <div className="flex flex-wrap items-end justify-between gap-3">
                 <div>
@@ -505,7 +522,7 @@ export default function GachaMarketPage() {
                 </span>
               </div>
               <ul className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {offers.map((offer) => {
+                {offers.filter((offer) => offer.slot < 7).map((offer) => {
                   const name =
                     offer.card?.name ??
                     offer.skin?.name ??
