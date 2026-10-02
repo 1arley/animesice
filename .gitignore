@@ -19,6 +19,10 @@ playwright/.cache/
 *.mov
 .vercel
 
+# manim render output + cache
+media/
+__pycache__/
+
 # opencode skill artifacts (not project code)
 graphify-out/
 .agents/
