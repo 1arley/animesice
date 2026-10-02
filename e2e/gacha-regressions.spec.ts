@@ -126,6 +126,74 @@ test("admin descarta cartas e respostas da seleção anterior", async ({ page })
   await expect(page.getByText("Carta A · RARA")).toBeVisible();
 });
 
+test("admin edita carta sem refazer a busca do anime", async ({ page }) => {
+  await page.route("**/user/me", route => route.fulfill({ json: { ...VIEWER, role: "ADMIN" } }));
+  const anime = { id: "anime-a", slug: "anime-a", title: "Anime A", coverImage: null, malId: 1 };
+  const poolCard = {
+    id: "card-a", name: "Personagem A", image: "https://img.test/a.jpg",
+    imageHidden: false, rarity: "RARA", favourites: 1, animeId: anime.id,
+    animeTitle: anime.title, status: "ACTIVE", source: "MAL", variantName: null,
+    variantType: "STANDARD", createdAt: "2026-09-11T00:00:00Z",
+    updatedAt: "2026-09-11T00:00:00Z", anime,
+  };
+  const patches: unknown[] = [];
+  await page.route("**/gacha/admin/cards?**", route => route.fulfill({ json: { data: [poolCard], meta } }));
+  await page.route("**/admin/animes?**", route => route.fulfill({ json: { data: [anime], meta } }));
+  await page.route("**/gacha/admin/cards/card-a", route => {
+    patches.push(route.request().postDataJSON());
+    return route.fulfill({ json: poolCard });
+  });
+
+  await page.goto("/admin/gacha");
+  await page.getByRole("button", { name: "Editar", exact: true }).click();
+
+  // O anime da carta já vem selecionado: salvar não pode exigir nova busca.
+  const select = page.getByLabel("Anime da carta");
+  await expect(select).toHaveValue(anime.id);
+  await expect(page.getByLabel("Buscar anime", { exact: true })).toHaveValue("");
+  await page.getByLabel("Motivo da alteração (obrigatório)").waitFor({ state: "detached" });
+  await page.getByRole("button", { name: "Salvar", exact: true }).click();
+
+  await expect.poll(() => patches.length).toBe(1);
+  expect(patches[0]).toMatchObject({ name: "Personagem A", animeId: anime.id });
+});
+
+test("busca de anime ignora resposta antiga e mantém a seleção", async ({ page }) => {
+  await page.route("**/user/me", route => route.fulfill({ json: { ...VIEWER, role: "ADMIN" } }));
+  const animeA = { id: "anime-a", slug: "anime-a", title: "Anime A", coverImage: null };
+  const animeB = { id: "anime-b", slug: "anime-b", title: "Anime B", coverImage: null };
+  let release!: () => void;
+  let requested!: () => void;
+  const pending = new Promise<void>(resolve => { release = resolve; });
+  const started = new Promise<void>(resolve => { requested = resolve; });
+  await page.route("**/gacha/admin/cards?**", route => route.fulfill({ json: { data: [], meta } }));
+  await page.route("**/admin/animes?**", async route => {
+    const search = new URL(route.request().url()).searchParams.get("search") ?? "";
+    if (search === "Anime") {
+      requested();
+      await pending;
+      return route.fulfill({ json: { data: [animeB], meta } });
+    }
+    return route.fulfill({ json: { data: [animeA, animeB], meta } });
+  });
+
+  await page.goto("/admin/gacha");
+  const search = page.getByLabel("Buscar anime", { exact: true });
+  await search.fill("Anime A");
+  await page.getByLabel("Anime da carta").selectOption(animeA.id);
+  await search.fill("Anime");
+  await started;
+  await search.fill("Anime B");
+  const settled = page.waitForResponse(r => new URL(r.url()).searchParams.get("search") === "Anime B");
+  release();
+  await settled;
+
+  // A resposta antiga não pode trocar o anime escolhido.
+  await expect(page.getByLabel("Anime da carta")).toHaveValue(animeA.id);
+  await expect(page.getByRole("option", { name: /^Anime A/ })).toHaveCount(1);
+  await expect(page.locator('span:text-is("Anime A")')).toBeVisible();
+});
+
 for (const staleFails of [false, true]) {
   test(`coleção ignora resposta antiga ${staleFails ? "com erro" : "com cartas"}`, async ({ page }) => {
     let release!: () => void;
