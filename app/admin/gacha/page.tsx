@@ -7,7 +7,6 @@ import { useAuth } from "@/lib/auth-context";
 import { useToast } from "@/components/common/ToastProvider";
 import type {
   AdminGachaCard,
-  Anime,
   GachaEngagementPilotDashboard,
   GachaPull,
 } from "@/types";
@@ -28,8 +27,18 @@ const ANIME_MIN_QUERY = 2;
 const SEARCH_DEBOUNCE_MS = 250;
 const REASON_MIN = 10;
 
+/** O picker aceita tanto o anime completo da busca quanto o resumo do card. */
+type AnimeOption = {
+  id: string;
+  title: string;
+  year?: number | null;
+  malId?: number | null;
+  published?: boolean;
+  coverImage?: string | null;
+};
+
 /** Rótulo legível da opção: título + ano + id externo (títulos duplicam no catálogo). */
-function animeLabel(anime: Anime) {
+function animeLabel(anime: AnimeOption) {
   return [
     anime.title,
     anime.year ? String(anime.year) : null,
@@ -54,11 +63,9 @@ export default function AdminGachaPage() {
   const [status, setStatus] = useState("");
   const [animeFilter, setAnimeFilter] = useState("");
   const [animeQuery, setAnimeQuery] = useState("");
-  const [animeResults, setAnimeResults] = useState<Anime[]>([]);
+  const [animeResults, setAnimeResults] = useState<AnimeOption[]>([]);
   const [animeSearching, setAnimeSearching] = useState(false);
-  const [selectedAnime, setSelectedAnime] = useState<Anime | null>(null);
-  const [animeSearch, setAnimeSearch] = useState("");
-  const [searchingAnimes, setSearchingAnimes] = useState(false);
+  const [selectedAnime, setSelectedAnime] = useState<AnimeOption | null>(null);
   const [users, setUsers] = useState<
     {
       id: string;
@@ -227,6 +234,11 @@ export default function AdminGachaPage() {
     void loadCards(1, cardSearch, rarity, value, status);
   }
 
+  /** Atalho: filtra o pool pelo anime já escolhido no formulário. */
+  function toggleAnimeFilter() {
+    onAnimeFilterChange(animeFilter === form.animeId ? "" : form.animeId);
+  }
+
   function gotoCardPage(page: number) {
     void loadCards(page);
   }
@@ -296,6 +308,7 @@ export default function AdminGachaPage() {
       animeId: id,
       image: current.image || anime?.coverImage || "",
     }));
+    if (animeFilter && animeFilter !== id) onAnimeFilterChange("");
   }
 
   function clearAnime() {
@@ -303,6 +316,7 @@ export default function AdminGachaPage() {
     setAnimeQuery("");
     setAnimeResults([]);
     setForm((current) => ({ ...current, animeId: "" }));
+    if (animeFilter) onAnimeFilterChange("");
   }
 
   function startEdit(card: AdminGachaCard) {
@@ -333,6 +347,7 @@ export default function AdminGachaPage() {
     setEditing(null);
     setSelectedAnime(null);
     setAnimeQuery("");
+    if (animeFilter) setAnimeFilter("");
     setAnimeResults([]);
   }
 
@@ -608,24 +623,35 @@ export default function AdminGachaPage() {
       <section className="mt-6 grid gap-6 lg:grid-cols-2">
         <div className="border border-hairline bg-panel p-4">
           <h2 className="font-display text-display-lg text-snow">Pool</h2>
+          <p className="mt-1 text-caption text-mist-soft">
+            {editing
+              ? `Editando ${editingCard?.name ?? "carta"} — anime e raridade já vêm preenchidos.`
+              : "Criar carta: busca o anime, escolhe na lista e salva."}
+          </p>
           <form className="mt-4 grid gap-3" onSubmit={saveCard}>
-            <input
-              className="field"
-              required
-              placeholder="Personagem"
-              aria-label="Personagem"
-              value={form.name}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
-            />
-            <input
-              className="field"
-              required
-              type="url"
-              placeholder="Imagem HTTPS"
-              aria-label="Imagem HTTPS"
-              value={form.image}
-              onChange={(e) => setForm({ ...form, image: e.target.value })}
-            />
+            <label className="grid gap-1" htmlFor="card-name">
+              <span className="text-caption text-mist">Personagem</span>
+              <input
+                id="card-name"
+                className="field"
+                required
+                placeholder="Ex.: Naruto Uzumaki"
+                value={form.name}
+                onChange={(e) => setForm({ ...form, name: e.target.value })}
+              />
+            </label>
+            <label className="grid gap-1" htmlFor="card-image">
+              <span className="text-caption text-mist">Imagem HTTPS</span>
+              <input
+                id="card-image"
+                className="field"
+                required={!editing}
+                type="url"
+                placeholder="https://…"
+                value={form.image}
+                onChange={(e) => setForm({ ...form, image: e.target.value })}
+              />
+            </label>
             <label className="flex items-center gap-2 text-body-sm text-mist">
               <input
                 type="checkbox"
@@ -636,70 +662,128 @@ export default function AdminGachaPage() {
               />
               Ocultar arte como ???
             </label>
-            <input
-              className="field"
-              placeholder="Buscar anime"
-              aria-label="Buscar anime"
-              value={animeSearch}
-              onChange={(e) => void searchAnimes(e.target.value)}
-            />
-            <p
-              className="-mt-2 text-caption text-mist-soft"
-              role="status"
-              aria-live="polite"
-            >
-              {searchingAnimes
-                ? "Buscando animes…"
-                : animeSearch.trim().length >= 2 &&
-                    animes.every((anime) => anime.id === form.animeId)
-                  ? "Nenhum outro anime encontrado. Tente o título alternativo ou japonês."
-                  : "Busque pelo título, título alternativo, título japonês ou slug."}
-            </p>
-            <select
-              className="field"
-              required
-              aria-label="Anime da carta"
-              value={form.animeId}
-              onChange={(e) => {
-                const a = animes.find((x) => x.id === e.target.value);
-                setForm({
-                  ...form,
-                  animeId: e.target.value,
-                  image: form.image || a?.coverImage || "",
-                });
-              }}
-            >
-              <option value="">Selecione anime</option>
-              {animes.map((a) => (
-                <option key={a.id} value={a.id}>
-                  {a.title}
-                </option>
-              ))}
-            </select>
-            <select
-              className="field"
-              aria-label="Raridade"
-              value={form.rarity}
-              onChange={(e) => setForm({ ...form, rarity: e.target.value })}
-            >
-              {TIERS.map((t) => (
-                <option key={t} value={t}>
-                  {t}
-                </option>
-              ))}
-            </select>
-            {editing && (
+
+            <div className="grid gap-1">
+              <label className="text-caption text-mist" htmlFor="card-anime-search">
+                Buscar anime
+              </label>
               <input
+                id="card-anime-search"
                 className="field"
-                placeholder="Motivo (obrigatório ao mudar anime ou raridade)"
-                aria-label="Motivo da alteração"
-                value={form.reason}
-                onChange={(e) => setForm({ ...form, reason: e.target.value })}
+                autoComplete="off"
+                placeholder="Título, título japonês ou id do MAL"
+                value={animeQuery}
+                onChange={(e) => setAnimeQuery(e.target.value)}
+                aria-describedby="card-anime-status"
+                aria-controls="card-anime-select"
               />
+              <p
+                id="card-anime-status"
+                className="text-caption text-mist-soft"
+                role="status"
+                aria-live="polite"
+              >
+                {animeQuery.trim().length < ANIME_MIN_QUERY
+                  ? `Digite ao menos ${ANIME_MIN_QUERY} caracteres.`
+                  : animeSearching
+                    ? "Buscando animes…"
+                    : animeOptions.length === 0
+                      ? "Nenhum anime encontrado. Confira no catálogo ou tente outra grafia."
+                      : `${animeOptions.length} resultado(s) — escolha abaixo.`}
+              </p>
+            </div>
+
+            <label className="grid gap-1" htmlFor="card-anime-select">
+              <span className="text-caption text-mist">Anime da carta</span>
+              <select
+                id="card-anime-select"
+                className="field"
+                required
+                value={form.animeId}
+                onChange={(e) => selectAnime(e.target.value)}
+              >
+                <option value="">Selecione anime</option>
+                {animeOptions.map((anime) => (
+                  <option key={anime.id} value={anime.id}>
+                    {animeLabel(anime)}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            {detachedAnime && (
+              <p
+                role="status"
+                className="border border-signal/40 bg-signal/10 p-2 text-caption text-signal"
+              >
+                Esta carta guarda só o texto “{editingCard?.animeTitle}” sem
+                vínculo com um anime do catálogo. Busque e escolha o anime para
+                corrigir.
+              </p>
             )}
-            <button className="admin-tab w-fit" type="submit">
-              {editing ? "Salvar" : "Criar"}
-            </button>
+
+            {selectedAnime && (
+              <div className="flex flex-wrap items-center justify-between gap-2 border border-hairline p-2">
+                <span className="min-w-0 truncate text-body-sm text-snow">
+                  {animeLabel(selectedAnime)}
+                </span>
+                <button
+                  type="button"
+                  className="admin-tab"
+                  onClick={clearAnime}
+                >
+                  Trocar anime
+                </button>
+              </div>
+            )}
+
+            <label className="grid gap-1" htmlFor="card-rarity">
+              <span className="text-caption text-mist">Raridade</span>
+              <select
+                id="card-rarity"
+                className="field"
+                value={form.rarity}
+                onChange={(e) => setForm({ ...form, rarity: e.target.value })}
+              >
+                {TIERS.map((t) => (
+                  <option key={t} value={t}>
+                    {t}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            {editing && needsReason && (
+              <label className="grid gap-1" htmlFor="card-reason">
+                <span className="text-caption text-mist">
+                  Motivo da alteração (obrigatório)
+                </span>
+                <input
+                  id="card-reason"
+                  className="field"
+                  required
+                  minLength={REASON_MIN}
+                  placeholder="Mínimo 10 caracteres — fica no histórico"
+                  value={form.reason}
+                  onChange={(e) => setForm({ ...form, reason: e.target.value })}
+                />
+              </label>
+            )}
+
+            <div className="flex flex-wrap gap-2">
+              <button className="admin-tab w-fit" type="submit">
+                {editing ? "Salvar" : "Criar"}
+              </button>
+              {editing && (
+                <button
+                  type="button"
+                  className="admin-tab"
+                  onClick={cancelEdit}
+                >
+                  Cancelar
+                </button>
+              )}
+            </div>
           </form>
           <div className="mt-4 grid gap-2 sm:grid-cols-[minmax(0,1fr)_10rem_9rem]">
             <input
@@ -726,10 +810,7 @@ export default function AdminGachaPage() {
               className="field"
               aria-label="Filtrar status"
               value={status}
-              onChange={(e) => {
-                setStatus(e.target.value);
-                void loadCards(1, cardSearch, rarity, animeId, e.target.value);
-              }}
+              onChange={(e) => onStatusChange(e.target.value)}
             >
               <option value="">Status</option>
               <option value="DRAFT">Rascunho</option>
@@ -737,6 +818,26 @@ export default function AdminGachaPage() {
               <option value="ACTIVE">Ativa</option>
               <option value="ARCHIVED">Arquivada</option>
             </select>
+          </div>
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              className="admin-tab"
+              disabled={!form.animeId}
+              aria-pressed={Boolean(form.animeId) && animeFilter === form.animeId}
+              onClick={toggleAnimeFilter}
+            >
+              Só as cartas deste anime
+            </button>
+            {animeFilter && (
+              <button
+                type="button"
+                className="admin-tab"
+                onClick={() => onAnimeFilterChange("")}
+              >
+                Limpar filtro de anime
+              </button>
+            )}
           </div>
           <p className="mt-2 font-mono text-caption text-mist-soft">
             {cardMeta.total} cartas · página {cardMeta.page}/
@@ -758,36 +859,21 @@ export default function AdminGachaPage() {
                     <small className="block text-mist-soft">
                       {card.anime?.title ?? card.animeTitle}
                       {card.anime?.malId ? ` · MAL ${card.anime.malId}` : ""}
+                      {!card.animeId && (
+                        <span className="text-signal"> · sem vínculo</span>
+                      )}
                     </small>
                   )}
                 </span>
                 <span className="flex flex-wrap gap-1 sm:flex-none">
                   <button
                     className="admin-tab"
-                    onClick={() => {
-                      setEditing(card.id);
-                      if (
-                        card.anime &&
-                        !animes.some((a) => a.id === card.anime!.id)
-                      )
-                        setAnimes((current) => [
-                          ...current,
-                          card.anime as Anime,
-                        ]);
-                      setForm({
-                        name: card.name,
-                        image: card.image ?? "",
-                        imageHidden: card.imageHidden,
-                        rarity: card.rarity,
-                        animeId: card.animeId ?? "",
-                        reason: "",
-                      });
-                      setAnimeSearch(
-                        card.anime?.title ?? card.animeTitle ?? "",
-                      );
-                    }}
+                    aria-pressed={editing === card.id}
+                    onClick={() =>
+                      editing === card.id ? cancelEdit() : startEdit(card)
+                    }
                   >
-                    Editar
+                    {editing === card.id ? "Cancelar" : "Editar"}
                   </button>
                   {user?.role === "SUPERADMIN" && card.status !== "ACTIVE" && (
                     <button
@@ -865,7 +951,7 @@ export default function AdminGachaPage() {
             placeholder="Buscar usuário"
             aria-label="Buscar usuário"
             value={search}
-            onChange={(e) => void searchUsers(e.target.value)}
+            onChange={(e) => onUserSearch(e.target.value)}
           />
           <div className="mt-2 space-y-1">
             {users.map((user) => (
