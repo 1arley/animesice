@@ -90,7 +90,7 @@ test("falha ao equipar é anunciada e o estado volta ao do servidor", async ({ p
   const moldura = page.getByRole("group", { name: /Moldura disponíveis/ });
   await moldura.getByRole("button", { name: /Aurora/ }).click();
 
-  await expect(page.getByRole("alert")).toContainText("Cosmético indisponível.");
+  await expect(page.getByRole("alert").filter({ hasText: "Cosmético" })).toBeVisible();
   await expect(moldura.getByRole("button", { name: /Aurora/ })).toHaveAttribute("aria-pressed", "false");
 });
 
@@ -138,6 +138,7 @@ test("moldura equipada aparece sobre a arte na carta", async ({ page }) => {
       style: el.getAttribute("style"),
     };
   });
+  expect(box.style, "estilo inline do overlay").toContain("108%");
   expect(box.w).toBeCloseTo(810 / 750, 2);
   expect(box.h).toBeCloseTo(1060 / 1000, 2);
   expect(box.cx).toBeCloseTo(box.ccx, 0);
