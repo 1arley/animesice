@@ -167,7 +167,7 @@ export const GachaCard = memo(function GachaCard({ pull, preview = false, linkAn
               <CosmeticSvg
                 cosmeticKey={backKey}
                 fit="cover"
-                className="absolute inset-0 h-full w-full object-cover"
+                className="absolute inset-0 h-full w-full object-fill"
               />
             ) : (
               <>
