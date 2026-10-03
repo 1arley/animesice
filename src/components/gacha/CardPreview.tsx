@@ -7,7 +7,7 @@ import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import { useFinePointer } from "@/lib/use-fine-pointer";
 import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
 import { GachaCard, gachaConditionLabel } from "@/components/gacha/GachaCard";
-import { CardBackSvg } from "@/components/gacha/CardBackSvg";
+import { CosmeticSvg } from "@/components/gacha/CosmeticSvg";
 import { api, ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import type { GachaPull, GachaShopItem } from "@/types";
@@ -531,8 +531,8 @@ export function CardPreview({
                   >
                     <span className="flex aspect-[3/4] items-center justify-center overflow-hidden bg-panel">
                       {cb.svg || cb.previewUrl ? (
-                        <CardBackSvg
-                          backKey={cb.key}
+                        <CosmeticSvg
+                          cosmeticKey={cb.key}
                           className="h-full w-full"
                         />
                       ) : (

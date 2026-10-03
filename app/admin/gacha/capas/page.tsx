@@ -1,8 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { api, ApiError } from "@/lib/api";
+
+type CosmeticType = "BACK" | "FRAME" | "HIGHLIGHT";
 
 type Layer = {
   id: string;
@@ -12,33 +14,121 @@ type Layer = {
   width?: number;
   height?: number;
   fill: string;
+  stroke?: string;
+  strokeWidth?: number;
   text?: string;
   hidden?: boolean;
 };
+
+type ViewBox = { x: number; y: number; w: number; h: number };
+
+/**
+ * Janela da arte. 3/4 (750x1000) e o mesmo slot do cartao em GachaCard —
+ * o preview antigo usava 5/7 e a arte chegava cortada no jogo.
+ */
+const ART = { w: 750, h: 1000 } as const;
+
+/**
+ * Molduras e destaques sao desenhados num canvas maior que a carta: o anel
+ * externo fica no "sangue" (bleed) para nao ser cortado pela janela da arte.
+ * Contrato com a renderizacao do GachaCard: a camada da moldura precisa
+ * ficar FORA do container overflow-hidden que segura a arte.
+ */
+const BLEED = 30;
+
+const TYPE_VIEWBOX: Record<CosmeticType, string> = {
+  BACK: `0 0 ${ART.w} ${ART.h}`,
+  FRAME: `${-BLEED} ${-BLEED} ${ART.w + BLEED * 2} ${ART.h + BLEED * 2}`,
+  HIGHLIGHT: `${-BLEED * 2} ${-BLEED * 2} ${ART.w + BLEED * 4} ${ART.h + BLEED * 4}`,
+};
+
+const DEFAULT_VIEWBOX = TYPE_VIEWBOX.BACK;
+
+function parseViewBox(svg: string, fallback: string): ViewBox {
+  const raw = /viewBox\s*=\s*["']\s*([-\d.eE+]+)[\s,]+([-\d.eE+]+)[\s,]+([-\d.eE+]+)[\s,]+([-\d.eE+]+)/.exec(svg);
+  const n = raw ? [Number(raw[1]), Number(raw[2]), Number(raw[3]), Number(raw[4])] : null;
+  if (n && n.every(Number.isFinite) && n[2] > 0 && n[3] > 0) return { x: n[0], y: n[1], w: n[2], h: n[3] };
+  const f = fallback.split(/\s+/).map(Number);
+  return { x: f[0]!, y: f[1]!, w: f[2]!, h: f[3]! };
+}
+
+/** Recorta a janela da arte (0,0,750,1000) dentro do viewBox, em porcentagem. */
+function artWindow(vb: ViewBox) {
+  const x0 = Math.max(0, vb.x);
+  const y0 = Math.max(0, vb.y);
+  const x1 = Math.min(vb.x + vb.w, ART.w);
+  const y1 = Math.min(vb.y + vb.h, ART.h);
+  const pct = (v: number, total: number) => `${(v / total) * 100}%`;
+  return {
+    left: pct(x0 - vb.x, vb.w),
+    top: pct(y0 - vb.y, vb.h),
+    width: pct(Math.max(0, x1 - x0), vb.w),
+    height: pct(Math.max(0, y1 - y0), vb.h),
+  };
+}
+
+/** Arte de referencia: grade + silhueta, para revelar desalinhamento da moldura. */
+const ART_PLATE = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 750 1000"><defs><linearGradient id="sky" x1="0" y1="0" x2="0.6" y2="1"><stop offset="0" stop-color="#1b3a63"/><stop offset=".55" stop-color="#0b1220"/><stop offset="1" stop-color="#17304d"/></linearGradient></defs><rect width="750" height="1000" fill="url(#sky)"/><circle cx="225" cy="250" r="170" fill="#38e8da" opacity=".18"/><circle cx="560" cy="600" r="240" fill="#8b5cf6" opacity=".16"/><path d="M0 780 250 520 430 760 560 640 750 830V1000H0Z" fill="#05080e" opacity=".85"/><path d="M0 250H750M0 500H750M0 750H750M250 0V1000M500 0V1000" stroke="#8de7ff" stroke-opacity=".22" stroke-width="2" fill="none"/></svg>`;
+
+function svgDataUrl(svg: string) {
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg.replace(/<script[\s\S]*?<\/script>/gi, ""))}`;
+}
 
 const blank = {
   key: "BACK_",
   name: "",
   description: "",
-  type: "BACK",
-  svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 750 1050"><rect width="750" height="1050" fill="#142d4c"/><path d="M0 0h750v1050H0z" fill="none" stroke="#8de7ff" stroke-width="18"/></svg>',
+  type: "BACK" as CosmeticType,
+  svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 750 1000"><rect width="750" height="1000" fill="#142d4c"/></svg>',
   previewUrl: "",
   price: 1200,
   status: "PUBLISHED",
 };
 
 const DEFAULT_LAYERS: Layer[] = [
-  { id: "bg", type: "rect", x: 0, y: 0, width: 750, height: 1050, fill: "#142d4c" },
+  { id: "bg", type: "rect", x: 0, y: 0, width: ART.w, height: ART.h, fill: "#142d4c" },
 ];
+
+/** Bandas de moldura: 4 retangulos fora da janela da arte, sem cobrir a arte. */
+function starterLayers(type: CosmeticType): { viewBox: string; layers: Layer[] } {
+  const band = (x: number, y: number, width: number, height: number, fill: string): Layer => ({
+    id: crypto.randomUUID(),
+    type: "rect",
+    x,
+    y,
+    width,
+    height,
+    fill,
+  });
+  if (type === "FRAME") {
+    return {
+      viewBox: TYPE_VIEWBOX.FRAME,
+      layers: [
+        band(-BLEED, -BLEED, ART.w + BLEED * 2, BLEED, "#142d4c"),
+        band(-BLEED, ART.h, ART.w + BLEED * 2, BLEED, "#142d4c"),
+        band(-BLEED, 0, BLEED, ART.h, "#142d4c"),
+        band(ART.w, 0, BLEED, ART.h, "#142d4c"),
+      ],
+    };
+  }
+  if (type === "HIGHLIGHT") {
+    return {
+      viewBox: TYPE_VIEWBOX.HIGHLIGHT,
+      layers: [{ ...band(24, 24, ART.w - 48, ART.h - 48, "none"), stroke: "#fcd34d", strokeWidth: 10 }],
+    };
+  }
+  return { viewBox: TYPE_VIEWBOX.BACK, layers: DEFAULT_LAYERS };
+}
 
 function unescapeXml(s: string) {
   return s.replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&apos;/g, "'");
 }
 
-function deserialize(svg: string): { layers: Layer[]; extra: string } {
+function deserialize(svg: string, type: CosmeticType): { viewBox: string; layers: Layer[]; extra: string } {
   const doc = new DOMParser().parseFromString(svg, "image/svg+xml");
   const root = doc.querySelector("svg");
-  if (!root) return { layers: DEFAULT_LAYERS, extra: "" };
+  if (!root) return { ...starterLayers(type), extra: "" };
+  const viewBox = root.getAttribute("viewBox") ?? TYPE_VIEWBOX[type];
   const layers: Layer[] = [];
   const extra: string[] = [];
   for (const child of Array.from(root.children)) {
@@ -51,6 +141,9 @@ function deserialize(svg: string): { layers: Layer[]; extra: string } {
         width: Number(child.getAttribute("width") ?? 0),
         height: Number(child.getAttribute("height") ?? 0),
         fill: child.getAttribute("fill") ?? "#000000",
+        stroke: child.getAttribute("stroke") ?? undefined,
+        strokeWidth: child.getAttribute("stroke-width") ? Number(child.getAttribute("stroke-width")) : undefined,
+        hidden: child.getAttribute("display") === "none" || undefined,
       });
     } else if (child.tagName === "text") {
       layers.push({
@@ -60,26 +153,61 @@ function deserialize(svg: string): { layers: Layer[]; extra: string } {
         y: Number(child.getAttribute("y") ?? 0),
         fill: child.getAttribute("fill") ?? "#ffffff",
         text: unescapeXml(child.textContent ?? ""),
+        hidden: child.getAttribute("display") === "none" || undefined,
       });
     } else {
       extra.push(child.outerHTML);
     }
   }
   return {
-    layers: layers.length ? layers : DEFAULT_LAYERS,
+    viewBox,
+    layers: layers.length ? layers : starterLayers(type).layers,
     extra: extra.join(""),
   };
 }
 
-function serialize(layers: Layer[], extra: string) {
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 750 1050">${extra}${layers
-    .filter((l) => !l.hidden)
-    .map((l) =>
-      l.type === "rect"
-        ? `<rect x="${l.x}" y="${l.y}" width="${l.width}" height="${l.height}" fill="${l.fill}"/>`
-        : `<text x="${l.x}" y="${l.y}" fill="${l.fill}" font-size="48" font-family="sans-serif">${(l.text ?? "").replace(/[<&>]/g, "")}</text>`,
-    )
+function serialize(layers: Layer[], extra: string, viewBox: string) {
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${viewBox}">${extra}${layers
+    .map((l) => {
+      const hide = l.hidden ? ' display="none"' : "";
+      if (l.type === "rect") {
+        const stroke = l.stroke && l.stroke !== "none" ? ` stroke="${l.stroke}" stroke-width="${l.strokeWidth ?? 4}"` : "";
+        return `<rect x="${l.x}" y="${l.y}" width="${l.width}" height="${l.height}" fill="${l.fill}"${stroke}${hide}/>`;
+      }
+      return `<text x="${l.x}" y="${l.y}" fill="${l.fill}" font-size="48" font-family="sans-serif"${hide}>${(l.text ?? "").replace(/[<&>]/g, "")}</text>`;
+    })
     .join("")}</svg>`;
+}
+
+/**
+ * Previa de autoria. A arte de referencia fica ATRAS do SVG para que moldura e
+ * destaque possam ser alinhados contra a janela real do cartao — sem ela, um
+ * frame transparente aparece como uma caixa vazia e nada pode ser conferido.
+ * A caixa externa usa o aspect do viewBox, entao o SVG mapeia 1:1 e nao sofre
+ * com object-cover (que cortava ~46% da altura de um canvas 5/7).
+ */
+function CosmeticPreview({ svg, type, guides }: { svg: string; type: CosmeticType; guides: boolean }) {
+  const vb = parseViewBox(svg, TYPE_VIEWBOX[type] ?? DEFAULT_VIEWBOX);
+  const win = artWindow(vb);
+  const label = type === "BACK" ? "Prévia da capa" : type === "FRAME" ? "Prévia da moldura" : "Prévia do destaque";
+  return (
+    <div
+      role="img"
+      aria-label={`${label} sobre a arte de referência`}
+      className="relative mx-auto w-full max-w-[260px]"
+      style={{ aspectRatio: `${vb.w} / ${vb.h}` }}
+    >
+      <div className="absolute overflow-hidden" style={win}>
+        <Image src={svgDataUrl(ART_PLATE)} alt="" fill unoptimized aria-hidden className="object-cover" />
+      </div>
+      {guides && (
+        <div className="pointer-events-none absolute border border-dashed border-ice/80" style={win} aria-hidden />
+      )}
+      {/* Mesmo rationale do CardBackSvg: documento de imagem inerte, sem execucao no DOM. */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={svgDataUrl(svg)} alt="" aria-hidden className="absolute inset-0 h-full w-full" />
+    </div>
+  );
 }
 
 export default function AdminCapasPage() {
@@ -90,20 +218,45 @@ export default function AdminCapasPage() {
   const [layers, setLayers] = useState<Layer[]>(DEFAULT_LAYERS);
   const [extra, setExtra] = useState("");
   const [selected, setSelected] = useState("bg");
-  function updateLayer(patch: Partial<Layer>) {
-    const next = layers.map((l) => (l.id === selected ? { ...l, ...patch } : l));
+  const [guides, setGuides] = useState(true);
+  const active = layers.find((l) => l.id === selected);
+
+  // form.svg e a fonte da verdade do viewBox: edicao manual no textarea
+  // tambem move o canvas do preview, sem estado duplicado para dessincronizar.
+  const viewBox = useMemo(
+    () => parseViewBox(form.svg, TYPE_VIEWBOX[form.type] ?? DEFAULT_VIEWBOX),
+    [form.svg, form.type],
+  );
+
+  function sync(next: Layer[]) {
     setLayers(next);
-    setForm((f) => ({ ...f, svg: serialize(next, extra) }));
+    setForm((f) => {
+      const vb = parseViewBox(f.svg, DEFAULT_VIEWBOX);
+      return { ...f, svg: serialize(next, extra, `${vb.x} ${vb.y} ${vb.w} ${vb.h}`) };
+    });
+  }
+  function updateLayer(patch: Partial<Layer>) {
+    sync(layers.map((l) => (l.id === selected ? { ...l, ...patch } : l)));
   }
   function addLayer(type: "rect" | "text") {
     const layer: Layer =
       type === "rect"
         ? { id: crypto.randomUUID(), type, x: 50, y: 50, width: 650, height: 120, fill: "#8de7ff" }
         : { id: crypto.randomUUID(), type, x: 80, y: 180, fill: "#ffffff", text: "Nova camada" };
-    const next = [...layers, layer];
-    setLayers(next);
+    sync([...layers, layer]);
     setSelected(layer.id);
-    setForm((f) => ({ ...f, svg: serialize(next, extra) }));
+  }
+  function changeType(type: CosmeticType) {
+    const starter = starterLayers(type);
+    setForm((f) => ({ ...f, type, svg: serialize(starter.layers, "", starter.viewBox) }));
+    setLayers(starter.layers);
+    setExtra("");
+    setSelected(starter.layers[0]?.id ?? "");
+  }
+  function resetViewBox() {
+    const vb = TYPE_VIEWBOX[form.type] ?? DEFAULT_VIEWBOX;
+    const next = form.svg.replace(/viewBox\s*=\s*(["'])[^"']*\1/, `viewBox="${vb}"`);
+    setForm((f) => ({ ...f, svg: next }));
   }
   const load = () =>
     api
@@ -116,8 +269,9 @@ export default function AdminCapasPage() {
   function startEditing(item: any) {
     setEditing(item.id);
     const { id: _id, createdAt: _c, updatedAt: _u, createdById: _cb, version: _v, ...fields } = item;
-    setForm({ ...fields, svg: fields.svg ?? "", description: fields.description ?? "", previewUrl: fields.previewUrl ?? "" });
-    const parsed = deserialize(item.svg ?? "");
+    const type = (fields.type ?? "BACK") as CosmeticType;
+    setForm({ ...fields, type, svg: fields.svg ?? "", description: fields.description ?? "", previewUrl: fields.previewUrl ?? "" });
+    const parsed = deserialize(item.svg ?? "", type);
     setLayers(parsed.layers);
     setExtra(parsed.extra);
     setSelected(parsed.layers[0]?.id ?? "");
@@ -154,7 +308,7 @@ export default function AdminCapasPage() {
           <input className="field" required placeholder="Nome" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
           <input className="field" placeholder="Descrição" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
           <div className="grid grid-cols-3 gap-3">
-            <select className="field" value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })}>
+            <select className="field" value={form.type} onChange={(e) => changeType(e.target.value as CosmeticType)}>
               <option value="BACK">Verso (capa)</option>
               <option value="FRAME">Moldura</option>
               <option value="HIGHLIGHT">Destaque</option>
@@ -205,9 +359,8 @@ export default function AdminCapasPage() {
               className="btn-ghost px-3 py-2"
               onClick={() => {
                 const next = layers.filter((l) => l.id !== selected);
-                setLayers(next);
+                sync(next);
                 setSelected(next[0]?.id ?? "");
-                setForm((f) => ({ ...f, svg: serialize(next, extra) }));
               }}
             >
               Excluir camada
@@ -215,32 +368,82 @@ export default function AdminCapasPage() {
           </div>
           <div className="grid gap-2">
             {layers.map((l) => (
-              <button type="button" key={l.id} onClick={() => setSelected(l.id)} className={`border p-2 text-left ${selected === l.id ? "border-ice" : "border-hairline"}`}>
-                {l.type === "text" ? l.text : "Forma"}
+              <button type="button" key={l.id} onClick={() => setSelected(l.id)} aria-pressed={selected === l.id} className={`border p-2 text-left ${selected === l.id ? "border-ice" : "border-hairline"}`}>
+                <span className="flex items-center gap-2">
+                  {l.hidden && <span className="text-caption text-mist">(oculta)</span>}
+                  {l.type === "text" ? l.text : "Forma"}
+                </span>
               </button>
             ))}
           </div>
           <div className="grid grid-cols-2 gap-2">
             <label className="text-caption text-mist">
               X
-              <input className="field" type="number" value={layers.find((l) => l.id === selected)?.x ?? 0} onChange={(e) => updateLayer({ x: Number(e.target.value) })} />
+              <input className="field" type="number" value={active?.x ?? 0} onChange={(e) => updateLayer({ x: Number(e.target.value) })} />
             </label>
             <label className="text-caption text-mist">
               Y
-              <input className="field" type="number" value={layers.find((l) => l.id === selected)?.y ?? 0} onChange={(e) => updateLayer({ y: Number(e.target.value) })} />
+              <input className="field" type="number" value={active?.y ?? 0} onChange={(e) => updateLayer({ y: Number(e.target.value) })} />
             </label>
+            {active?.type === "rect" && (
+              <>
+                <label className="text-caption text-mist">
+                  Largura
+                  <input className="field" type="number" value={active.width ?? 0} onChange={(e) => updateLayer({ width: Number(e.target.value) })} />
+                </label>
+                <label className="text-caption text-mist">
+                  Altura
+                  <input className="field" type="number" value={active.height ?? 0} onChange={(e) => updateLayer({ height: Number(e.target.value) })} />
+                </label>
+                <label className="text-caption text-mist">
+                  Contorno
+                  <input
+                    className="field h-10"
+                    type="color"
+                    value={active.stroke && active.stroke !== "none" ? active.stroke : "#8de7ff"}
+                    onChange={(e) => updateLayer({ stroke: e.target.value, strokeWidth: active.strokeWidth ?? 4 })}
+                  />
+                </label>
+                <label className="flex items-center gap-2 pt-6 text-caption text-mist">
+                  <input type="checkbox" checked={Boolean(active.stroke && active.stroke !== "none")} onChange={(e) => updateLayer({ stroke: e.target.checked ? "#8de7ff" : "none" })} />
+                  Usar contorno
+                </label>
+                {active.stroke && active.stroke !== "none" && (
+                  <label className="text-caption text-mist">
+                    Espessura
+                    <input className="field" type="number" min="0" value={active.strokeWidth ?? 4} onChange={(e) => updateLayer({ strokeWidth: Number(e.target.value) })} />
+                  </label>
+                )}
+              </>
+            )}
             <label className="text-caption text-mist">
               Cor
-              <input className="field h-10" type="color" value={layers.find((l) => l.id === selected)?.fill ?? "#ffffff"} onChange={(e) => updateLayer({ fill: e.target.value })} />
+              <input className="field h-10" type="color" value={active?.fill ?? "#ffffff"} onChange={(e) => updateLayer({ fill: e.target.value })} />
             </label>
           </div>
         </form>
         <aside>
           <h2 className="font-display text-body-lg text-snow">Preview</h2>
-          <div className="relative mt-3 aspect-[5/7] overflow-hidden border border-hairline bg-ink">
-            <Image fill unoptimized className="object-contain" alt="Preview da capa" src={`data:image/svg+xml;charset=utf-8,${encodeURIComponent((form.svg ?? "").replace(/<script[\s\S]*?<\/script>/gi, ""))}`} />
+          <div className="mt-3 border border-hairline bg-ink p-3">
+            <CosmeticPreview svg={form.svg ?? ""} type={form.type} guides={guides} />
           </div>
-          <p className="mt-2 text-caption text-mist">Selecione camada para ajustar posição e cor.</p>
+          <p className="mt-3 font-mono text-caption text-mist-soft">
+            viewBox {viewBox.x} {viewBox.y} {viewBox.w} {viewBox.h}
+          </p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            <button type="button" aria-pressed={guides} onClick={() => setGuides((g) => !g)} className="btn-ghost px-3 py-2 text-caption">
+              {guides ? "Ocultar guias" : "Mostrar guias"}
+            </button>
+            <button type="button" onClick={resetViewBox} className="btn-ghost px-3 py-2 text-caption">
+              viewBox padrão
+            </button>
+          </div>
+          <p className="mt-2 text-caption text-mist">
+            {form.type === "BACK"
+              ? "Arte de referência atrás: a capa é opaca e cobre tudo."
+              : "A moldura é desenhada sobre a arte. A área tracejada é a janela do cartão — o anel deve ficar fora dela."}
+          </p>
+          <p className="mt-1 text-caption text-mist">Selecione camada para ajustar posição, tamanho e cor.</p>
         </aside>
       </div>
       <section className="mt-8">
