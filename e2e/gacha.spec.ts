@@ -207,7 +207,7 @@ test.describe("Gacha", () => {
         },
       }),
     );
-    await page.goto("/gacha/colecao");
+    await page.goto("/gacha/cartas");
     await expect(
       page.getByRole("button", { name: "Destacar no perfil" }),
     ).toBeVisible();

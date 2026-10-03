@@ -84,7 +84,7 @@ src/components/
 │   ├── Footer.tsx
 │   ├── Header.tsx              - Main header with logo/nav
 │   ├── HomeHero.tsx            - Hero section on home
-│   ├── KoFiLink.tsx            - Ko-fi donation link
+│   ├── SupportLink.tsx         - LivePix donation link
 │   ├── Modal.tsx               - Generic modal
 │   ├── NotificationBell.tsx    - Notification indicator
 │   ├── NotificationPreferencesSection.tsx - Settings

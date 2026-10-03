@@ -43,6 +43,8 @@ import type {
   GachaPointsPage,
   CrystalPage,
   GachaShop,
+  GachaLoadout,
+  GachaLoadoutSlot,
   GachaListing,
   GachaListingPage,
   GachaSpinPreview,
@@ -1632,6 +1634,15 @@ export const api = {
     request<{ gachaCardBack: string | null }>(`/gacha/card-back`, {
       method: "PATCH",
       body: JSON.stringify({ key }),
+    }),
+
+  gachaLoadout: () =>
+    request<{ loadout: GachaLoadout; cardBack: string | null }>(`/gacha/loadout`),
+
+  gachaSetLoadout: (slot: GachaLoadoutSlot, key: string | null) =>
+    request<{ gachaLoadout: GachaLoadout }>(`/gacha/loadout`, {
+      method: "PATCH",
+      body: JSON.stringify({ slot, key }),
     }),
 
   gachaCardBackSvg: (key: string) =>

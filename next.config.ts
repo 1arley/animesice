@@ -98,8 +98,10 @@ const nextConfig: NextConfig = {
       },
       { source: "/room/:slug", destination: "/sala/:slug", permanent: true },
       {
+        // /gacha/colecao virou o gerenciador de cosméticos (capa, moldura,
+        // destaque); a galeria de cartas vive em /gacha/cartas.
         source: "/gacha/collection",
-        destination: "/gacha/colecao",
+        destination: "/gacha/cartas",
         permanent: true,
       },
       {

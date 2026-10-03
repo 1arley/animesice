@@ -116,7 +116,7 @@ function Encyclopedia() {
             Descubra cartas e complete seus conjuntos.
           </p>
         </div>
-        <Link href="/gacha/colecao" className="btn-ghost px-4 py-3">
+        <Link href="/gacha/cartas" className="btn-ghost px-4 py-3">
           Minha coleção
         </Link>
       </div>

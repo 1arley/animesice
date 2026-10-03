@@ -127,7 +127,7 @@ test("capa personalizada aparece no seletor da carta", async ({ page }) => {
       },
     }),
   );
-  await page.goto("/gacha/colecao");
+  await page.goto("/gacha/cartas");
   await page.getByRole("button", { name: /Carta A/ }).click();
   const back = page
     .getByRole("dialog")
