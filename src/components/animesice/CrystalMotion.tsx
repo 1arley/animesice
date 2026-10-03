@@ -19,7 +19,19 @@ export interface CrystalMotionProps {
  *  via screen blend). O WebP estático fica como poster/fallback e no modo
  *  prefers-reduced-motion. O vídeo circula em splash/loading/transition. */
 const LOGO_URL = "/images/logo.webp";
-const VIDEO_URL = "/icons/crystal_animation_clean.webm";
+/** Fontes do cristal em cascata: o navegador carrega só a primeira que sabe
+ *  decodificar, então quem tem WebM não paga o MP4.
+ *
+ *  O WebM (VP9) é o principal: menor e é o único com alpha. O MP4 (H.264) é o
+ *  fallback para o Safari — o WebKit só decodifica WebM a partir do iOS 17.4
+ *  e nunca no macOS anterior ao Big Sur, então antes disso o cristal caía no
+ *  fallback em CSS e perdia a animação. Nenhum dos dois precisa de alpha para
+ *  funcionar: os dois têm fundo preto opaco, que o `mix-blend-mode: screen` do
+ *  `.crystal-video` apaga sobre os fundos escuros da identidade. */
+const VIDEO_SOURCES = [
+  { src: "/icons/crystal_animation_clean.webm", type: "video/webm" },
+  { src: "/icons/crystal_animation_h264.mp4", type: "video/mp4" },
+] as const;
 const MOTE_COUNT = 14;
 
 interface MoteStyle {
@@ -173,7 +185,6 @@ export function CrystalMotion({
           /* eslint-disable-next-line jsx-a11y/media-has-caption */
           <video
             className="crystal-logo crystal-video"
-            src={VIDEO_URL}
             poster={LOGO_URL}
             autoPlay
             muted
@@ -182,7 +193,11 @@ export function CrystalMotion({
             preload="auto"
             ref={videoRef}
             aria-hidden="true"
-          />
+          >
+            {VIDEO_SOURCES.map((source) => (
+              <source key={source.src} src={source.src} type={source.type} />
+            ))}
+          </video>
         )}
       </div>
     </div>

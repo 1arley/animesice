@@ -298,3 +298,61 @@ test("mercado preserva oferta com erro e só confirma cancelamento concluído", 
     page.getByText("Anúncio cancelado.", { exact: true }),
   ).toHaveCount(0);
 });
+
+test("abrir caixa mostra a recompensa em modal mesmo com a página rolada", async ({
+  page,
+}, testInfo) => {
+  await page.route("**/gacha/economy", (route) =>
+    route.fulfill({
+      json: {
+        balance: 2000,
+        available: 2000,
+        reserved: 0,
+        commonBoxes: 1,
+        rareBoxes: 0,
+        premiumBoxes: 0,
+        keys: 1,
+        spinResets: 0,
+        loyaltyDays: 0,
+        dailyClaimedToday: false,
+      },
+    }),
+  );
+  await page.route("**/gacha/economy/market/listings?**", (route) =>
+    route.fulfill({ json: { items: [], total: 0, page: 1 } }),
+  );
+  await page.route("**/gacha/economy/market/listings/mine?**", (route) =>
+    route.fulfill({ json: { items: [], total: 0 } }),
+  );
+  await page.route("**/gacha/economy/market/orders/mine?**", (route) =>
+    route.fulfill({ json: { items: [], total: 0 } }),
+  );
+  await page.route("**/gacha/economy/shop", (route) => route.fulfill({ json: [] }));
+  await page.route("**/gacha/economy/skins/mine", (route) =>
+    route.fulfill({ json: [] }),
+  );
+  await page.route("**/gacha/economy/market/mission", (route) =>
+    route.fulfill({ json: { visits: 0, ready: false } }),
+  );
+  // CRISTAL é o caso que o Anderson reportou: prêmio só visível no saldo.
+  await page.route("**/gacha/economy/boxes/open", (route) =>
+    route.fulfill({ json: { reward: { category: "CRYSTAL", amount: 640 } } }),
+  );
+  await page.goto("/gacha/mercado");
+  const open = page
+    .getByRole("article")
+    .filter({ hasText: "Comum" })
+    .getByRole("button", { name: "Abrir" });
+  await open.scrollIntoViewIfNeeded();
+  await open.click();
+  // O prêmio precisa estar no viewport, não no topo da página.
+  const dialog = page.getByRole("dialog", { name: "Comum aberta" });
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByText("640 cristais", { exact: true })).toBeVisible();
+  await expect(
+    dialog.getByText("Cristais já entram no seu saldo disponível."),
+  ).toBeVisible();
+  await page.screenshot({ path: testInfo.outputPath("caixa-premio.png") });
+  await dialog.getByRole("button", { name: "Continuar" }).click();
+  await expect(dialog).toHaveCount(0);
+});

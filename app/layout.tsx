@@ -7,7 +7,6 @@ import { SITE_URL } from "@/lib/site";
 import { escapeJsonLd } from "@/lib/url";
 import { DeferredCrystalSplash } from "@/components/animesice/DeferredCrystalSplash";
 import { chunkRecoveryScript } from "@/lib/chunk-recovery-script";
-import { ServiceNotice } from "@/components/common/ServiceNotice";
 import { CompensationModal } from "@/components/common/CompensationModal";
 import { MonetagVignette } from "@/components/common/MonetagVignette";
 
@@ -151,7 +150,6 @@ export default function RootLayout({
       <body
         className={`${fontDisplay.variable} ${fontPlexSans.variable} ${fontPlexMono.variable} antialiased`}
       >
-        <ServiceNotice />
         <AuthProvider>
           <ToastProvider>{children}</ToastProvider>
           <CompensationModal />
