@@ -51,7 +51,7 @@ test("filme toca uma vez e só depois revela o prêmio, sem spoiler no toast", a
       json: { reward: { category: "CRYSTAL", amount: 640 } },
     });
   });
-  await page.goto("/gacha/mercado");
+  await page.goto("/gacha/loja");
   const trigger = openButton(page, "Premium");
   await trigger.click();
   const dialog = page.getByRole("dialog");
@@ -88,7 +88,7 @@ test("pular não inventa prêmio; fechar durante API lenta preserva o resultado"
     await wait;
     await route.fulfill({ json: { reward: { category: "KEY", amount: 2 } } });
   });
-  await page.goto("/gacha/mercado");
+  await page.goto("/gacha/loja");
   await openButton(page, "Rara").click();
   const dialog = page.getByRole("dialog");
   await dialog.getByRole("button", { name: "Pular animação" }).click();
@@ -116,7 +116,7 @@ test("movimento reduzido revela direto e não baixa vídeo", async ({ page }) =>
   await page.route("**/boxes/open", (route) =>
     route.fulfill({ json: { reward: { category: "SPIN_RESET", amount: 1 } } }),
   );
-  await page.goto("/gacha/mercado");
+  await page.goto("/gacha/loja");
   await openButton(page, "Comum").click();
   await expect(
     page
@@ -143,7 +143,7 @@ test("vídeo ausente não esconde recompensa e erro da API não celebra sucesso"
           json: { message: "Sem chaves disponíveis." },
         });
   });
-  await page.goto("/gacha/mercado");
+  await page.goto("/gacha/loja");
   await openButton(page, "Comum").click();
   const dialog = page.getByRole("dialog");
   await expect(dialog.getByText("100 cristais", { exact: true })).toBeVisible();
@@ -165,7 +165,7 @@ test("download travado libera a recompensa sem depender do evento ended", async 
   await page.route("**/boxes/open", (route) =>
     route.fulfill({ json: { reward: { category: "CRYSTAL", amount: 750 } } }),
   );
-  await page.goto("/gacha/mercado");
+  await page.goto("/gacha/loja");
   await openButton(page, "Rara").click();
   await expect(
     page.getByRole("dialog").getByText("750 cristais", { exact: true }),
@@ -195,7 +195,7 @@ test("arte e nome longo cabem na cena; teclado permanece no diálogo", async ({
       },
     }),
   );
-  await page.goto("/gacha/mercado");
+  await page.goto("/gacha/loja");
   await openButton(page, "Rara").click();
   const dialog = page.getByRole("dialog");
   const art = dialog.getByRole("img", { name, exact: true });
@@ -228,7 +228,7 @@ test("abrir outra caixa toca o filme de novo, sem reaproveitar estado antigo", a
       json: { reward: { category: "CRYSTAL", amount: 100 + calls } },
     });
   });
-  await page.goto("/gacha/mercado");
+  await page.goto("/gacha/loja");
   const dialog = page.getByRole("dialog");
 
   await openButton(page, "Comum").click();
