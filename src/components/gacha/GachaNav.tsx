@@ -27,7 +27,9 @@ export function GachaNav() {
         <div className="grid min-w-max grid-flow-col auto-cols-[8.5rem] lg:min-w-0 lg:grid-flow-row lg:grid-cols-9">
           {items.map(([href, label, description]) => {
             const active =
-              href === "/gacha" ? pathname === href : pathname.startsWith(href);
+              href === "/gacha"
+                ? pathname === href
+                : pathname === href || pathname.startsWith(`${href}/`);
             return (
               <Link
                 key={href}
