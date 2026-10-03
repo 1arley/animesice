@@ -1,0 +1,64 @@
+{
+  "id_prefix": "cg",
+  "seed": 11,
+  "title": "Carmesim Glitch",
+  "description": "Capa em carmesim e preto, com olho central, mira técnica, veias fraturadas, correntes e ruído digital.",
+  "canvas": {"w": 600, "h": 900, "emblem_scale": 1.0},
+  "theme": "carmesim-glitch",
+  "background": {
+    "glow": true, "glow_radius": 345, "stars": 64,
+    "star_min_radius": 185, "star_max_radius": 465,
+    "halftone": true, "halftone_size": 0.75, "halftone_spacing": 6,
+    "halftone_opacity": 0.11,
+    "scanlines": true, "scanline_spacing": 5, "scanline_width": 0.7,
+    "scanline_opacity": 0.1,
+    "dashed_rings": false
+  },
+  "frame": {
+    "enabled": true, "layers": 3, "insets": [14, 23, 31],
+    "widths": [3, 1, 0.7], "tones": ["mid_b", "lite_b", "pale"],
+    "opacity": 0.72, "corners": false, "top_bottom_ornament": false
+  },
+  "effects": {
+    "back": [
+      {"type": "fractured_veins", "center": [300, 450], "count": 18,
+       "root_radius": 52, "length": 330, "step": 15, "width": 15,
+       "depth": 2, "angle_offset": 0, "branch_tone": "dark_a", "highlights": true},
+      {"type": "specks", "center": [300, 450], "rx": 270, "ry": 370,
+       "count": 145, "size_min": 0.5, "size_max": 1.8,
+       "tones": ["pale", "signal", "accent"], "opacity_min": 0.18, "opacity_max": 0.68}
+    ],
+    "front": [
+      {"type": "glitch_bars", "count": 42, "avoid": [300, 450, 88],
+       "tones": ["pale", "signal", "lite_b"], "opacity_min": 0.28, "opacity_max": 0.75},
+      {"type": "floating_digits", "count": 32, "avoid": [300, 450, 112],
+       "size_min": 8, "size_max": 15, "opacity_min": 0.35, "opacity_max": 0.75}
+    ],
+    "vignette": true, "vignette_opacity": 0.67
+  },
+  "layers": [
+    {"space": "canvas", "type": "orbit_arc", "center": [300, 450], "r": 232, "arc": [205, 515], "stroke": "pale", "stroke_width": 1.4, "opacity": 0.32, "dash": "10 18"},
+    {"space": "canvas", "type": "orbit_arc", "center": [300, 450], "r": 262, "arc": [330, 622], "stroke": "frame", "stroke_width": 0.9, "opacity": 0.43, "dash": "8 17"},
+    {"space": "canvas", "type": "orbit_arc", "center": [300, 450], "rx": 248, "ry": 276, "arc": [18, 155], "stroke": "pale", "stroke_width": 1.5, "opacity": 0.22, "dash": "2 17"},
+    {"space": "canvas", "type": "crescent", "center": [296, 449], "rx": 236, "ry": 242, "arc": [205, 333], "peak": 39, "segments": 44, "noise": 2.1, "fill": "dark_b", "opacity": 0.86},
+    {"space": "canvas", "type": "crescent", "center": [307, 444], "rx": 241, "ry": 254, "arc": [22, 153], "peak": 34, "segments": 46, "noise": 1.6, "fill": "dark_b", "opacity": 0.82},
+    {"space": "canvas", "type": "rays", "center": [300, 450], "count": 22, "inner": 58, "length_min": 82, "length_max": 154, "width_min": 1, "width_max": 3.5, "fill": "signal", "opacity": 0.64, "jitter": 5},
+    {"space": "canvas", "type": "orbit_arc", "center": [300, 450], "r": 118, "arc": [18, 315], "stroke": "pale", "stroke_width": 1.5, "opacity": 0.47},
+    {"space": "canvas", "type": "orbit_arc", "center": [300, 450], "r": 152, "arc": [128, 446], "stroke": "pale", "stroke_width": 1, "opacity": 0.32},
+    {"space": "canvas", "type": "orbit_arc", "center": [300, 450], "r": 196, "arc": [221, 505], "stroke": "frame", "stroke_width": 1.2, "opacity": 0.3, "dash": "4 8"},
+    {"space": "canvas", "type": "chain", "tone": "pale", "points": [[470, -40], [640, 250], [140, 630], [390, 950]], "scale": 1.08, "spacing": 20, "samples": 380},
+    {"space": "canvas", "type": "chain", "tone": "signal", "points": [[-30, 90], [120, 20], [90, 200], [230, -30]], "scale": 0.62, "spacing": 18, "samples": 150},
+    {"space": "canvas", "type": "chain", "tone": "signal", "points": [[-30, 640], [140, 700], [60, 860], [260, 950]], "scale": 0.66, "spacing": 19, "samples": 180, "start": 6},
+    {"space": "canvas", "type": "chain", "tone": "signal", "points": [[630, 760], [500, 800], [560, 900], [470, 960]], "scale": 0.5, "spacing": 17, "samples": 150, "start": 4},
+    {"space": "canvas", "type": "reticle", "center": [300, 450], "radius": 92, "ticks": 72, "major": 10, "minor": 4, "crosshair": 26, "tone": "pale", "opacity": 0.78},
+    {"space": "canvas", "type": "reticle", "center": [300, 450], "radius": 106, "ticks": 48, "major": 8, "minor": 3, "crosshair": 0, "tone": "frame", "opacity": 0.47},
+    {"space": "canvas", "type": "centerpiece", "center": [300, 450], "piece_type": "eye", "r": 54},
+    {"space": "canvas", "type": "orbit_arc", "center": [300, 450], "r": 300, "arc": [195, 480], "stroke": "pale", "stroke_width": 1, "opacity": 0.19},
+    {"space": "canvas", "type": "number_orbit", "key": "fib-inner", "center": [300, 450], "radius": 222, "text": "0 1 1 2 3 5 8 13 21 34 55 89 144 233 377 610", "font_size": 8, "letter_spacing": 4, "tone": "lite_b", "opacity": 0.52},
+    {"space": "canvas", "type": "number_orbit", "key": "fib-outer", "center": [300, 450], "radius": 286, "text": "987 1597 2584 4181 6765 10946 17711 28657", "font_size": 7, "letter_spacing": 5, "tone": "frame", "opacity": 0.42, "start_offset": "18%"}
+  ],
+  "overlays": [
+    {"type": "text", "x": 300, "y": 72, "text": "SIGNAL / 0112358", "font_family": "monospace", "font_size": 9, "letter_spacing": 3, "fill": "lite_b", "opacity": 0.68},
+    {"type": "text", "x": 300, "y": 842, "text": "EYE · ARCHIVE · 07", "font_family": "monospace", "font_size": 8, "letter_spacing": 3, "fill": "lite_b", "opacity": 0.62}
+  ]
+}
