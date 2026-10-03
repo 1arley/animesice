@@ -35,7 +35,7 @@ truthfully copy.
 - Locale is Portuguese (pt-BR); all copy, dates, and UX stay pt-BR.
 - Dark, cinematic, studio-grade interface meant for evening/night viewing
   ("sinal da madrugada"). The product reads best in low light.
-- Funding is ads (Monetag) + donations (Ko-fi). No paywall, no subscriptions.
+- Funding is ads (Monetag) + donations (LivePix). No paywall, no subscriptions.
   The ad loader is gated to post-load + first interaction to protect LCP/CLS.
 - Backend is a separate service (see AUTH_BACKEND_CONTRACT.md); the frontend
   talks to it over a typed API and a `role` cookie for sessions.

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Wordmark } from "@/components/common/Wordmark";
 import { AuthButtons } from "@/components/common/AuthButtons";
 import { NotificationBell } from "@/components/common/NotificationBell";
-import { KoFiLink } from "@/components/common/KoFiLink";
+import { SupportLink } from "@/components/common/SupportLink";
 
 /**
  * Cabeçalho da prateleira: wordmark à esquerda, busca ao centro,
@@ -95,9 +95,9 @@ export function Header() {
               <path d="M14 14l4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
             </svg>
           </button>
-          {/* Ko-fi: só desktop no header — no mobile fica no footer */}
+          {/* LivePix: só desktop no header — no mobile fica no footer */}
           <div className="hidden sm:block">
-            <KoFiLink variant="header" />
+            <SupportLink variant="header" />
           </div>
           <NotificationBell />
           {/* Auth some da linha no mobile: fica no menu do SiteNav / tab bar */}

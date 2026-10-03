@@ -1,14 +1,17 @@
 /**
- * Ko-fi — apoio opcional ao projeto.
+ * LivePix — apoio opcional ao projeto.
  *
  * Uma fonte de URL + ícone únicos para o header e o footer. No header a
  * presença é propositalmente discreta: ícone só, tom de mist, sem borda —
  * apoio não vira pedido. O footer mantém o botão com destaque.
+ *
+ * O rótulo é "Apoie o projeto" de propósito: não cita o gateway, então trocar
+ * LivePix por outro provedor é só mudar SUPPORT_URL.
  */
-export const KO_FI_URL = "https://ko-fi.com/iarley";
+export const SUPPORT_URL = "https://livepix.gg/aeliana";
 
 /** Xícara de café — mesma arte nos dois lugares. */
-function KoFiIcon({ size = 14 }: { size?: number }) {
+function SupportIcon({ size = 14 }: { size?: number }) {
   return (
     <svg
       width={size}
@@ -37,36 +40,36 @@ function KoFiIcon({ size = 14 }: { size?: number }) {
   );
 }
 
-interface KoFiLinkProps {
+interface SupportLinkProps {
   /** "header" = ícone discreto; "footer" = botão com destaque. */
   variant?: "header" | "footer";
 }
 
-export function KoFiLink({ variant = "footer" }: KoFiLinkProps) {
+export function SupportLink({ variant = "footer" }: SupportLinkProps) {
   if (variant === "header") {
     return (
       <a
-        href={KO_FI_URL}
+        href={SUPPORT_URL}
         target="_blank"
         rel="noopener noreferrer"
-        aria-label="Apoie no Ko-fi"
-        title="Apoie no Ko-fi"
+        aria-label="Apoie o projeto"
+        title="Apoie o projeto"
         className="inline-flex h-11 w-11 items-center justify-center rounded-sm text-mist opacity-80 transition-[color,opacity] duration-200 hover:text-ice hover:opacity-100"
       >
-        <KoFiIcon size={16} />
+        <SupportIcon size={16} />
       </a>
     );
   }
 
   return (
     <a
-      href={KO_FI_URL}
+      href={SUPPORT_URL}
       target="_blank"
       rel="noopener noreferrer"
       className="mt-4 inline-flex min-h-11 items-center gap-2 border border-signal/60 bg-signal/10 px-3 py-2.5 font-mono text-caption font-medium uppercase tracking-wider text-signal transition-colors hover:bg-signal hover:text-ink"
     >
-      <KoFiIcon size={14} />
-      Apoie no Ko-fi
+      <SupportIcon size={14} />
+      Apoie o projeto
     </a>
   );
 }
