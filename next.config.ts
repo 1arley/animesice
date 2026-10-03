@@ -10,7 +10,9 @@ import type { NextConfig } from "next";
  */
 const isDev = process.env.NODE_ENV !== "production";
 const localConnect =
-  isDev || process.env.INCLUDE_LOCAL_API === "1" ? " http://localhost:3001" : "";
+  isDev || process.env.INCLUDE_LOCAL_API === "1"
+    ? " http://localhost:3001"
+    : "";
 
 const cspHeader = `
   default-src 'self';
@@ -89,12 +91,37 @@ const nextConfig: NextConfig = {
       { source: "/register", destination: "/cadastro", permanent: true },
       { source: "/settings", destination: "/configuracoes", permanent: true },
       { source: "/me", destination: "/minha-conta", permanent: true },
-      { source: "/users/:userName", destination: "/usuarios/:userName", permanent: true },
+      {
+        source: "/users/:userName",
+        destination: "/usuarios/:userName",
+        permanent: true,
+      },
       { source: "/room/:slug", destination: "/sala/:slug", permanent: true },
-      { source: "/gacha/collection", destination: "/gacha/colecao", permanent: true },
-      { source: "/gacha/crystals", destination: "/gacha/cristais", permanent: true },
-      { source: "/gacha/encyclopedia", destination: "/gacha/enciclopedia", permanent: true },
-      { source: "/gacha/trades", destination: "/gacha/trocas", permanent: true },
+      {
+        source: "/gacha/collection",
+        destination: "/gacha/colecao",
+        permanent: true,
+      },
+      {
+        source: "/gacha/crystals",
+        destination: "/gacha/cristais",
+        permanent: true,
+      },
+      {
+        source: "/gacha/encyclopedia",
+        destination: "/gacha/enciclopedia",
+        permanent: true,
+      },
+      {
+        source: "/gacha/trades",
+        destination: "/gacha/mercado",
+        permanent: true,
+      },
+      {
+        source: "/gacha/trocas",
+        destination: "/gacha/mercado",
+        permanent: true,
+      },
     ];
   },
   async headers() {
