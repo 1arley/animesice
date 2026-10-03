@@ -617,7 +617,12 @@ export const api = {
     return result;
   },
 
-  adminListAnimes: (page = 1, limit = 50, search?: string, counts = true) =>
+  adminListAnimes: (
+    page = 1,
+    limit = 50,
+    search?: string,
+    counts = true,
+  ) =>
     request<Paginated<Anime & { _count: { episodes: number } }>>(
       `/admin/animes?page=${page}&limit=${limit}${search ? `&search=${encodeURIComponent(search)}` : ""}${counts ? "" : "&counts=false"}`,
     ),
