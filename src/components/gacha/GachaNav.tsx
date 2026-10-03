@@ -10,7 +10,7 @@ const items = [
   ["/gacha/enciclopedia", "Enciclopédia", "Explore o catálogo"],
   ["/gacha/skins", "Skins", "Personalize seu perfil"],
   ["/gacha/wishlist", "Wishlist", "Marque seus alvos"],
-["/gacha/mercado", "Mercado", "Anúncios e trocas"],
+  ["/gacha/mercado", "Mercado", "Anúncios e trocas"],
   ["/gacha/mercado-noturno", "Mercado Noturno", "Ofertas de fim de semana"],
   ["/gacha/loja", "Loja", "Ofertas e cosméticos"],
   ["/gacha/cristais", "Cristais", "Saldo e histórico"],

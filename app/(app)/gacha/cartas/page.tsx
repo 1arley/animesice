@@ -20,7 +20,7 @@ import type {
 } from "@/types";
 
 export default function GachaCollectionPage() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [items, setItems] = useState<GachaPull[]>([]);
   const [featured, setFeatured] = useState<GachaFeatured | null>(null);
   const [progress, setProgress] = useState<GachaCollectionProgress[]>([]);
@@ -36,6 +36,7 @@ export default function GachaCollectionPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [featuredError, setFeaturedError] = useState("");
+  const [progressError, setProgressError] = useState("");
   const [rerolling, setRerolling] = useState(false);
   const [listing, setListing] = useState(false);
   const [burning, setBurning] = useState(false);
@@ -119,7 +120,9 @@ export default function GachaCollectionPage() {
         if (!cancelled) setProgress(collections);
       })
       .catch(() => {
-        if (!cancelled) setError("Não foi possível carregar o progresso.");
+        // Falha aqui é parcial: o progresso é um extra do piloto de engajamento
+        // e não pode apagar a grade de cartas que já carregou.
+        if (!cancelled) setProgressError("Não foi possível carregar o progresso.");
       });
     return () => {
       cancelled = true;
@@ -226,6 +229,15 @@ export default function GachaCollectionPage() {
       setBurning(false);
     }
   }
+
+  // `useAuth` resolve /user/me no idle; sem esta guarda a página mostraria o
+  // convite para entrar antes de a sessão ser lida.
+  if (authLoading)
+    return (
+      <div className="mx-auto max-w-shelf px-4 py-16">
+        <div className="skeleton h-80" aria-busy="true" aria-label="Carregando sua coleção" />
+      </div>
+    );
 
   if (!user)
     return (
@@ -496,6 +508,11 @@ export default function GachaCollectionPage() {
       {featuredError && (
         <p role="alert" className="mt-8 text-signal">
           {featuredError}
+        </p>
+      )}
+      {progressError && (
+        <p role="status" className="mt-8 text-body-sm text-mist">
+          {progressError}
         </p>
       )}
       {error ? (
