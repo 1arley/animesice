@@ -29,9 +29,10 @@ export function GachaLoadoutEditor() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  // Não limpa o erro: quem chama decide. Um erro de equipar precisa
+  // sobreviver ao reload que desfaz a atualização otimista.
   const load = useCallback(async () => {
     setLoading(true);
-    setError("");
     try {
       const [shop, current] = await Promise.all([
         api.gachaShop(),
@@ -112,7 +113,14 @@ export function GachaLoadoutEditor() {
           className="mb-4 flex flex-wrap items-center gap-3 border border-signal/40 p-4 text-body-sm text-signal"
         >
           {error}
-          <button type="button" onClick={() => void load()} className="btn-ghost min-h-11 px-3">
+          <button
+            type="button"
+            onClick={() => {
+              setError("");
+              void load();
+            }}
+            className="btn-ghost min-h-11 px-3"
+          >
             Tentar novamente
           </button>
         </p>
