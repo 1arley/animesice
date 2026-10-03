@@ -143,3 +143,52 @@ test("moldura equipada aparece sobre a arte na carta", async ({ page }) => {
   expect(box.h).toBeCloseTo(1060 / 1000, 2);
   expect(box.cx).toBeCloseTo(box.ccx, 0);
 });
+
+test("destaque equipado aparece sobre a arte na carta", async ({ page }) => {
+  const pull = {
+    id: "p1", condition: 0.1, foil: "NORMAL", edition: 1, value: 100,
+    obtainedAt: "2026-09-11T00:00:00Z",
+    user: {
+      ...VIEWER,
+      gachaLoadout: { FRAME: null, HIGHLIGHT: "DESTAQUE_CARTA" },
+    },
+    card: { id: "c1", name: "Carta A", rarity: "RARA", image: null, favourites: 1,
+      animeId: "a1", animeTitle: "Anime A", anime: { slug: "anime-a" } },
+  };
+  await page.route("**/gacha/collection?**", (r) => r.fulfill({ json: {
+    data: [pull],
+    meta: { page: 1, limit: 24, total: 1, totalPages: 1 },
+    stats: { total: 1, totalValue: 100 },
+  } }));
+  await page.route("**/gacha/featured", (r) => r.fulfill({ json: null }));
+  await page.route("**/gacha/collections/progress", (r) => r.fulfill({ json: [] }));
+  await page.route("**/gacha/engagement-pilot", (r) => r.fulfill({ json: { enabled: false, percent: 0 } }));
+  await page.route("**/gacha/loadout", (r) => r.fulfill({ json: {
+    loadout: { FRAME: null, HIGHLIGHT: "DESTAQUE_CARTA" }, cardBack: null,
+  } }));
+  await page.route("**/gacha/card-backs/DESTAQUE_CARTA", (r) => r.fulfill({ json: {
+    key: "DESTAQUE_CARTA", name: "Dourado", svg: svg("-60 -60 870 1120"), previewUrl: null,
+  } }));
+
+  await page.goto("/gacha/cartas");
+  const destaque = page.locator('img[src^="data:image/svg+xml"][class*="z-10"]');
+  await expect(destaque).toHaveCount(1);
+
+  // Overlay de destaque: viewBox -60 -60 870 1120 -> ~116% x 112%.
+  const box = await destaque.evaluate((el) => {
+    const host = el.parentElement!;
+    const a = el.getBoundingClientRect();
+    const b = host.getBoundingClientRect();
+    return {
+      w: a.width / b.width,
+      h: a.height / b.height,
+      cx: a.left + a.width / 2,
+      ccx: b.left + b.width / 2,
+      style: el.getAttribute("style"),
+    };
+  });
+  expect(box.style, "estilo inline do overlay").toContain("116%");
+  expect(box.w).toBeCloseTo(870 / 750, 2);
+  expect(box.h).toBeCloseTo(1120 / 1000, 2);
+  expect(box.cx).toBeCloseTo(box.ccx, 0);
+});

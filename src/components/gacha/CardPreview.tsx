@@ -8,6 +8,7 @@ import { useFinePointer } from "@/lib/use-fine-pointer";
 import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
 import { GachaCard, gachaConditionLabel } from "@/components/gacha/GachaCard";
 import { CosmeticSvg } from "@/components/gacha/CosmeticSvg";
+import { cosmeticTypeOf } from "@/lib/cosmetic-svg";
 import { api, ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import type { GachaPull, GachaShopItem } from "@/types";
@@ -52,8 +53,22 @@ export function CardPreview({
   const reduced = usePrefersReducedMotion();
   const priceRef = useRef<HTMLInputElement>(null);
   const cosmetics = pull.user?.gachaCosmetics ?? [];
-  const aurora = cosmetics.includes("FRAME_AURORA");
-  const destaque = cosmetics.includes("DESTAQUE_CARTA");
+  const loadout = pull.user?.gachaLoadout;
+  const frameSlot = loadout?.FRAME ?? null;
+  const frameKey =
+    frameSlot && cosmeticTypeOf(frameSlot) === "FRAME" ? frameSlot : null;
+  const highlightSlot = loadout?.HIGHLIGHT ?? null;
+  const highlightKey =
+    highlightSlot && cosmeticTypeOf(highlightSlot) === "HIGHLIGHT"
+      ? highlightSlot
+      : null;
+  // Loadout tem prioridade; chrome legado só entra com o slot vazio.
+  const aurora = frameKey
+    ? frameKey === "FRAME_AURORA"
+    : cosmetics.includes("FRAME_AURORA");
+  const destaque = highlightKey
+    ? highlightKey === "DESTAQUE_CARTA"
+    : cosmetics.includes("DESTAQUE_CARTA");
   const rerollCost = Math.max(1, pull.value + Math.round(pull.value * 0.15));
   const applyCost =
     pull.rankedValue !== undefined && pull.value > pull.rankedValue
