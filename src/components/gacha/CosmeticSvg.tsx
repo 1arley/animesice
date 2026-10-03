@@ -79,7 +79,16 @@ export const CosmeticSvg = memo(function CosmeticSvg({
       className={className}
       style={
         scale
-          ? { left: "50%", top: "50%", translate: "-50% -50%", width: scale.width, height: scale.height }
+          ? {
+              left: "50%",
+              top: "50%",
+              translate: "-50% -50%",
+              width: scale.width,
+              height: scale.height,
+              // O preflight do Tailwind trava `img { max-width: 100% }`, o que
+              // cortaria o sangue do overlay em 100% e desalinharia a moldura.
+              maxWidth: "none",
+            }
           : undefined
       }
     />
