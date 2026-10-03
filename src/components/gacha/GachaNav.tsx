@@ -5,7 +5,8 @@ import { usePathname } from "next/navigation";
 
 const items = [
   ["/gacha", "Girar", "Abra novas cartas"],
-  ["/gacha/colecao", "Coleção", "Veja suas cópias"],
+  ["/gacha/cartas", "Minhas cartas", "Suas cópias e destaques"],
+  ["/gacha/colecao", "Cosméticos", "Capa, moldura e destaque"],
   ["/gacha/enciclopedia", "Enciclopédia", "Explore o catálogo"],
   ["/gacha/skins", "Skins", "Personalize seu perfil"],
   ["/gacha/wishlist", "Wishlist", "Marque seus alvos"],
@@ -28,7 +29,7 @@ export function GachaNav() {
       className="mx-auto mt-3 max-w-shelf px-4 sm:mt-4"
     >
       <div className="overflow-x-auto border-y border-hairline bg-panel/80 shadow-[0_8px_30px_rgba(0,0,0,0.12)]">
-        <div className="grid min-w-max grid-flow-col auto-cols-[8.5rem] lg:min-w-0 lg:grid-flow-row lg:grid-cols-9">
+        <div className="grid min-w-max grid-flow-col auto-cols-[8.5rem] lg:min-w-0 lg:grid-flow-row lg:grid-cols-10">
           {items.map(([href, label, description]) => {
             const active = href === activeHref;
             return (
