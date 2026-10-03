@@ -3,8 +3,17 @@
 import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { api, ApiError } from "@/lib/api";
-
-type CosmeticType = "BACK" | "FRAME" | "HIGHLIGHT";
+import {
+  ART_PLATE,
+  CARD_ART as ART,
+  BLEED,
+  TYPE_VIEWBOX,
+  DEFAULT_VIEWBOX,
+  parseViewBox,
+  artWindow,
+  svgDataUrl,
+  type CosmeticType,
+} from "@/lib/cosmetic-svg";
 
 type Layer = {
   id: string;
@@ -19,60 +28,6 @@ type Layer = {
   text?: string;
   hidden?: boolean;
 };
-
-type ViewBox = { x: number; y: number; w: number; h: number };
-
-/**
- * Janela da arte. 3/4 (750x1000) e o mesmo slot do cartao em GachaCard —
- * o preview antigo usava 5/7 e a arte chegava cortada no jogo.
- */
-const ART = { w: 750, h: 1000 } as const;
-
-/**
- * Molduras e destaques sao desenhados num canvas maior que a carta: o anel
- * externo fica no "sangue" (bleed) para nao ser cortado pela janela da arte.
- * Contrato com a renderizacao do GachaCard: a camada da moldura precisa
- * ficar FORA do container overflow-hidden que segura a arte.
- */
-const BLEED = 30;
-
-const TYPE_VIEWBOX: Record<CosmeticType, string> = {
-  BACK: `0 0 ${ART.w} ${ART.h}`,
-  FRAME: `${-BLEED} ${-BLEED} ${ART.w + BLEED * 2} ${ART.h + BLEED * 2}`,
-  HIGHLIGHT: `${-BLEED * 2} ${-BLEED * 2} ${ART.w + BLEED * 4} ${ART.h + BLEED * 4}`,
-};
-
-const DEFAULT_VIEWBOX = TYPE_VIEWBOX.BACK;
-
-function parseViewBox(svg: string, fallback: string): ViewBox {
-  const raw = /viewBox\s*=\s*["']\s*([-\d.eE+]+)[\s,]+([-\d.eE+]+)[\s,]+([-\d.eE+]+)[\s,]+([-\d.eE+]+)/.exec(svg);
-  const n = raw ? [Number(raw[1]), Number(raw[2]), Number(raw[3]), Number(raw[4])] : null;
-  if (n && n.every(Number.isFinite) && n[2] > 0 && n[3] > 0) return { x: n[0], y: n[1], w: n[2], h: n[3] };
-  const f = fallback.split(/\s+/).map(Number);
-  return { x: f[0]!, y: f[1]!, w: f[2]!, h: f[3]! };
-}
-
-/** Recorta a janela da arte (0,0,750,1000) dentro do viewBox, em porcentagem. */
-function artWindow(vb: ViewBox) {
-  const x0 = Math.max(0, vb.x);
-  const y0 = Math.max(0, vb.y);
-  const x1 = Math.min(vb.x + vb.w, ART.w);
-  const y1 = Math.min(vb.y + vb.h, ART.h);
-  const pct = (v: number, total: number) => `${(v / total) * 100}%`;
-  return {
-    left: pct(x0 - vb.x, vb.w),
-    top: pct(y0 - vb.y, vb.h),
-    width: pct(Math.max(0, x1 - x0), vb.w),
-    height: pct(Math.max(0, y1 - y0), vb.h),
-  };
-}
-
-/** Arte de referencia: grade + silhueta, para revelar desalinhamento da moldura. */
-const ART_PLATE = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 750 1000"><defs><linearGradient id="sky" x1="0" y1="0" x2="0.6" y2="1"><stop offset="0" stop-color="#1b3a63"/><stop offset=".55" stop-color="#0b1220"/><stop offset="1" stop-color="#17304d"/></linearGradient></defs><rect width="750" height="1000" fill="url(#sky)"/><circle cx="225" cy="250" r="170" fill="#38e8da" opacity=".18"/><circle cx="560" cy="600" r="240" fill="#8b5cf6" opacity=".16"/><path d="M0 780 250 520 430 760 560 640 750 830V1000H0Z" fill="#05080e" opacity=".85"/><path d="M0 250H750M0 500H750M0 750H750M250 0V1000M500 0V1000" stroke="#8de7ff" stroke-opacity=".22" stroke-width="2" fill="none"/></svg>`;
-
-function svgDataUrl(svg: string) {
-  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg.replace(/<script[\s\S]*?<\/script>/gi, ""))}`;
-}
 
 const blank = {
   key: "BACK_",
@@ -203,7 +158,7 @@ function CosmeticPreview({ svg, type, guides }: { svg: string; type: CosmeticTyp
       {guides && (
         <div className="pointer-events-none absolute border border-dashed border-ice/80" style={win} aria-hidden />
       )}
-      {/* Mesmo rationale do CardBackSvg: documento de imagem inerte, sem execucao no DOM. */}
+      {/* SVG fica em documento de imagem inerte, sem execucao no DOM. */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={svgDataUrl(svg)} alt="" aria-hidden className="absolute inset-0 h-full w-full" />
     </div>
@@ -231,7 +186,9 @@ export default function AdminCapasPage() {
   function sync(next: Layer[]) {
     setLayers(next);
     setForm((f) => {
-      const vb = parseViewBox(f.svg, DEFAULT_VIEWBOX);
+      // Fallback por tipo: um FRAME sem viewBox no textarea nao pode herdar
+      // o viewBox de capa no proximo toque de camada.
+      const vb = parseViewBox(f.svg, TYPE_VIEWBOX[f.type] ?? DEFAULT_VIEWBOX);
       return { ...f, svg: serialize(next, extra, `${vb.x} ${vb.y} ${vb.w} ${vb.h}`) };
     });
   }

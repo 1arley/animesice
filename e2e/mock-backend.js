@@ -319,6 +319,46 @@ const server = http.createServer((req, res) => {
   if (req.method === 'GET' && (p === '/api/gacha/trades/mine' || p === '/gacha/trades/mine')) {
     return json(res, []);
   }
+  if (req.method === 'GET' && (p === '/api/gacha/shop' || p === '/gacha/shop')) {
+    return json(res, { balance: 0, cosmetics: [], activeCardBack: null, spinPrice: 0 });
+  }
+  if (req.method === 'GET' && (p === '/api/gacha/loadout' || p === '/gacha/loadout')) {
+    return json(res, { loadout: { FRAME: null, HIGHLIGHT: null }, cardBack: null });
+  }
+  if (req.method === 'PATCH' && (p === '/api/gacha/loadout' || p === '/gacha/loadout')) {
+    let body = '';
+    req.on('data', (c) => (body += c));
+    req.on('end', () => {
+      try {
+        const b = JSON.parse(body || '{}');
+        const slot = b.slot === 'FRAME' || b.slot === 'HIGHLIGHT' ? b.slot : 'FRAME';
+        const key = typeof b.key === 'string' && b.key ? b.key : null;
+        return json(res, { gachaLoadout: { FRAME: null, HIGHLIGHT: null, [slot]: key } });
+      } catch (e) {
+        res.writeHead(400);
+        res.end('bad json');
+      }
+    });
+    return;
+  }
+  if (req.method === 'PATCH' && (p === '/api/gacha/card-back' || p === '/gacha/card-back')) {
+    let body = '';
+    req.on('data', (c) => (body += c));
+    req.on('end', () => {
+      try {
+        const b = JSON.parse(body || '{}');
+        return json(res, { gachaCardBack: typeof b.key === 'string' && b.key ? b.key : null });
+      } catch (e) {
+        res.writeHead(400);
+        res.end('bad json');
+      }
+    });
+    return;
+  }
+  const gachaCardBackSvg = p && p.match(/^\/(api\/)?gacha\/card-backs\/([^/]+)$/);
+  if (req.method === 'GET' && gachaCardBackSvg) {
+    return json(res, { key: decodeURIComponent(gachaCardBackSvg[2]), name: '', svg: null, previewUrl: null });
+  }
   if (req.method === 'GET' && p && /^\/(api\/)?gacha\/cards\/.+/.test(p)) return json(res, {
     id: p.split('/').pop(), condition: 0.04, foil: 'GOLD', edition: 1, value: 9500,
     obtainedAt: new Date().toISOString(), user: { id: 'viewer-1', name: 'Viewer', userName: 'viewer', avatar: null },

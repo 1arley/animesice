@@ -130,15 +130,23 @@ export const GachaCard = memo(function GachaCard({ pull, preview = false, linkAn
   const isGalaxy = card.rarity === "GALACTICA";
   const foilText = FOIL_TEXT[pull.foil];
   const cosmetics = pull.user?.gachaCosmetics ?? [];
-  const hasAurora = cosmetics.includes("FRAME_AURORA");
   const backKey = cardBack === undefined ? pull.user?.gachaCardBack : cardBack;
   const loadout = pull.user?.gachaLoadout;
   const frameSlot = loadout?.FRAME ?? null;
   const frameKey =
     frameSlot && cosmeticTypeOf(frameSlot) === "FRAME" ? frameSlot : null;
-  const destaqueRing = cosmetics.includes("DESTAQUE_CARTA")
-    ? " shadow-[0_0_18px_rgba(252,211,77,0.45)]"
-    : "";
+  const highlightSlot = loadout?.HIGHLIGHT ?? null;
+  const highlightKey =
+    highlightSlot && cosmeticTypeOf(highlightSlot) === "HIGHLIGHT"
+      ? highlightSlot
+      : null;
+  // Chrome legado só entra quando o slot correspondente do loadout está vazio —
+  // loadout equipado tem prioridade e não soma com a moldura/destaque antigos.
+  const hasAurora = !frameKey && cosmetics.includes("FRAME_AURORA");
+  const destaqueRing =
+    !highlightKey && cosmetics.includes("DESTAQUE_CARTA")
+      ? " shadow-[0_0_18px_rgba(252,211,77,0.45)]"
+      : "";
 
   const markup = (
     <div
@@ -179,6 +187,15 @@ export const GachaCard = memo(function GachaCard({ pull, preview = false, linkAn
           {frameKey && (
             <CosmeticSvg
               cosmeticKey={frameKey}
+              fit="card"
+              className="pointer-events-none absolute z-10 object-fill"
+            />
+          )}
+          {/* Destaque: sangue maior (viewBox -60 -60 870 1120); anel fica fora
+              da moldura e também passa pelo overflow-hidden do cartão. */}
+          {highlightKey && (
+            <CosmeticSvg
+              cosmeticKey={highlightKey}
               fit="card"
               className="pointer-events-none absolute z-10 object-fill"
             />

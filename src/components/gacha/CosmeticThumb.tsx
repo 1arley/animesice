@@ -35,7 +35,6 @@ export function CosmeticThumb({
           Sem imagem
         </span>
       )}
-      {alt && <span className="sr-only">{alt}</span>}
     </div>
   );
 }

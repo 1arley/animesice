@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { api, ApiError } from "@/lib/api";
 import { CosmeticSlotPicker } from "@/components/gacha/CosmeticSlotPicker";
+import { cosmeticTypeOf, type CosmeticType } from "@/lib/cosmetic-svg";
 import { useAuth } from "@/lib/auth-context";
 import { useToast } from "@/components/common/ToastProvider";
 import type { GachaLoadout, GachaLoadoutSlot, GachaShopItem } from "@/types";
@@ -11,11 +12,11 @@ import type { GachaLoadout, GachaLoadoutSlot, GachaShopItem } from "@/types";
 const EMPTY: GachaLoadout = { FRAME: null, HIGHLIGHT: null };
 
 /** Filtra só o que o usuário possui e já está publicado. */
-function owned(items: GachaShopItem[], type: "BACK" | "FRAME" | "HIGHLIGHT") {
+function owned(items: GachaShopItem[], type: CosmeticType) {
   return items.filter(
     (i) =>
       i.owned &&
-      (i.type === type || (!i.type && i.key.startsWith(`${type}_`))),
+      (i.type === type || (!i.type && cosmeticTypeOf(i.key) === type)),
   );
 }
 
@@ -29,8 +30,8 @@ export function GachaLoadoutEditor() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // Não limpa o erro: quem chama decide. Um erro de equipar precisa
-  // sobreviver ao reload que desfaz a atualização otimista.
+  // Não limpa o erro: quem chama decide. O erro de equipar precisa
+  // sobreviver à tela sem sobrescrita por um reload subsequente.
   const load = useCallback(async () => {
     setLoading(true);
     try {
@@ -71,18 +72,18 @@ export function GachaLoadoutEditor() {
         }
         toast("Coleção atualizada.", "success");
       } catch (cause) {
+        // Sem update otimista: o estado local só muda após sucesso.
+        // Não recarrega aqui para não sobrescrever a mensagem de erro.
         setError(
           cause instanceof ApiError
             ? cause.message
             : "Não foi possível atualizar a coleção.",
         );
-        // Recarrega para desfazer a optimistic update e voltar ao estado real.
-        await load();
       } finally {
         setBusyKey(null);
       }
     },
-    [busyKey, load, toast],
+    [busyKey, toast],
   );
 
   if (authLoading) {
@@ -127,7 +128,12 @@ export function GachaLoadoutEditor() {
       )}
 
       {loading ? (
-        <div className="skeleton h-72" aria-label="Carregando coleção" aria-busy="true" />
+        <div
+          className="skeleton h-72"
+          role="status"
+          aria-label="Carregando coleção"
+          aria-busy="true"
+        />
       ) : (
         <div className="grid gap-4 lg:grid-cols-3">
           <CosmeticSlotPicker
