@@ -470,7 +470,7 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
             <p className="mt-2 max-w-xl text-pretty text-body-sm text-mist">
               {mode === "market"
                 ? "Anuncie cartas e skins, negocie com outros jogadores e envie propostas de troca. Cristais são a moeda do mercado; pontos contam apenas no ranking."
-                : "Confira a seleção diária e o mercado noturno, abra caixas e encontre capas e cosméticos."}
+                : "Confira a seleção diária, abra caixas e encontre capas e cosméticos."}
             </p>
           </div>
           <div className="w-full border border-hairline bg-panel px-5 py-4 sm:w-auto sm:min-w-56">
@@ -530,9 +530,6 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
               <>
                 <a href="#daily-shop-title" className="btn-ghost min-h-11 px-4">
                   Loja diária
-                </a>
-                <a href="#night-shop-title" className="btn-ghost min-h-11 px-4">
-                  Mercado noturno
                 </a>
                 <a href="#boxes-title" className="btn-ghost min-h-11 px-4">
                   Caixas
@@ -639,15 +636,6 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
                 available={inventory?.available ?? 0}
                 busy={busy !== null}
                 resetLabel={`Renova em ${resetCountdown} BRT`}
-                onBuy={buyOffer}
-              />
-              <ShopOfferSection
-                id="night-shop-title"
-                title="Mercado noturno"
-                description="Uma seleção sazonal de cartas, skins e consumíveis."
-                offers={offers.filter((offer) => offer.slot >= 7)}
-                available={inventory?.available ?? 0}
-                busy={busy !== null}
                 onBuy={buyOffer}
               />
             </>
