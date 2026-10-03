@@ -13,7 +13,7 @@ import type { UserSearchResult } from "@/types";
  */
 export function UserCard({ user }: { user: UserSearchResult }) {
   const name = user.name?.trim() || user.userName || "Usuário";
-  const href = `/users/${user.userName ?? user.id}`;
+  const href = `/usuarios/${user.userName ?? user.id}`;
 
   return (
     <SpotlightCard className="flex h-full flex-col border border-hairline bg-panel p-4">
