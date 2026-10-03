@@ -494,6 +494,7 @@ export interface SocialUser {
   avatar: string | null;
   gachaCosmetics?: string[];
   gachaCardBack?: string | null;
+  gachaLoadout?: GachaLoadout | null;
 }
 
 /** Anime referenciado em um post do feed. */
@@ -637,6 +638,14 @@ export interface GachaSkinsResponse {
     limit: number;
     totalPages: number;
   };
+}
+
+/** Slots equipáveis de loadout. A capa tem coluna própria no backend. */
+export type GachaLoadoutSlot = "FRAME" | "HIGHLIGHT";
+
+export interface GachaLoadout {
+  FRAME: string | null;
+  HIGHLIGHT: string | null;
 }
 
 export interface GachaShopItem {

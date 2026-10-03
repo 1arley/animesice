@@ -3,7 +3,8 @@ import Link from "next/link";
 import { memo, type CSSProperties } from "react";
 import { safeImageSrc } from "@/lib/url";
 import { blur } from "@/lib/blur";
-import { CardBackSvg } from "@/components/gacha/CardBackSvg";
+import { CosmeticSvg } from "@/components/gacha/CosmeticSvg";
+import { cosmeticTypeOf } from "@/lib/cosmetic-svg";
 import { HoloTilt } from "@/components/core/HoloTilt";
 import type { GachaPull } from "@/types";
 
@@ -131,6 +132,10 @@ export const GachaCard = memo(function GachaCard({ pull, preview = false, linkAn
   const cosmetics = pull.user?.gachaCosmetics ?? [];
   const hasAurora = cosmetics.includes("FRAME_AURORA");
   const backKey = cardBack === undefined ? pull.user?.gachaCardBack : cardBack;
+  const loadout = pull.user?.gachaLoadout;
+  const frameSlot = loadout?.FRAME ?? null;
+  const frameKey =
+    frameSlot && cosmeticTypeOf(frameSlot) === "FRAME" ? frameSlot : null;
   const destaqueRing = cosmetics.includes("DESTAQUE_CARTA")
     ? " shadow-[0_0_18px_rgba(252,211,77,0.45)]"
     : "";
@@ -151,8 +156,9 @@ export const GachaCard = memo(function GachaCard({ pull, preview = false, linkAn
             aria-label="Verso personalizado da carta"
           >
             {backKey ? (
-              <CardBackSvg
-                backKey={backKey}
+              <CosmeticSvg
+                cosmeticKey={backKey}
+                fit="cover"
                 className="absolute inset-0 h-full w-full object-cover"
               />
             ) : (
@@ -166,6 +172,17 @@ export const GachaCard = memo(function GachaCard({ pull, preview = false, linkAn
           </div>
         ) : <>
         <div className="group relative" style={{ aspectRatio: "3 / 4" }}>
+          {/* Moldura: viewBox com sangue é escalado 108%x106% e centralizado,
+              então a janela da arte cai exatamente sobre a arte. O anel externo
+              é cortado pelo overflow-hidden do cartão — por isso o desenho da
+              moldura é pensado para o anel interno, não para o externo. */}
+          {frameKey && (
+            <CosmeticSvg
+              cosmeticKey={frameKey}
+              fit="card"
+              className="pointer-events-none absolute z-10 object-fill"
+            />
+          )}
           {art ? (
             <Image
               src={art}
@@ -213,19 +230,19 @@ export const GachaCard = memo(function GachaCard({ pull, preview = false, linkAn
             <div aria-hidden className="condition-mint-glare pointer-events-none absolute inset-0" />
           )}
           <span
-            className={`absolute left-1.5 top-1.5 bg-ink/85 px-1.5 py-0.5 font-mono text-caption font-medium backdrop-blur-sm ${isGalaxy ? GALAXY_TEXT : rarity.text}`}
+            className={`absolute left-1.5 top-1.5 z-20 bg-ink/85 px-1.5 py-0.5 font-mono text-caption font-medium backdrop-blur-sm ${isGalaxy ? GALAXY_TEXT : rarity.text}`}
           >
             {card.rarity}
           </span>
           {pull.foil !== "NORMAL" && (
             <span
-              className={`absolute right-1.5 top-1.5 bg-ink/85 px-1.5 py-0.5 font-mono text-caption font-medium backdrop-blur-sm ${foilText ?? "text-snow"}`}
+              className={`absolute right-1.5 top-1.5 z-20 bg-ink/85 px-1.5 py-0.5 font-mono text-caption font-medium backdrop-blur-sm ${foilText ?? "text-snow"}`}
             >
               {pull.foil}
             </span>
           )}
           <span
-            className={`absolute bottom-1.5 right-1.5 bg-ink/85 px-1.5 py-0.5 font-mono text-caption font-medium backdrop-blur-sm ${CONDITION_COLOR[label] ?? "text-mist"}`}
+            className={`absolute bottom-1.5 right-1.5 z-20 bg-ink/85 px-1.5 py-0.5 font-mono text-caption font-medium backdrop-blur-sm ${CONDITION_COLOR[label] ?? "text-mist"}`}
           >
             {CONDITION_GLYPH[label] ? `${CONDITION_GLYPH[label]} ` : ""}
             {label}

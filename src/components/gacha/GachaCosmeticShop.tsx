@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
-import { CardBackSvg } from "@/components/gacha/CardBackSvg";
+import { CosmeticSvg } from "@/components/gacha/CosmeticSvg";
+import { CosmeticThumb } from "@/components/gacha/CosmeticThumb";
 import { useToast } from "@/components/common/ToastProvider";
 import type { GachaShopItem } from "@/types";
 
@@ -148,12 +149,17 @@ export function GachaCosmeticShop({
                 key={item.key}
                 className={`flex min-w-0 flex-col border bg-panel ${active ? "border-ice/60" : "border-hairline"}`}
               >
-                {isBack && (
+                {isBack ? (
                   <div className="flex h-52 items-center justify-center border-b border-hairline bg-ink p-5">
-                    <CardBackSvg
-                      backKey={item.key}
+                    <CosmeticSvg
+                      cosmeticKey={item.key}
                       className="aspect-[3/4] h-full object-contain"
                     />
+                  </div>
+                ) : (
+                  // Moldura e destaque só se julgam sobre a arte.
+                  <div className="flex h-52 items-center justify-center border-b border-hairline bg-ink p-5">
+                    <CosmeticThumb svg={item.svg} type={item.type ?? "FRAME"} className="h-full" />
                   </div>
                 )}
                 <div className="flex flex-1 flex-col p-5">
