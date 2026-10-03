@@ -10,13 +10,17 @@ const items = [
   ["/gacha/skins", "Skins", "Personalize seu perfil"],
   ["/gacha/wishlist", "Wishlist", "Marque seus alvos"],
 ["/gacha/mercado", "Mercado", "Anúncios e trocas"],
-  ["/gacha/mercado-noturno", "Mercado Noturno", "Revele ofertas mensais"],
+  ["/gacha/mercado-noturno", "Mercado Noturno", "Ofertas de fim de semana"],
   ["/gacha/loja", "Loja", "Ofertas e cosméticos"],
   ["/gacha/cristais", "Cristais", "Saldo e histórico"],
 ] as const;
 
 export function GachaNav() {
   const pathname = usePathname();
+  const activeHref = items
+    .map(([href]) => href)
+    .filter((href) => pathname === href || pathname.startsWith(`${href}/`))
+    .sort((left, right) => right.length - left.length)[0];
 
   return (
     <nav
@@ -26,8 +30,7 @@ export function GachaNav() {
       <div className="overflow-x-auto border-y border-hairline bg-panel/80 shadow-[0_8px_30px_rgba(0,0,0,0.12)]">
         <div className="grid min-w-max grid-flow-col auto-cols-[8.5rem] lg:min-w-0 lg:grid-flow-row lg:grid-cols-9">
           {items.map(([href, label, description]) => {
-            const active =
-              href === "/gacha" ? pathname === href : pathname.startsWith(href);
+            const active = href === activeHref;
             return (
               <Link
                 key={href}
