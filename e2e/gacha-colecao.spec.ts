@@ -121,8 +121,8 @@ test("moldura equipada aparece sobre a arte na carta", async ({ page }) => {
   } }));
 
   await page.goto("/gacha/cartas");
-  const moldura = page.locator('img[src^="data:image/svg+xml"]').first();
-  await expect(moldura).toBeVisible();
+  const moldura = page.locator('img[src^="data:image/svg+xml"][class*="z-10"]');
+  await expect(moldura).toHaveCount(1);
 
   // O overlay é 108% x 106% (viewBox com sangue) e centralizado, então a
   // janela da arte cai exatamente sobre o cartão.
@@ -130,7 +130,13 @@ test("moldura equipada aparece sobre a arte na carta", async ({ page }) => {
     const host = el.parentElement!;
     const a = el.getBoundingClientRect();
     const b = host.getBoundingClientRect();
-    return { w: a.width / b.width, h: a.height / b.height, cx: a.left + a.width / 2, ccx: b.left + b.width / 2 };
+    return {
+      w: a.width / b.width,
+      h: a.height / b.height,
+      cx: a.left + a.width / 2,
+      ccx: b.left + b.width / 2,
+      style: el.getAttribute("style"),
+    };
   });
   expect(box.w).toBeCloseTo(810 / 750, 2);
   expect(box.h).toBeCloseTo(1060 / 1000, 2);
