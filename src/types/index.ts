@@ -745,6 +745,8 @@ export interface GachaEconomyInventory {
 
 export interface GachaEconomyListingItem {
   id: string;
+  userId: string;
+  user: { id: string; name: string | null; userName: string | null };
   itemType: "CARD" | "SKIN";
   price: number;
   status: "ACTIVE" | "SOLD" | "FILLED" | "CANCELLED" | "EXPIRED";
@@ -780,6 +782,42 @@ export interface GachaEconomyOrder {
   expiresAt: string;
   card?: { id: string; name: string; rarity: string } | null;
   skin?: { id: string; name: string; rarity?: string } | null;
+}
+
+export interface GachaMarketOffer {
+  id: string;
+  offeredUserId: string;
+  requestedUserId: string;
+  crystals: number;
+  status: "PENDING" | "ACCEPTED" | "DECLINED" | "CANCELLED" | "EXPIRED";
+  expiresAt: string;
+  createdAt: string;
+  completedAt: string | null;
+  offeredUser: { id: string; name: string | null; userName: string | null };
+  requestedUser: { id: string; name: string | null; userName: string | null };
+  listing: {
+    id: string;
+    itemType: "CARD" | "SKIN";
+    price: number;
+    item: {
+      id: string;
+      name: string;
+      image: string | null;
+      rarity: string;
+      foil?: string;
+      edition?: number;
+      condition?: number;
+    };
+  } | null;
+  offeredCards: Array<{
+    id: string;
+    name: string;
+    image: string | null;
+    rarity: string;
+    foil: string;
+    edition: number;
+    condition: number;
+  }>;
 }
 
 export interface GachaEconomyPage<T> {
