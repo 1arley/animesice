@@ -126,8 +126,10 @@ test.describe("Gacha harden — cerimônia", () => {
     await expect(page.getByText(/Pity ÉPICA\+ em 14d/)).toBeVisible();
     await expect(page.getByRole("button", { name: /^Girar \(5\)$/ })).toBeEnabled();
     await expect(page.getByRole("button", { name: "Pegar carta" })).toBeEnabled();
-    await expect(page.getByRole("link", { name: "Minhas cartas" })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Cosméticos" })).toBeVisible();
+    // Âncora no início: o nome acessível inclui a descrição em xl, e
+    // "Loja — Ofertas e cosméticos" também conteria o termo.
+    await expect(page.getByRole("link", { name: /^Minhas cartas/ })).toBeVisible();
+    await expect(page.getByRole("link", { name: /^Cosméticos/ })).toBeVisible();
     await expect(page.getByText("Previews desta hora (2/5)")).toBeVisible();
     await expect(page.getByText(/Selecionada: Cha Hae-In/)).toBeVisible();
     await noHorizontalOverflow(page);
