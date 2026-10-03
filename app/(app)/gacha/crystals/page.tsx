@@ -5,10 +5,9 @@ import Link from "next/link";
 import { api, ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { CardBackSvg } from "@/components/gacha/CardBackSvg";
 import { SectionLabel } from "@/components/common/SectionLabel";
 import { useToast } from "@/components/common/ToastProvider";
-import type { CrystalEvent, CrystalEventType, GachaShopItem } from "@/types";
+import type { CrystalEvent, CrystalEventType } from "@/types";
 
 const PAGE_SIZE = 20;
 
@@ -41,93 +40,22 @@ export default function GachaCrystalsPage() {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [shop, setShop] = useState<GachaShopItem[]>([]);
-  const [activeBack, setActiveBack] = useState<string | null>(null);
-  const [equipping, setEquipping] = useState(false);
-  const [shopLoading, setShopLoading] = useState(true);
-  const [shopError, setShopError] = useState("");
   const [buying, setBuying] = useState<string | null>(null);
-  const [claimingDaily, setClaimingDaily] = useState(false);
-  const [dailyClaimedToday, setDailyClaimedToday] = useState(false);
   const [checkoutUrl, setCheckoutUrl] = useState<string | null>(null);
   const [packages, setPackages] = useState<
     Array<{ id: string; cents: number; crystals: number }>
   >([...CRYSTAL_PACKAGES]);
-  const [dailyBonus, setDailyBonus] = useState(350);
   const [redeemCode, setRedeemCode] = useState("");
   const [redeeming, setRedeeming] = useState(false);
   const purchaseKeys = useRef<Record<string, string>>({});
   const { toast } = useToast();
 
-  const loadShop = useCallback(async () => {
-    setShopLoading(true);
-    setShopError("");
-    try {
-      const s = await api.gachaShop();
-      setShop(s.cosmetics);
-      setActiveBack(s.activeCardBack ?? null);
-    } catch {
-      setShopError("Não foi possível carregar a loja.");
-    } finally {
-      setShopLoading(false);
-    }
-  }, []);
-
   const loadPackages = useCallback(async () => {
     try {
       const odds = await api.gachaEconomyOdds();
       setPackages(odds.crystalPackages);
-      setDailyBonus(odds.dailyBonus);
     } catch {}
   }, []);
-
-  async function handleBuy(key: string) {
-    if (buying !== null) return;
-    setBuying(key);
-    setError("");
-    try {
-      await api.gachaBuyCosmetic({ key });
-      await Promise.all([loadShop(), load(1, false)]);
-      toast("Cosmético comprado. Clique em Usar para equipar.", "success");
-    } catch (e) {
-      const msg =
-        e instanceof Error ? e.message : "Não foi possível concluir a compra.";
-      setError(msg);
-      if (
-        /insuficiente|indisponível|vendid|expir|já foi|said|already|sold|conflict/i.test(
-          msg,
-        )
-      ) {
-        await Promise.all([loadShop(), load(1, false)]);
-      }
-    } finally {
-      setBuying(null);
-    }
-  }
-
-  async function handleDailyBonus() {
-    setClaimingDaily(true);
-    setError("");
-    try {
-      const res = await api.gachaEconomyDaily();
-      setDailyClaimedToday(true);
-      toast(`Bônus diário: +${res.claimed} cristais.`, "success");
-      await load(1, false);
-    } catch (e) {
-      const msg =
-        e instanceof ApiError
-          ? e.message
-          : "Não foi possível resgatar o bônus.";
-      if (/resgatado|claimed|already/i.test(msg)) {
-        setDailyClaimedToday(true);
-        await load(1, false);
-      } else {
-        setError(msg);
-      }
-    } finally {
-      setClaimingDaily(false);
-    }
-  }
 
   async function handleRedeemCode(e: React.FormEvent) {
     e.preventDefault();
@@ -176,31 +104,10 @@ export default function GachaCrystalsPage() {
     }
   }
 
-  async function handleBack(key: string | null) {
-    if (equipping) return;
-    setEquipping(true);
-    setError("");
-    try {
-      const result = await api.gachaSetCardBack(key);
-      setActiveBack(result.gachaCardBack);
-      toast(
-        result.gachaCardBack ? "Capa equipada." : "Capa removida.",
-        "success",
-      );
-    } catch (e) {
-      setError(
-        e instanceof Error ? e.message : "Não foi possível trocar a capa.",
-      );
-    } finally {
-      setEquipping(false);
-    }
-  }
-
   const load = useCallback(async (target: number, append: boolean) => {
     try {
       const data = await api.gachaCrystals(target, PAGE_SIZE);
       setBalance(data.balance);
-      setDailyClaimedToday(data.dailyClaimedToday);
       setTotal(data.meta.total);
       setEvents((prev) => (append ? [...prev, ...data.events] : data.events));
       setPage(target);
@@ -214,9 +121,8 @@ export default function GachaCrystalsPage() {
   useEffect(() => {
     if (!user) return;
     void load(1, false);
-    void loadShop();
     void loadPackages();
-  }, [user, load, loadShop, loadPackages]);
+  }, [user, load, loadPackages]);
 
   useEffect(() => {
     if (!checkoutUrl) return;
@@ -260,7 +166,8 @@ export default function GachaCrystalsPage() {
             Cristais
           </h1>
           <p className="mt-2 max-w-xl text-body-sm text-mist">
-            Cuide do saldo, resgate recompensas e personalize sua coleção.
+            Compre Cristais e acompanhe seu saldo e extrato. Ofertas e
+            recompensas diárias ficam na Loja.
           </p>
         </div>
         <Link href="/gacha/mercado" className="btn-ghost min-h-11 px-4">
@@ -293,28 +200,6 @@ export default function GachaCrystalsPage() {
               cristais
             </span>
           </p>
-          <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-hairline pt-4">
-            <div>
-              <p className="text-body-sm text-snow">Bônus diário</p>
-              <p className="mt-1 text-caption text-mist">
-                {dailyClaimedToday
-                  ? "Tudo certo. Volte amanhã para resgatar novamente."
-                  : `Mais ${dailyBonus.toLocaleString("pt-BR")} cristais para sua coleção.`}
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => void handleDailyBonus()}
-              disabled={loading || claimingDaily || dailyClaimedToday}
-              className="btn-ice min-h-11 px-4 disabled:opacity-50"
-            >
-              {dailyClaimedToday
-                ? "Resgatado hoje"
-                : claimingDaily
-                  ? "Resgatando…"
-                  : "Resgatar bônus"}
-            </button>
-          </div>
         </section>
         <form
           onSubmit={handleRedeemCode}
@@ -358,9 +243,9 @@ export default function GachaCrystalsPage() {
         <a href="#crystal-packages" className="btn-ghost min-h-11 px-4">
           Comprar cristais
         </a>
-        <a href="#cosmetics" className="btn-ghost min-h-11 px-4">
+        <Link href="/gacha/loja#cosmetics" className="btn-ghost min-h-11 px-4">
           Capas e cosméticos
-        </a>
+        </Link>
         <a href="#statement" className="btn-ghost min-h-11 px-4">
           Extrato
         </a>
@@ -435,160 +320,18 @@ export default function GachaCrystalsPage() {
         )}
       </section>
 
-      <section
-        id="cosmetics"
-        aria-labelledby="cosmetics-title"
-        className="mt-10 scroll-mt-24"
-      >
-        <div className="flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <h2
-              id="cosmetics-title"
-              className="font-display text-2xl text-snow"
-            >
-              Capas e cosméticos
-            </h2>
-            <p className="mt-1 text-body-sm text-mist">
-              A capa escolhida será usada no verso de todas as suas cartas.
-            </p>
-          </div>
-          <Link
-            href="/gacha/colecao"
-            className="inline-flex min-h-11 items-center text-body-sm text-ice hover:underline"
-          >
-            Ver minha coleção
-          </Link>
-        </div>
-        {shopError && (
-          <div
-            role="alert"
-            className="mt-4 flex flex-wrap items-center gap-3 border border-signal/40 p-4 text-body-sm text-signal"
-          >
-            {shopError}
-            <button
-              type="button"
-              onClick={() => void loadShop()}
-              className="btn-ghost min-h-11 px-3"
-            >
-              Tentar novamente
-            </button>
-          </div>
-        )}
-        {shopLoading ? (
-          <div
-            className="skeleton mt-4 h-56"
-            aria-label="Carregando cosméticos"
-            aria-busy="true"
-          />
-        ) : shop.length === 0 && !shopError ? (
-          <p className="mt-4 border border-dashed border-hairline p-5 text-body-sm text-mist">
-            Nenhum cosmético disponível no momento.
-          </p>
-        ) : (
-          <ul className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {shop.map((item) => {
-              const insufficient = balance != null && balance < item.price;
-              const isBack =
-                item.type === "BACK" ||
-                (!item.type && item.key.startsWith("BACK_"));
-              const active = activeBack === item.key;
-              return (
-                <li
-                  key={item.key}
-                  className={`flex min-w-0 flex-col border bg-panel ${active ? "border-ice/60" : "border-hairline"}`}
-                >
-                  {isBack && (
-                    <div className="flex h-52 items-center justify-center border-b border-hairline bg-ink p-5">
-                      <CardBackSvg
-                        backKey={item.key}
-                        className="aspect-[3/4] h-full object-contain"
-                      />
-                    </div>
-                  )}
-                  <div className="flex flex-1 flex-col p-5">
-                    <div className="flex flex-wrap items-center justify-between gap-2 text-caption">
-                      <span className="text-mist">
-                        {isBack
-                          ? "Capa de carta"
-                          : item.type === "FRAME"
-                            ? "Moldura"
-                            : "Cosmético"}
-                      </span>
-                      {item.owned && (
-                        <span className="font-mono text-ice">SEU</span>
-                      )}
-                    </div>
-                    <h3 className="mt-2 font-display text-xl text-snow">
-                      {item.label}
-                    </h3>
-                    <p className="mt-2 text-body-sm text-mist">
-                      {item.description}
-                    </p>
-                    <div className="mt-auto pt-5">
-                      {item.owned ? (
-                        isBack ? (
-                          <>
-                            <p
-                              className="mb-2 text-caption text-mist"
-                              role="status"
-                            >
-                              {active
-                                ? "Equipada em todas as suas cartas"
-                                : "Pronta para usar na sua coleção"}
-                            </p>
-                            <button
-                              type="button"
-                              disabled={equipping}
-                              onClick={() =>
-                                void handleBack(active ? null : item.key)
-                              }
-                              className={`${active ? "btn-ghost" : "btn-ice"} min-h-11 w-full px-3 disabled:opacity-50`}
-                            >
-                              {equipping
-                                ? "Atualizando…"
-                                : active
-                                  ? "Remover capa"
-                                  : "Usar capa"}
-                            </button>
-                          </>
-                        ) : (
-                          <p className="text-body-sm text-ice">
-                            Na sua coleção
-                          </p>
-                        )
-                      ) : (
-                        <>
-                          <p className="mb-3 font-display text-lg tabular-nums text-snow">
-                            {item.price.toLocaleString("pt-BR")}{" "}
-                            <span className="text-caption text-mist">
-                              cristais
-                            </span>
-                          </p>
-                          <button
-                            type="button"
-                            onClick={() => void handleBuy(item.key)}
-                            disabled={
-                              balance == null || buying !== null || insufficient
-                            }
-                            className="btn-ice min-h-11 w-full px-3 disabled:opacity-50"
-                          >
-                            {buying === item.key
-                              ? "Comprando…"
-                              : balance == null
-                                ? "Carregando saldo…"
-                                : insufficient
-                                  ? "Saldo insuficiente"
-                                  : "Comprar cosmético"}
-                          </button>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        )}
+      <section className="mt-10 border border-hairline bg-panel p-5">
+        <h2 className="font-display text-2xl text-snow">Capas e cosméticos</h2>
+        <p className="mt-2 text-body-sm text-mist">
+          A loja de itens visuais fica junto das ofertas diárias e do mercado
+          noturno.
+        </p>
+        <Link
+          href="/gacha/loja#cosmetics"
+          className="btn-ghost mt-4 inline-flex min-h-11 items-center px-4"
+        >
+          Abrir capas e cosméticos
+        </Link>
       </section>
 
       <div id="statement" className="scroll-mt-24">

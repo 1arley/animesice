@@ -62,6 +62,7 @@ import type {
   GachaEconomyInventory,
   GachaEconomyListingItem,
   GachaEconomyOrder,
+  GachaMarketOffer,
   GachaEconomyPage,
   GachaEconomyOffer,
   GachaMarketMission,
@@ -1448,19 +1449,44 @@ export const api = {
     }),
 
   gachaCrystals: (page = 1, limit = 20) =>
-      request<CrystalPage>(`/gacha/crystals?page=${page}&limit=${limit}`),
+    request<CrystalPage>(`/gacha/crystals?page=${page}&limit=${limit}`),
   gachaRedeemCode: (code: string) =>
     request<{ crystals: number; balance: number }>(`/gacha/crystals/redeem`, {
-      method: "POST", body: JSON.stringify({ code }),
+      method: "POST",
+      body: JSON.stringify({ code }),
     }),
   adminCrystalCodes: () => request(`/gacha/admin/crystal-codes`),
-  adminGetCrystalCode: (id: string) => request(`/gacha/admin/crystal-codes/${id}`),
-  adminCreateCrystalCode: (body: { code?: string; crystals: number; maxUses?: number; expiresAt?: string }) =>
-    request(`/gacha/admin/crystal-codes`, { method: "POST", body: JSON.stringify(body) }),
-  adminUpdateCrystalCode: (id: string, body: { code?: string; crystals?: number; maxUses?: number; active?: boolean; expiresAt?: string }) =>
-    request(`/gacha/admin/crystal-codes/${id}`, { method: "PUT", body: JSON.stringify(body) }),
+  adminGetCrystalCode: (id: string) =>
+    request(`/gacha/admin/crystal-codes/${id}`),
+  adminCreateCrystalCode: (body: {
+    code?: string;
+    crystals: number;
+    maxUses?: number;
+    expiresAt?: string;
+  }) =>
+    request(`/gacha/admin/crystal-codes`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  adminUpdateCrystalCode: (
+    id: string,
+    body: {
+      code?: string;
+      crystals?: number;
+      maxUses?: number;
+      active?: boolean;
+      expiresAt?: string;
+    },
+  ) =>
+    request(`/gacha/admin/crystal-codes/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(body),
+    }),
   adminToggleCrystalCode: (id: string, active: boolean) =>
-    request(`/gacha/admin/crystal-codes/${id}`, { method: "PATCH", body: JSON.stringify({ active }) }),
+    request(`/gacha/admin/crystal-codes/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify({ active }),
+    }),
   adminDeleteCrystalCode: (id: string) =>
     request(`/gacha/admin/crystal-codes/${id}`, { method: "DELETE" }),
 
@@ -1502,6 +1528,30 @@ export const api = {
     request<GachaEconomyPage<GachaEconomyOrder>>(
       `/gacha/economy/market/orders/mine?page=${page}&limit=50`,
     ),
+  gachaEconomyMyMarketOffers: () =>
+    request<GachaMarketOffer[]>("/gacha/economy/market/offers/mine"),
+  gachaEconomyCreateMarketOffer: (body: {
+    itemType: "CARD" | "SKIN";
+    listingId: string;
+    crystals?: number;
+    offeredUserCardIds?: string[];
+  }) =>
+    request<{ id: string; status: string; expiresAt: string }>(
+      "/gacha/economy/market/offers",
+      { method: "POST", body: JSON.stringify(body) },
+    ),
+  gachaEconomyAcceptMarketOffer: (id: string) =>
+    request(`/gacha/economy/market/offers/${encodeURIComponent(id)}/accept`, {
+      method: "POST",
+    }),
+  gachaEconomyDeclineMarketOffer: (id: string) =>
+    request(`/gacha/economy/market/offers/${encodeURIComponent(id)}/decline`, {
+      method: "POST",
+    }),
+  gachaEconomyCancelMarketOffer: (id: string) =>
+    request(`/gacha/economy/market/offers/${encodeURIComponent(id)}/cancel`, {
+      method: "POST",
+    }),
   gachaEconomyCreateOrder: (body: {
     itemType: "CARD" | "SKIN";
     itemId: string;
@@ -1522,6 +1572,11 @@ export const api = {
     request("/gacha/economy/market/skins/listings", {
       method: "POST",
       body: JSON.stringify({ userSkinId, price }),
+    }),
+  gachaEconomyCreateCardListing: (userCardId: string, price: number) =>
+    request("/gacha/economy/market/cards/listings", {
+      method: "POST",
+      body: JSON.stringify({ userCardId, price }),
     }),
   gachaEconomyBuyListing: (itemType: "CARD" | "SKIN", id: string) =>
     request(
