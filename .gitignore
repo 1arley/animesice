@@ -26,7 +26,6 @@ __pycache__/
 
 # opencode skill artifacts (not project code)
 graphify-out/
-.agents/
 .claude/
 .codex/
 .impeccable/

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
 import { isPrivileged } from "@/lib/role";
 import { Wordmark } from "@/components/common/Wordmark";
-import { KoFiLink } from "@/components/common/KoFiLink";
+import { SupportLink } from "@/components/common/SupportLink";
 
 interface FooterLink { href: string; title: string; external?: boolean; }
 
@@ -44,7 +44,7 @@ export function Footer() {
             Prateleira de streaming. Não hospedamos vídeo — todo conteúdo é
             provido de terceiros não afiliados.
           </p>
-          <KoFiLink variant="footer" />
+          <SupportLink variant="footer" />
         </div>
 
         <FooterCol title="Navegar" links={navigate} />

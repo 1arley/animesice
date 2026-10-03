@@ -3,7 +3,9 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
-import { CardBackSvg } from "@/components/gacha/CardBackSvg";
+import { CosmeticSvg } from "@/components/gacha/CosmeticSvg";
+import { CosmeticThumb } from "@/components/gacha/CosmeticThumb";
+import { cosmeticTypeOf } from "@/lib/cosmetic-svg";
 import { useToast } from "@/components/common/ToastProvider";
 import type { GachaShopItem } from "@/types";
 
@@ -128,6 +130,7 @@ export function GachaCosmeticShop({
       {loading ? (
         <div
           className="skeleton mt-4 h-56"
+          role="status"
           aria-label="Carregando cosméticos"
           aria-busy="true"
         />
@@ -139,21 +142,25 @@ export function GachaCosmeticShop({
         <ul className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {shop.map((item) => {
             const insufficient = balance != null && balance < item.price;
-            const isBack =
-              item.type === "BACK" ||
-              (!item.type && item.key.startsWith("BACK_"));
+            const type = item.type ?? cosmeticTypeOf(item.key);
+            const isBack = type === "BACK";
             const active = activeBack === item.key;
             return (
               <li
                 key={item.key}
                 className={`flex min-w-0 flex-col border bg-panel ${active ? "border-ice/60" : "border-hairline"}`}
               >
-                {isBack && (
+                {isBack ? (
                   <div className="flex h-52 items-center justify-center border-b border-hairline bg-ink p-5">
-                    <CardBackSvg
-                      backKey={item.key}
+                    <CosmeticSvg
+                      cosmeticKey={item.key}
                       className="aspect-[3/4] h-full object-contain"
                     />
+                  </div>
+                ) : (
+                  // Moldura e destaque só se julgam sobre a arte.
+                  <div className="flex h-52 items-center justify-center border-b border-hairline bg-ink p-5">
+                    <CosmeticThumb svg={item.svg} type={type ?? "FRAME"} className="h-full" />
                   </div>
                 )}
                 <div className="flex flex-1 flex-col p-5">
@@ -161,9 +168,11 @@ export function GachaCosmeticShop({
                     <span className="text-mist">
                       {isBack
                         ? "Capa de carta"
-                        : item.type === "FRAME"
+                        : type === "FRAME"
                           ? "Moldura"
-                          : "Cosmético"}
+                          : type === "HIGHLIGHT"
+                            ? "Destaque"
+                            : "Cosmético"}
                     </span>
                     {item.owned && (
                       <span className="font-mono text-ice">SEU</span>
