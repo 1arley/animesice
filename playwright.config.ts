@@ -39,7 +39,7 @@ export default defineConfig({
     // The CSP (next.config.ts) relaxes connect-src for localhost:3001 ONLY when
     // INCLUDE_LOCAL_API=1 is present at BUILD time (headers are baked into the
     // build) — so the build must run inside this command, with the env vars set.
-    command: `sh -c "MOCK_BACKEND_PORT=${backendPort} E2E_APP_PORT=${appPort} node e2e/mock-backend.js >/tmp/mock-backend-${backendPort}.log 2>&1 & echo $! > /tmp/mock-backend-${backendPort}.pid; INCLUDE_LOCAL_API=1 NEXT_PUBLIC_API_URL=http://localhost:${backendPort} npm run build >/tmp/next-build-${appPort}.log 2>&1 && INCLUDE_LOCAL_API=1 NEXT_PUBLIC_API_URL=http://localhost:${backendPort} npm run start -- -p ${appPort}"`,
+    command: `sh -c "MOCK_BACKEND_PORT=${backendPort} E2E_APP_PORT=${appPort} node e2e/mock-backend.js >/tmp/mock-backend-${backendPort}.log 2>&1 & echo $! > /tmp/mock-backend-${backendPort}.pid; INCLUDE_LOCAL_API=1 NEXT_PUBLIC_API_URL=http://localhost:${backendPort} npm run build >/tmp/next-build-${appPort}.log 2>&1 && mkdir -p .next/standalone/.next/static .next/standalone/public && cp -R .next/static/. .next/standalone/.next/static/ && cp -R public/. .next/standalone/public/ && INCLUDE_LOCAL_API=1 NEXT_PUBLIC_API_URL=http://localhost:${backendPort} PORT=${appPort} node .next/standalone/server.js"`,
     url: localBaseUrl,
     reuseExistingServer: !process.env.CI,
     timeout: 240 * 1000,

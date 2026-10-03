@@ -70,7 +70,7 @@ test.describe("Gacha trading — fluxo de propostas", () => {
       }),
     );
 
-    await page.goto("/gacha/trocas");
+    await page.goto("/gacha/mercado");
 
     await expect(page.getByText("Outro usuário quer trocar")).toBeVisible();
     await expect(page.getByText("Sinal interrompido")).toHaveCount(0);
@@ -102,13 +102,13 @@ test.describe("Gacha trading — fluxo de propostas", () => {
       return r.fulfill({ json: { ...tr } });
     });
 
-    await page.goto("/gacha/trocas");
+    await page.goto("/gacha/mercado");
 
     await expect(page.getByRole("heading", { name: /Recebidas \(2\)/ })).toBeVisible();
     await expect(page.getByRole("heading", { name: /Enviadas \(1\)/ })).toBeVisible();
-    await expect(page.getByText("quer trocar a carta dele pela sua", { exact: false })).toHaveCount(2);
+    const incomingText = /Zoe quer trocar \d+ cartas? pela\(s\) sua\(s\):/;
+    await expect(page.getByText(incomingText)).toHaveCount(2);
 
-    const incomingText = /quer trocar a carta dele pela sua/;
     const beruRow = page
       .locator("li", { hasText: incomingText })
       .filter({ hasText: "Beru" });
@@ -130,7 +130,7 @@ test.describe("Gacha trading — fluxo de propostas", () => {
     await expect(page.getByText("Troca concluída")).toBeVisible();
     await expect(page.getByText("Troca cancelada").first()).toBeVisible();
 
-    const outRow = page.locator("li", { hasText: /Você quer trocar a sua carta/ });
+    const outRow = page.locator("li", { hasText: /Você quer trocar \d+ cartas? pela\(s\) de Zoe/ });
     await outRow.getByRole("button", { name: "Cancelar" }).click();
 
     await expect(page.getByRole("heading", { name: /Enviadas \(0\)/ })).toBeVisible();
@@ -175,19 +175,16 @@ test.describe("Gacha trading — composer", () => {
       return r.fulfill({ status: 201, json: { ...tr } });
     });
 
-    await page.goto("/gacha/trocas");
+    await page.goto("/gacha/mercado");
     await page.getByRole("button", { name: "Nova proposta" }).click();
     const dialog = page.getByRole("dialog");
-    await page.getByLabel("userName da outra pessoa").fill("zoe");
-    await dialog.getByRole("button", { name: "Buscar" }).click();
+    await dialog.getByLabel("Nome de usuário").fill("zoe");
+    await dialog.getByRole("button", { name: "Buscar coleção" }).click();
 
-    const want = page.getByLabel("Carta que você quer");
-    await expect(want.locator("option")).toHaveCount(2);
-    await want.selectOption("z-a");
-
-    const give = page.getByLabel("Sua carta de oferta");
-    await expect(give.locator("option")).toHaveCount(3);
-    await give.selectOption("m-a");
+    await dialog
+      .getByRole("checkbox", { name: /Beru, Rei das Formigas/ })
+      .check();
+    await dialog.getByRole("checkbox", { name: /Sung Jin-Woo/ }).check();
 
     await page.getByRole("button", { name: "Enviar proposta" }).click();
 
@@ -220,22 +217,23 @@ test.describe("Gacha trading — composer", () => {
       r.fulfill({ status: 409, json: { message: "Essa carta já está em uma troca ativa." } }),
     );
 
-    await page.goto("/gacha/trocas");
+    await page.goto("/gacha/mercado");
     await page.getByRole("button", { name: "Nova proposta" }).click();
-    await page.getByLabel("userName da outra pessoa").fill("zoe");
+    await page.getByRole("dialog").getByLabel("Nome de usuário").fill("zoe");
     await page.getByRole("dialog")
-      .getByRole("button", { name: "Buscar" })
+      .getByRole("button", { name: "Buscar coleção" })
       .click();
 
-    await page.getByLabel("Carta que você quer").selectOption("z-a");
-    const give = page.getByLabel("Sua carta de oferta");
-    await expect(give.locator("option")).toHaveCount(3);
-    await give.selectOption("m-a");
+    const dialog = page.getByRole("dialog");
+    await dialog
+      .getByRole("checkbox", { name: /Beru, Rei das Formigas/ })
+      .check();
+    await dialog.getByRole("checkbox", { name: /Sung Jin-Woo/ }).check();
     await page.getByRole("button", { name: "Enviar proposta" }).click();
 
     await expect(
-      page.getByRole("dialog").getByText(/já está em uma troca ativa/),
+      dialog.getByText(/já está em uma troca ativa/),
     ).toBeVisible();
-    await expect(page.getByRole("dialog")).toBeVisible();
+    await expect(dialog).toBeVisible();
   });
 });

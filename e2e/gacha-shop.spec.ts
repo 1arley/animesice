@@ -90,7 +90,7 @@ test.beforeEach(async ({ page }) => {
 test("capa personalizada possuída pode ser equipada na loja", async ({
   page,
 }, testInfo) => {
-  await page.goto("/gacha/cristais");
+  await page.goto("/gacha/loja");
   const item = page
     .getByRole("listitem")
     .filter({ hasText: "Mark of sacrifice" });
@@ -147,6 +147,8 @@ test("mercado preserva oferta com erro e só confirma cancelamento concluído", 
 }, testInfo) => {
   const listing = {
     id: "listing-a",
+    userId: "seller-1",
+    user: { id: "seller-1", name: "Seller", userName: "seller" },
     itemType: "CARD",
     price: 500,
     status: "ACTIVE",
@@ -189,6 +191,7 @@ test("mercado preserva oferta com erro e só confirma cancelamento concluído", 
       json: [
         {
           id: "offer-skin",
+          slot: 0,
           itemType: "SKIN",
           price: 800,
           discount: 20,
@@ -217,9 +220,6 @@ test("mercado preserva oferta com erro e só confirma cancelamento concluído", 
   await expect(
     page.getByRole("heading", { name: "Cartas no mercado" }),
   ).toBeVisible();
-  await expect(
-    page.getByText("Você tem a caixa. Falta uma chave para abrir."),
-  ).toHaveCount(2);
   await page.screenshot({
     path: testInfo.outputPath("mercado.png"),
     fullPage: true,
@@ -229,7 +229,8 @@ test("mercado preserva oferta com erro e só confirma cancelamento concluído", 
       () => document.documentElement.scrollWidth <= window.innerWidth,
     ),
   ).toBe(true);
-  const shop = page.getByRole("region", { name: "Seleção de hoje" });
+  await page.goto("/gacha/loja");
+  const shop = page.getByRole("region", { name: "Loja diária" });
   await expect(shop.getByText("Skin · EPICA", { exact: true })).toBeVisible();
   const preview = shop.getByRole("button", {
     name: "Ver detalhes de Skin de teste com nome completo",
@@ -267,20 +268,21 @@ test("mercado preserva oferta com erro e só confirma cancelamento concluído", 
   );
   expect(purchases).toBe(1);
   await purchase.getByRole("button", { name: "Cancelar" }).click();
-  await page.route("**/gacha/economy/market/orders", (route) =>
+  await page.goto("/gacha/mercado");
+  await page.route("**/gacha/economy/market/offers", (route) =>
     route.fulfill({
       status: 400,
       json: { message: "Oferta não aceita. Tente novamente." },
     }),
   );
-  await page.getByRole("button", { name: "Fazer oferta" }).click();
+  await page.getByRole("button", { name: "Propor ao vendedor" }).click();
   const dialog = page.getByRole("dialog");
-  await dialog.getByLabel("Sua oferta em cristais").fill("450");
-  await dialog.getByRole("button", { name: "Reservar cristais" }).click();
+  await dialog.getByLabel("Sua proposta em Cristais").fill("450");
+  await dialog.getByRole("button", { name: "Enviar proposta" }).click();
   await expect(dialog.getByRole("alert")).toHaveText(
     "Oferta não aceita. Tente novamente.",
   );
-  await expect(dialog.getByLabel("Sua oferta em cristais")).toHaveValue("450");
+  await expect(dialog.getByLabel("Sua proposta em Cristais")).toHaveValue("450");
   await dialog.getByRole("button", { name: "Cancelar" }).click();
   await expect(dialog).toHaveCount(0);
   let cancellations = 0;
@@ -338,7 +340,7 @@ test("abrir caixa mostra a recompensa em modal mesmo com a página rolada", asyn
   await page.route("**/gacha/economy/boxes/open", (route) =>
     route.fulfill({ json: { reward: { category: "CRYSTAL", amount: 640 } } }),
   );
-  await page.goto("/gacha/mercado");
+  await page.goto("/gacha/loja");
   const open = page
     .getByRole("article")
     .filter({ hasText: "Comum" })
