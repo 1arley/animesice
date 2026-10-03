@@ -2,11 +2,12 @@ name: Build & Push Docker Image
 
 on:
   push:
-    branches: [main, dev]
+    branches: [main]
   workflow_dispatch:
 
 jobs:
   build:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
 
     steps:
@@ -22,35 +23,15 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Determine image tag
-        id: tag
-        run: |
-          if [ "${{ github.ref_name }}" = "main" ]; then
-            echo "tag=latest" >> $GITHUB_OUTPUT
-          else
-            echo "tag=${{ github.ref_name }}" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Determine API URL
-        id: api
-        run: |
-          if [ "${{ github.ref_name }}" = "main" ]; then
-            api_host="api.animesice.app"
-          else
-            api_host="api.dev.animesice.app"
-          fi
-          echo "url=https://${api_host}/api" >> $GITHUB_OUTPUT
-
       - name: Build and push
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
-          tags: |
-            ${{ secrets.DOCKERHUB_REPO }}:${{ steps.tag.outputs.tag }}
+          tags: ${{ secrets.DOCKERHUB_REPO }}:latest
           build-args: |
-            NEXT_PUBLIC_API_URL=${{ steps.api.outputs.url }}
-            NEXT_PUBLIC_SITE_URL=https://${{ github.ref_name == 'main' && 'animesice.app' || 'dev.animesice.app' }}
+            NEXT_PUBLIC_API_URL=https://api.animesice.app/api
+            NEXT_PUBLIC_SITE_URL=https://animesice.app
             NEXT_PUBLIC_ENABLE_MONETAG=${{ secrets.NEXT_PUBLIC_ENABLE_MONETAG || '' }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
