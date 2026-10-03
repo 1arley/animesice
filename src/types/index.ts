@@ -834,6 +834,7 @@ export interface GachaEconomyOffer {
   price: number;
   discount: number;
   purchasedAt: string | null;
+  revealed: boolean;
   card?: {
     id: string;
     name: string;

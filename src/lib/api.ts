@@ -1601,6 +1601,11 @@ export const api = {
   gachaEconomyClaimMission: () =>
     request("/gacha/economy/market/mission/claim", { method: "POST" }),
   gachaEconomyShop: () => request<GachaEconomyOffer[]>("/gacha/economy/shop"),
+  gachaEconomyRevealOffer: (id: string) =>
+    request<{ offerId: string; revealed: boolean }>(
+      `/gacha/economy/shop/${encodeURIComponent(id)}/reveal`,
+      { method: "POST" },
+    ),
   gachaEconomyBuyOffer: (id: string) =>
     request(`/gacha/economy/shop/${encodeURIComponent(id)}/buy`, {
       method: "POST",
