@@ -58,6 +58,10 @@ export function NightMarket() {
   const [offers, setOffers] = useState<GachaEconomyOffer[]>([]);
   const [available, setAvailable] = useState<number | null>(null);
   const [revealed, setRevealed] = useState<Set<string>>(() => new Set());
+  const [animatingOffers, setAnimatingOffers] = useState<Set<string>>(
+    () => new Set(),
+  );
+  const pendingReveals = useRef(new Set<string>());
   const [purchaseOffer, setPurchaseOffer] = useState<GachaEconomyOffer | null>(
     null,
   );
@@ -66,6 +70,7 @@ export function NightMarket() {
   const [error, setError] = useState("");
   const [purchaseError, setPurchaseError] = useState("");
   const flippers = useRef<Record<string, HTMLDivElement | null>>({});
+  const revealBursts = useRef<Record<string, HTMLVideoElement | null>>({});
   const fronts = useRef<Record<string, HTMLDivElement | null>>({});
 
   const loadOffers = useCallback(async () => {
@@ -75,7 +80,13 @@ export function NightMarket() {
         api.gachaEconomyShop(),
         api.gachaEconomyInventory(),
       ]);
-      setOffers(shop.filter((offer) => offer.slot >= 7));
+      const nightOffers = shop.filter((offer) => offer.slot >= 7);
+      setOffers(nightOffers);
+      setRevealed(
+        new Set(
+          nightOffers.filter((offer) => offer.revealed).map((offer) => offer.id),
+        ),
+      );
       setAvailable(inventory.available);
       setError("");
     } catch (cause) {
@@ -96,24 +107,81 @@ export function NightMarket() {
     void loadOffers().finally(() => setLoading(false));
   }, [authLoading, loadOffers, user]);
 
-  const revealOffer = (offer: GachaEconomyOffer) => {
+  const revealOffer = async (offer: GachaEconomyOffer) => {
+    if (revealed.has(offer.id) || pendingReveals.current.has(offer.id)) return;
+    pendingReveals.current.add(offer.id);
+    try {
+      await api.gachaEconomyRevealOffer(offer.id);
+    } catch (cause) {
+      toast(
+        cause instanceof ApiError
+          ? cause.message
+          : "Não foi possível salvar a revelação. Tente novamente.",
+        "error",
+      );
+      pendingReveals.current.delete(offer.id);
+      return;
+    }
+    pendingReveals.current.delete(offer.id);
     setRevealed((current) => new Set(current).add(offer.id));
     requestAnimationFrame(() => fronts.current[offer.id]?.focus());
     if (reduceMotion) return;
     const flipper = flippers.current[offer.id];
     if (!flipper) return;
-    void import("@/lib/gsap").then(({ gsap }) => {
-      gsap.fromTo(
-        flipper,
-        { rotationY: 0 },
-        {
-          rotationY: 180,
-          duration: 1.05,
-          ease: "power3.inOut",
-          transformOrigin: "center center",
-        },
-      );
-    });
+    const burst = revealBursts.current[offer.id];
+    setAnimatingOffers((current) => new Set(current).add(offer.id));
+    const finishReveal = () => {
+      burst?.pause();
+      if (burst) burst.currentTime = 0;
+      setAnimatingOffers((current) => {
+        const next = new Set(current);
+        next.delete(offer.id);
+        return next;
+      });
+    };
+    void import("@/lib/gsap")
+      .then(({ gsap }) => {
+        if (!flipper.isConnected) {
+          finishReveal();
+          return;
+        }
+        if (burst) {
+          burst.currentTime = 0;
+          void burst.play().catch(() => {});
+        }
+        gsap
+          .timeline({
+            onComplete: () => {
+              gsap.set(flipper, { clearProps: "transform" });
+              finishReveal();
+            },
+          })
+          .fromTo(
+            flipper,
+            { rotationY: 0, scale: 1, z: 0 },
+            {
+              rotationY: 82,
+              scale: 0.94,
+              z: 36,
+              duration: 0.4,
+              ease: "power2.in",
+            },
+          )
+          .to(flipper, {
+            rotationY: 180,
+            scale: 1.045,
+            z: 18,
+            duration: 0.42,
+            ease: "power3.out",
+          })
+          .to(flipper, {
+            scale: 1,
+            z: 0,
+            duration: 0.33,
+            ease: "back.out(1.35)",
+          });
+      })
+      .catch(finishReveal);
   };
 
   const buyOffer = async () => {
@@ -140,13 +208,13 @@ export function NightMarket() {
     <main id="body-content" className="mx-auto max-w-shelf px-4 pb-20 pt-8">
       <header className="night-market-hero">
         <div className="night-market-hero__copy">
-          <p className="shelf-label">Gacha / Edição mensal</p>
+          <p className="shelf-label">Gacha / Edição semanal</p>
           <h1 className="max-w-xl text-balance font-display text-4xl text-snow sm:text-5xl">
             Mercado Noturno
           </h1>
           <p className="mt-4 max-w-xl text-pretty text-body text-mist">
-            Seis ofertas pessoais aparecem por tempo limitado. A raridade dá a
-            pista; a arte e os detalhes só surgem quando você vira a carta.
+            Seis ofertas pessoais chegam todo fim de semana. Revele cada carta
+            uma vez; ela continuará aberta até o fim desta edição.
           </p>
           <div className="mt-6 flex flex-wrap items-center gap-3">
             <a href="#ofertas" className="btn-ice min-h-11 px-4">
@@ -187,12 +255,12 @@ export function NightMarket() {
       <section id="ofertas" className="mt-10 scroll-mt-24" aria-labelledby="offers-title">
         <div className="flex flex-wrap items-end justify-between gap-4 border-b border-hairline pb-4">
           <div>
-            <p className="text-caption text-mist">A seleção termina no fim do evento</p>
+            <p className="text-caption text-mist">Nova seleção todo fim de semana</p>
             <h2 id="offers-title" className="mt-1 font-display text-2xl text-snow">
               Cartas seladas
             </h2>
             <p className="mt-1 text-body-sm text-mist">
-              Desconto, preço e raridade ficam visíveis antes de revelar cada oferta.
+              Desconto, preço e raridade ficam visíveis antes da primeira revelação.
             </p>
           </div>
           {available !== null && (
@@ -239,8 +307,8 @@ export function NightMarket() {
           <div className="mt-6 border border-hairline bg-panel p-6">
             <h3 className="font-display text-xl text-snow">A noite ainda não começou</h3>
             <p className="mt-2 max-w-xl text-body-sm text-mist">
-              A próxima edição mensal ainda não está aberta. As ofertas aparecem
-              aqui quando o Mercado Noturno voltar.
+              O Mercado Noturno abre aos sábados e domingos, com novas cartas e
+              skins a cada fim de semana.
             </p>
             <Link href="/gacha/mercado" className="mt-4 inline-flex min-h-11 items-center text-body-sm text-ice hover:underline">
               Voltar ao mercado
@@ -259,20 +327,21 @@ export function NightMarket() {
                 const name = offerName(offer);
                 const image = offerImage(offer);
                 const kind = offerKind(offer);
+                const isAnimating = animatingOffers.has(offer.id);
                 return (
                   <li key={offer.id} className="night-offer-card">
                     <div
                       ref={(element) => {
                         flippers.current[offer.id] = element;
                       }}
-                      className="night-offer-card__flipper"
+                      className={`night-offer-card__flipper ${isRevealed ? "is-revealed" : ""} ${isAnimating ? "is-animating" : ""}`}
                     >
                       <button
                         type="button"
                         aria-label={`Revelar oferta ${index + 1}: ${kind}, raridade ${rarityLabel(rarity)}, ${offer.discount}% de desconto`}
                         aria-hidden={isRevealed}
                         tabIndex={isRevealed ? -1 : 0}
-                        onClick={() => revealOffer(offer)}
+                        onClick={() => void revealOffer(offer)}
                         className={`night-offer-card__face night-offer-card__back border bg-panel p-5 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ice ${rarityStyle.border} ${rarityStyle.glow ?? ""}`}
                       >
                         <span className="flex items-center justify-between gap-3 text-caption">
@@ -361,6 +430,22 @@ export function NightMarket() {
                         </div>
                       </div>
                     </div>
+                    <video
+                      ref={(element) => {
+                        revealBursts.current[offer.id] = element;
+                      }}
+                      className={`night-offer-card__burst ${isAnimating ? "is-playing" : ""}`}
+                      aria-hidden="true"
+                      muted
+                      playsInline
+                      preload="none"
+                      tabIndex={-1}
+                    >
+                      <source
+                        src="/gacha/night-market-card-reveal.mp4"
+                        type="video/mp4"
+                      />
+                    </video>
                   </li>
                 );
               })}

@@ -1837,6 +1837,7 @@
 }
 
 .night-offer-card {
+  position: relative;
   min-width: 0;
   perspective: 1400px;
 }
@@ -1845,6 +1846,10 @@
   position: relative;
   aspect-ratio: 3 / 4;
   transform-style: preserve-3d;
+}
+
+.night-offer-card__flipper.is-revealed:not(.is-animating) {
+  transform: rotateY(180deg);
 }
 
 .night-offer-card__face {
@@ -1901,6 +1906,29 @@
   width: 0.55rem;
   aspect-ratio: 1;
   border: 1px solid rgba(56, 232, 218, 0.7);
+}
+
+.night-offer-card__burst {
+  position: absolute;
+  z-index: 2;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  mix-blend-mode: screen;
+  pointer-events: none;
+  transition: opacity 120ms linear;
+}
+
+.night-offer-card__burst.is-playing {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .night-offer-card__burst {
+    display: none;
+  }
 }
 
 @media (min-width: 768px) {
