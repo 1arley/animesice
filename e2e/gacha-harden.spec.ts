@@ -126,7 +126,8 @@ test.describe("Gacha harden — cerimônia", () => {
     await expect(page.getByText(/Pity ÉPICA\+ em 14d/)).toBeVisible();
     await expect(page.getByRole("button", { name: /^Girar \(5\)$/ })).toBeEnabled();
     await expect(page.getByRole("button", { name: "Pegar carta" })).toBeEnabled();
-    await expect(page.getByRole("link", { name: "Coleção" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Minhas cartas" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Cosméticos" })).toBeVisible();
     await expect(page.getByText("Previews desta hora (2/5)")).toBeVisible();
     await expect(page.getByText(/Selecionada: Cha Hae-In/)).toBeVisible();
     await noHorizontalOverflow(page);
@@ -151,7 +152,7 @@ test.describe("Gacha harden — enciclopédia paginada", () => {
     page.on("request", request => {
       if (request.url().includes("localhost:3001/gacha/encyclopedia")) requests.push(request.url());
     });
-    await page.goto("/gacha/colecao");
+    await page.goto("/gacha/cartas");
     await expect(page.getByRole("button", { name: "Em destaque" })).toBeVisible();
     expect(requests).toHaveLength(0);
     await page.getByRole("link", { name: "Explorar enciclopédia" }).click();

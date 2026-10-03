@@ -328,8 +328,8 @@ export default function GachaCollectionPage() {
         <Link href="/gacha/enciclopedia" className="btn-ice px-4 py-2">
           Explorar enciclopédia
         </Link>
-        <Link href="/gacha" className="btn-ghost px-4 py-2">
-          Voltar ao Gacha
+        <Link href="/gacha/colecao" className="btn-ghost px-4 py-2">
+          Meus cosméticos
         </Link>
       </div>
       {pilotEnabled && (featured || progress.length > 0) && (
