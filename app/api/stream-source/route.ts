@@ -23,20 +23,30 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const result = refresh
-    ? await fetch(
+  let result: Awaited<ReturnType<typeof serverStreamSourceAsync>> = null;
+  if (refresh) {
+    const response = await fetch(
         `${API_URL}/stream/source?anime=${encodeURIComponent(animeSlug)}&episode=${episodeNumber}&refresh=1`,
         {
           headers: { cookie: request.headers.get("cookie") ?? "" },
           cache: "no-store",
         },
-      )
-        .then(async (res) => {
-          const data = await res.json().catch(() => null);
-          return res.ok ? data : null;
-        })
-        .catch(() => null)
-    : await serverStreamSourceAsync(animeSlug, episodeNumber).catch(() => null);
+      ).catch(() => null);
+    if (response) {
+      const data = await response.json().catch(() => null);
+      if (!response.ok) {
+        return NextResponse.json(
+          data ?? { message: "Não foi possível atualizar a fonte do vídeo." },
+          { status: response.status, headers: { "Cache-Control": NO_STORE } },
+        );
+      }
+      result = data as typeof result;
+    }
+  } else {
+    result = await serverStreamSourceAsync(animeSlug, episodeNumber).catch(
+      () => null,
+    );
+  }
   if (!result) {
     return NextResponse.json(
       { message: "Não foi possível obter o vídeo deste episódio." },

@@ -319,6 +319,9 @@ const server = http.createServer((req, res) => {
   if (req.method === 'GET' && (p === '/api/gacha/trades/mine' || p === '/gacha/trades/mine')) {
     return json(res, []);
   }
+  if (req.method === 'GET' && (p === '/api/gacha/economy/market/offers/mine' || p === '/gacha/economy/market/offers/mine')) {
+    return json(res, []);
+  }
   if (req.method === 'GET' && (p === '/api/gacha/shop' || p === '/gacha/shop')) {
     return json(res, { balance: 0, cosmetics: [], activeCardBack: null, spinPrice: 0 });
   }
