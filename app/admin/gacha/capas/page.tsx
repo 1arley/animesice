@@ -150,7 +150,7 @@ function CosmeticPreview({ svg, type, guides }: { svg: string; type: CosmeticTyp
       role="img"
       aria-label={`${label} sobre a arte de referência`}
       className="relative mx-auto w-full max-w-[260px]"
-      style={{ aspectRatio: `${vb.w} / ${vb.h}` }}
+      style={{ aspectRatio: type === "BACK" ? "3 / 4" : `${vb.w} / ${vb.h}` }}
     >
       <div className="absolute overflow-hidden" style={win}>
         <Image src={svgDataUrl(ART_PLATE)} alt="" fill unoptimized aria-hidden className="object-cover" />
