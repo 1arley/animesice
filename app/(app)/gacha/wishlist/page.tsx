@@ -8,43 +8,70 @@ import { useAuth } from "@/lib/auth-context";
 import { safeImageSrc } from "@/lib/url";
 import { useToast } from "@/components/common/ToastProvider";
 import { PaginationControls } from "@/components/ui/PaginationControls";
+import {
+  GACHA_WISHLIST_PAGE_SIZE,
+  useGachaWishlistPagination,
+} from "@/lib/use-gacha-wishlist-pagination";
 import type { GachaWishlistResponse } from "@/types";
-
-const PAGE_SIZE = 24;
 
 export default function GachaWishlistPage() {
   const { user, loading: authLoading } = useAuth();
-  const [data, setData] = useState<GachaWishlistResponse | null>(null);
+  const [loadedWishlist, setLoadedWishlist] = useState<{
+    userId: string;
+    data: GachaWishlistResponse;
+  } | null>(null);
+  const data =
+    loadedWishlist && loadedWishlist.userId === user?.id
+      ? loadedWishlist.data
+      : null;
   const [error, setError] = useState("");
+  const [loadError, setLoadError] = useState("");
+  const [loadRetry, setLoadRetry] = useState(0);
   const [publicList, setPublicList] = useState(true);
   const [savingPrivacy, setSavingPrivacy] = useState(false);
-  const [cardsPage, setCardsPage] = useState(1);
-  const [setsPage, setSetsPage] = useState(1);
   const [loading, setLoading] = useState(false);
+  const {
+    cardsPage,
+    setsPage,
+    setCardsPage,
+    setSetsPage,
+    ready: paginationReady,
+  } = useGachaWishlistPagination();
   const { toast } = useToast();
 
   useEffect(() => {
-    if (!user) return;
+    if (!user || !paginationReady) return;
+    if (
+      data?.meta.cardsPage === cardsPage &&
+      data.meta.setsPage === setsPage
+    ) {
+      setLoading(false);
+      return;
+    }
     let cancelled = false;
+    const controller = new AbortController();
     const load = async () => {
       setLoading(true);
+      setLoadError("");
       try {
         const result = await api.gachaWishlist(user.id, {
-          limit: PAGE_SIZE,
+          limit: GACHA_WISHLIST_PAGE_SIZE,
           cardsPage,
           setsPage,
-        });
+        }, controller.signal);
         if (cancelled) return;
-        setData(result);
+        setLoadedWishlist({ userId: user.id, data: result });
         setPublicList(result.isPublic);
-        setError("");
+        setLoadError("");
         // O backend limita a página ao total real: se um desejo foi removido
         // fora da última página, voltamos para a última página válida.
         if (result.meta.cardsPage !== cardsPage)
-          setCardsPage(result.meta.cardsPage);
-        if (result.meta.setsPage !== setsPage) setSetsPage(result.meta.setsPage);
+          setCardsPage(result.meta.cardsPage, true);
+        if (result.meta.setsPage !== setsPage)
+          setSetsPage(result.meta.setsPage, true);
       } catch {
-        if (!cancelled) setError("Não foi possível carregar sua wishlist.");
+        if (!cancelled)
+          setLoadError("Não foi possível carregar sua wishlist. Tente novamente.");
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -52,8 +79,9 @@ export default function GachaWishlistPage() {
     void load();
     return () => {
       cancelled = true;
+      controller.abort();
     };
-  }, [user, cardsPage, setsPage]);
+  }, [user, paginationReady, cardsPage, setsPage, loadRetry, data]);
 
   if (authLoading)
     return (
@@ -113,6 +141,18 @@ export default function GachaWishlistPage() {
               : "Wishlist privada"}
         </button>
       </div>
+      {loadError && (
+        <div role="alert" className="mt-6 flex flex-wrap items-center gap-3 text-signal">
+          <p>{loadError}</p>
+          <button
+            type="button"
+            onClick={() => setLoadRetry((value) => value + 1)}
+            className="btn-ghost min-h-11 px-4"
+          >
+            Tentar novamente
+          </button>
+        </div>
+      )}
       {error && (
         <p role="alert" className="mt-6 text-signal">
           {error}
