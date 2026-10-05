@@ -7,7 +7,10 @@ import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { safeImageSrc } from "@/lib/url";
 import { useToast } from "@/components/common/ToastProvider";
+import { PaginationControls } from "@/components/ui/PaginationControls";
 import type { GachaWishlistResponse } from "@/types";
+
+const PAGE_SIZE = 24;
 
 export default function GachaWishlistPage() {
   const { user, loading: authLoading } = useAuth();
@@ -15,18 +18,42 @@ export default function GachaWishlistPage() {
   const [error, setError] = useState("");
   const [publicList, setPublicList] = useState(true);
   const [savingPrivacy, setSavingPrivacy] = useState(false);
+  const [cardsPage, setCardsPage] = useState(1);
+  const [setsPage, setSetsPage] = useState(1);
+  const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
     if (!user) return;
-    void api
-      .gachaWishlist(user.id)
-      .then((result) => {
+    let cancelled = false;
+    const load = async () => {
+      setLoading(true);
+      try {
+        const result = await api.gachaWishlist(user.id, {
+          limit: PAGE_SIZE,
+          cardsPage,
+          setsPage,
+        });
+        if (cancelled) return;
         setData(result);
         setPublicList(result.isPublic);
-      })
-      .catch(() => setError("Não foi possível carregar sua wishlist."));
-  }, [user]);
+        setError("");
+        // O backend limita a página ao total real: se um desejo foi removido
+        // fora da última página, voltamos para a última página válida.
+        if (result.meta.cardsPage !== cardsPage)
+          setCardsPage(result.meta.cardsPage);
+        if (result.meta.setsPage !== setsPage) setSetsPage(result.meta.setsPage);
+      } catch {
+        if (!cancelled) setError("Não foi possível carregar sua wishlist.");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+    void load();
+    return () => {
+      cancelled = true;
+    };
+  }, [user, cardsPage, setsPage]);
 
   if (authLoading)
     return (
@@ -98,11 +125,27 @@ export default function GachaWishlistPage() {
       ) : (
         <>
           <section className="mt-10">
-            <h2 className="font-display text-body-lg text-snow">Conjuntos</h2>
-            {data.sets.length === 0 ? (
+            <div className="flex flex-wrap items-baseline justify-between gap-2">
+              <h2 className="font-display text-body-lg text-snow">Conjuntos</h2>
+              {data.meta.sets > 0 && (
+                <p className="text-caption text-mist tabular-nums">
+                  {data.sets.length} de {data.meta.sets}
+                </p>
+              )}
+            </div>
+            {data.meta.sets === 0 ? (
               <p className="mt-3 text-mist">Nenhum conjunto desejado.</p>
+            ) : data.sets.length === 0 ? (
+              <p className="mt-3 text-mist">
+                Nenhum conjunto nesta página.
+              </p>
             ) : (
-              <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <div
+                aria-busy={loading}
+                className={`mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 ${
+                  loading ? "opacity-60" : ""
+                }`}
+              >
                 {data.sets.map((set) => (
                   <Link
                     key={set.id}
@@ -122,13 +165,34 @@ export default function GachaWishlistPage() {
                 ))}
               </div>
             )}
+            <PaginationControls
+              page={data.meta.setsPage}
+              totalPages={data.meta.setsTotalPages}
+              onPageChange={setSetsPage}
+              label="Paginação dos conjuntos desejados"
+              busy={loading}
+            />
           </section>
           <section className="mt-10">
-            <h2 className="font-display text-body-lg text-snow">Cartas</h2>
-            {data.cards.length === 0 ? (
+            <div className="flex flex-wrap items-baseline justify-between gap-2">
+              <h2 className="font-display text-body-lg text-snow">Cartas</h2>
+              {data.meta.cards > 0 && (
+                <p className="text-caption text-mist tabular-nums">
+                  {data.cards.length} de {data.meta.cards}
+                </p>
+              )}
+            </div>
+            {data.meta.cards === 0 ? (
               <p className="mt-3 text-mist">Nenhuma carta desejada.</p>
+            ) : data.cards.length === 0 ? (
+              <p className="mt-3 text-mist">Nenhuma carta nesta página.</p>
             ) : (
-              <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
+              <div
+                aria-busy={loading}
+                className={`mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 ${
+                  loading ? "opacity-60" : ""
+                }`}
+              >
                 {data.cards.map((entry) => {
                   const image = safeImageSrc(entry.card.image);
                   return (
@@ -159,6 +223,13 @@ export default function GachaWishlistPage() {
                 })}
               </div>
             )}
+            <PaginationControls
+              page={data.meta.cardsPage}
+              totalPages={data.meta.cardsTotalPages}
+              onPageChange={setCardsPage}
+              label="Paginação das cartas desejadas"
+              busy={loading}
+            />
           </section>
         </>
       )}

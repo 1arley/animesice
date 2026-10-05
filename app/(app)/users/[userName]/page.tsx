@@ -536,6 +536,7 @@ export default function PublicProfilePage({
 
           {activeTab === "wishlist" && (
             <ProfileWishlist
+              userId={profile.id}
               data={tabWishlist}
               loading={tabLoading && !tabWishlist}
             />
