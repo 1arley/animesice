@@ -1,14 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
 import { PaginationControls } from "@/components/ui/PaginationControls";
-import {
-  GACHA_WISHLIST_PAGE_SIZE,
-  useGachaWishlistPagination,
-} from "@/lib/use-gacha-wishlist-pagination";
-import { api } from "@/lib/api";
-import type { GachaWishlistResponse } from "@/types";
+import { useGachaWishlist } from "@/lib/use-gacha-wishlist";
 
 export function ProfileWishlist({ userId }: { userId: string }) {
   const {
@@ -16,84 +10,11 @@ export function ProfileWishlist({ userId }: { userId: string }) {
     setsPage,
     setCardsPage,
     setSetsPage,
-    ready: paginationReady,
-  } = useGachaWishlistPagination();
-  const [view, setView] = useState<{
-    userId: string;
-    data: GachaWishlistResponse;
-  } | null>(null);
-  const [paging, setPaging] = useState(false);
-  const [pageError, setPageError] = useState<{
-    userId: string;
-    message: string;
-  } | null>(null);
-  const [retry, setRetry] = useState(0);
-  const wishlist = view?.userId === userId ? view.data : null;
-  const error = pageError?.userId === userId ? pageError.message : "";
-
-  useEffect(() => {
-    if (!paginationReady) return;
-    if (
-      view?.userId === userId &&
-      view.data.meta.cardsPage === cardsPage &&
-      view.data.meta.setsPage === setsPage
-    ) {
-      setPaging(false);
-      return;
-    }
-    let cancelled = false;
-    const controller = new AbortController();
-    setPaging(true);
-    setPageError(null);
-
-    void api
-      .gachaWishlist(
-        userId,
-        {
-          limit: GACHA_WISHLIST_PAGE_SIZE,
-          cardsPage,
-          setsPage,
-        },
-        controller.signal,
-      )
-      .then((result) => {
-        if (cancelled) return;
-        setView({ userId, data: result });
-        if (result.meta.cardsPage !== cardsPage)
-          setCardsPage(result.meta.cardsPage, true);
-        if (result.meta.setsPage !== setsPage)
-          setSetsPage(result.meta.setsPage, true);
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setPageError({
-            userId,
-            message: "Não foi possível carregar esta página. Tente novamente.",
-          });
-        }
-      })
-      .finally(() => {
-        if (!cancelled) setPaging(false);
-      });
-
-    return () => {
-      cancelled = true;
-      controller.abort();
-    };
-  }, [
-    userId,
-    cardsPage,
-    setsPage,
-    setCardsPage,
-    setSetsPage,
-    paginationReady,
-    retry,
-    view,
-  ]);
-
-  function retryPage() {
-    setRetry((value) => value + 1);
-  }
+    data: wishlist,
+    loading: paging,
+    error,
+    retry: retryPage,
+  } = useGachaWishlist(userId);
 
   if (!wishlist) {
     return (
