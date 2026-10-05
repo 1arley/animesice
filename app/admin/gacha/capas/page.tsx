@@ -5,8 +5,6 @@ import Image from "next/image";
 import { api, ApiError } from "@/lib/api";
 import {
   ART_PLATE,
-  CARD_ART as ART,
-  BLEED,
   TYPE_VIEWBOX,
   DEFAULT_VIEWBOX,
   auditCosmetic,
@@ -18,20 +16,14 @@ import {
   type AuditLevel,
   type CosmeticType,
 } from "@/lib/cosmetic-svg";
-
-type Layer = {
-  id: string;
-  type: "rect" | "text";
-  x: number;
-  y: number;
-  width?: number;
-  height?: number;
-  fill: string;
-  stroke?: string;
-  strokeWidth?: number;
-  text?: string;
-  hidden?: boolean;
-};
+import {
+  layersOf,
+  parseScene,
+  serializeScene,
+  starterScene,
+  type Layer,
+  type Scene,
+} from "@/lib/cosmetic-svg-authoring";
 
 const blank = {
   key: "BACK_",
@@ -43,100 +35,6 @@ const blank = {
   price: 1200,
   status: "PUBLISHED",
 };
-
-const DEFAULT_LAYERS: Layer[] = [
-  { id: "bg", type: "rect", x: 0, y: 0, width: ART.w, height: ART.h, fill: "#142d4c" },
-];
-
-/** Bandas de moldura: 4 retangulos fora da janela da arte, sem cobrir a arte. */
-function starterLayers(type: CosmeticType): { viewBox: string; layers: Layer[] } {
-  const band = (x: number, y: number, width: number, height: number, fill: string): Layer => ({
-    id: crypto.randomUUID(),
-    type: "rect",
-    x,
-    y,
-    width,
-    height,
-    fill,
-  });
-  if (type === "FRAME") {
-    return {
-      viewBox: TYPE_VIEWBOX.FRAME,
-      layers: [
-        band(-BLEED, -BLEED, ART.w + BLEED * 2, BLEED, "#142d4c"),
-        band(-BLEED, ART.h, ART.w + BLEED * 2, BLEED, "#142d4c"),
-        band(-BLEED, 0, BLEED, ART.h, "#142d4c"),
-        band(ART.w, 0, BLEED, ART.h, "#142d4c"),
-      ],
-    };
-  }
-  if (type === "HIGHLIGHT") {
-    return {
-      viewBox: TYPE_VIEWBOX.HIGHLIGHT,
-      layers: [{ ...band(24, 24, ART.w - 48, ART.h - 48, "none"), stroke: "#fcd34d", strokeWidth: 10 }],
-    };
-  }
-  return { viewBox: TYPE_VIEWBOX.BACK, layers: DEFAULT_LAYERS };
-}
-
-function unescapeXml(s: string) {
-  return s.replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&apos;/g, "'");
-}
-
-function deserialize(svg: string, type: CosmeticType): { viewBox: string; layers: Layer[]; extra: string } {
-  const doc = new DOMParser().parseFromString(svg, "image/svg+xml");
-  const root = doc.querySelector("svg");
-  if (!root) return { ...starterLayers(type), extra: "" };
-  const viewBox = root.getAttribute("viewBox") ?? TYPE_VIEWBOX[type];
-  const layers: Layer[] = [];
-  const extra: string[] = [];
-  for (const child of Array.from(root.children)) {
-    if (child.tagName === "rect") {
-      layers.push({
-        id: crypto.randomUUID(),
-        type: "rect",
-        x: Number(child.getAttribute("x") ?? 0),
-        y: Number(child.getAttribute("y") ?? 0),
-        width: Number(child.getAttribute("width") ?? 0),
-        height: Number(child.getAttribute("height") ?? 0),
-        fill: child.getAttribute("fill") ?? "#000000",
-        stroke: child.getAttribute("stroke") ?? undefined,
-        strokeWidth: child.getAttribute("stroke-width") ? Number(child.getAttribute("stroke-width")) : undefined,
-        hidden: child.getAttribute("display") === "none" || undefined,
-      });
-    } else if (child.tagName === "text") {
-      layers.push({
-        id: crypto.randomUUID(),
-        type: "text",
-        x: Number(child.getAttribute("x") ?? 0),
-        y: Number(child.getAttribute("y") ?? 0),
-        fill: child.getAttribute("fill") ?? "#ffffff",
-        text: unescapeXml(child.textContent ?? ""),
-        hidden: child.getAttribute("display") === "none" || undefined,
-      });
-    } else {
-      extra.push(child.outerHTML);
-    }
-  }
-  return {
-    viewBox,
-    layers: layers.length ? layers : starterLayers(type).layers,
-    extra: extra.join(""),
-  };
-}
-
-function serialize(layers: Layer[], extra: string, viewBox: string) {
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${viewBox}">${extra}${layers
-    .map((l) => {
-      const hide = l.hidden ? ' display="none"' : "";
-      if (l.type === "rect") {
-        const stroke = l.stroke && l.stroke !== "none" ? ` stroke="${l.stroke}" stroke-width="${l.strokeWidth ?? 4}"` : "";
-        return `<rect x="${l.x}" y="${l.y}" width="${l.width}" height="${l.height}" fill="${l.fill}"${stroke}${hide}/>`;
-      }
-      return `<text x="${l.x}" y="${l.y}" fill="${l.fill}" font-size="48" font-family="sans-serif"${hide}>${(l.text ?? "").replace(/[<&>]/g, "")}</text>`;
-    })
-    .join("")}</svg>`;
-}
 
 /**
  * Previa de autoria. A arte de referencia fica ATRAS do SVG para que moldura e
@@ -232,10 +130,10 @@ export default function AdminCapasPage() {
   const [form, setForm] = useState(blank);
   const [editing, setEditing] = useState<string | null>(null);
   const [error, setError] = useState("");
-  const [layers, setLayers] = useState<Layer[]>(DEFAULT_LAYERS);
-  const [extra, setExtra] = useState("");
+  const [scene, setScene] = useState<Scene>(() => starterScene("BACK"));
   const [selected, setSelected] = useState("bg");
   const [guides, setGuides] = useState(true);
+  const layers = useMemo(() => layersOf(scene), [scene]);
   const active = layers.find((l) => l.id === selected);
 
   // form.svg e a fonte da verdade do viewBox: edicao manual no textarea
@@ -249,32 +147,37 @@ export default function AdminCapasPage() {
   // o SVG mede agora, nao uma lista generica que o autor precisa interpretar.
   const audit = useMemo(() => auditCosmetic(form.svg ?? "", form.type), [form.svg, form.type]);
 
-  function sync(next: Layer[]) {
-    setLayers(next);
+  function sync(next: Scene) {
+    setScene(next);
     setForm((f) => {
       // Fallback por tipo: um FRAME sem viewBox no textarea nao pode herdar
       // o viewBox de capa no proximo toque de camada.
       const vb = parseViewBox(f.svg, TYPE_VIEWBOX[f.type] ?? DEFAULT_VIEWBOX);
-      return { ...f, svg: serialize(next, extra, `${vb.x} ${vb.y} ${vb.w} ${vb.h}`) };
+      return { ...f, svg: serializeScene(next, `${vb.x} ${vb.y} ${vb.w} ${vb.h}`) };
     });
   }
   function updateLayer(patch: Partial<Layer>) {
-    sync(layers.map((l) => (l.id === selected ? { ...l, ...patch } : l)));
+    sync({
+      ...scene,
+      nodes: scene.nodes.map((n) =>
+        n.kind === "layer" && n.layer.id === selected ? { ...n, layer: { ...n.layer, ...patch } } : n,
+      ),
+    });
   }
   function addLayer(type: "rect" | "text") {
     const layer: Layer =
       type === "rect"
-        ? { id: crypto.randomUUID(), type, x: 50, y: 50, width: 650, height: 120, fill: "#8de7ff" }
-        : { id: crypto.randomUUID(), type, x: 80, y: 180, fill: "#ffffff", text: "Nova camada" };
-    sync([...layers, layer]);
+        ? { id: crypto.randomUUID(), type, x: 50, y: 50, width: 650, height: 120, fill: "#8de7ff", rest: {} }
+        : { id: crypto.randomUUID(), type, x: 80, y: 180, fill: "#ffffff", text: "Nova camada", rest: {} };
+    // No fim da cena: uma camada nova e o topo do desenho, como no paint order.
+    sync({ ...scene, nodes: [...scene.nodes, { kind: "layer", layer }] });
     setSelected(layer.id);
   }
   function changeType(type: CosmeticType) {
-    const starter = starterLayers(type);
-    setForm((f) => ({ ...f, type, svg: serialize(starter.layers, "", starter.viewBox) }));
-    setLayers(starter.layers);
-    setExtra("");
-    setSelected(starter.layers[0]?.id ?? "");
+    const starter = starterScene(type);
+    setForm((f) => ({ ...f, type, svg: serializeScene(starter, starter.viewBox) }));
+    setScene(starter);
+    setSelected(layersOf(starter)[0]?.id ?? "");
   }
   function resetViewBox() {
     const vb = TYPE_VIEWBOX[form.type] ?? DEFAULT_VIEWBOX;
@@ -294,16 +197,14 @@ export default function AdminCapasPage() {
     const { id: _id, createdAt: _c, updatedAt: _u, createdById: _cb, version: _v, ...fields } = item;
     const type = (fields.type ?? "BACK") as CosmeticType;
     setForm({ ...fields, type, svg: fields.svg ?? "", description: fields.description ?? "", previewUrl: fields.previewUrl ?? "" });
-    const parsed = deserialize(item.svg ?? "", type);
-    setLayers(parsed.layers);
-    setExtra(parsed.extra);
-    setSelected(parsed.layers[0]?.id ?? "");
+    const parsed = parseScene(item.svg ?? "", type);
+    setScene(parsed);
+    setSelected(layersOf(parsed)[0]?.id ?? "");
   }
   function cancelEditing() {
     setEditing(null);
     setForm(blank);
-    setLayers(DEFAULT_LAYERS);
-    setExtra("");
+    setScene(starterScene("BACK"));
     setSelected("bg");
   }
   async function save(event: React.FormEvent) {
@@ -381,9 +282,9 @@ export default function AdminCapasPage() {
               type="button"
               className="btn-ghost px-3 py-2"
               onClick={() => {
-                const next = layers.filter((l) => l.id !== selected);
-                sync(next);
-                setSelected(next[0]?.id ?? "");
+                const nodes = scene.nodes.filter((n) => n.kind !== "layer" || n.layer.id !== selected);
+                sync({ ...scene, nodes });
+                setSelected(layersOf({ ...scene, nodes })[0]?.id ?? "");
               }}
             >
               Excluir camada

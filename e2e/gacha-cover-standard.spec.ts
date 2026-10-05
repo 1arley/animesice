@@ -91,6 +91,59 @@ test("admin vê a capa no padrão aprovada e sem contorno de falha", async ({ pa
   await expect(page.locator("div.border-signal")).toHaveCount(0);
 });
 
+/**
+ * Round-trip no editor: parse -> edicao -> serialize nao pode reescrever a arte.
+ *
+ * O bug que este teste trava: os nós que o editor nao modela (`defs`, grupos,
+ * `title`) eram guardados numa string solta e reemitidos ANTES de todas as
+ * camadas. Um `rect` desenhado antes de um grupo saia depois dele na volta, e a
+ * arte mudava sem o autor ter tocado nela. Os atributos fora do modelo
+ * (`rx`, `fill-opacity`, `opacity`) tinham o mesmo destino: sumiam no round-trip.
+ */
+const MIXED_BACK = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 750 1000" role="img">
+<title>Capa — Noite Estrelada</title>
+<rect width="750" height="1000" fill="#05080e"/>
+<defs>
+<radialGradient id="nb"><stop offset="0" stop-color="#1b3a63"/><stop offset="1" stop-color="#05080e"/></radialGradient>
+</defs>
+<g opacity=".9">
+<circle cx="375" cy="500" r="240" fill="url(#nb)"/>
+</g>
+<rect width="750" height="1000" fill="#05080e" fill-opacity=".5"/>
+</svg>`;
+
+test("editar uma camada preserva ordem, metadados da raiz e atributos nao modelados", async ({ page }) => {
+  await blockAds(page);
+  await page.context().addCookies([{ name: "role", value: "ADMIN", url: "http://localhost:3000" }]);
+  await page.route(/\/\/localhost:3001\/(?:api\/)?user\/me$/, route => route.fulfill({ json: VIEWER }));
+  await page.route("**/gacha/admin/card-backs", route => route.fulfill({ json: [
+    { id: "back-1", key: "BACK_NOITE", name: "Noite Estrelada", description: null,
+      type: "BACK", svg: MIXED_BACK, previewUrl: null, price: 0, status: "PUBLISHED" },
+  ] }));
+  await page.goto("/admin/gacha/capas");
+
+  await page.getByRole("button", { name: /Noite Estrelada/ }).click();
+
+  // Edita a unica camada editavel do arquivo: o plano de fundo.
+  await page.getByLabel("X").fill("12");
+
+  const out = await page.getByLabel("SVG da capa").inputValue();
+
+  // 1. Ordem visual: o rect inicial continua antes do defs e do grupo.
+  expect(out.indexOf("<rect")).toBeLessThan(out.indexOf("<defs"));
+  expect(out.indexOf("<defs")).toBeLessThan(out.indexOf("<circle"));
+  expect(out.indexOf("<circle")).toBeLessThan(out.lastIndexOf("<rect"));
+
+  // 2. Metadados da raiz e o <title> sobrevivem ao round-trip.
+  expect(out).toContain('role="img"');
+  expect(out).toContain("<title>Capa — Noite Estrelada</title>");
+
+  // 3. Atributos fora do modelo do editor nao viram lixo.
+  expect(out).toContain('fill-opacity=".5"');
+  expect(out).toContain("<circle");
+  expect(out).toContain('x="12"');
+});
+
 test("trocar o tipo do cosmetico reavalia a auditoria", async ({ page }) => {
   const padrao = await openEditor(page, BROKEN_BACK);
   await expect(padrao.locator('li[data-level="erro"]')).toHaveCount(2);
