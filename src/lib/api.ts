@@ -56,6 +56,7 @@ import type {
   GachaRankingEntry,
   GachaEncyclopedia,
   GachaWishlistResponse,
+  GachaWishlistQuery,
   GachaInterestedUser,
   GachaFeatured,
   GachaSkinsResponse,
@@ -1863,10 +1864,14 @@ export const api = {
       `/gacha/encyclopedia/suggestions?q=${encodeURIComponent(query)}`,
       { signal },
     ),
-  gachaWishlist: (userId?: string, query = "") =>
-    request<GachaWishlistResponse>(
-      `/gacha/wishlist?${userId ? "userId=" + encodeURIComponent(userId) + "&" : ""}${query}`,
-    ),
+  gachaWishlist: (userId?: string, query: GachaWishlistQuery = {}) => {
+    const params = new URLSearchParams();
+    if (userId) params.set("userId", userId);
+    for (const [key, value] of Object.entries(query)) {
+      if (value !== undefined) params.set(key, String(value));
+    }
+    return request<GachaWishlistResponse>(`/gacha/wishlist?${params}`);
+  },
   gachaWishlistCard: (cardId: string, body: Record<string, unknown> = {}) =>
     request(`/gacha/wishlist/cards/${encodeURIComponent(cardId)}`, {
       method: "PUT",
