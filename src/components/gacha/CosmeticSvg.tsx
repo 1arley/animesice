@@ -16,7 +16,10 @@ const cache = new Map<string, Asset>();
  * SVG de um cosmetico (capa, moldura ou destaque) servido como documento de
  * imagem, nunca inserido no DOM da pagina.
  *
- * `fit="cover"`: preenche o container (capa, verso da carta).
+ * Sem `fit`: o SVG preenche o container como a arte da frente — mesmo
+ * `object-cover`, mesma escala dos dois lados da carta. Use com
+ * `object-cover` no `className` para que capas fora do aspect 3/4 sejam
+ * recortadas em vez de esticadas.
  * `fit="card"`: sobrepoe a janela da arte de um container 3/4 — a moldura e
  * posicionada um pouco maior que a carta para o sangue nao ser cortado.
  *
@@ -25,12 +28,12 @@ const cache = new Map<string, Asset>();
 export const CosmeticSvg = memo(function CosmeticSvg({
   cosmeticKey,
   svg: inlineSvg,
-  fit = "cover",
+  fit,
   className,
 }: {
   cosmeticKey?: string | null;
   svg?: string | null;
-  fit?: "cover" | "card";
+  fit?: "card";
   className?: string;
 }) {
   const key = cosmeticKey ?? null;
@@ -67,7 +70,10 @@ export const CosmeticSvg = memo(function CosmeticSvg({
   );
   if (!src) return null;
 
-  const scale = fit === "card" ? overlayScale(parseViewBox(raw ?? "")) : null;
+  // `card` dimensiona o overlay a partir do viewBox da propria arte. A capa e o
+  // verso ficam sem `fit`: preenchem o container na mesma escala da arte da
+  // frente, sem overscan, entao nao ha nada a compensar aqui.
+  const overlay = fit === "card" ? overlayScale(parseViewBox(raw ?? "")) : null;
 
   return (
     // SVG stays in an image document instead of executing in the page DOM.
@@ -78,13 +84,13 @@ export const CosmeticSvg = memo(function CosmeticSvg({
       aria-hidden="true"
       className={className}
       style={
-        scale
+        overlay
           ? {
               left: "50%",
               top: "50%",
               translate: "-50% -50%",
-              width: scale.width,
-              height: scale.height,
+              width: overlay.width,
+              height: overlay.height,
               // O preflight do Tailwind trava `img { max-width: 100% }`, o que
               // cortaria o sangue do overlay em 100% e desalinharia a moldura.
               maxWidth: "none",

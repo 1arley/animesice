@@ -17,6 +17,138 @@ export const CARD_ART = { w: 750, h: 1000 } as const;
  */
 export const BLEED = 30;
 
+/**
+ * Folga que o verso engole antes de virar aro: nenhuma. A carta desenha frente e
+ * verso na mesma escala — os dois passam pelo mesmo `object-cover` da janela 3/4
+ * — entao qualquer sobra entre o plano e a borda do viewBox aparece como faixa
+ * do fundo do container. Nao ha overscan para disfarcar arte mal desenhada.
+ *
+ * O que sobra e arredondamento de ponto flutuante: 0.2% do eixo, uns 1.5px num
+ * canvas de 750, invisivel em qualquer tamanho de carta.
+ */
+const BACK_PLATE_SLACK = 0.002;
+
+export type AuditLevel = "ok" | "aviso" | "erro";
+
+export type AuditItem = {
+  level: AuditLevel;
+  /** A regra do padrao, em uma linha: o que a capa precisa cumprir. */
+  rule: string;
+  /** Por que a regra existe: o que acontece na carta se ela for furada. */
+  why: string;
+  /** Valor medido no rascunho, quando a regra e verificavel. */
+  got?: string;
+};
+
+function numAttr(tag: string, name: string): number {
+  const m = new RegExp(`\\b${name}\\s*=\\s*["']\\s*(-?[\\d.]+)`).exec(tag);
+  return m ? Number(m[1]) : 0;
+}
+
+/**
+ * Maior `<rect>` do arquivo — o plano de fundo que a arte e desenhada por
+ * cima. E o unico proxy confiavel sem renderizar o SVG: o rect carrega as
+ * coordenadas de authoring, enquanto o viewBox e so a moldura declarada.
+ *
+ * Heuristica assumida e nomeada de proposito: um verso tipico tem o plano como
+ * o maior retangulo; uma moldura nao, e por isso a regra so vale para BACK.
+ */
+export function largestPlate(svg: string): ViewBox | null {
+  let best: ViewBox | null = null;
+  for (const m of svg.matchAll(/<rect\b[^>]*>/gi)) {
+    const w = numAttr(m[0], "width");
+    const h = numAttr(m[0], "height");
+    if (!(w > 0 && h > 0)) continue;
+    if (!best || w * h > best.w * best.h) {
+      best = { x: numAttr(m[0], "x"), y: numAttr(m[0], "y"), w, h };
+    }
+  }
+  return best;
+}
+
+/** Quanta arte se perde quando um canvas de aspect `a` entra num slot. */
+function cropLoss(a: number, slot: number): number {
+  return 1 - Math.min(a, slot) / Math.max(a, slot);
+}
+
+/**
+ * Auditoria do padrao contra o rascunho em edicao. Cada item e uma regra do
+ * contrato de autoria verificada no SVG atual, com o motivo pelo qual ela
+ * existe — assim a dica do admin e o teste que trava o bug sao o mesmo
+ * artefato, em vez de texto que envelhece longe da regra.
+ *
+ * Para BACK o plano de fundo e a medida de verdade: e ele que preenche a
+ * janela. Se o maior rect nao cobre o viewBox sobram faixas sem desenho, onde
+ * o fundo do container aparece.
+ */
+export function auditCosmetic(svg: string, type: CosmeticType): AuditItem[] {
+  const want = parseViewBox(TYPE_VIEWBOX[type]);
+  const vb = parseViewBox(svg, TYPE_VIEWBOX[type]);
+  const items: AuditItem[] = [];
+
+  const vbMatches = vb.x === want.x && vb.y === want.y && vb.w === want.w && vb.h === want.h;
+  items.push({
+    level: vbMatches ? "ok" : "erro",
+    rule: `viewBox "${TYPE_VIEWBOX[type]}"`,
+    why: vbMatches
+      ? "Canvas na medida do slot da carta."
+      : `Esta em "${vb.x} ${vb.y} ${vb.w} ${vb.h}". O verso usa object-cover: fora da medida a arte e recortada ou sobra, nunca encaixa.`,
+    got: `${vb.x} ${vb.y} ${vb.w} ${vb.h}`,
+  });
+
+  if (type !== "BACK") return items;
+
+  const plate = largestPlate(svg);
+  if (!plate) {
+    items.push({
+      level: "erro",
+      rule: "Plano de fundo cobrindo o canvas inteiro",
+      why: "Nenhum <rect> no arquivo. O verso cai no fundo do container e a capa aparece vazia.",
+    });
+    return items;
+  }
+
+  // Faixa sem desenho entre a borda do canvas e a borda do plano, por lado.
+  const gaps = {
+    esquerda: plate.x - vb.x,
+    direita: vb.x + vb.w - (plate.x + plate.w),
+    topo: plate.y - vb.y,
+    base: vb.y + vb.h - (plate.y + plate.h),
+  };
+  const worst = Math.max(gaps.esquerda, gaps.direita, gaps.topo, gaps.base);
+  const horizontal = worst === gaps.esquerda || worst === gaps.direita;
+  const frac = worst / (horizontal ? vb.w : vb.h);
+  const listed = Object.entries(gaps)
+    .filter(([, v]) => v > 0.5)
+    .map(([k, v]) => `${Math.round(v)}px ${k}`)
+    .join(" e ");
+
+  const bleeds = frac <= BACK_PLATE_SLACK;
+  items.push({
+    level: bleeds ? "ok" : "erro",
+    rule: "Plano de fundo cobrindo o canvas inteiro",
+    why: bleeds
+      ? "O plano encosta nas quatro bordas: a capa sangra ate a borda da carta."
+      : `Sobra ${listed} sem desenho. A carta desenha a capa no mesmo tamanho da arte da frente, sem overscan, entao essa faixa deixa o fundo do container aparecer — e e o que parece "borda sobrando".`,
+    got: `${plate.w}x${plate.h} num canvas ${vb.w}x${vb.h}`,
+  });
+
+  // O plano esta no aspect do slot? Se nao, nem viewBox nem escala resolvem.
+  const plateAspect = plate.w / plate.h;
+  const slotAspect = want.w / want.h;
+  const aspectOk = Math.abs(plateAspect - slotAspect) < 0.005;
+  items.push({
+    level: aspectOk ? "ok" : "erro",
+    rule: `Arte desenhada em ${want.w}x${want.h} (3/4)`,
+    why: aspectOk
+      ? "O plano tem o aspect do slot: o desenho cai inteiro na carta."
+      : `O plano esta em ${plateAspect.toFixed(2)}:1. Corrigir so o viewBox nao resolve — o verso recorta ${(cropLoss(plateAspect, slotAspect) * 100).toFixed(1)}% da arte para fora. Redesenhe no aspect 3/4 dentro de ${want.w}x${want.h}.`,
+    got: `${plateAspect.toFixed(3)}:1`,
+  });
+
+  return items;
+}
+
 export type CosmeticType = "BACK" | "FRAME" | "HIGHLIGHT";
 
 export type ViewBox = { x: number; y: number; w: number; h: number };

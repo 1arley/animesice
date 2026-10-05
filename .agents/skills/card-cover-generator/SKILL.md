@@ -25,6 +25,8 @@ python3 scripts/validate.py /tmp/cover.svg --config CONFIG.json
 python3 scripts/batch.py --config CONFIG.json --seeds 1-20 --output-dir out/variations
 ```
 
+For anything that goes on a gacha card, pass the destination slot so the canvas is checked against the size the card actually renders: `validate.py /tmp/cover.svg --config CONFIG.json --slot card` (750 × 1000). `--slot portrait` is 600 × 900 and `--slot square` is 730 × 730. Without the flag the script only validates the file; with it, a canvas in the wrong proportion fails instead of being silently stretched by the card's `object-cover`.
+
 `batch.py` also accepts `--configs-dir DIR`, `--themes all`, or comma-separated theme names. For custom palettes, use the config's inline `theme` and omit `--themes`, or save the palette as a reusable file in `themes/`. `preview.py` uses CairoSVG, `rsvg-convert`, or Inkscape when available.
 
 ## Quality bar
