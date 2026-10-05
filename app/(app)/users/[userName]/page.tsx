@@ -6,7 +6,6 @@ import { api, ApiError } from "@/lib/api";
 import type {
   GachaFeatured,
   GachaPull,
-  GachaWishlistResponse,
   PublicUserProfile,
   PublicActivityEvent,
   UserRating,
@@ -102,9 +101,6 @@ export default function PublicProfilePage({
   const [tabGachaPage, setTabGachaPage] = useState(1);
   const [tabGachaHasMore, setTabGachaHasMore] = useState(false);
   const [tabGachaPrivate, setTabGachaPrivate] = useState(false);
-  const [tabWishlist, setTabWishlist] = useState<GachaWishlistResponse | null>(
-    null,
-  );
   const [featuredCard, setFeaturedCard] = useState<GachaFeatured | null>(null);
 
   useEffect(() => {
@@ -143,7 +139,6 @@ export default function PublicProfilePage({
       setTabFollowersTotal(0);
       setTabFollowersPage(1);
       setTabFollowersHasMore(false);
-      setTabWishlist(null);
       setCollectionStatus("ALL");
       setTabList([]);
       setTabListTotal(0);
@@ -364,9 +359,6 @@ export default function PublicProfilePage({
           }
         }
       }
-      if (tab === "wishlist" && !tabWishlist) {
-        setTabWishlist(await api.gachaWishlist(profile.id));
-      }
       if (tab === "following" && tabFollowing.length === 0) {
         const res = await api.getFollowingForUser(profile.id, 1, LIMIT);
         setTabFollowing(res.data ?? []);
@@ -535,11 +527,7 @@ export default function PublicProfilePage({
           )}
 
           {activeTab === "wishlist" && (
-            <ProfileWishlist
-              userId={profile.id}
-              data={tabWishlist}
-              loading={tabLoading && !tabWishlist}
-            />
+            <ProfileWishlist userId={profile.id} />
           )}
 
           {activeTab === "following" && (
