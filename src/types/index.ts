@@ -995,13 +995,28 @@ export interface GachaWishlistResponse {
   isPublic: boolean;
   cards: GachaWishlistCard[];
   sets: GachaWishlistSet[];
+  /**
+   * Cartas e conjuntos são listas independentes: cada uma tem total e página
+   * própria, então a paginação de uma não desloca a da outra.
+   */
   meta: {
     cards: number;
     sets: number;
-    page?: number;
-    limit?: number;
-    totalPages?: number;
+    limit: number;
+    cardsPage: number;
+    cardsTotalPages: number;
+    setsPage: number;
+    setsTotalPages: number;
   };
+}
+
+export interface GachaWishlistQuery {
+  page?: number;
+  limit?: number;
+  cardsPage?: number;
+  setsPage?: number;
+  status?: "pending" | "complete";
+  priority?: WishlistPriority;
 }
 
 /** Carta destaque — setComplete sinaliza conjunto completo (prestígio no perfil). */

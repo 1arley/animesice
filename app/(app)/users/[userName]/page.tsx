@@ -1,12 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { api, ApiError } from "@/lib/api";
 import type {
   GachaFeatured,
   GachaPull,
-  GachaWishlistResponse,
   PublicUserProfile,
   PublicActivityEvent,
   UserRating,
@@ -50,6 +49,7 @@ export default function PublicProfilePage({
   params: Promise<{ userName: string }>;
 }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [profile, setProfile] = useState<PublicUserProfile | null>(null);
   const [error, setError] = useState(false);
   const [activeTab, setActiveTab] = useState<ProfileTab>("overview");
@@ -102,9 +102,6 @@ export default function PublicProfilePage({
   const [tabGachaPage, setTabGachaPage] = useState(1);
   const [tabGachaHasMore, setTabGachaHasMore] = useState(false);
   const [tabGachaPrivate, setTabGachaPrivate] = useState(false);
-  const [tabWishlist, setTabWishlist] = useState<GachaWishlistResponse | null>(
-    null,
-  );
   const [featuredCard, setFeaturedCard] = useState<GachaFeatured | null>(null);
 
   useEffect(() => {
@@ -143,7 +140,6 @@ export default function PublicProfilePage({
       setTabFollowersTotal(0);
       setTabFollowersPage(1);
       setTabFollowersHasMore(false);
-      setTabWishlist(null);
       setCollectionStatus("ALL");
       setTabList([]);
       setTabListTotal(0);
@@ -199,11 +195,37 @@ export default function PublicProfilePage({
     };
   }, [params, router]);
 
-  // ?tab= legado + rolagem suave ao trocar de aba.
+  // Os parâmetros do Next sincronizam o histórico entre a aba e a paginação.
+  // Cliques atualizam activeTab diretamente; ignoramos essa mesma URL na
+  // sincronização para ?tab= legado não sobrescrever a aba escolhida.
+  const lastHandledSearch = useRef<string | null>(null);
   useEffect(() => {
-    const t = new URLSearchParams(window.location.search).get("tab");
-    if (t && TAB_ALIASES[t]) setActiveTab(TAB_ALIASES[t]);
-  }, []);
+    const query = searchParams.toString();
+    if (lastHandledSearch.current === query) return;
+    lastHandledSearch.current = query;
+    const tab = new URLSearchParams(query).get("tab");
+    setActiveTab(
+      tab && Object.prototype.hasOwnProperty.call(TAB_ALIASES, tab)
+        ? TAB_ALIASES[tab]
+        : "overview",
+    );
+  }, [searchParams]);
+
+  // A aba ativa precisa de dados, venha de clique, de popstate ou da URL no
+  // mount — um ?tab= compartilhado abriria vazio sem isto. A wishlist é a
+  // exceção: carrega no useGachaWishlist ao montar o ProfileWishlist, então
+  // aqui ensureTab("wishlist") só alterna o tabLoading. ensureTab é recriado
+  // a cada render, então a versão corrente fica num ref e o efeito não é
+  // reagendado; os guards internos dele (lista vazia) evitam refetch.
+  const ensureTabRef = useRef(ensureTab);
+  useEffect(() => {
+    ensureTabRef.current = ensureTab;
+  });
+
+  useEffect(() => {
+    if (!profile || activeTab === "overview") return;
+    void ensureTabRef.current(activeTab);
+  }, [profile, activeTab]);
 
   useEffect(() => {
     if (activeTab === "overview") return;
@@ -364,9 +386,6 @@ export default function PublicProfilePage({
           }
         }
       }
-      if (tab === "wishlist" && !tabWishlist) {
-        setTabWishlist(await api.gachaWishlist(profile.id));
-      }
       if (tab === "following" && tabFollowing.length === 0) {
         const res = await api.getFollowingForUser(profile.id, 1, LIMIT);
         setTabFollowing(res.data ?? []);
@@ -410,9 +429,31 @@ export default function PublicProfilePage({
     }
   }
 
+  // Só a wishlist é profunda e paginada, então é a única que viaja na URL.
+  // Qualquer outra aba limpa tab/cardsPage/setsPage: um ?tab= remanescente
+  // voltaria a activá-la no próximo popstate.
   function handleNavigate(tab: ProfileTab) {
+    const url = new URL(window.location.href);
+    if (tab === "wishlist") url.searchParams.set("tab", "wishlist");
+    else {
+      url.searchParams.delete("tab");
+      url.searchParams.delete("cardsPage");
+      url.searchParams.delete("setsPage");
+    }
+    const href = `${url.pathname}${url.search}${url.hash}`;
+    const current = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+    lastHandledSearch.current = url.searchParams.toString();
+    // Clicar na aba já ativa não gera entrada nova: um Back que só repete a
+    // mesma URL parece quebrado.
+    if (href !== current) {
+      window.history.pushState(null, "", href);
+    }
+    // O carregamento sob demanda sai do efeito abaixo, que dispara no clique,
+    // no popstate e na restauração pela URL. Só o re-click na aba ativa
+    // depende daqui: setActiveTab não muda o estado e o efeito não roda, mas
+    // as abas engolim falha em silêncio e precisam de uma segunda tentativa.
+    if (tab === activeTab) void ensureTab(tab);
     setActiveTab(tab);
-    ensureTab(tab);
   }
 
   return (
@@ -535,10 +576,7 @@ export default function PublicProfilePage({
           )}
 
           {activeTab === "wishlist" && (
-            <ProfileWishlist
-              data={tabWishlist}
-              loading={tabLoading && !tabWishlist}
-            />
+            <ProfileWishlist userId={profile.id} />
           )}
 
           {activeTab === "following" && (
