@@ -26,8 +26,10 @@ export function ProfileWishlist({ userId }: { userId: string }) {
           Wishlist
         </h2>
         {error ? (
-          <div role="alert" className="mt-4 flex flex-wrap items-center gap-3 text-signal">
-            <p>{error}</p>
+          <div className="mt-4 flex flex-wrap items-center gap-3 text-signal">
+            {/* O alert fica só na mensagem: envolver o botão faz o leitor de
+                tela anunciar "Tentar novamente" junto com o erro. */}
+            <p role="alert">{error}</p>
             <button
               type="button"
               onClick={retryPage}
@@ -58,8 +60,8 @@ export function ProfileWishlist({ userId }: { userId: string }) {
         Wishlist
       </h2>
       {error && (
-        <div role="alert" className="mt-4 flex flex-wrap items-center gap-3 text-signal">
-          <p>{error}</p>
+        <div className="mt-4 flex flex-wrap items-center gap-3 text-signal">
+          <p role="alert">{error}</p>
           <button
             type="button"
             onClick={retryPage}

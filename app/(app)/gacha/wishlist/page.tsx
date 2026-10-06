@@ -90,8 +90,8 @@ export default function GachaWishlistPage() {
         </button>
       </div>
       {loadError && (
-        <div role="alert" className="mt-6 flex flex-wrap items-center gap-3 text-signal">
-          <p>{loadError}</p>
+        <div className="mt-6 flex flex-wrap items-center gap-3 text-signal">
+          <p role="alert">{loadError}</p>
           <button
             type="button"
             onClick={retryLoad}
