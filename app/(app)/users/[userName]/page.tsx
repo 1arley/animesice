@@ -201,15 +201,16 @@ export default function PublicProfilePage({
   const lastHandledSearch = useRef<string | null>(null);
   useEffect(() => {
     const query = searchParams.toString();
-    if (lastHandledSearch.current === query) return;
-    lastHandledSearch.current = query;
+    const searchKey = `${profile?.id ?? ""}\u0000${query}`;
+    if (lastHandledSearch.current === searchKey) return;
+    lastHandledSearch.current = searchKey;
     const tab = new URLSearchParams(query).get("tab");
     setActiveTab(
       tab && Object.prototype.hasOwnProperty.call(TAB_ALIASES, tab)
         ? TAB_ALIASES[tab]
         : "overview",
     );
-  }, [searchParams]);
+  }, [searchParams, profile?.id]);
 
   // A aba ativa precisa de dados, venha de clique, de popstate ou da URL no
   // mount — um ?tab= compartilhado abriria vazio sem isto. A wishlist é a
@@ -442,7 +443,7 @@ export default function PublicProfilePage({
     }
     const href = `${url.pathname}${url.search}${url.hash}`;
     const current = `${window.location.pathname}${window.location.search}${window.location.hash}`;
-    lastHandledSearch.current = url.searchParams.toString();
+    lastHandledSearch.current = `${profile?.id ?? ""}\u0000${url.searchParams.toString()}`;
     // Clicar na aba já ativa não gera entrada nova: um Back que só repete a
     // mesma URL parece quebrado.
     if (href !== current) {

@@ -31,14 +31,23 @@ def local_name(tag: str) -> str:
     return tag.rsplit("}", 1)[-1]
 
 
-def _length(value: str | None) -> float:
+def _length(value: str | None, reference_size: float) -> float:
     if not value:
         return 0.0
-    match = re.match(r"\s*(-?[0-9.]+)", value)
-    return float(match.group(1)) if match else 0.0
+    match = re.fullmatch(
+        r"\s*([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?)\s*(%|px)?\s*",
+        value,
+        re.IGNORECASE,
+    )
+    if not match:
+        return 0.0
+    length = float(match.group(1))
+    return length * reference_size / 100 if match.group(2) == "%" else length
 
 
-def largest_plate(element: ET.Element) -> tuple[float, float, float, float] | None:
+def largest_plate(
+    element: ET.Element, viewbox_width: float, viewbox_height: float
+) -> tuple[float, float, float, float] | None:
     """Biggest painted `<rect>`: the background plate the art sits on.
 
     The plate carries the authoring coordinates, while the viewBox is only a
@@ -52,9 +61,15 @@ def largest_plate(element: ET.Element) -> tuple[float, float, float, float] | No
     while stack:
         node = stack.pop()
         if local_name(node.tag) == "rect":
-            w, h = _length(node.get("width")), _length(node.get("height"))
+            w = _length(node.get("width"), viewbox_width)
+            h = _length(node.get("height"), viewbox_height)
             if w > 0 and h > 0 and (best is None or w * h > best[2] * best[3]):
-                best = (_length(node.get("x")), _length(node.get("y")), w, h)
+                best = (
+                    _length(node.get("x"), viewbox_width),
+                    _length(node.get("y"), viewbox_height),
+                    w,
+                    h,
+                )
         stack.extend(child for child in node if local_name(child.tag) not in NON_PAINTED)
     return best
 
@@ -100,7 +115,7 @@ def validate(svg_path: Path, config_path: Path, theme_override: str | None = Non
     # agreement, which is how a cover ends up with empty bands. Compare the
     # drawn plate against the declared frame to catch it.
     if len(viewbox) == 4:
-        plate = largest_plate(root)
+        plate = largest_plate(root, viewbox[2], viewbox[3])
         if plate is None:
             errors.append("no painted <rect> found: the cover needs an opaque background plate")
         else:
