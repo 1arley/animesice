@@ -1,32 +1,47 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import Image from "next/image";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { safeImageSrc } from "@/lib/url";
 import { useToast } from "@/components/common/ToastProvider";
-import type { GachaWishlistResponse } from "@/types";
+import { PaginationControls } from "@/components/ui/PaginationControls";
+import { useGachaWishlist } from "@/lib/use-gacha-wishlist";
 
 export default function GachaWishlistPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="mx-auto max-w-shelf px-4 py-12 text-mist" role="status">
+          Carregando...
+        </div>
+      }
+    >
+      <GachaWishlistContent />
+    </Suspense>
+  );
+}
+
+function GachaWishlistContent() {
   const { user, loading: authLoading } = useAuth();
-  const [data, setData] = useState<GachaWishlistResponse | null>(null);
   const [error, setError] = useState("");
   const [publicList, setPublicList] = useState(true);
   const [savingPrivacy, setSavingPrivacy] = useState(false);
+  const {
+    setCardsPage,
+    setSetsPage,
+    data,
+    loading,
+    error: loadError,
+    retry: retryLoad,
+  } = useGachaWishlist(user?.id);
   const { toast } = useToast();
 
   useEffect(() => {
-    if (!user) return;
-    void api
-      .gachaWishlist(user.id)
-      .then((result) => {
-        setData(result);
-        setPublicList(result.isPublic);
-      })
-      .catch(() => setError("Não foi possível carregar sua wishlist."));
-  }, [user]);
+    if (data) setPublicList(data.isPublic);
+  }, [data]);
 
   if (authLoading)
     return (
@@ -86,23 +101,51 @@ export default function GachaWishlistPage() {
               : "Wishlist privada"}
         </button>
       </div>
+      {loadError && (
+        <div className="mt-6 flex flex-wrap items-center gap-3 text-signal">
+          <p role="alert">{loadError}</p>
+          <button
+            type="button"
+            onClick={retryLoad}
+            className="btn-ghost min-h-11 px-4"
+          >
+            Tentar novamente
+          </button>
+        </div>
+      )}
       {error && (
         <p role="alert" className="mt-6 text-signal">
           {error}
         </p>
       )}
       {!data ? (
-        <div className="skeleton mt-8 h-64" />
+        loadError ? null : <div className="skeleton mt-8 h-64" />
       ) : data.private ? (
         <p className="mt-8 text-mist">Wishlist privada.</p>
       ) : (
         <>
           <section className="mt-10">
-            <h2 className="font-display text-body-lg text-snow">Conjuntos</h2>
-            {data.sets.length === 0 ? (
+            <div className="flex flex-wrap items-baseline justify-between gap-2">
+              <h2 className="font-display text-body-lg text-snow">Conjuntos</h2>
+              {data.meta.sets > 0 && (
+                <p className="text-caption text-mist tabular-nums">
+                  {data.sets.length} de {data.meta.sets}
+                </p>
+              )}
+            </div>
+            {data.meta.sets === 0 ? (
               <p className="mt-3 text-mist">Nenhum conjunto desejado.</p>
+            ) : data.sets.length === 0 ? (
+              <p className="mt-3 text-mist">
+                Nenhum conjunto nesta página.
+              </p>
             ) : (
-              <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <div
+                aria-busy={loading}
+                className={`mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 ${
+                  loading ? "opacity-60" : ""
+                }`}
+              >
                 {data.sets.map((set) => (
                   <Link
                     key={set.id}
@@ -122,13 +165,34 @@ export default function GachaWishlistPage() {
                 ))}
               </div>
             )}
+            <PaginationControls
+              page={data.meta.setsPage}
+              totalPages={data.meta.setsTotalPages}
+              onPageChange={setSetsPage}
+              label="Paginação dos conjuntos desejados"
+              busy={loading}
+            />
           </section>
           <section className="mt-10">
-            <h2 className="font-display text-body-lg text-snow">Cartas</h2>
-            {data.cards.length === 0 ? (
+            <div className="flex flex-wrap items-baseline justify-between gap-2">
+              <h2 className="font-display text-body-lg text-snow">Cartas</h2>
+              {data.meta.cards > 0 && (
+                <p className="text-caption text-mist tabular-nums">
+                  {data.cards.length} de {data.meta.cards}
+                </p>
+              )}
+            </div>
+            {data.meta.cards === 0 ? (
               <p className="mt-3 text-mist">Nenhuma carta desejada.</p>
+            ) : data.cards.length === 0 ? (
+              <p className="mt-3 text-mist">Nenhuma carta nesta página.</p>
             ) : (
-              <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
+              <div
+                aria-busy={loading}
+                className={`mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 ${
+                  loading ? "opacity-60" : ""
+                }`}
+              >
                 {data.cards.map((entry) => {
                   const image = safeImageSrc(entry.card.image);
                   return (
@@ -159,6 +223,13 @@ export default function GachaWishlistPage() {
                 })}
               </div>
             )}
+            <PaginationControls
+              page={data.meta.cardsPage}
+              totalPages={data.meta.cardsTotalPages}
+              onPageChange={setCardsPage}
+              label="Paginação das cartas desejadas"
+              busy={loading}
+            />
           </section>
         </>
       )}
