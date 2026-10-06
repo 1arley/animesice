@@ -107,7 +107,7 @@ export default function GachaWishlistPage() {
         </p>
       )}
       {!data ? (
-        <div className="skeleton mt-8 h-64" />
+        loadError ? null : <div className="skeleton mt-8 h-64" />
       ) : data.private ? (
         <p className="mt-8 text-mist">Wishlist privada.</p>
       ) : (
