@@ -27,6 +27,13 @@ export const BLEED = 30;
  * canvas de 750, invisivel em qualquer tamanho de carta.
  */
 const BACK_PLATE_SLACK = 0.002;
+const NON_PAINTED_SVG_NODES = new Set([
+  "defs",
+  "clippath",
+  "pattern",
+  "mask",
+  "symbol",
+]);
 
 export type AuditLevel = "ok" | "aviso" | "erro";
 
@@ -40,28 +47,55 @@ export type AuditItem = {
   got?: string;
 };
 
-function numAttr(tag: string, name: string): number {
-  const m = new RegExp(`\\b${name}\\s*=\\s*["']\\s*(-?[\\d.]+)`).exec(tag);
-  return m ? Number(m[1]) : 0;
+function numAttr(tag: string, name: string, referenceSize: number): number {
+  const m = new RegExp(
+    `(?:^|\\s)${name}\\s*=\\s*["']\\s*([+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:e[+-]?\\d+)?)\\s*(%|px)?\\s*["']`,
+    "i",
+  ).exec(tag);
+  if (!m) return 0;
+  const value = Number(m[1]);
+  return m[2] === "%" ? (value * referenceSize) / 100 : value;
 }
 
 /**
- * Maior `<rect>` do arquivo — o plano de fundo que a arte e desenhada por
- * cima. E o unico proxy confiavel sem renderizar o SVG: o rect carrega as
- * coordenadas de authoring, enquanto o viewBox e so a moldura declarada.
+ * Maior `<rect>` pintado — o plano de fundo que a arte e desenhada por cima.
+ * E o unico proxy confiavel sem renderizar o SVG: o rect carrega as coordenadas
+ * de authoring, enquanto o viewBox e so a moldura declarada.
  *
  * Heuristica assumida e nomeada de proposito: um verso tipico tem o plano como
  * o maior retangulo; uma moldura nao, e por isso a regra so vale para BACK.
  */
 export function largestPlate(svg: string): ViewBox | null {
+  const vb = parseViewBox(svg);
+  let nonPaintedDepth = 0;
   let best: ViewBox | null = null;
-  for (const m of svg.matchAll(/<rect\b[^>]*>/gi)) {
-    const w = numAttr(m[0], "width");
-    const h = numAttr(m[0], "height");
-    if (!(w > 0 && h > 0)) continue;
-    if (!best || w * h > best.w * best.h) {
-      best = { x: numAttr(m[0], "x"), y: numAttr(m[0], "y"), w, h };
+  for (const m of svg.matchAll(/<!--[\s\S]*?-->|<!\[CDATA\[[\s\S]*?\]\]>|<\?[\s\S]*?\?>|<![^>]*>|<[^>]+>/g)) {
+    const tag = m[0];
+    if (tag.startsWith("<!--") || tag.startsWith("<!") || tag.startsWith("<?"))
+      continue;
+    const parts = /^<\s*(\/?)\s*([a-zA-Z][\w:.-]*)/i.exec(tag);
+    if (!parts) continue;
+    const closing = parts[1] === "/";
+    const name = parts[2].split(":").pop()!.toLowerCase();
+    if (closing) {
+      if (NON_PAINTED_SVG_NODES.has(name))
+        nonPaintedDepth = Math.max(0, nonPaintedDepth - 1);
+      continue;
     }
+    if (name === "rect" && nonPaintedDepth === 0) {
+      const w = numAttr(tag, "width", vb.w);
+      const h = numAttr(tag, "height", vb.h);
+      if (w > 0 && h > 0 && (!best || w * h > best.w * best.h)) {
+        best = {
+          x: numAttr(tag, "x", vb.w),
+          y: numAttr(tag, "y", vb.h),
+          w,
+          h,
+        };
+      }
+    }
+    if (NON_PAINTED_SVG_NODES.has(name) && !/\/\s*>$/.test(tag))
+      nonPaintedDepth++;
   }
   return best;
 }
