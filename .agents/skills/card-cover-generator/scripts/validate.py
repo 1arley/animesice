@@ -15,13 +15,66 @@ from gen_cover import load_config, load_theme
 
 SVG_NS = "http://www.w3.org/2000/svg"
 MAX_BYTES = 256 * 1024
+# Where a generated file ends up, so validation can hold the canvas to the size
+# it will actually be rendered into. `card` is the AnimeSice gacha card slot:
+# the same 3/4 window the card art uses, so front and back render at one size.
+SLOTS = {
+    "card": (750, 1000),
+    "portrait": (600, 900),
+    "square": (730, 730),
+}
+# Containers whose children are definitions, never painted themselves.
+NON_PAINTED = {"defs", "clipPath", "pattern", "mask", "symbol"}
 
 
 def local_name(tag: str) -> str:
     return tag.rsplit("}", 1)[-1]
 
 
-def validate(svg_path: Path, config_path: Path, theme_override: str | None = None, prefix_override: str | None = None) -> list[str]:
+def _length(value: str | None, reference_size: float) -> float:
+    if not value:
+        return 0.0
+    match = re.fullmatch(
+        r"\s*([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?)\s*(%|px)?\s*",
+        value,
+        re.IGNORECASE,
+    )
+    if not match:
+        return 0.0
+    length = float(match.group(1))
+    return length * reference_size / 100 if match.group(2) == "%" else length
+
+
+def largest_plate(
+    element: ET.Element, viewbox_width: float, viewbox_height: float
+) -> tuple[float, float, float, float] | None:
+    """Biggest painted `<rect>`: the background plate the art sits on.
+
+    The plate carries the authoring coordinates, while the viewBox is only a
+    declared frame. So a viewBox edited by hand without rescaling the artwork
+    still satisfies the viewBox check in `validate` but shows up here as a
+    plate smaller than the canvas -- the exact shape of a cover that renders
+    with empty bands around the art.
+    """
+    best: tuple[float, float, float, float] | None = None
+    stack = [child for child in element if local_name(child.tag) not in NON_PAINTED]
+    while stack:
+        node = stack.pop()
+        if local_name(node.tag) == "rect":
+            w = _length(node.get("width"), viewbox_width)
+            h = _length(node.get("height"), viewbox_height)
+            if w > 0 and h > 0 and (best is None or w * h > best[2] * best[3]):
+                best = (
+                    _length(node.get("x"), viewbox_width),
+                    _length(node.get("y"), viewbox_height),
+                    w,
+                    h,
+                )
+        stack.extend(child for child in node if local_name(child.tag) not in NON_PAINTED)
+    return best
+
+
+def validate(svg_path: Path, config_path: Path, theme_override: str | None = None, prefix_override: str | None = None, slot: str | None = None) -> list[str]:
     errors: list[str] = []
     try:
         config = load_config(config_path)
@@ -40,12 +93,47 @@ def validate(svg_path: Path, config_path: Path, theme_override: str | None = Non
     if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_.-]*", prefix):
         return errors + [f"invalid id_prefix {prefix!r}"]
     canvas_w, canvas_h = int(config["canvas"]["w"]), int(config["canvas"]["h"])
+    if slot is not None:
+        if slot not in SLOTS:
+            return [f"unknown slot {slot!r}; choose one of {', '.join(sorted(SLOTS))}"]
+        slot_w, slot_h = SLOTS[slot]
+        if (canvas_w, canvas_h) != (slot_w, slot_h):
+            errors.append(
+                f"canvas must be {slot_w}x{slot_h} for the {slot} slot, got "
+                f"{canvas_w}x{canvas_h}; the card fits the cover to that slot, so any other "
+                "ratio is cropped or letterboxed instead of filling it"
+            )
     try:
         viewbox = [float(n) for n in root.get("viewBox", "").replace(",", " ").split()]
     except ValueError:
         viewbox = []
     if len(viewbox) != 4 or viewbox != [0.0, 0.0, float(canvas_w), float(canvas_h)]:
         errors.append(f'viewBox must be "0 0 {canvas_w} {canvas_h}", got {root.get("viewBox")!r}')
+    # A matching viewBox says nothing about whether the art reaches it.
+    # gen_cover.py draws the plate from `canvas`, so the two normally agree;
+    # editing the viewBox by hand to retarget an existing cover breaks that
+    # agreement, which is how a cover ends up with empty bands. Compare the
+    # drawn plate against the declared frame to catch it.
+    if len(viewbox) == 4:
+        plate = largest_plate(root, viewbox[2], viewbox[3])
+        if plate is None:
+            errors.append("no painted <rect> found: the cover needs an opaque background plate")
+        else:
+            px, py, pw, ph = plate
+            gaps = {
+                "left": px - viewbox[0],
+                "right": viewbox[0] + viewbox[2] - (px + pw),
+                "top": py - viewbox[1],
+                "bottom": viewbox[1] + viewbox[3] - (py + ph),
+            }
+            empty = {side: gap for side, gap in gaps.items() if gap > 0.5}
+            if empty:
+                detail = " and ".join(f"{round(gap)}px {side}" for side, gap in empty.items())
+                errors.append(
+                    f"background plate {round(pw)}x{round(ph)} does not reach the "
+                    f"{round(viewbox[2])}x{round(viewbox[3])} canvas: {detail} left undrawn; "
+                    "artwork must bleed to every edge (resize the layer coordinates with the canvas)"
+                )
     if byte_size > MAX_BYTES:
         errors.append(f"SVG is {byte_size} bytes; maximum is {MAX_BYTES}")
 
@@ -93,8 +181,13 @@ def main() -> int:
     parser.add_argument("--config", type=Path, required=True)
     parser.add_argument("--theme", help="palette override used when generating the SVG")
     parser.add_argument("--id-prefix", help="unique prefix used when generating the SVG")
+    parser.add_argument(
+        "--slot",
+        choices=sorted(SLOTS),
+        help="hold the canvas to the size the cover is rendered into (card = 750x1000)",
+    )
     args = parser.parse_args()
-    errors = validate(args.svg, args.config, args.theme, args.id_prefix)
+    errors = validate(args.svg, args.config, args.theme, args.id_prefix, args.slot)
     if errors:
         for error in errors:
             print(f"FAIL: {error}", file=sys.stderr)
