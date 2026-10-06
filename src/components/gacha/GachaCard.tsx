@@ -159,15 +159,19 @@ export const GachaCard = memo(function GachaCard({ pull, preview = false, linkAn
       <div className={`overflow-hidden ${isGalaxy || hasAurora ? "bg-panel" : ""}`}>
         {side === "back" ? (
           <div
-            className={`relative flex aspect-[3/4] items-center justify-center overflow-hidden p-5 bg-[radial-gradient(circle_at_30%_20%,rgba(56,232,218,.3),transparent_35%),linear-gradient(145deg,#101d30,#080c12_55%,#172f48)]`}
+            className={`relative flex aspect-[3/4] items-center justify-center overflow-hidden bg-[radial-gradient(circle_at_30%_20%,rgba(56,232,218,.3),transparent_35%),linear-gradient(145deg,#101d30,#080c12_55%,#172f48)]`}
             role="img"
             aria-label="Verso personalizado da carta"
           >
             {backKey ? (
+              // Mesmo `object-cover` e mesma escala da arte da frente: os dois
+              // lados desenham no slot 3/4 e nao ha overscan entre eles, entao
+              // o verso nao "pula" no giro. Fora do 3/4 o cover recorta em vez
+              // de esticar; o gradiente do container so aparece se a capa nao
+              // cobrir o canvas inteiro.
               <CosmeticSvg
                 cosmeticKey={backKey}
-                fit="cover"
-                className="absolute inset-0 h-full w-full object-fill"
+                className="absolute inset-0 h-full w-full object-cover"
               />
             ) : (
               <>
