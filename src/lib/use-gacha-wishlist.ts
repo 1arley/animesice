@@ -137,7 +137,10 @@ export function useGachaWishlist(userId?: string) {
     ready,
     data,
     loading,
-    error: failedUserId === userId,
+    error:
+      failedUserId === userId
+        ? "Não foi possível carregar a wishlist. Tente novamente."
+        : "",
     retry: () => setRetryCount((count) => count + 1),
   };
 }

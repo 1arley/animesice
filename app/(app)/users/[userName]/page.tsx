@@ -194,11 +194,21 @@ export default function PublicProfilePage({
     };
   }, [params, router]);
 
-  // ?tab= legado + rolagem suave ao trocar de aba.
+  // ?tab= legado + restauração da aba ao navegar pelo histórico.
   useEffect(() => {
-    const t = new URLSearchParams(window.location.search).get("tab");
-    if (t && TAB_ALIASES[t]) setActiveTab(TAB_ALIASES[t]);
-  }, []);
+    const syncTabFromUrl = () => {
+      const tab = new URLSearchParams(window.location.search).get("tab");
+      if (tab && Object.prototype.hasOwnProperty.call(TAB_ALIASES, tab)) {
+        setActiveTab(TAB_ALIASES[tab]);
+      } else if (activeTab === "wishlist") {
+        setActiveTab("overview");
+      }
+    };
+
+    syncTabFromUrl();
+    window.addEventListener("popstate", syncTabFromUrl);
+    return () => window.removeEventListener("popstate", syncTabFromUrl);
+  }, [activeTab]);
 
   useEffect(() => {
     if (activeTab === "overview") return;
@@ -403,6 +413,25 @@ export default function PublicProfilePage({
   }
 
   function handleNavigate(tab: ProfileTab) {
+    if (tab === "wishlist" && activeTab !== "wishlist") {
+      const url = new URL(window.location.href);
+      url.searchParams.set("tab", "wishlist");
+      window.history.pushState(
+        window.history.state,
+        "",
+        `${url.pathname}${url.search}${url.hash}`,
+      );
+    } else if (activeTab === "wishlist" && tab !== "wishlist") {
+      const url = new URL(window.location.href);
+      url.searchParams.delete("tab");
+      url.searchParams.delete("cardsPage");
+      url.searchParams.delete("setsPage");
+      window.history.replaceState(
+        window.history.state,
+        "",
+        `${url.pathname}${url.search}${url.hash}`,
+      );
+    }
     setActiveTab(tab);
     ensureTab(tab);
   }
