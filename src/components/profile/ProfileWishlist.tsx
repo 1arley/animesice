@@ -6,8 +6,6 @@ import { useGachaWishlist } from "@/lib/use-gacha-wishlist";
 
 export function ProfileWishlist({ userId }: { userId: string }) {
   const {
-    cardsPage,
-    setsPage,
     setCardsPage,
     setSetsPage,
     data: wishlist,

@@ -1872,7 +1872,7 @@ export const api = {
     const params = new URLSearchParams();
     if (userId) params.set("userId", userId);
     for (const [key, value] of Object.entries(query)) {
-      if (value !== undefined) params.set(key, String(value));
+      if (value !== undefined && value !== null) params.set(key, String(value));
     }
     return request<GachaWishlistResponse>(`/gacha/wishlist?${params}`, {
       signal,

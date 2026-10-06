@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { api } from "@/lib/api";
 import type { GachaWishlistResponse } from "@/types";
 
@@ -11,16 +12,18 @@ type WishlistPages = {
   setsPage: number;
 };
 
-function readPage(params: URLSearchParams, key: keyof WishlistPages): number {
+function readPage(
+  params: Pick<URLSearchParams, "get">,
+  key: keyof WishlistPages,
+): number {
   const page = Number(params.get(key) ?? 1);
   return Number.isInteger(page) && page > 0 && page <= 100000 ? page : 1;
 }
 
 export function useGachaWishlist(userId?: string) {
-  const [pages, setPages] = useState<WishlistPages>({
-    cardsPage: 1,
-    setsPage: 1,
-  });
+  const searchParams = useSearchParams();
+  const cardsPage = readPage(searchParams, "cardsPage");
+  const setsPage = readPage(searchParams, "setsPage");
   const [ready, setReady] = useState(false);
   const [loaded, setLoaded] = useState<{
     userId: string;
@@ -32,18 +35,7 @@ export function useGachaWishlist(userId?: string) {
   const data = loaded && loaded.userId === userId ? loaded.data : null;
 
   useEffect(() => {
-    const syncFromUrl = () => {
-      const params = new URLSearchParams(window.location.search);
-      setPages({
-        cardsPage: readPage(params, "cardsPage"),
-        setsPage: readPage(params, "setsPage"),
-      });
-    };
-
-    syncFromUrl();
     setReady(true);
-    window.addEventListener("popstate", syncFromUrl);
-    return () => window.removeEventListener("popstate", syncFromUrl);
   }, []);
 
   const setPage = useCallback(
@@ -55,10 +47,8 @@ export function useGachaWishlist(userId?: string) {
       else url.searchParams.set(key, String(nextPage));
 
       const href = `${url.pathname}${url.search}${url.hash}`;
-      if (replace) window.history.replaceState(window.history.state, "", href);
-      else window.history.pushState(window.history.state, "", href);
-
-      setPages((current) => ({ ...current, [key]: nextPage }));
+      if (replace) window.history.replaceState(null, "", href);
+      else window.history.pushState(null, "", href);
     },
     [],
   );
@@ -78,8 +68,9 @@ export function useGachaWishlist(userId?: string) {
       return;
     }
     if (
-      data?.meta.cardsPage === pages.cardsPage &&
-      data.meta.setsPage === pages.setsPage
+      data &&
+      data.meta.cardsPage === cardsPage &&
+      data.meta.setsPage === setsPage
     ) {
       setLoading(false);
       return;
@@ -94,17 +85,17 @@ export function useGachaWishlist(userId?: string) {
         userId,
         {
           limit: GACHA_WISHLIST_PAGE_SIZE,
-          cardsPage: pages.cardsPage,
-          setsPage: pages.setsPage,
+          cardsPage,
+          setsPage,
         },
         controller.signal,
       )
       .then((result) => {
         if (cancelled) return;
         setLoaded({ userId, data: result });
-        if (result.meta.cardsPage !== pages.cardsPage)
+        if (result.meta.cardsPage !== cardsPage)
           setCardsPage(result.meta.cardsPage, true);
-        if (result.meta.setsPage !== pages.setsPage)
+        if (result.meta.setsPage !== setsPage)
           setSetsPage(result.meta.setsPage, true);
       })
       .catch(() => {
@@ -121,8 +112,8 @@ export function useGachaWishlist(userId?: string) {
   }, [
     userId,
     ready,
-    pages.cardsPage,
-    pages.setsPage,
+    cardsPage,
+    setsPage,
     setCardsPage,
     setSetsPage,
     retryCount,
@@ -130,8 +121,8 @@ export function useGachaWishlist(userId?: string) {
   ]);
 
   return {
-    cardsPage: pages.cardsPage,
-    setsPage: pages.setsPage,
+    cardsPage,
+    setsPage,
     setCardsPage,
     setSetsPage,
     ready,

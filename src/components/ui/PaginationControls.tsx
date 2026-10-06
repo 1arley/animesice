@@ -22,7 +22,9 @@ function pageWindow(page: number, totalPages: number): (number | "gap")[] {
   const result: (number | "gap")[] = [];
   let previous = 0;
   for (const value of sorted) {
-    if (previous && value - previous > 1) result.push("gap");
+    if (previous && value - previous > 1) {
+      result.push(value - previous === 2 ? previous + 1 : "gap");
+    }
     result.push(value);
     previous = value;
   }
