@@ -60,10 +60,22 @@ async function mockProfileAndWishlist(
       });
       return;
     }
+    const query = new URL(route.request().url()).searchParams;
     await route.fulfill({
       status: 200,
       contentType: "application/json",
-      body: JSON.stringify(WISHLIST),
+      body: JSON.stringify({
+        ...WISHLIST,
+        meta: {
+          ...WISHLIST.meta,
+          cards: 80,
+          sets: 80,
+          cardsPage: Number(query.get("cardsPage") ?? 1),
+          setsPage: Number(query.get("setsPage") ?? 1),
+          cardsTotalPages: 8,
+          setsTotalPages: 8,
+        },
+      }),
     });
   });
   return { wishlistRequests };
@@ -122,6 +134,66 @@ test.describe("Perfil público / wishlist na URL", () => {
       ),
     ).toBe(true);
   });
+
+  test(
+    "histórico restaura aba, páginas e mostra página isolada na janela",
+    async ({ page }) => {
+      await blockAds(page);
+      await mockGeneric(page);
+      await mockProfileAndWishlist(page);
+
+      await page.goto("/usuarios/ana?tab=ratings");
+      await expect(page.getByText("Ana Teste").first()).toBeVisible();
+      await clickCentered(
+        page.getByRole("button", { name: "Wishlist", exact: true }),
+      );
+
+      const cardsNav = page.getByRole("navigation", {
+        name: "Paginação das cartas desejadas",
+      });
+      const setsNav = page.getByRole("navigation", {
+        name: "Paginação dos conjuntos desejados",
+      });
+      for (const pageNumber of [2, 3, 4]) {
+        const button = cardsNav.getByRole("button", {
+          name: `Página ${pageNumber}`,
+        });
+        await expect(button).toBeEnabled();
+        await clickCentered(button);
+        await expect(page).toHaveURL(new RegExp(`cardsPage=${pageNumber}`));
+        await expect(button).toHaveAttribute("aria-current", "page");
+      }
+      await expect(
+        cardsNav.getByRole("button", { name: "Página 2" }),
+      ).toBeVisible();
+
+      for (const pageNumber of [2, 3, 4]) {
+        const button = setsNav.getByRole("button", {
+          name: `Página ${pageNumber}`,
+        });
+        await expect(button).toBeEnabled();
+        await clickCentered(button);
+        await expect(page).toHaveURL(new RegExp(`setsPage=${pageNumber}`));
+        await expect(button).toHaveAttribute("aria-current", "page");
+      }
+
+      await clickCentered(
+        page.getByRole("button", { name: "Coleção", exact: true }),
+      );
+      await expect(page).not.toHaveURL(/[?&](tab|cardsPage|setsPage)=/);
+      await page.goBack();
+      await expect(page).toHaveURL(/tab=wishlist.*cardsPage=4.*setsPage=4/);
+      await expect(
+        page.getByRole("button", { name: "Wishlist", exact: true }),
+      ).toHaveAttribute("aria-current", "page");
+      await expect(
+        cardsNav.getByRole("button", { name: "Página 4" }),
+      ).toHaveAttribute("aria-current", "page");
+      await expect(
+        setsNav.getByRole("button", { name: "Página 4" }),
+      ).toHaveAttribute("aria-current", "page");
+    },
+  );
 
   test("falha ao carregar a wishlist mostra o alerta e some com o skeleton", async ({
     page,

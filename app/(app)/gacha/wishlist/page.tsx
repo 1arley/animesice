@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import Image from "next/image";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
@@ -11,13 +11,25 @@ import { PaginationControls } from "@/components/ui/PaginationControls";
 import { useGachaWishlist } from "@/lib/use-gacha-wishlist";
 
 export default function GachaWishlistPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="mx-auto max-w-shelf px-4 py-12 text-mist" role="status">
+          Carregando...
+        </div>
+      }
+    >
+      <GachaWishlistContent />
+    </Suspense>
+  );
+}
+
+function GachaWishlistContent() {
   const { user, loading: authLoading } = useAuth();
   const [error, setError] = useState("");
   const [publicList, setPublicList] = useState(true);
   const [savingPrivacy, setSavingPrivacy] = useState(false);
   const {
-    cardsPage,
-    setsPage,
     setCardsPage,
     setSetsPage,
     data,

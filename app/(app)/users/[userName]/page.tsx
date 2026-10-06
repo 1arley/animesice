@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { api, ApiError } from "@/lib/api";
 import type {
   GachaFeatured,
@@ -49,6 +49,7 @@ export default function PublicProfilePage({
   params: Promise<{ userName: string }>;
 }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [profile, setProfile] = useState<PublicUserProfile | null>(null);
   const [error, setError] = useState(false);
   const [activeTab, setActiveTab] = useState<ProfileTab>("overview");
@@ -194,25 +195,21 @@ export default function PublicProfilePage({
     };
   }, [params, router]);
 
-  // Invariante da rota: a URL é escrita só pela intenção do usuário
-  // (handleNavigate) e lida só no mount e no popstate. Ler a URL em cada
-  // mudança de aba faria um ?tab= antigo (link de /config, alias legado)
-  // sobrescrever o clique na tab e deixar a navegação sem resposta.
-  // ?tab= legado + restauração da aba ao navegar pelo histórico.
+  // Os parâmetros do Next sincronizam o histórico entre a aba e a paginação.
+  // Cliques atualizam activeTab diretamente; ignoramos essa mesma URL na
+  // sincronização para ?tab= legado não sobrescrever a aba escolhida.
+  const lastHandledSearch = useRef<string | null>(null);
   useEffect(() => {
-    const syncTabFromUrl = () => {
-      const tab = new URLSearchParams(window.location.search).get("tab");
-      setActiveTab(
-        tab && Object.prototype.hasOwnProperty.call(TAB_ALIASES, tab)
-          ? TAB_ALIASES[tab]
-          : "overview",
-      );
-    };
-
-    syncTabFromUrl();
-    window.addEventListener("popstate", syncTabFromUrl);
-    return () => window.removeEventListener("popstate", syncTabFromUrl);
-  }, []);
+    const query = searchParams.toString();
+    if (lastHandledSearch.current === query) return;
+    lastHandledSearch.current = query;
+    const tab = new URLSearchParams(query).get("tab");
+    setActiveTab(
+      tab && Object.prototype.hasOwnProperty.call(TAB_ALIASES, tab)
+        ? TAB_ALIASES[tab]
+        : "overview",
+    );
+  }, [searchParams]);
 
   // A aba ativa precisa de dados, venha de clique, de popstate ou da URL no
   // mount — um ?tab= compartilhado abriria vazio sem isto. A wishlist é a
@@ -445,10 +442,11 @@ export default function PublicProfilePage({
     }
     const href = `${url.pathname}${url.search}${url.hash}`;
     const current = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+    lastHandledSearch.current = url.searchParams.toString();
     // Clicar na aba já ativa não gera entrada nova: um Back que só repete a
     // mesma URL parece quebrado.
     if (href !== current) {
-      window.history.pushState(window.history.state, "", href);
+      window.history.pushState(null, "", href);
     }
     // O carregamento sob demanda sai do efeito abaixo, que dispara no clique,
     // no popstate e na restauração pela URL. Só o re-click na aba ativa
