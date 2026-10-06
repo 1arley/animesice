@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api, ApiError } from "@/lib/api";
 import type {
@@ -194,21 +194,41 @@ export default function PublicProfilePage({
     };
   }, [params, router]);
 
+  // Invariante da rota: a URL é escrita só pela intenção do usuário
+  // (handleNavigate) e lida só no mount e no popstate. Ler a URL em cada
+  // mudança de aba faria um ?tab= antigo (link de /config, alias legado)
+  // sobrescrever o clique na tab e deixar a navegação sem resposta.
   // ?tab= legado + restauração da aba ao navegar pelo histórico.
   useEffect(() => {
     const syncTabFromUrl = () => {
       const tab = new URLSearchParams(window.location.search).get("tab");
-      if (tab && Object.prototype.hasOwnProperty.call(TAB_ALIASES, tab)) {
-        setActiveTab(TAB_ALIASES[tab]);
-      } else if (activeTab === "wishlist") {
-        setActiveTab("overview");
-      }
+      setActiveTab(
+        tab && Object.prototype.hasOwnProperty.call(TAB_ALIASES, tab)
+          ? TAB_ALIASES[tab]
+          : "overview",
+      );
     };
 
     syncTabFromUrl();
     window.addEventListener("popstate", syncTabFromUrl);
     return () => window.removeEventListener("popstate", syncTabFromUrl);
-  }, [activeTab]);
+  }, []);
+
+  // A aba ativa precisa de dados, venha de clique, de popstate ou da URL no
+  // mount — um ?tab= compartilhado abriria vazio sem isto. A wishlist é a
+  // exceção: carrega no useGachaWishlist ao montar o ProfileWishlist, então
+  // aqui ensureTab("wishlist") só alterna o tabLoading. ensureTab é recriado
+  // a cada render, então a versão corrente fica num ref e o efeito não é
+  // reagendado; os guards internos dele (lista vazia) evitam refetch.
+  const ensureTabRef = useRef(ensureTab);
+  useEffect(() => {
+    ensureTabRef.current = ensureTab;
+  });
+
+  useEffect(() => {
+    if (!profile || activeTab === "overview") return;
+    void ensureTabRef.current(activeTab);
+  }, [profile, activeTab]);
 
   useEffect(() => {
     if (activeTab === "overview") return;
@@ -412,28 +432,30 @@ export default function PublicProfilePage({
     }
   }
 
+  // Só a wishlist é profunda e paginada, então é a única que viaja na URL.
+  // Qualquer outra aba limpa tab/cardsPage/setsPage: um ?tab= remanescente
+  // voltaria a activá-la no próximo popstate.
   function handleNavigate(tab: ProfileTab) {
-    if (tab === "wishlist" && activeTab !== "wishlist") {
-      const url = new URL(window.location.href);
-      url.searchParams.set("tab", "wishlist");
-      window.history.pushState(
-        window.history.state,
-        "",
-        `${url.pathname}${url.search}${url.hash}`,
-      );
-    } else if (activeTab === "wishlist" && tab !== "wishlist") {
-      const url = new URL(window.location.href);
+    const url = new URL(window.location.href);
+    if (tab === "wishlist") url.searchParams.set("tab", "wishlist");
+    else {
       url.searchParams.delete("tab");
       url.searchParams.delete("cardsPage");
       url.searchParams.delete("setsPage");
-      window.history.replaceState(
-        window.history.state,
-        "",
-        `${url.pathname}${url.search}${url.hash}`,
-      );
     }
+    const href = `${url.pathname}${url.search}${url.hash}`;
+    const current = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+    // Clicar na aba já ativa não gera entrada nova: um Back que só repete a
+    // mesma URL parece quebrado.
+    if (href !== current) {
+      window.history.pushState(window.history.state, "", href);
+    }
+    // O carregamento sob demanda sai do efeito abaixo, que dispara no clique,
+    // no popstate e na restauração pela URL. Só o re-click na aba ativa
+    // depende daqui: setActiveTab não muda o estado e o efeito não roda, mas
+    // as abas engolim falha em silêncio e precisam de uma segunda tentativa.
+    if (tab === activeTab) void ensureTab(tab);
     setActiveTab(tab);
-    ensureTab(tab);
   }
 
   return (
