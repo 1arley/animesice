@@ -16,13 +16,13 @@ function revealSpeed(idx: number): number {
   return idx >= 4 ? 0.85 : idx === 3 ? 1 : 1.8;
 }
 function ringCount(idx: number): number {
-  return idx >= 5 ? 3 : idx === 4 ? 2 : idx >= 3 ? 1 : 0;
+  return idx >= 5 ? 3 : idx === 4 ? 2 : 1;
 }
 function particleCount(idx: number): number {
-  return idx >= 5 ? 24 : idx === 4 ? 12 : idx >= 3 ? 8 : 0;
+  return idx >= 5 ? 24 : idx === 4 ? 12 : idx >= 3 ? 8 : 6;
 }
 function shakeAmp(idx: number): number {
-  return idx >= 5 ? 5 : idx === 4 ? 3 : 0;
+  return idx >= 5 ? 7 : idx === 4 ? 4 : 2;
 }
 
 export function RollStage({ pull, reduceMotion, onClose, preview = false }: {
@@ -79,14 +79,18 @@ export function RollStage({ pull, reduceMotion, onClose, preview = false }: {
     const buildFlip = (idx: number) => {
       reveal?.kill();
       const rare = idx >= 4;
-      const frontAt = rare ? 0.88 : 0.6;
+      const frontAt = rare ? 1.35 : 1.15;
       const settledAt = frontAt + 0.5;
+      const rarityCallout = idx >= 6 ? "GALACTICA!" : idx >= 5 ? "MÍTICA!" : idx >= 4 ? "LENDÁRIA!" : idx === 3 ? "ÉPICA!" : "Sua carta";
       reveal = gsap.timeline();
       reveal.to(select("[data-flip]"), {
-        rotationY: 90, scale: rare ? 0.88 : 0.94,
-        duration: rare ? 0.42 : 0.3, ease: "power2.in",
+        rotationY: 1260, scale: rare ? 0.88 : 0.94,
+        duration: rare ? 1.25 : 1.05, ease: "power3.inOut",
       }, 0.3)
-        .to(select("[data-flip]"), { rotationY: 180, duration: 0.42, ease: "power3.out" }, frontAt)
+        .fromTo(select("[data-flip]"), { rotationX: -12, z: -48 }, {
+          rotationX: 0, z: 0, duration: rare ? 1.1 : 0.9,
+          ease: "power2.out", immediateRender: false,
+        }, 0.3)
         .to(select("[data-flip]"), { scale: 1, duration: 0.5, ease: "back.out(1.4)" }, frontAt)
         .to(select("[data-crystal]"), { scale: 0, opacity: 0, duration: 0.25, ease: "back.in(2)" }, 0)
         .fromTo(select("[data-ring]"), { scale: 0.4, opacity: 0.8 }, {
@@ -97,16 +101,32 @@ export function RollStage({ pull, reduceMotion, onClose, preview = false }: {
           y: (i) => Math.sin(i * Math.PI * 2 / PARTICLE_SLOTS) * 230,
           opacity: 0, duration: 0.65, immediateRender: false, ease: "power2.out",
         }, frontAt)
-        .fromTo(select("[data-flash]"), { opacity: 0.4 }, {
+        .fromTo(select("[data-flash]"), { opacity: rare ? 0.8 : 0.55 }, {
           opacity: 0, duration: 0.4, immediateRender: false,
         }, frontAt)
-        .to(select("[data-stage]"), { x: shakeAmp(idx), yoyo: true, repeat: 7, duration: 0.06 }, frontAt)
+        .fromTo(select("[data-screen-flash]"), { opacity: idx >= 5 ? 0.32 : rare ? 0.22 : 0.1 }, {
+          opacity: 0, duration: rare ? 0.8 : 0.55, immediateRender: false,
+        }, frontAt)
+        .to(select("[data-stage]"), {
+          x: shakeAmp(idx), rotation: 0.7, yoyo: true, repeat: 9,
+          duration: 0.045, ease: "none",
+        }, frontAt)
         .fromTo(select("[data-sweep]"), { x: "-150%" }, {
           x: "150%", duration: 0.6, ease: "power1.inOut", immediateRender: false,
         }, frontAt + 0.15)
         .fromTo(select("[data-badge]"), { scale: 0.9, opacity: 0 }, {
           scale: 1, opacity: 1, ease: "power2.out", duration: 0.25, immediateRender: false,
         }, settledAt)
+        .fromTo(select("[data-rarity-title]"), {
+          scale: idx >= 4 ? 0.55 : 0.8, y: 16, opacity: 0,
+        }, {
+          scale: 1, y: 0, opacity: 1, duration: idx >= 4 ? 0.65 : 0.35,
+          ease: idx >= 4 ? "elastic.out(1, 0.5)" : "back.out(1.6)", immediateRender: false,
+        }, settledAt)
+        .call(() => {
+          const title = select("[data-rarity-title]")[0];
+          if (title) title.textContent = idx >= 3 ? rarityCallout : "Sua carta";
+        }, [], frontAt)
         .call(() => setRevealed(true), [], settledAt);
       tl.add(reveal, "reveal");
     };
@@ -115,6 +135,8 @@ export function RollStage({ pull, reduceMotion, onClose, preview = false }: {
     tl.from("[data-stage]", { scale: 0.94, opacity: 0, duration: 0.15 }, 0)
       .to("[data-crystal]", { scale: 1.08, duration: 1.2, ease: "power2.in" }, 0.2)
       .fromTo("[data-glow]", { opacity: 0.25, scale: 1 }, { opacity: 0.8, scale: 1.25, duration: 1.3, ease: "power2.in", immediateRender: false }, 0.3)
+      .to("[data-stage]", { scale: 1.035, y: -8, yoyo: true, repeat: 3, duration: 0.12, ease: "power1.inOut" }, 0.72)
+      .to("[data-glow]", { opacity: 1, scale: 1.5, yoyo: true, repeat: 3, duration: 0.12, ease: "power1.inOut" }, 1.02)
       .call(() => setCanSkip(true), [], 0.6)
       .call(() => {
         waiting.current = true;
@@ -157,8 +179,11 @@ export function RollStage({ pull, reduceMotion, onClose, preview = false }: {
       onCancel={(event) => { event.preventDefault(); skipOrClose(); }}
       onClick={(event) => { if (event.target === event.currentTarget && ready) onClose(); }}>
       <div className="pointer-events-none flex min-h-full flex-col items-center justify-center gap-5">
-        <h2 id="roll-title" className="font-display text-display-lg" aria-live="polite">
-          {ready ? (preview ? "Prévia revelada" : "Sua carta") : "Invocando sua carta…"}
+        {!reduceMotion && <div data-screen-flash aria-hidden="true" className="pointer-events-none fixed inset-0 z-10 bg-[radial-gradient(ellipse_at_center,rgba(255,255,255,0.5),transparent_68%)] opacity-0" />}
+        <h2 id="roll-title" data-rarity-title className="font-display text-display-lg" aria-live="polite">
+          {ready
+            ? tierIndex >= 6 ? "GALACTICA!" : tierIndex >= 5 ? "MÍTICA!" : tierIndex >= 4 ? "LENDÁRIA!" : tierIndex >= 3 ? "ÉPICA!" : preview ? "Prévia revelada" : "Sua carta"
+            : "Invocando sua carta…"}
         </h2>
         <div data-stage className={`pointer-events-auto relative flex min-h-[min(90vw,26rem)] w-56 max-w-[65vw] items-center ${tierText || "text-ice"}`} style={{ perspective: 1000 }}>
           {!reduceMotion && <>
