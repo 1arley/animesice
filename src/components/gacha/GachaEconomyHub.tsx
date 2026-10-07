@@ -16,6 +16,10 @@ import { useToast } from "@/components/common/ToastProvider";
 import { GachaTradeHub } from "@/components/gacha/GachaTradeHub";
 import { GachaMarketOfferHub } from "@/components/gacha/GachaMarketOfferHub";
 import { GachaCosmeticShop } from "@/components/gacha/GachaCosmeticShop";
+import {
+  GachaOfferGridSkeleton,
+  GachaPanelGridSkeleton,
+} from "@/components/gacha/GachaPageSkeleton";
 import type {
   GachaBoxTier,
   GachaEconomyInventory,
@@ -458,7 +462,7 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
 
   return (
     <main id="body-content" className="mx-auto max-w-shelf px-4 pb-20 pt-8">
-      <header className="border-b border-hairline pb-7">
+      <header className={`relative overflow-hidden border border-hairline bg-panel px-5 py-6 sm:px-8 sm:py-8 ${mode === "shop" ? "border-ice/20 bg-[radial-gradient(ellipse_at_top_right,rgba(56,232,218,0.12),transparent_55%)]" : "border-b"}`}>
         <div className="flex flex-wrap items-end justify-between gap-5">
           <div className="max-w-2xl">
             <p className="shelf-label">
@@ -473,12 +477,12 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
                 : "Confira a seleção diária, abra caixas e encontre capas e cosméticos."}
             </p>
           </div>
-          <div className="w-full border border-hairline bg-panel px-5 py-4 sm:w-auto sm:min-w-56">
-            <p className="text-caption text-mist">Saldo em Cristais</p>
-            <p className="font-display text-3xl tabular-nums text-ice">
+          <div className="w-full border border-ice/20 bg-ink/70 px-5 py-4 sm:w-auto sm:min-w-56">
+            <p className="text-caption uppercase tracking-[0.16em] text-mist">Saldo disponível</p>
+            <p className="mt-1 font-display text-3xl tabular-nums text-ice">
               {inventory ? inventory.available.toLocaleString("pt-BR") : "—"}
             </p>
-            <p className="text-caption text-mist">para anúncios e compras</p>
+            <p className="text-caption text-mist">Cristais para compras</p>
             {inventory && inventory.reserved > 0 && (
               <p className="text-caption tabular-nums text-mist">
                 {inventory.reserved.toLocaleString("pt-BR")} reservado
@@ -497,7 +501,7 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
       </header>
       <nav
         aria-label={mode === "market" ? "Seções do mercado" : "Seções da loja"}
-        className="mt-4 flex flex-wrap gap-2 border-b border-hairline pb-4"
+        className="sticky top-0 z-10 -mx-4 mt-4 flex flex-wrap gap-2 border-b border-hairline bg-ink/95 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-ink/80"
       >
         {mode === "market" ? (
           <>
@@ -610,20 +614,26 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
       )}
 
       {loading ? (
-        <div
-          className="mt-8 space-y-5"
-          aria-busy="true"
-          aria-label={
-            mode === "market" ? "Carregando mercado" : "Carregando loja"
-          }
-        >
-          <div className="skeleton h-28" />
-          <div className="grid gap-4 md:grid-cols-3">
-            <div className="skeleton h-56" />
-            <div className="skeleton h-56" />
-            <div className="skeleton h-56" />
-          </div>
-        </div>
+        mode === "market" ? (
+          <GachaPanelGridSkeleton
+            count={6}
+            label="Carregando mercado"
+            className="mt-8"
+          />
+        ) : (
+          <>
+            <GachaOfferGridSkeleton
+              count={3}
+              label="Carregando ofertas da loja"
+              className="mt-8"
+            />
+            <GachaPanelGridSkeleton
+              count={3}
+              label="Carregando caixas"
+              className="mt-8"
+            />
+          </>
+        )
       ) : (
         <>
           {mode === "shop" && user && (
@@ -642,7 +652,7 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
           )}
 
           {mode === "shop" && user && inventory && odds && (
-            <section aria-labelledby="boxes-title" className="mt-9">
+            <section aria-labelledby="boxes-title" className="mt-9 scroll-mt-24">
               <div className="flex flex-wrap items-end justify-between gap-3">
                 <div>
                   <h2
@@ -677,7 +687,7 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
                   return (
                     <article
                       key={tier}
-                      className={`market-box border border-hairline bg-panel p-5 ${busy === `open-${tier}` ? "market-box-opening" : ""}`}
+                      className={`market-box border ${tier === "PREMIUM" ? "border-amber-300/30" : tier === "RARE" ? "border-ice/25" : "border-hairline"} bg-panel p-5 ${busy === `open-${tier}` ? "market-box-opening" : ""}`}
                     >
                       <svg
                         viewBox="0 0 120 96"
@@ -709,6 +719,11 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
                       <p className="mt-5 font-display text-2xl tabular-nums text-ice">
                         {odds.boxPrices[tier].toLocaleString("pt-BR")} cristais
                       </p>
+                      {count === 0 && inventory.available < odds.boxPrices[tier] && (
+                        <p className="mt-1 text-caption text-mist">
+                          Faltam {(odds.boxPrices[tier] - inventory.available).toLocaleString("pt-BR")} cristais
+                        </p>
+                      )}
                       <p className="mt-2 min-h-10 text-caption text-mist">
                         {count === 0
                           ? "Compre uma caixa para começar."
@@ -782,7 +797,7 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
           {mode === "shop" && user && (
             <section
               aria-labelledby="retention-title"
-              className="mt-10 border-y border-hairline py-5"
+              className="mt-10 border border-hairline bg-panel p-5"
             >
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <div>

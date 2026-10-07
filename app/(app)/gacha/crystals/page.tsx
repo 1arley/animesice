@@ -6,6 +6,10 @@ import { api, ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { SectionLabel } from "@/components/common/SectionLabel";
+import {
+  GachaPanelGridSkeleton,
+  GachaRowsSkeleton,
+} from "@/components/gacha/GachaPageSkeleton";
 import { useToast } from "@/components/common/ToastProvider";
 import type { CrystalEvent, CrystalEventType } from "@/types";
 
@@ -144,7 +148,11 @@ export default function GachaCrystalsPage() {
         aria-label="Carregando carteira"
         aria-busy="true"
       >
-        <div className="skeleton h-48" />
+        <GachaPanelGridSkeleton
+          count={2}
+          label="Carregando carteira"
+          className="mt-0 lg:grid-cols-2"
+        />
       </main>
     );
 
@@ -339,7 +347,11 @@ export default function GachaCrystalsPage() {
       </div>
 
       {loading ? (
-        <div className="skeleton mt-3 h-32" aria-busy="true" />
+        <GachaRowsSkeleton
+          count={5}
+          label="Carregando extrato de cristais"
+          className="mt-3"
+        />
       ) : events.length === 0 ? (
         <EmptyState
           text="Nenhum Crystal ainda. Guarde uma carta no gacha para ganhar."

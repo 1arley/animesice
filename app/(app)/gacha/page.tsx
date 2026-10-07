@@ -520,9 +520,18 @@ function GachaPageContent() {
           (loading ? (
             <div className="relative px-6 pb-10 text-center">
               <div
-                className="skeleton mx-auto h-24 max-w-xl"
+                role="status"
+                aria-label="Carregando status do gacha"
                 aria-busy="true"
-              />
+                className="mx-auto grid max-w-3xl grid-cols-2 divide-x divide-hairline border border-hairline bg-ink/60 text-left sm:grid-cols-4"
+              >
+                {Array.from({ length: 4 }, (_, index) => (
+                  <div key={index} className="space-y-2 px-3 py-4 sm:px-4">
+                    <div aria-hidden="true" className="skeleton h-3 w-12" />
+                    <div aria-hidden="true" className="skeleton h-4 w-full" />
+                  </div>
+                ))}
+              </div>
             </div>
           ) : statusError ? (
             <div className="relative px-6 pb-10 text-center">

@@ -10,6 +10,7 @@ import { api, ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
 import { safeImageSrc } from "@/lib/url";
+import { GachaOfferGridSkeleton } from "@/components/gacha/GachaPageSkeleton";
 import type { GachaEconomyOffer } from "@/types";
 
 const SKIN_RARITY: Record<string, string> = {
@@ -280,11 +281,11 @@ export function NightMarket() {
         )}
 
         {loading ? (
-          <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3" aria-busy="true" aria-label="Carregando ofertas">
-            {Array.from({ length: 3 }, (_, index) => (
-              <div key={index} className="skeleton aspect-[3/4]" />
-            ))}
-          </div>
+          <GachaOfferGridSkeleton
+            count={3}
+            label="Carregando ofertas do Mercado Noturno"
+            className="mt-6 gap-5"
+          />
         ) : authLoading ? null : !user ? (
           <div className="mt-6 border border-hairline bg-panel p-6">
             <p className="text-body text-snow">Entre para ver sua seleção pessoal.</p>

@@ -24,8 +24,10 @@ playwright/.cache/
 media/
 __pycache__/
 
-# opencode skill artifacts (not project code)
-graphify-out/
+# opencode skill artifacts (not project code): keep only the shared graph artifacts
+graphify-out/*
+!graphify-out/graph.json
+!graphify-out/GRAPH_REPORT.md
 .claude/
 .codex/
 .impeccable/
@@ -34,3 +36,5 @@ graphify-out/
 .github/agents/
 .github/hooks/
 .github/skills/
+# Skills are restored from skills-lock.json with npm run skills:install
+/.agents/skills/*/

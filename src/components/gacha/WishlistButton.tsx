@@ -24,6 +24,10 @@ export function WishlistButton({
   const [wishlisted, setWishlisted] = useState(initialWishlisted);
   const [loading, setLoading] = useState(false);
 
+  // Bug #4 fix: if neither id is provided, render nothing — a silent no-op
+  // button gives no feedback and confuses users. We bail out early instead.
+  if (!cardId && !animeId) return null;
+
   if (!user) {
     return (
       <Link href="/login" className="btn-ghost px-3 py-2 text-caption">
@@ -32,8 +36,14 @@ export function WishlistButton({
     );
   }
 
+  // Bug #3 fix: the `disabled` prop should only block *adding* to the wishlist.
+  // Removal must always be possible so the user can clean up after obtaining a
+  // card. We achieve this by ignoring the `disabled` flag when the current
+  // state is `wishlisted=true` (i.e. a click would be a removal).
+  const effectivelyDisabled = disabled && !wishlisted;
+
   async function toggle() {
-    if (loading || disabled || (!cardId && !animeId)) return;
+    if (loading || effectivelyDisabled) return;
     const next = !wishlisted;
     setWishlisted(next);
     setLoading(true);
@@ -56,7 +66,7 @@ export function WishlistButton({
     <button
       type="button"
       onClick={() => void toggle()}
-      disabled={loading || disabled}
+      disabled={loading || effectivelyDisabled}
       aria-pressed={wishlisted}
       className={`${wishlisted ? "btn-ice" : "btn-ghost"} px-3 py-2 text-caption ${compact ? "" : "mt-3 w-full"}`}
     >

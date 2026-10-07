@@ -756,6 +756,12 @@
     }
   }
 
+  @media (prefers-reduced-motion: reduce) {
+    .skeleton::after {
+      display: none;
+    }
+  }
+
   /* Raio dourado dos cards GOLD: atravessa a carta e descansa ~2/3 do ciclo. */
   @keyframes gold-shine {
     0%,
