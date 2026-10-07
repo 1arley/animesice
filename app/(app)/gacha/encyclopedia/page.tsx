@@ -9,12 +9,115 @@ import { useAuth } from "@/lib/auth-context";
 import { safeImageSrc } from "@/lib/url";
 import { GACHA_TIERS, RARITY } from "@/components/gacha/GachaCard";
 import { WishlistButton } from "@/components/gacha/WishlistButton";
+import { Modal } from "@/components/common/Modal";
 import {
   GachaCardGridSkeleton,
   GachaPageSkeleton,
   GachaPanelGridSkeleton,
 } from "@/components/gacha/GachaPageSkeleton";
-import type { GachaEncyclopedia } from "@/types";
+import type { GachaEncyclopedia, GachaEncyclopediaOwner } from "@/types";
+
+function CardOwners({
+  cardId,
+  cardName,
+}: {
+  cardId: string;
+  cardName: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const [owners, setOwners] = useState<GachaEncyclopediaOwner[] | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  async function showOwners() {
+    setOpen(true);
+    if (owners || loading) return;
+    setLoading(true);
+    setError("");
+    try {
+      setOwners(await api.gachaEncyclopediaCardOwners(cardId));
+    } catch {
+      setError("Não foi possível carregar quem possui esta carta.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => void showOwners()}
+        className="btn-ghost mt-2 min-h-11 w-full px-3 text-body-sm"
+      >
+        Ver quem possui
+      </button>
+      <Modal
+        open={open}
+        onClose={() => setOpen(false)}
+        title={`Quem possui ${cardName}`}
+        footer={
+          <button
+            type="button"
+            onClick={() => setOpen(false)}
+            className="btn-ghost min-h-11 px-4"
+          >
+            Fechar
+          </button>
+        }
+      >
+        {loading ? (
+          <p role="status" className="text-body-sm text-mist">
+            Carregando colecionadores…
+          </p>
+        ) : error ? (
+          <div role="alert" className="text-body-sm text-signal">
+            <p>{error}</p>
+            <button
+              type="button"
+              onClick={() => {
+                setOwners(null);
+                void showOwners();
+              }}
+              className="btn-ghost mt-3 min-h-11 px-3"
+            >
+              Tentar novamente
+            </button>
+          </div>
+        ) : owners?.length ? (
+          <ul className="divide-y divide-hairline">
+            {owners.map((owner) => (
+              <li
+                key={owner.userName ?? owner.name}
+                className="flex min-h-14 items-center justify-between gap-3 py-3"
+              >
+                {owner.userName ? (
+                  <Link
+                    href={`/users/${encodeURIComponent(owner.userName)}`}
+                    className="min-h-11 min-w-0 flex-1 content-center break-words text-ice underline"
+                  >
+                    {owner.name?.trim() || `@${owner.userName}`}
+                  </Link>
+                ) : (
+                  <span className="min-w-0 flex-1 break-words text-snow">
+                    {owner.name?.trim() || "Colecionador"}
+                  </span>
+                )}
+                <span className="shrink-0 text-caption text-mist">
+                  {owner.copies} {owner.copies === 1 ? "cópia" : "cópias"}
+                </span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-body-sm text-mist">
+            Nenhum usuário possui esta carta no momento.
+          </p>
+        )}
+      </Modal>
+    </>
+  );
+}
 
 function Encyclopedia() {
   const params = useSearchParams();
@@ -284,7 +387,10 @@ function Encyclopedia() {
             className="mt-8"
           />
         ) : (
-          <GachaCardGridSkeleton label="Carregando enciclopédia" className="mt-8" />
+          <GachaCardGridSkeleton
+            label="Carregando enciclopédia"
+            className="mt-8"
+          />
         )
       ) : (
         <>
@@ -367,6 +473,9 @@ function Encyclopedia() {
                     <p className="mt-1 text-caption text-mist">
                       {card.animeTitle ?? "Sem anime"} · {card.rarity}
                     </p>
+                    {user && (
+                      <CardOwners cardId={card.id} cardName={card.name} />
+                    )}
                     <WishlistButton
                       cardId={card.id}
                       initialWishlisted={card.wishlisted}
@@ -423,9 +532,7 @@ function Encyclopedia() {
 
 export default function EncyclopediaPage() {
   return (
-    <Suspense
-      fallback={<GachaPageSkeleton kind="encyclopedia" />}
-    >
+    <Suspense fallback={<GachaPageSkeleton kind="encyclopedia" />}>
       <Encyclopedia />
     </Suspense>
   );

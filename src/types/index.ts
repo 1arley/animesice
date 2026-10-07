@@ -777,6 +777,7 @@ export interface GachaEconomyListingItem {
       id: string;
       name: string;
       image?: string | null;
+      imageHidden?: boolean;
       rarity: string;
       animeTitle?: string | null;
     };
@@ -849,6 +850,8 @@ export interface GachaEconomyOffer {
     name: string;
     image?: string | null;
     rarity?: string;
+    imageHidden?: boolean;
+    animeTitle?: string | null;
   } | null;
   skin?: {
     id: string;
@@ -946,6 +949,12 @@ export interface GachaEncyclopediaCard {
   owned: boolean;
   wishlisted: boolean;
   wishlistPriority: string | null;
+}
+
+export interface GachaEncyclopediaOwner {
+  name: string | null;
+  userName: string | null;
+  copies: number;
 }
 
 export interface GachaEncyclopediaSet {
@@ -1068,7 +1077,6 @@ export interface GachaEngagementPilotDashboard {
     sharedCards: number;
     pause: boolean;
   };
-  satisfaction: { measured: boolean };
 }
 
 export type GachaTradeStatus =

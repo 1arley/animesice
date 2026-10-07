@@ -55,6 +55,7 @@ import type {
   GachaEngagementPilotDashboard,
   GachaRankingEntry,
   GachaEncyclopedia,
+  GachaEncyclopediaOwner,
   GachaWishlistResponse,
   GachaWishlistQuery,
   GachaInterestedUser,
@@ -620,12 +621,7 @@ export const api = {
     return result;
   },
 
-  adminListAnimes: (
-    page = 1,
-    limit = 50,
-    search?: string,
-    counts = true,
-  ) =>
+  adminListAnimes: (page = 1, limit = 50, search?: string, counts = true) =>
     request<Paginated<Anime & { _count: { episodes: number } }>>(
       `/admin/animes?page=${page}&limit=${limit}${search ? `&search=${encodeURIComponent(search)}` : ""}${counts ? "" : "&counts=false"}`,
     ),
@@ -1638,7 +1634,9 @@ export const api = {
     }),
 
   gachaLoadout: () =>
-    request<{ loadout: GachaLoadout; cardBack: string | null }>(`/gacha/loadout`),
+    request<{ loadout: GachaLoadout; cardBack: string | null }>(
+      `/gacha/loadout`,
+    ),
 
   gachaSetLoadout: (slot: GachaLoadoutSlot, key: string | null) =>
     request<{ gachaLoadout: GachaLoadout }>(`/gacha/loadout`, {
@@ -1859,6 +1857,10 @@ export const api = {
 
   gachaEncyclopedia: (query: string, signal?: AbortSignal) =>
     request<GachaEncyclopedia>(`/gacha/encyclopedia?${query}`, { signal }),
+  gachaEncyclopediaCardOwners: (cardId: string) =>
+    request<GachaEncyclopediaOwner[]>(
+      `/gacha/encyclopedia/${encodeURIComponent(cardId)}/owners`,
+    ),
   gachaEncyclopediaSuggestions: (query: string, signal?: AbortSignal) =>
     request<string[]>(
       `/gacha/encyclopedia/suggestions?q=${encodeURIComponent(query)}`,
