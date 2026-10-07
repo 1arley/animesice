@@ -17,6 +17,10 @@ import { GachaTradeHub } from "@/components/gacha/GachaTradeHub";
 import { GachaMarketOfferHub } from "@/components/gacha/GachaMarketOfferHub";
 import { GachaCosmeticShop } from "@/components/gacha/GachaCosmeticShop";
 import {
+  CardPreview,
+  type GachaCardInspection,
+} from "@/components/gacha/CardPreview";
+import {
   GachaOfferGridSkeleton,
   GachaPanelGridSkeleton,
 } from "@/components/gacha/GachaPageSkeleton";
@@ -45,11 +49,48 @@ const BOX_FIELD: Record<
 };
 
 function itemName(listing: GachaEconomyListingItem): string {
+  if (listing.itemType === "CARD" && listing.item.card?.imageHidden)
+    return "Carta misteriosa";
   return (
     listing.item.name ??
     listing.item.card?.name ??
     (listing.itemType === "CARD" ? "Carta" : "Skin")
   );
+}
+
+function listingInspection(
+  listing: GachaEconomyListingItem,
+): GachaCardInspection {
+  return {
+    card: {
+      id: listing.item.card?.id ?? listing.item.cardId ?? listing.item.id,
+      name: itemName(listing),
+      image: listing.item.card?.image ?? listing.item.image ?? null,
+      imageHidden: listing.item.card?.imageHidden,
+      rarity: listing.item.rarity ?? listing.item.card?.rarity ?? "COMUM",
+      animeTitle:
+        listing.item.animeTitle ?? listing.item.card?.animeTitle ?? null,
+    },
+    price: listing.price,
+    foil: listing.item.foil,
+    condition: listing.item.condition,
+    edition: listing.item.edition,
+  };
+}
+
+function shopInspection(offer: GachaEconomyOffer): GachaCardInspection | null {
+  if (offer.itemType !== "CARD" || !offer.card) return null;
+  return {
+    card: {
+      id: offer.card.id,
+      name: offer.card.imageHidden ? "Carta misteriosa" : offer.card.name,
+      image: offer.card.image ?? null,
+      imageHidden: offer.card.imageHidden,
+      rarity: offer.card.rarity ?? "COMUM",
+      animeTitle: offer.card.animeTitle,
+    },
+    price: offer.price,
+  };
 }
 
 function timeLeft(expiresAt: string): string {
@@ -137,6 +178,8 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
     price: number;
     run: () => Promise<boolean>;
   } | null>(null);
+  const [cardInspection, setCardInspection] =
+    useState<GachaCardInspection | null>(null);
   const [resetCountdown, setResetCountdown] = useState(timeUntilReset);
 
   const refresh = useCallback(async () => {
@@ -462,7 +505,9 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
 
   return (
     <main id="body-content" className="mx-auto max-w-shelf px-4 pb-20 pt-8">
-      <header className={`relative overflow-hidden border border-hairline bg-panel px-5 py-6 sm:px-8 sm:py-8 ${mode === "shop" ? "border-ice/20 bg-[radial-gradient(ellipse_at_top_right,rgba(56,232,218,0.12),transparent_55%)]" : "border-b"}`}>
+      <header
+        className={`relative overflow-hidden border border-hairline bg-panel px-5 py-6 sm:px-8 sm:py-8 ${mode === "shop" ? "border-ice/20 bg-[radial-gradient(ellipse_at_top_right,rgba(56,232,218,0.12),transparent_55%)]" : "border-b"}`}
+      >
         <div className="flex flex-wrap items-end justify-between gap-5">
           <div className="max-w-2xl">
             <p className="shelf-label">
@@ -478,7 +523,9 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
             </p>
           </div>
           <div className="w-full border border-ice/20 bg-ink/70 px-5 py-4 sm:w-auto sm:min-w-56">
-            <p className="text-caption uppercase tracking-[0.16em] text-mist">Saldo disponível</p>
+            <p className="text-caption uppercase tracking-[0.16em] text-mist">
+              Saldo disponível
+            </p>
             <p className="mt-1 font-display text-3xl tabular-nums text-ice">
               {inventory ? inventory.available.toLocaleString("pt-BR") : "—"}
             </p>
@@ -647,12 +694,19 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
                 busy={busy !== null}
                 resetLabel={`Renova em ${resetCountdown} BRT`}
                 onBuy={buyOffer}
+                onInspectCard={(offer) => {
+                  const inspection = shopInspection(offer);
+                  if (inspection) setCardInspection(inspection);
+                }}
               />
             </>
           )}
 
           {mode === "shop" && user && inventory && odds && (
-            <section aria-labelledby="boxes-title" className="mt-9 scroll-mt-24">
+            <section
+              aria-labelledby="boxes-title"
+              className="mt-9 scroll-mt-24"
+            >
               <div className="flex flex-wrap items-end justify-between gap-3">
                 <div>
                   <h2
@@ -719,11 +773,16 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
                       <p className="mt-5 font-display text-2xl tabular-nums text-ice">
                         {odds.boxPrices[tier].toLocaleString("pt-BR")} cristais
                       </p>
-                      {count === 0 && inventory.available < odds.boxPrices[tier] && (
-                        <p className="mt-1 text-caption text-mist">
-                          Faltam {(odds.boxPrices[tier] - inventory.available).toLocaleString("pt-BR")} cristais
-                        </p>
-                      )}
+                      {count === 0 &&
+                        inventory.available < odds.boxPrices[tier] && (
+                          <p className="mt-1 text-caption text-mist">
+                            Faltam{" "}
+                            {(
+                              odds.boxPrices[tier] - inventory.available
+                            ).toLocaleString("pt-BR")}{" "}
+                            cristais
+                          </p>
+                        )}
                       <p className="mt-2 min-h-10 text-caption text-mist">
                         {count === 0
                           ? "Compre uma caixa para começar."
@@ -920,6 +979,10 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
                 setOfferCardIds([]);
               }}
               onHistory={(listing) => void showHistory(listing)}
+              onInspectCard={(listing) =>
+                listing.itemType === "CARD" &&
+                setCardInspection(listingInspection(listing))
+              }
             />
           )}
           {mode === "market" && (
@@ -959,6 +1022,10 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
                 setOfferCardIds([]);
               }}
               onHistory={(listing) => void showHistory(listing)}
+              onInspectCard={(listing) =>
+                listing.itemType === "CARD" &&
+                setCardInspection(listingInspection(listing))
+              }
             />
           )}
 
@@ -1502,6 +1569,12 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
           )}
         </>
       )}
+      {cardInspection && (
+        <CardPreview
+          inspection={cardInspection}
+          onClose={() => setCardInspection(null)}
+        />
+      )}
     </main>
   );
 }
@@ -1515,6 +1588,7 @@ function ShopOfferSection({
   busy,
   resetLabel,
   onBuy,
+  onInspectCard,
 }: {
   id: string;
   title: string;
@@ -1524,6 +1598,7 @@ function ShopOfferSection({
   busy: boolean;
   resetLabel?: string;
   onBuy: (offer: GachaEconomyOffer) => void;
+  onInspectCard: (offer: GachaEconomyOffer) => void;
 }) {
   return (
     <section aria-labelledby={id} className="mt-10">
@@ -1548,11 +1623,14 @@ function ShopOfferSection({
         <ul className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {offers.map((offer) => {
             const name =
-              offer.card?.name ??
+              (offer.card?.imageHidden
+                ? "Carta misteriosa"
+                : offer.card?.name) ??
               offer.skin?.name ??
               (offer.itemType === "KEY" ? "Chave" : "Caixa comum");
             const rarity = offer.skin?.rarity ?? offer.card?.rarity;
             const shortfall = Math.max(0, offer.price - available);
+            const inspection = shopInspection(offer);
             return (
               <li
                 key={offer.id}
@@ -1560,7 +1638,14 @@ function ShopOfferSection({
               >
                 <MarketArtwork
                   name={name}
-                  image={offer.card?.image ?? offer.skin?.imageUrl}
+                  image={
+                    offer.card?.imageHidden
+                      ? null
+                      : (offer.card?.image ?? offer.skin?.imageUrl)
+                  }
+                  onInspectCard={
+                    inspection ? () => onInspectCard(offer) : undefined
+                  }
                   details={[
                     offer.itemType === "SKIN"
                       ? "Skin"
@@ -1572,6 +1657,15 @@ function ShopOfferSection({
                     .filter(Boolean)
                     .join(" · ")}
                 />
+                {inspection && (
+                  <button
+                    type="button"
+                    onClick={() => onInspectCard(offer)}
+                    className="btn-ghost mt-2 min-h-11 w-full px-3"
+                  >
+                    Inspecionar carta
+                  </button>
+                )}
                 <p className="mt-4 text-caption text-ice">
                   {offer.itemType === "SKIN"
                     ? "Skin"
@@ -1640,6 +1734,7 @@ function MarketSection({
   onOrder,
   onOffer,
   onHistory,
+  onInspectCard,
 }: {
   title: string;
   listings: GachaEconomyListingItem[];
@@ -1654,6 +1749,7 @@ function MarketSection({
   onOrder: (listing: GachaEconomyListingItem) => void;
   onOffer: (listing: GachaEconomyListingItem) => void;
   onHistory: (listing: GachaEconomyListingItem) => void;
+  onInspectCard: (listing: GachaEconomyListingItem) => void;
 }) {
   const [query, setQuery] = useState("");
   const normalizedQuery = query.trim().toLocaleLowerCase("pt-BR");
@@ -1733,9 +1829,16 @@ function MarketSection({
                 <MarketArtwork
                   name={itemName(listing)}
                   image={
-                    listing.item.image ??
-                    listing.item.imageUrl ??
-                    listing.item.card?.image
+                    listing.item.card?.imageHidden
+                      ? null
+                      : (listing.item.image ??
+                        listing.item.imageUrl ??
+                        listing.item.card?.image)
+                  }
+                  onInspectCard={
+                    listing.itemType === "CARD"
+                      ? () => onInspectCard(listing)
+                      : undefined
                   }
                   details={[
                     listing.item.rarity ?? listing.item.card?.rarity,
@@ -1745,6 +1848,15 @@ function MarketSection({
                     .filter(Boolean)
                     .join(" · ")}
                 />
+                {listing.itemType === "CARD" && (
+                  <button
+                    type="button"
+                    onClick={() => onInspectCard(listing)}
+                    className="btn-ghost mt-2 min-h-11 w-full px-3"
+                  >
+                    Inspecionar carta
+                  </button>
+                )}
                 <div className="mt-4 flex flex-wrap items-start justify-between gap-3">
                   <div className="min-w-0">
                     <h3 className="break-words font-display text-lg text-snow">
@@ -1910,10 +2022,12 @@ function MarketArtwork({
   name,
   image,
   details,
+  onInspectCard,
 }: {
   name: string;
   image?: string | null;
   details: string;
+  onInspectCard?: () => void;
 }) {
   const [open, setOpen] = useState(false);
   const [zoom, setZoom] = useState(false);
@@ -1924,10 +2038,18 @@ function MarketArtwork({
       <button
         type="button"
         onClick={() => {
+          if (onInspectCard) {
+            onInspectCard();
+            return;
+          }
           setZoom(false);
           setOpen(true);
         }}
-        aria-label={`Ver detalhes de ${name}`}
+        aria-label={
+          onInspectCard
+            ? `Inspecionar carta ${name}`
+            : `Ver detalhes de ${name}`
+        }
         className="group block w-full text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ice"
       >
         <span className="flex h-64 items-center justify-center overflow-hidden bg-ink sm:h-72">
@@ -1946,7 +2068,7 @@ function MarketArtwork({
           )}
         </span>
         <span className="flex min-h-11 items-center justify-center border-b border-hairline text-body-sm text-ice group-hover:text-snow">
-          Ver arte e detalhes
+          {onInspectCard ? "Inspecionar carta" : "Ver arte e detalhes"}
         </span>
       </button>
       {open && (
