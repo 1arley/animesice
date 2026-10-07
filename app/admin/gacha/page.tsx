@@ -518,6 +518,9 @@ export default function AdminGachaPage() {
           <Link href="/admin/gacha/capas" className="admin-tab">
             Editar capas
           </Link>
+          <Link href="/admin/gacha/skins" className="admin-tab">
+            Skins
+          </Link>
         </div>
       </div>
       {error && (
