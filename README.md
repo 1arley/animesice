@@ -26,6 +26,7 @@ This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next
     - [Extra](#extra)
 - [Library Recommendations](#library-recommendations)
 - [VSCode Extensions](#vscode-extensions)
+- [Security](#security)
 - [License](#license)
 
 ## TechStack
@@ -263,6 +264,10 @@ To quickly and easily generate favicons for the app, go to [Favicon Generator](h
 
 - [Tailwind CSS IntelliSense](https://marketplace.visualstudio.com/items?itemName=bradlc.vscode-tailwindcss): IntelliSense for Tailwind CSS.
 - [React](https://marketplace.visualstudio.com/items?itemName=dsznajder.es7-react-js-snippets): React snippets for JSX and TSX.
+
+## Security
+
+Report vulnerabilities privately, see [SECURITY.md](SECURITY.md).
 
 ## License
 
