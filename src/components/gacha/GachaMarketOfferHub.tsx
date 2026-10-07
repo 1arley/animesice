@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { api, ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { useToast } from "@/components/common/ToastProvider";
+import { GachaRowsSkeleton } from "@/components/gacha/GachaPageSkeleton";
 import { EmptyState } from "@/components/ui/EmptyState";
 import type { GachaMarketOffer } from "@/types";
 
@@ -228,7 +229,11 @@ export function GachaMarketOfferHub({
       )}
 
       {loading ? (
-        <div className="skeleton mt-4 h-28" aria-busy="true" />
+        <GachaRowsSkeleton
+          count={2}
+          label="Carregando propostas do mercado"
+          className="mt-4"
+        />
       ) : (
         <div className="mt-5 grid gap-6 lg:grid-cols-2">
           {[

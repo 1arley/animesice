@@ -6,6 +6,7 @@ import { api, ApiError } from "@/lib/api";
 import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
 import { useToast } from "@/components/common/ToastProvider";
 import { SkinReveal } from "@/components/gacha/SkinReveal";
+import { GachaPageSkeleton } from "@/components/gacha/GachaPageSkeleton";
 import type { GachaSkin, GachaSkinsResponse } from "@/types";
 
 const PAGE_LIMIT = 48;
@@ -134,28 +135,21 @@ export default function GachaSkinsPage() {
   }
 
   if (!data)
-    return (
-      <main
-        id="body-content"
-        className="mx-auto max-w-shelf px-4 py-12 text-mist"
-      >
-        {error ? (
-          <div>
-            <p role="alert" className="mb-4 text-sm text-red-300">
-              {error}
-            </p>
-            <button
-              type="button"
-              className="btn-ice"
-              onClick={() => void load(1)}
-            >
-              Tentar de novo
-            </button>
-          </div>
-        ) : (
-          "Carregando skins…"
-        )}
+    return error ? (
+      <main id="body-content" className="mx-auto max-w-shelf px-4 py-12">
+        <p role="alert" className="mb-4 text-sm text-red-300">
+          {error}
+        </p>
+        <button
+          type="button"
+          className="btn-ice"
+          onClick={() => void load(1)}
+        >
+          Tentar de novo
+        </button>
       </main>
+    ) : (
+      <GachaPageSkeleton kind="skins" />
     );
 
   return (

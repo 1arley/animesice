@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
@@ -10,6 +10,9 @@ import {
   gachaConditionLabel,
 } from "@/components/gacha/GachaCard";
 import { CardPreview } from "@/components/gacha/CardPreview";
+import { GachaCardGridSkeleton, GachaPageSkeleton } from "@/components/gacha/GachaPageSkeleton";
+import { CardsFilterBar } from "@/components/gacha/CardsFilterBar";
+import { CardsPagination } from "@/components/gacha/CardsPagination";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import { useToast } from "@/components/common/ToastProvider";
@@ -48,6 +51,9 @@ export default function GachaCollectionPage() {
     pull: GachaPull;
     payout: number;
   } | null>(null);
+
+  // Ref para o topo da grade — usado para rolar quando a página muda.
+  const gridTopRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!burnResult) return;
@@ -120,14 +126,19 @@ export default function GachaCollectionPage() {
         if (!cancelled) setProgress(collections);
       })
       .catch(() => {
-        // Falha aqui é parcial: o progresso é um extra do piloto de engajamento
-        // e não pode apagar a grade de cartas que já carregou.
-        if (!cancelled) setProgressError("Não foi possível carregar o progresso.");
+        if (!cancelled)
+          setProgressError("Não foi possível carregar o progresso.");
       });
     return () => {
       cancelled = true;
     };
   }, [user]);
+
+  /** Muda de página e rola suavemente até o topo da grade. */
+  function handlePageChange(next: number) {
+    setPage(next);
+    gridTopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
 
   async function saveProgress(
     favoriteCollectionId: string | null,
@@ -187,9 +198,7 @@ export default function GachaCollectionPage() {
       toast(`Ranking atualizado: +${diff} pts.`, "success");
     } catch (err) {
       setError(
-        err instanceof Error
-          ? err.message
-          : "Erro ao aplicar ao ranking.",
+        err instanceof Error ? err.message : "Erro ao aplicar ao ranking.",
       );
     } finally {
       setApplyingRanking(false);
@@ -233,11 +242,7 @@ export default function GachaCollectionPage() {
   // `useAuth` resolve /user/me no idle; sem esta guarda a página mostraria o
   // convite para entrar antes de a sessão ser lida.
   if (authLoading)
-    return (
-      <div className="mx-auto max-w-shelf px-4 py-16">
-        <div className="skeleton h-80" aria-busy="true" aria-label="Carregando sua coleção" />
-      </div>
-    );
+    return <GachaPageSkeleton kind="cards" />;
 
   if (!user)
     return (
@@ -330,20 +335,25 @@ export default function GachaCollectionPage() {
           </div>
         </div>
       )}
+
+      {/* Cabeçalho */}
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="font-display text-display-lg text-snow">
             Minha coleção
           </h1>
-          <p className="text-body-sm text-mist">{total} cartas</p>
         </div>
-        <Link href="/gacha/enciclopedia" className="btn-ice px-4 py-2">
-          Explorar enciclopédia
-        </Link>
-        <Link href="/gacha/colecao" className="btn-ghost px-4 py-2">
-          Meus cosméticos
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          <Link href="/gacha/enciclopedia" className="btn-ice px-4 py-2">
+            Explorar enciclopédia
+          </Link>
+          <Link href="/gacha/colecao" className="btn-ghost px-4 py-2">
+            Meus cosméticos
+          </Link>
+        </div>
       </div>
+
+      {/* Progresso das coleções (piloto de engajamento) */}
       {pilotEnabled && (featured || progress.length > 0) && (
         <section
           aria-labelledby="collection-progress-title"
@@ -456,132 +466,102 @@ export default function GachaCollectionPage() {
           </div>
         </section>
       )}
-      <div className="mt-6 flex flex-wrap gap-3">
-        <select
-          aria-label="Ordenação"
-          value={sort}
-          onChange={(e) => {
-            setSort(e.target.value);
-            setPage(1);
-          }}
-          className="border border-hairline bg-panel p-3 text-snow"
-        >
-          <option value="value">Mais valiosas</option>
-          <option value="recent">Recentes</option>
-          <option value="rarity">Raridade</option>
-          <option value="edition">Edição</option>
-        </select>
-        <select
-          aria-label="Raridade"
-          value={rarity}
-          onChange={(e) => {
-            setRarity(e.target.value);
-            setPage(1);
-          }}
-          className="border border-hairline bg-panel p-3 text-snow"
-        >
-          <option value="">Todas as raridades</option>
-          {GACHA_TIERS.map((tier) => (
-            <option key={tier}>{tier}</option>
-          ))}
-        </select>
-        <select
-          aria-label="Foil"
-          value={foil}
-          onChange={(e) => {
-            setFoil(e.target.value);
-            setPage(1);
-          }}
-          className="border border-hairline bg-panel p-3 text-snow"
-        >
-          <option value="">Todos os foils</option>
-          <option>NORMAL</option>
-          <option>HOLO</option>
-          <option>GOLD</option>
-        </select>
-        {total >= 20 && (
-          <span className="self-center font-mono text-caption text-mist">
-            Condition disponível no verso da carta
-          </span>
-        )}
-      </div>
+
+      {/* Filtros */}
+      <CardsFilterBar
+        sort={sort}
+        rarity={rarity}
+        foil={foil}
+        total={total}
+        loading={loading}
+        onSortChange={(v) => {
+          setSort(v);
+          setPage(1);
+        }}
+        onRarityChange={(v) => {
+          setRarity(v);
+          setPage(1);
+        }}
+        onFoilChange={(v) => {
+          setFoil(v);
+          setPage(1);
+        }}
+      />
+
+      {/* Marcador invisível para scroll-to-top na troca de página */}
+      <div ref={gridTopRef} aria-hidden="true" className="-mt-4 pt-4" />
+
+      {/* Alertas */}
       {featuredError && (
-        <p role="alert" className="mt-8 text-signal">
+        <p role="alert" className="mt-4 text-signal">
           {featuredError}
         </p>
       )}
       {progressError && (
-        <p role="status" className="mt-8 text-body-sm text-mist">
+        <p role="status" className="mt-4 text-body-sm text-mist">
           {progressError}
         </p>
       )}
-      {error ? (
-        <p role="alert" className="mt-8 text-signal">
+      {error && (
+        <p role="alert" className="mt-4 text-signal">
           {error}
         </p>
-      ) : loading ? (
-        <div className="skeleton mt-8 h-80" aria-busy="true" />
-      ) : items.length === 0 ? (
-        <div className="mt-8">
-          <EmptyState text="Sua coleção está vazia." variant="compact" />
-          <Link href="/gacha" className="btn-ice mt-4 inline-block px-4 py-3">
-            Voltar ao Gacha
-          </Link>
-        </div>
-      ) : (
-        <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
-          {items.map((pull) => (
-            <div key={pull.id}>
-              <button
-                type="button"
-                onClick={() => setPreview(pull)}
-                className="w-full text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-ice"
-              >
-                <GachaCard pull={pull} linkAnime={false} />
-              </button>
-              <button
-                type="button"
-                disabled={featured?.id === pull.id}
-                onClick={() => {
-                  setFeaturedError("");
-                  void api
-                    .setGachaFeatured(pull.id)
-                    .then((next) => {
-                      setFeatured(next);
-                      toast("Carta em destaque no perfil.", "success");
-                    })
-                    .catch(() => {
-                      setFeaturedError("Não foi possível destacar a carta.");
-                    });
-                }}
-                className="mt-2 min-h-11 w-full border border-hairline px-2 font-mono text-caption text-ice disabled:text-mist"
-              >
-                {featured?.id === pull.id
-                  ? "Em destaque"
-                  : "Destacar no perfil"}
-              </button>
-            </div>
-          ))}
-        </div>
       )}
-      {pages > 1 && (
-        <div className="mt-8 flex gap-3">
-          <button
-            className="btn-ghost px-4 py-2"
-            disabled={page <= 1}
-            onClick={() => setPage((p) => p - 1)}
-          >
-            Anterior
-          </button>
-          <button
-            className="btn-ghost px-4 py-2"
-            disabled={page >= pages}
-            onClick={() => setPage((p) => p + 1)}
-          >
-            Próxima
-          </button>
-        </div>
-      )}
+
+      {/* Grade de cartas */}
+      {!error &&
+        (loading ? (
+          <GachaCardGridSkeleton className="mt-6" />
+        ) : items.length === 0 ? (
+          <div className="mt-6">
+            <EmptyState text="Nenhuma carta encontrada." variant="compact" />
+            <Link href="/gacha" className="btn-ice mt-4 inline-block px-4 py-3">
+              Voltar ao Gacha
+            </Link>
+          </div>
+        ) : (
+          <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
+            {items.map((pull) => (
+              <div key={pull.id}>
+                <button
+                  type="button"
+                  onClick={() => setPreview(pull)}
+                  className="w-full text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-ice"
+                >
+                  <GachaCard pull={pull} linkAnime={false} />
+                </button>
+                <button
+                  type="button"
+                  disabled={featured?.id === pull.id}
+                  onClick={() => {
+                    setFeaturedError("");
+                    void api
+                      .setGachaFeatured(pull.id)
+                      .then((next) => {
+                        setFeatured(next);
+                        toast("Carta em destaque no perfil.", "success");
+                      })
+                      .catch(() => {
+                        setFeaturedError("Não foi possível destacar a carta.");
+                      });
+                  }}
+                  className="mt-2 min-h-11 w-full border border-hairline px-2 font-mono text-caption text-ice disabled:text-mist"
+                >
+                  {featured?.id === pull.id
+                    ? "Em destaque"
+                    : "Destacar no perfil"}
+                </button>
+              </div>
+            ))}
+          </div>
+        ))}
+
+      {/* Paginação numérica */}
+      <CardsPagination
+        page={page}
+        pages={pages}
+        onPageChange={handlePageChange}
+      />
     </main>
   );
 }
