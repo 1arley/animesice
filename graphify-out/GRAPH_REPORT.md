@@ -6,31 +6,31 @@
 - Unclassified: 67 file(s) not represented in the graph (top: .csv 37, (none) 17, .toml 4)
 
 ## Summary
-- 4005 nodes · 8832 edges · 240 communities (210 shown, 30 thin omitted)
+- 4006 nodes · 8832 edges · 241 communities (209 shown, 32 thin omitted)
 - Extraction: 98% EXTRACTED · 2% INFERRED · 0% AMBIGUOUS · INFERRED: 149 edges (avg confidence: 0.89)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `4d857538`
+- Built from commit: `d4743568`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
 ## Community Hubs (Navigation)
 - @playwright/test
-- gacha_box_reveal.py
-- Header
+- GachaCrystal
+- Avatar
 - live-browser.js
 - capas/page.tsx
 - usePrefersReducedMotion
-- settings/page.tsx
-- index.ts
-- Avatar
-- Wordmark
-- connectSSE
 - design_system.py
-- GachaEconomyHub.tsx
+- index.ts
+- blog.ts
+- next
+- connectSSE
+- format_ascii_box
+- GachaEconomyHub
 - HomeSections.tsx
-- (app)/gacha/page.tsx
+- GachaCard.tsx
 - ContinueWatchingRail.tsx
 - core.py
 - Baixa prioridade (acessibilidade)
@@ -57,14 +57,14 @@
 - ui-taste/SKILL.md
 - applyEditing
 - search_stack
-- ProfileHero.tsx
+- Anime
 - mock-backend.js
 - GachaPageSkeleton
 - ExternalWorksPage
 - users/[userName]/page.tsx
 - error.tsx
 - dependencies
-- admin/usuarios/page.tsx
+- detect_domain
 - AdminWatchtowerPage
 - HeroSlide.tsx
 - skins/page.tsx
@@ -77,7 +77,7 @@
 - test-crystal/page.tsx
 - CHANGELOG.md
 - impeccable/reference/new-work.md
-- BlogForm.tsx
+- BlogForm
 - handleKeyDown
 - AnimesIce Frontend Audit
 - Product
@@ -122,7 +122,7 @@
 - 1.0.0 (2026-08-20)
 - 1.0.0 (2026-09-16)
 - [1.1.0](https://github.com/1arley/animesice/compare/v1.0.0...v1.1.0) (2026-10-04)
-- useToast
+- (app)/gacha/page.tsx
 - impeccable/SKILL.md
 - showToast
 - 1.0.0 (2026-08-14)
@@ -140,18 +140,18 @@
 - [1.1.0](https://github.com/1arley/animesice/compare/v1.0.0...v1.1.0) (2026-09-18)
 - 1.0.0 (2026-08-21)
 - [1.1.0](https://github.com/1arley/animesice/compare/v1.0.1...v1.1.0) (2026-08-12)
-- FeedPost.tsx
+- EmptyState
 - createLiveBrowserDomHelpers
 - DesignSystemGenerator
 - api-server.ts
 - createLiveBrowserSessionState
 - UI/UX Pro Max - Design Intelligence
-- test_catalog_summary_line_endings.py
+- pathlib
 - actOnAgentTarget
 - animate.md
 - Handle `generate`
 - Responsive Design
-- animes/[slug]/page.tsx
+- AnimeListButton
 - tasteskill: Anti-Slop Frontend Skill
 - Appendix B - Canonical Sources (read these before reinventing)
 - Generate Report
@@ -159,17 +159,17 @@
 - CORE DIRECTIVE: AWWWARDS-LEVEL IMAGE ART DIRECTION
 - 2. THE COMBINATORIAL VARIATION ENGINE
 - Impeccable Asset Producer
-- colorize.md
+- GachaLoadoutEditor.tsx
 - New visual work
 - optimize.md
 - Pre-Delivery Checklist (canonical — the only one)
 - Quick Reference
-- VideoPlayer.tsx
+- NightMarket.tsx
 - 4. DESIGN ENGINEERING DIRECTIVES (Bias Correction)
 - critique.md
 - Simplify the Design
 - Hardening Dimensions
-- RoomPage
+- ProfileStats.tsx
 - Accessibility And UI Rules
 - clarify.md
 - Nielsen's 10 Heuristics
@@ -190,7 +190,7 @@
 - 9. AI TELLS (Forbidden Patterns)
 - frontend-code-review/SKILL.md
 - 8. ANTI-AI-SLOP RULES
-- escapeJsonLd
+- doctor.md
 - Android platform
 - Persona-Based Design Testing
 - Extract Flow
@@ -208,11 +208,11 @@
 - Impeccable Finish Reviewer
 - Impeccable Manual Edit Applier
 - live-browser-ignores.js
-- pathlib
+- csv
 - HeroAtmosphere.tsx
 - 5. IMAGE COUNT & PAGE SLICING
-- Diagnostic Scan
-- MEDIUM
+- HomeHero.tsx
+- RatingStars
 - Visualize: Direction Comps & Asset Production
 - AdminCrystalCodesPage
 - 12. THE BLOCK LIBRARY (Contract - Implementations Land Here Iteratively)
@@ -223,9 +223,9 @@
 - 21. MOBILE ANTI-AI-TELLS RULE
 - NativeVideoPlayer
 - Region map
-- RootLayout
+- calendario/page.tsx
 - Web Interface Guidelines
-- Operate
+- Read
 - 7. DIAL DEFINITIONS (Technical Reference)
 - Component Architecture Review
 - Frontend Code Review
@@ -270,75 +270,71 @@
 ## Import Cycles
 - None detected.
 
-## Communities (240 total, 30 thin omitted)
+## Communities (241 total, 32 thin omitted)
 
 ### Community 0 - "@playwright/test"
 Cohesion: 0.05
 Nodes (47): API(), mockFeed(), API(), makeUsers(), mockUsersDirectory(), EBML_MAGIC, FTYP_BOX, pull (+39 more)
 
-### Community 1 - "gacha_box_reveal.py"
-Cohesion: 0.11
-Nodes (9): CommonBox, GachaBoxReveal, PremiumBox, RareBox, render_assets(), diamond(), NightMarketCardReveal, render_asset() (+1 more)
-
-### Community 2 - "Header"
-Cohesion: 0.09
-Nodes (29): AdminLayout(), AdminShell(), AdminSidebar(), NAV_ITEMS, NavItem, AppLayout(), ConfirmEmailContent(), ConfirmEmailPage() (+21 more)
+### Community 2 - "Avatar"
+Cohesion: 0.04
+Nodes (50): AdminLayout(), AdminShell(), AdminSidebar(), NAV_ITEMS, NavItem, AppLayout(), RecuperarSenhaPage(), VerifyEmailForm() (+42 more)
 
 ### Community 3 - "live-browser.js"
 Cohesion: 0.03
 Nodes (138): applyGlobalBarLabelState(), applyParamDefaults(), applyParamValue(), applyPlaceholderSizingStyles(), averageRgb01(), bindEditBadgeProxy(), bufferToBase64(), buildAnnotationsForCapture() (+130 more)
 
 ### Community 4 - "capas/page.tsx"
-Cohesion: 0.10
-Nodes (38): AdminCapasPage(), addLayer(), cancelEditing(), changeType(), save(), startEditing(), sync(), updateLayer() (+30 more)
+Cohesion: 0.09
+Nodes (40): AdminCapasPage(), addLayer(), cancelEditing(), changeType(), save(), startEditing(), sync(), updateLayer() (+32 more)
 
 ### Community 5 - "usePrefersReducedMotion"
-Cohesion: 0.13
-Nodes (19): lenis, CrystalMotion(), CrystalMotionMode, CrystalMotionProps, MoteStyle, moteValue(), VIDEO_SOURCES, CrystalSplash() (+11 more)
+Cohesion: 0.14
+Nodes (17): lenis, CrystalMotion(), CrystalMotionMode, CrystalMotionProps, MoteStyle, moteValue(), VIDEO_SOURCES, CrystalSplash() (+9 more)
 
-### Community 6 - "settings/page.tsx"
-Cohesion: 0.10
-Nodes (13): AVATAR_ACCEPT, prepareAvatar(), SettingsPage(), handleFilePicked(), handlePasswordChange(), NotificationPreferencesSection(), PrivacySection(), DashStat() (+5 more)
+### Community 6 - "design_system.py"
+Cohesion: 0.07
+Nodes (15): _detect_page_type(), format_page_override_md(), _generate_intelligent_overrides(), persist_design_system(), safe_slug(), _write_persisted_file(), apply_decision_rules(), _object_without_duplicates() (+7 more)
 
 ### Community 7 - "index.ts"
 Cohesion: 0.03
-Nodes (88): STATUS_BADGE, STATUS_LABELS, TYPE_LABELS, AnimeOption, TIERS, Tab, TAB_LABELS, TAB_STATUS (+80 more)
+Nodes (98): AnimeOption, TIERS, Tab, TAB_LABELS, TAB_STATUS, TABS, AnimeListButtonProps, STATUS_LABELS (+90 more)
 
-### Community 8 - "Avatar"
-Cohesion: 0.18
-Nodes (11): MyProfilePage(), NotificationsPage(), Avatar(), AvatarProps, CommentRow(), FollowRow(), ProfileFollowList(), FollowButton() (+3 more)
+### Community 8 - "blog.ts"
+Cohesion: 0.25
+Nodes (15): BlogPage(), metadata, revalidate, GET(), revalidate, sitemap(), STATIC_ROUTES, serverListBlogPosts() (+7 more)
 
-### Community 9 - "Wordmark"
-Cohesion: 0.10
-Nodes (22): LoginForm(), handleSubmit(), LoginPage(), safeNext(), RecuperarSenhaPage(), RedefinirSenhaForm(), handleSubmit(), RedefinirSenhaPage() (+14 more)
+### Community 9 - "next"
+Cohesion: 0.09
+Nodes (19): AdminBlogPage(), LoginForm(), LoginPage(), RedefinirSenhaForm(), handleSubmit(), RedefinirSenhaPage(), RegisterPage(), handleSubmit() (+11 more)
 
 ### Community 10 - "connectSSE"
 Cohesion: 0.08
 Nodes (86): abortSvelteComponentInjection(), applySavedSessionMeta(), cancelEditing(), cancelEditingToPicking(), cleanup(), cleanupAcceptedSession(), clearHandled(), clearMountErrorCard() (+78 more)
 
-### Community 11 - "design_system.py"
-Cohesion: 0.06
-Nodes (18): ansi_ljust(), _detect_page_type(), format_ascii_box(), add_wrapped(), wrap_text(), format_markdown(), format_page_override_md(), generate_design_system() (+10 more)
+### Community 11 - "format_ascii_box"
+Cohesion: 0.10
+Nodes (11): ansi_ljust(), format_ascii_box(), add_wrapped(), wrap_text(), format_markdown(), generate_design_system(), hex_to_ansi(), _mode_support_labels() (+3 more)
 
-### Community 12 - "GachaEconomyHub.tsx"
-Cohesion: 0.07
-Nodes (44): GachaShopPage(), metadata, NightMarketPage(), GachaMarketPage(), FOCUSABLE, ACCENT, BOX_LABEL, BoxReveal() (+36 more)
+### Community 12 - "GachaEconomyHub"
+Cohesion: 0.15
+Nodes (17): GachaShopPage(), GachaMarketPage(), GachaEconomyHub(), act(), buyOffer(), createMarketOffer(), createOrder(), listCard() (+9 more)
 
 ### Community 13 - "HomeSections.tsx"
-Cohesion: 0.14
-Nodes (28): HomePage(), metadata, revalidate, gsap, DividerSvg(), HomeBackdrop(), IceBeamDivider(), DeferredHomeHero() (+20 more)
+Cohesion: 0.16
+Nodes (25): HomePage(), metadata, revalidate, gsap, DividerSvg(), HomeBackdrop(), IceBeamDivider(), DeferredPersonalizedRails() (+17 more)
 
-### Community 14 - "(app)/gacha/page.tsx"
-Cohesion: 0.06
-Nodes (48): GachaCollectionPage(), handleReroll(), Cristal do gacha (Manim), CompensationModal(), ConfirmDialog(), Modal(), CardPreview(), share() (+40 more)
+### Community 14 - "GachaCard.tsx"
+Cohesion: 0.09
+Nodes (24): Cristal do gacha (Manim), CardsFilterBar(), ChevronDown(), FilterBadge(), CONDITION_ART, CONDITION_COLOR, CONDITION_GLYPH, CONDITION_SURFACE (+16 more)
 
 ### Community 15 - "ContinueWatchingRail.tsx"
-Cohesion: 0.20
-Nodes (10): ContinueWatchingRail(), FavoriteButton(), FavoriteButtonProps, RatingStarsProps, ClickSpark(), Spark, HeartIcon(), AnimeStats (+2 more)
+Cohesion: 0.11
+Nodes (17): CommentRow(), CommentSection(), CommentSectionProps, ContinueWatchingRail(), FavoriteButton(), FavoriteButtonProps, Modal(), AnimeStatsDisplay() (+9 more)
 
 ### Community 16 - "core.py"
-Cohesion: 0.05
-Nodes (27): _contains_phrase(), _domain_keywords(), _exact_match_diagnostic(), _exact_row_identity(), _file_signature(), _get_bm25(), _legacy_successor_guidance(), _load_csv() (+19 more)
+Cohesion: 0.06
+Nodes (26): _contains_phrase(), _domain_keywords(), _exact_match_diagnostic(), _exact_row_identity(), _file_signature(), _get_bm25(), _legacy_successor_guidance(), _load_csv() (+18 more)
 
 ### Community 18 - "Baixa prioridade (acessibilidade)"
 Cohesion: 0.06
@@ -361,8 +357,8 @@ Cohesion: 0.09
 Nodes (55): ae(), be(), bt(), Ce(), s(), Ct(), de(), dt() (+47 more)
 
 ### Community 23 - "safeImageSrc"
-Cohesion: 0.09
-Nodes (31): CalendarioPage(), metadata, PosterThumb(), revalidate, metadata, revalidate, TopPage(), Positive Findings (+23 more)
+Cohesion: 0.14
+Nodes (24): AnimeDetailPage(), generateMetadata(), getAnime, revalidate, metadata, revalidate, TopPage(), Positive Findings (+16 more)
 
 ### Community 24 - "package.json"
 Cohesion: 0.09
@@ -378,7 +374,7 @@ Nodes (17): aliases, components, hooks, lib, ui, utils, iconLibrary, rsc (+9 mor
 
 ### Community 28 - "buscar/page.tsx"
 Cohesion: 0.14
-Nodes (24): AnimesPage(), generateMetadata(), revalidate, first(), metadata, revalidate, SearchPage(), SearchParam (+16 more)
+Nodes (25): AnimesPage(), generateMetadata(), revalidate, first(), metadata, revalidate, SearchPage(), SearchParam (+17 more)
 
 ### Community 29 - "Mobile Menu / Hamburger Menu Analysis"
 Cohesion: 0.08
@@ -386,11 +382,11 @@ Nodes (25): 1. Overall Project Structure, 2. Mobile Menu / Hamburger Functionali
 
 ### Community 30 - "react"
 Cohesion: 0.05
-Nodes (49): AdminAuditPage(), AuditTab, RESOURCE_TYPES, AdminBlogPage(), AdminAnime, AdminCatalogoPage(), AdminConfigPage(), AdminCreateEpisodePage() (+41 more)
+Nodes (54): AdminAuditPage(), AuditTab, RESOURCE_TYPES, AdminAnime, AdminCatalogoPage(), AdminConfigPage(), AdminCreateEpisodePage(), AdminCreateAnimePage() (+46 more)
 
 ### Community 31 - "SyncedVideoPlayer.tsx"
-Cohesion: 0.20
-Nodes (13): EmbedPlayer(), FullscreenEnterIcon(), FullscreenExitIcon(), MutedIcon(), NativeSyncedPlayer(), onEnded(), onPause(), onPlay() (+5 more)
+Cohesion: 0.15
+Nodes (23): Architecture Overview, hls.js, EmbedPlayer(), FullscreenEnterIcon(), FullscreenExitIcon(), MutedIcon(), NativeSyncedPlayer(), onEnded() (+15 more)
 
 ### Community 32 - "devDependencies"
 Cohesion: 0.13
@@ -398,7 +394,7 @@ Nodes (15): devDependencies, autoprefixer, eslint, eslint-config-next, @playwrig
 
 ### Community 33 - "app/layout.tsx"
 Cohesion: 0.19
-Nodes (8): fontDisplay, fontPlexMono, fontPlexSans, metadata, viewport, DeferredCrystalSplash(), MonetagVignette(), chunkRecoveryScript
+Nodes (10): fontDisplay, fontPlexMono, fontPlexSans, metadata, RootLayout(), viewport, DeferredCrystalSplash(), MonetagVignette() (+2 more)
 
 ### Community 34 - "AnimesIce - Frontend (Next.js + React + Tailwind CSS + TypeScript)"
 Cohesion: 0.08
@@ -433,24 +429,24 @@ Cohesion: 0.06
 Nodes (43): addManualContextText(), applyEditing(), buildLocatorForLeaf(), canRestoreManualEditElement(), collectEditableTextRows(), visit(), collectManualContextPieces(), walk() (+35 more)
 
 ### Community 42 - "search_stack"
-Cohesion: 0.08
-Nodes (9): _exact_stack_identifier(), _project_row(), search_stack(), _valid_max_results(), _rows(), TestNativeDesktopStackFreshness, TestTextLayoutRetrieval, _rows() (+1 more)
+Cohesion: 0.09
+Nodes (8): _exact_stack_identifier(), _project_row(), search_stack(), _valid_max_results(), _rows(), TestNativeDesktopStackFreshness, _rows(), TestWebStackFreshness
 
-### Community 43 - "ProfileHero.tsx"
-Cohesion: 0.23
-Nodes (9): FeaturedPortrait(), FeaturedPortraitSkeleton(), CalendarIcon(), ExternalIcon(), FlagIcon(), ProfileHero(), REPORT_REASONS, ShareIcon() (+1 more)
+### Community 43 - "Anime"
+Cohesion: 0.15
+Nodes (13): contentType, revalidate, size, 1. CMS — Conteúdo editorial nos animes + Blog, 1a. Schema (Prisma), 1b. Backend (NestJS), 1c. Frontend, 1d. Migração de dados (+5 more)
 
 ### Community 44 - "mock-backend.js"
 Cohesion: 0.18
 Nodes (8): EPISODE, http, server, CORS_HEADERS, http, json(), server, url
 
 ### Community 45 - "GachaPageSkeleton"
-Cohesion: 0.07
-Nodes (30): Loading(), Loading(), GachaColecaoPage(), metadata, Loading(), Loading(), Loading(), Loading() (+22 more)
+Cohesion: 0.09
+Nodes (23): Loading(), Loading(), Loading(), Loading(), Loading(), Loading(), Encyclopedia(), EncyclopediaPage() (+15 more)
 
 ### Community 47 - "users/[userName]/page.tsx"
-Cohesion: 0.07
-Nodes (40): OverviewSkeleton(), ProfileSkeleton(), PublicProfilePage(), ensureTab(), handleNavigate(), TAB_ALIASES, HeadingLevel, SectionLabel() (+32 more)
+Cohesion: 0.05
+Nodes (57): OverviewSkeleton(), ProfileSkeleton(), PublicProfilePage(), ensureTab(), handleNavigate(), TAB_ALIASES, HeadingLevel, SectionLabel() (+49 more)
 
 ### Community 48 - "error.tsx"
 Cohesion: 0.47
@@ -460,20 +456,16 @@ Nodes (8): ErrorPage(), GlobalError(), CHUNK_ERROR_EVENT, CHUNK_RECOVERY_EXHAUST
 Cohesion: 0.18
 Nodes (11): dependencies, gsap, @gsap/react, hls.js, lenis, motion, next, ogl (+3 more)
 
-### Community 50 - "admin/usuarios/page.tsx"
-Cohesion: 0.18
-Nodes (7): ACTION_DESC, ACTION_LABELS, AdminUsersPage(), ModerateAction, ModerateUserModal(), ROLE_BADGE, ROLE_LABELS
-
 ### Community 51 - "AdminWatchtowerPage"
 Cohesion: 0.38
 Nodes (10): AdminWatchtowerPage(), handleBackfillAnilist(), handleCheck(), handleDiscover(), handleRepair(), handleRetry(), handleScanAll(), handleSyncSchedules() (+2 more)
 
 ### Community 52 - "HeroSlide.tsx"
-Cohesion: 0.13
-Nodes (19): motion, ParallaxValues, useHeroParallax(), HeroCharacter(), HeroCharacterProps, HeroEnvironment(), HeroEnvironmentProps, HeroParticles() (+11 more)
+Cohesion: 0.18
+Nodes (13): motion, ParallaxValues, useHeroParallax(), HeroCharacter(), HeroCharacterProps, HeroEnvironment(), HeroEnvironmentProps, HeroParticles() (+5 more)
 
 ### Community 53 - "skins/page.tsx"
-Cohesion: 0.24
+Cohesion: 0.31
 Nodes (6): countdown(), GachaSkinsPage(), SkinTile(), SkinReveal(), GachaSkin, GachaSkinsResponse
 
 ### Community 54 - "scripts"
@@ -481,16 +473,16 @@ Cohesion: 0.20
 Nodes (10): scripts, build, check:chunk-recovery, dev, lint, release, release:dry, start (+2 more)
 
 ### Community 55 - "room/[slug]/page.tsx"
-Cohesion: 0.17
-Nodes (14): Participant, CreateRoomButton(), EpisodeNavigation(), EpisodePlayerShell(), VideoPlayer, WatchClient(), WatchClientProps, RoomInfo (+6 more)
+Cohesion: 0.13
+Nodes (15): mergeMessages(), Participant, RoomPage(), socket.io-client, EpisodeLoadingState(), PHRASES, EpisodeNavigation(), EpisodePlayerShell() (+7 more)
 
 ### Community 56 - "validate_data.py"
 Cohesion: 0.07
-Nodes (41): read_rows(), TestAccessibilityGuidance, TestChartsTypographyAndIcons, TestCurrentReactGuidance, TestSemanticColors, _catalog_date(), _check_app_interface_contract(), _check_catalog_contract() (+33 more)
+Nodes (42): read_rows(), TestAccessibilityGuidance, TestChartsTypographyAndIcons, TestCurrentReactGuidance, TestSemanticColors, _catalog_date(), _check_app_interface_contract(), _check_catalog_contract() (+34 more)
 
 ### Community 57 - "SEO & Tráfego — Plano de Implementação"
-Cohesion: 0.14
-Nodes (13): 1. CMS — Conteúdo editorial nos animes + Blog, 1c. Frontend, 1d. Migração de dados, 2. Página de índice `/generos`, 3. Schema VideoObject nos episódios, 4. Gêneros no sitemap, 5. hreflang `pt-BR`, Contexto (+5 more)
+Cohesion: 0.18
+Nodes (10): 2. Página de índice `/generos`, 3. Schema VideoObject nos episódios, 4. Gêneros no sitemap, 5. hreflang `pt-BR`, Contexto, Decisões fechadas, Ordem de execução recomendada, SEO & Tráfego — Plano de Implementação (+2 more)
 
 ### Community 58 - "CORE DIRECTIVE: PREMIUM MOBILE APP IMAGE DIRECTION"
 Cohesion: 0.06
@@ -509,12 +501,12 @@ Cohesion: 0.13
 Nodes (14): 1.0.0 (2026-08-15), [1.1.0](https://github.com/1arley/animesice/compare/v1.0.0...v1.1.0) (2026-09-18), [1.1.0](https://github.com/1arley/animesice/compare/v1.0.0...v1.1.0) (2026-09-18), [1.1.0](https://github.com/1arley/animesice/compare/v1.0.0...v1.1.0) (2026-09-18), [1.2.0](https://github.com/1arley/animesice/compare/v1.1.0...v1.2.0) (2026-08-13), Bug Fixes, Bug Fixes, Bug Fixes (+6 more)
 
 ### Community 62 - "impeccable/reference/new-work.md"
-Cohesion: 0.07
-Nodes (24): Recommended Actions, Craft (deprecated alias), Impeccable Documenter, Input Contract, Output Contract, Workflow, Apply, Live-mode signature params (+16 more)
+Cohesion: 0.06
+Nodes (30): 1. Accessibility (VoiceOver / TalkBack), 2. Performance, 3. Appearance & Theming, 4. Platform Conformance (CRITICAL), 5. Adaptivity, Diagnostic Scan, Recommended Actions, Craft (deprecated alias) (+22 more)
 
-### Community 63 - "BlogForm.tsx"
-Cohesion: 0.22
-Nodes (11): EditBlogPostPage(), NewBlogPostPage(), 1a. Schema (Prisma), 1b. Backend (NestJS), BlogForm(), changeTitle(), submit(), slugify() (+3 more)
+### Community 63 - "BlogForm"
+Cohesion: 0.31
+Nodes (7): EditBlogPostPage(), NewBlogPostPage(), BlogForm(), changeTitle(), submit(), slugify(), toLocalDate()
 
 ### Community 64 - "handleKeyDown"
 Cohesion: 0.14
@@ -573,8 +565,8 @@ Cohesion: 0.19
 Nodes (24): clearStoredManualApplyState(), fetchPendingCount(), handleManualEditActivity(), hidePendingApplyDock(), manualApplyLoadingText(), manualApplyStateKey(), manualEditEventForCurrentPage(), numberOrNull() (+16 more)
 
 ### Community 90 - "live.md"
-Cohesion: 0.09
-Nodes (21): Step 1: Parse the request, Step 2: Reuse the page, then start, Step 3: Generate, Step 4: Accept and close, Cleanup, Exit, First-time setup, Handle `accept` (+13 more)
+Cohesion: 0.06
+Nodes (33): Apply at system scale, Audit before choosing, Choose a strategy, Contrast and perception, Live-mode signature params, Verify, Visitor mode, Step 1: Parse the request (+25 more)
 
 ### Community 91 - "1.0.0 (2026-08-18)"
 Cohesion: 0.50
@@ -585,8 +577,8 @@ Cohesion: 0.25
 Nodes (7): Agent Team, Code, Tests, Delivery, Commands, Project Structure, Repository Guidelines, Role and First Checks, UI, Security, Technology
 
 ### Community 94 - "blog/[slug]/page.tsx"
-Cohesion: 0.09
-Nodes (33): append-arrays, append-string, Consent prompt (use this phrasing), CSP detection (first-time only), BlogPage(), metadata, revalidate, GET() (+25 more)
+Cohesion: 0.11
+Nodes (18): BlogPostPage(), findPost(), generateMetadata(), revalidate, GenerosPage(), metadata, revalidate, metadata (+10 more)
 
 ### Community 95 - "document.md"
 Cohesion: 0.18
@@ -597,16 +589,16 @@ Cohesion: 0.09
 Nodes (22): Assess Onboarding Needs, Context Over Ceremony, Contextual Help, Design Onboarding Experiences, Documentation & Help, Empty State Design, Feature Discovery & Adoption, Guided Tours & Walkthroughs (+14 more)
 
 ### Community 97 - "test_core.py"
-Cohesion: 0.07
-Nodes (7): No-argument routing: the context-aware menu, BM25, detect_domain(), TestBm25CoreBehavior, TestDiagnosticsContracts, TestDomainDetection, TestTokenizer
+Cohesion: 0.08
+Nodes (7): Command guidance, No-argument routing: the context-aware menu, Workflow questions, BM25, TestBm25CoreBehavior, TestDiagnosticsContracts, TestTokenizer
 
 ### Community 98 - "Auditoria de UI/UX do mercado"
 Cohesion: 0.33
 Nodes (5): Achados tratados, Auditoria de UI/UX do mercado, Direcao visual, Limites e proximas prioridades, Verificacao
 
 ### Community 99 - "test_design_system_mode.py"
-Cohesion: 0.06
-Nodes (16): _button_outline_text_color(), _contrast_ratio(), _derive_dark_palette(), _filter_anti_patterns_for_mode(), format_master_md(), _palette_is_dark(), _query_wants_dark(), _relative_luminance() (+8 more)
+Cohesion: 0.05
+Nodes (18): The contract (read once), _button_outline_text_color(), _contrast_ratio(), _derive_dark_palette(), _filter_anti_patterns_for_mode(), format_master_md(), _palette_is_dark(), _query_wants_dark() (+10 more)
 
 ### Community 100 - "iOS Design: iPhone UI/UX"
 Cohesion: 0.09
@@ -668,13 +660,13 @@ Nodes (5): 1.0.0 (2026-09-16), Bug Fixes, Features, Performance Improvements, Re
 Cohesion: 0.40
 Nodes (5): [1.1.0](https://github.com/1arley/animesice/compare/v1.0.0...v1.1.0) (2026-10-04), Bug Fixes, Features, Performance Improvements, Reverts
 
-### Community 116 - "useToast"
-Cohesion: 0.07
-Nodes (32): blank, Code, AdminGachaConfigPage(), ConfigEntry, GROUP_LABELS, SORT_TABS, SortKey, UsuariosPage() (+24 more)
+### Community 116 - "(app)/gacha/page.tsx"
+Cohesion: 0.06
+Nodes (43): blank, Code, AdminGachaConfigPage(), ConfigEntry, GROUP_LABELS, GachaCollectionPage(), handleReroll(), CRYSTAL_PACKAGES (+35 more)
 
 ### Community 117 - "impeccable/SKILL.md"
-Cohesion: 0.08
-Nodes (21): Before you finish, Scope is sovereign, The amplification, The skeleton test, Why it reads flat, Craft floor, Refuse, Verify (+13 more)
+Cohesion: 0.09
+Nodes (18): Before you finish, Scope is sovereign, The amplification, The skeleton test, Why it reads flat, Craft floor, Refuse, Verify (+10 more)
 
 ### Community 118 - "showToast"
 Cohesion: 0.15
@@ -713,8 +705,8 @@ Cohesion: 0.50
 Nodes (4): 1.0.0 (2026-08-19), Bug Fixes, Features, Performance Improvements
 
 ### Community 127 - "Findings"
-Cohesion: 0.12
-Nodes (16): CRITICAL, F01: Cross-Project Brand Contamination in hentaisice Fork, F02: Modal Focus Trap Not Implemented, F03: Toast Notifications Not Announced to Screen Readers, F04: `api.ts` ensureRefresh() Can Permanently Lock Refresh State, F05: CSP Uses `unsafe-inline` for `script-src`, F12: FavoriteButton Has No Visual Loading Feedback, F13: FeedPost Silently Swallows Share Error (+8 more)
+Cohesion: 0.11
+Nodes (19): handleSubmit(), safeNext(), CRITICAL, F01: Cross-Project Brand Contamination in hentaisice Fork, F02: Modal Focus Trap Not Implemented, F03: Toast Notifications Not Announced to Screen Readers, F04: `api.ts` ensureRefresh() Can Permanently Lock Refresh State, F05: CSP Uses `unsafe-inline` for `script-src` (+11 more)
 
 ### Community 128 - "[1.1.0](https://github.com/1arley/animesice/compare/v1.0.0...v1.1.0) (2026-09-18)"
 Cohesion: 0.67
@@ -740,21 +732,21 @@ Nodes (4): 1.0.0 (2026-08-21), Bug Fixes, Features, Performance Improvements
 Cohesion: 0.50
 Nodes (4): [1.0.1](https://github.com/1arley/animesice/compare/v1.0.0...v1.0.1) (2026-08-12), [1.1.0](https://github.com/1arley/animesice/compare/v1.0.1...v1.1.0) (2026-08-12), Bug Fixes, Features
 
-### Community 135 - "FeedPost.tsx"
-Cohesion: 0.07
-Nodes (25): FeedPage(), revalidate, PedidosPage(), RegrasPage(), SugestoesPage(), CommentGlyph(), CommentLike(), EventVerb() (+17 more)
+### Community 135 - "EmptyState"
+Cohesion: 0.05
+Nodes (38): ACTION_DESC, ACTION_LABELS, AdminUsersPage(), ModerateAction, ModerateUserModal(), ROLE_BADGE, ROLE_LABELS, FeedPage() (+30 more)
 
 ### Community 136 - "createLiveBrowserDomHelpers"
 Cohesion: 0.16
 Nodes (13): createLiveBrowserDomHelpers(), cloneWithoutChrome(), cssId(), liveUiRoot(), makeFrozenAnchor(), raiseHitModal(), rectIsUsableAnchor(), syncTopLayerHost() (+5 more)
 
 ### Community 137 - "DesignSystemGenerator"
-Cohesion: 0.05
-Nodes (16): The contract (read once), DesignSystemGenerator, _resolve_dial(), apply_decision_rules(), _object_without_duplicates(), parse_decision_rules(), _validate_action(), TestReasoningMatch (+8 more)
+Cohesion: 0.08
+Nodes (6): DesignSystemGenerator, TestReasoningMatch, read_rows(), TestGeneratedCatalogContract, TestLandingAndStackContract, TestReasoningContract
 
 ### Community 139 - "api-server.ts"
-Cohesion: 0.14
-Nodes (17): POST(), POST(), GET(), generateMetadata(), getEpisode, revalidate, toIso8601Duration(), WatchPage() (+9 more)
+Cohesion: 0.12
+Nodes (20): POST(), POST(), GET(), dynamic, generateMetadata(), getEpisode, revalidate, toIso8601Duration() (+12 more)
 
 ### Community 140 - "createLiveBrowserSessionState"
 Cohesion: 0.22
@@ -764,9 +756,9 @@ Nodes (15): createLiveBrowserSessionState(), clearHandled(), clearScrollY(), cle
 Cohesion: 0.11
 Nodes (17): Before Delivering App UI, Example Workflow, If a search returns 0 results, Output Formats, Query Contract, Rule Categories by Priority, Running the search tool, Step 1: Analyze User Requirements (+9 more)
 
-### Community 142 - "test_catalog_summary_line_endings.py"
-Cohesion: 0.08
-Nodes (5): CatalogSummaryLineEndingsTest, _load_generator(), TestFixtureValidation, TestMetricMath, TestThresholdGate
+### Community 142 - "pathlib"
+Cohesion: 0.04
+Nodes (17): CatalogSummaryLineEndingsTest, _load_generator(), TestStackFlagWithDesignSystem, TestFixtureValidation, TestMetricMath, TestThresholdGate, resolve(), shipped_invocations() (+9 more)
 
 ### Community 144 - "actOnAgentTarget"
 Cohesion: 0.29
@@ -784,9 +776,9 @@ Nodes (16): 1. Read the screenshot (if present), 2. Wrap the element, 3. Load th
 Cohesion: 0.20
 Nodes (10): Breakpoints: Content-Driven, Detect Input Method, Not Just Screen Size, Layout Adaptation Patterns, Mobile-First: Write It Right, Picture Element for Art Direction, Responsive Design, Responsive Images: Get It Right, Safe Areas: Handle the Notch (+2 more)
 
-### Community 148 - "animes/[slug]/page.tsx"
-Cohesion: 0.12
-Nodes (20): AnimeDetailPage(), generateMetadata(), getAnime, revalidate, AnimeListButton(), handleRemove(), handleSave(), refreshState() (+12 more)
+### Community 148 - "AnimeListButton"
+Cohesion: 0.60
+Nodes (4): AnimeListButton(), handleRemove(), handleSave(), refreshState()
 
 ### Community 149 - "tasteskill: Anti-Slop Frontend Skill"
 Cohesion: 0.13
@@ -812,9 +804,9 @@ Nodes (14): 2. THE COMBINATORIAL VARIATION ENGINE, Background Character, Backgro
 Cohesion: 0.15
 Nodes (12): Act on the receipt, Assemble and review, Plan and asset review, Plan, capture, serve, Core Rule, Decision Comps, Impeccable Asset Producer, Input Contract (+4 more)
 
-### Community 156 - "colorize.md"
-Cohesion: 0.25
-Nodes (7): Apply at system scale, Audit before choosing, Choose a strategy, Contrast and perception, Live-mode signature params, Verify, Visitor mode
+### Community 156 - "GachaLoadoutEditor.tsx"
+Cohesion: 0.24
+Nodes (10): GachaColecaoPage(), metadata, CosmeticSlotPicker(), SLOT_HINT, SLOT_LABEL, EMPTY, GachaLoadoutEditor(), owned() (+2 more)
 
 ### Community 157 - "New visual work"
 Cohesion: 0.14
@@ -832,9 +824,9 @@ Nodes (12): Accessibility, Common Rules for Professional UI + Pre-Delivery Check
 Cohesion: 0.15
 Nodes (12): 10. Charts & Data (LOW), 1. Accessibility (CRITICAL), 2. Touch & Interaction (CRITICAL), 3. Performance (HIGH), 4. Style Selection (HIGH), 5. Layout & Responsive (HIGH), 6. Typography & Color (MEDIUM), 7. Animation (MEDIUM) (+4 more)
 
-### Community 161 - "VideoPlayer.tsx"
-Cohesion: 0.38
-Nodes (9): Architecture Overview, SyncedVideoPlayer(), BloggerFallback(), EmbedPlayer(), isBloggerEmbed(), isYouTubeEmbed(), VideoPlayer(), VideoPlayerProps (+1 more)
+### Community 161 - "NightMarket.tsx"
+Cohesion: 0.26
+Nodes (11): metadata, NightMarketPage(), GachaOfferGridSkeleton(), NightMarket(), offerImage(), offerKind(), offerName(), offerRarity() (+3 more)
 
 ### Community 162 - "4. DESIGN ENGINEERING DIRECTIVES (Bias Correction)"
 Cohesion: 0.17
@@ -851,6 +843,10 @@ Nodes (11): Assess Current State, Code Simplification, Content Simplification, D
 ### Community 165 - "Hardening Dimensions"
 Cohesion: 0.17
 Nodes (11): Accessibility Resilience, Assess Hardening Needs, Edge Cases & Boundary Conditions, Error Handling, Hardening Dimensions, Input Validation & Sanitization, Internationalization (i18n), Performance Resilience (+3 more)
+
+### Community 166 - "ProfileStats.tsx"
+Cohesion: 0.33
+Nodes (6): CountUp(), ProfileNav(), ProfileTab, TABS, ProfileStats(), StatItem
 
 ### Community 167 - "Accessibility And UI Rules"
 Cohesion: 0.18
@@ -913,8 +909,8 @@ Cohesion: 0.22
 Nodes (9): Color & materials, Components & controls, iOS platform, Layout & structure, Motion, The iOS slop test, Touch targets, Typography (+1 more)
 
 ### Community 182 - "Operate mode depth (and Read notes)"
-Cohesion: 0.12
-Nodes (15): Constraints, Failure modes, Flow, $impeccable hooks, Routing, Triage findings, Color, Components (+7 more)
+Cohesion: 0.22
+Nodes (9): Color, Components, Layout, Motion, Operate mode depth (and Read notes), Product constraints, Product permissions, The product slop test (+1 more)
 
 ### Community 183 - "Shape"
 Cohesion: 0.22
@@ -932,9 +928,9 @@ Nodes (3): Dify Invariants, Workflow Nodes And RAG Pipe, Dify UI Review Routing
 Cohesion: 0.25
 Nodes (8): 8. ANTI-AI-SLOP RULES, Carousel / marquee slop (layout), Content slop, Data / KPI slop, Density slop, Layout slop, Typography slop, Visual slop
 
-### Community 187 - "escapeJsonLd"
-Cohesion: 0.32
-Nodes (6): GenerosPage(), metadata, revalidate, metadata, SobrePage(), escapeJsonLd()
+### Community 187 - "doctor.md"
+Cohesion: 0.25
+Nodes (7): Monorepo notes, Opting out of the boot check, Step 1: Run the pass, Step 2: Act by severity, Step 3: Deprecated fields are binding, Step 4: Do not overclaim on truth drift, What this owns, and what it does not
 
 ### Community 188 - "Android platform"
 Cohesion: 0.25
@@ -1004,25 +1000,25 @@ Nodes (6): Checks, Entry Atomicity, Impeccable Manual Edit Applier, Input Contra
 Cohesion: 0.52
 Nodes (6): globToRegex(), matchesScope(), normalizeIgnoreRule(), normalizeIgnoreValue(), pageCandidates(), resolveDetectIgnores()
 
-### Community 205 - "pathlib"
-Cohesion: 0.09
-Nodes (8): TestStackFlagWithDesignSystem, resolve(), shipped_invocations(), SkillScriptPathsTest, read_rows(), read_rows(), TestTextLayoutDataContracts, main()
+### Community 205 - "csv"
+Cohesion: 0.10
+Nodes (5): read_rows(), TestStyleTaxonomy, read_rows(), TestTextLayoutDataContracts, TestTextLayoutRetrieval
 
 ### Community 206 - "HeroAtmosphere.tsx"
-Cohesion: 0.32
-Nodes (6): ogl, Aurora, HeroAtmosphere(), HeroAtmosphereProps, Aurora(), DEFAULT_COLOR_STOPS
+Cohesion: 0.38
+Nodes (5): Aurora, HeroAtmosphere(), HeroAtmosphereProps, Aurora(), DEFAULT_COLOR_STOPS
 
 ### Community 207 - "5. IMAGE COUNT & PAGE SLICING"
 Cohesion: 0.33
 Nodes (6): 5. IMAGE COUNT & PAGE SLICING, Continuity Rule, Counting rule, Format, Section size variety, THIS IS THE PRIMARY OUTPUT RULE
 
-### Community 208 - "Diagnostic Scan"
-Cohesion: 0.33
-Nodes (6): 1. Accessibility (VoiceOver / TalkBack), 2. Performance, 3. Appearance & Theming, 4. Platform Conformance (CRITICAL), 5. Adaptivity, Diagnostic Scan
+### Community 208 - "HomeHero.tsx"
+Cohesion: 0.43
+Nodes (5): DeferredHomeHero(), HeroProps, highlightLabelForHour(), HomeHero(), useIsMobile()
 
-### Community 209 - "MEDIUM"
-Cohesion: 0.29
-Nodes (7): F06: SyncedVideoPlayer Exceeds 800 Lines, F07: CommentSection Missing Loading Feedback on Submit/Delete, F08: RatingStars Radiogroup Keyboard Navigation Broken, F09: ServiceNotice Uses Hardcoded Date Key, F10: ShareButtons Hardcodes Domain Instead of Using SITE_URL, F11: Modal Duplicates Keyframe Styles on Every Mount, MEDIUM
+### Community 209 - "RatingStars"
+Cohesion: 0.21
+Nodes (12): F06: SyncedVideoPlayer Exceeds 800 Lines, F07: CommentSection Missing Loading Feedback on Submit/Delete, F08: RatingStars Radiogroup Keyboard Navigation Broken, F09: ServiceNotice Uses Hardcoded Date Key, F10: ShareButtons Hardcodes Domain Instead of Using SITE_URL, F11: Modal Duplicates Keyframe Styles on Every Mount, MEDIUM, RatingStars() (+4 more)
 
 ### Community 210 - "Visualize: Direction Comps & Asset Production"
 Cohesion: 0.33
@@ -1057,24 +1053,24 @@ Cohesion: 0.40
 Nodes (5): 21. MOBILE ANTI-AI-TELLS RULE, Copy AI tells, Layout AI tells, UI clutter tells, Visual AI tells
 
 ### Community 219 - "NativeVideoPlayer"
-Cohesion: 0.53
-Nodes (6): hls.js, NativeVideoPlayer(), onEnded(), onPause(), onPlay(), sendProgress()
+Cohesion: 0.70
+Nodes (5): NativeVideoPlayer(), onEnded(), onPause(), onPlay(), sendProgress()
 
 ### Community 220 - "Region map"
 Cohesion: 0.40
 Nodes (4): Containment, Painted material, Region map, What varies independently
 
-### Community 221 - "RootLayout"
-Cohesion: 0.40
-Nodes (5): RootLayout(), F14: Auth Context Shows Loading Flash on First Render, ToastProvider(), AuthProvider(), loadApi()
+### Community 221 - "calendario/page.tsx"
+Cohesion: 0.38
+Nodes (5): CalendarioPage(), metadata, PosterThumb(), revalidate, YearFilter()
 
 ### Community 222 - "Web Interface Guidelines"
 Cohesion: 0.40
 Nodes (4): Guidelines Source, How It Works, Usage, Web Interface Guidelines
 
-### Community 223 - "Operate"
+### Community 223 - "Read"
 Cohesion: 0.50
-Nodes (3): Comps, Directions, Operate
+Nodes (3): Comps, Directions, Read
 
 ### Community 224 - "7. DIAL DEFINITIONS (Technical Reference)"
 Cohesion: 0.50
@@ -1113,24 +1109,24 @@ Cohesion: 0.50
 Nodes (3): EmptyState(), HistoryRow(), LibraryPage()
 
 ## Knowledge Gaps
-- **1327 isolated node(s):** `GachaNavGroup`, `GachaNavItem`, `Code`, `ConfigEntry`, `Toast` (+1322 more)
-  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 1700 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
-- **30 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **1327 isolated node(s):** `0.A Read these signals first`, `0.B Output a one-line "Design Read" before generating`, `0.C If the brief is ambiguous, ask one question, do not guess`, `0.D Anti-Default Discipline`, `1.A Dial Inference (design read → dial values)` (+1322 more)
+  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 1701 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
+- **32 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `next` connect `react` to `Header`, `capas/page.tsx`, `usePrefersReducedMotion`, `settings/page.tsx`, `index.ts`, `FeedPost.tsx`, `Avatar`, `Wordmark`, `api-server.ts`, `GachaEconomyHub.tsx`, `HomeSections.tsx`, `(app)/gacha/page.tsx`, `ContinueWatchingRail.tsx`, `episode/[slug]/[number]/page.tsx`, `animes/[slug]/page.tsx`, `safeImageSrc`, `package.json`, `buscar/page.tsx`, `app/layout.tsx`, `ProfileHero.tsx`, `GachaPageSkeleton`, `users/[userName]/page.tsx`, `error.tsx`, `admin/usuarios/page.tsx`, `HeroSlide.tsx`, `skins/page.tsx`, `room/[slug]/page.tsx`, `escapeJsonLd`, `BlogForm.tsx`, `HeroAtmosphere.tsx`, `blog/[slug]/page.tsx`, `GachaNav.tsx`, `biblioteca/layout.tsx`, `next.config.ts`, `useToast`?**
-  _High betweenness centrality (0.235) - this node is a cross-community bridge._
-- **What connects `GachaNavGroup`, `GachaNavItem`, `Code` to the rest of the system?**
+- **Why does `next` connect `next` to `Avatar`, `capas/page.tsx`, `usePrefersReducedMotion`, `index.ts`, `EmptyState`, `blog.ts`, `api-server.ts`, `HomeSections.tsx`, `GachaCard.tsx`, `ContinueWatchingRail.tsx`, `episode/[slug]/[number]/page.tsx`, `safeImageSrc`, `package.json`, `GachaLoadoutEditor.tsx`, `buscar/page.tsx`, `react`, `NightMarket.tsx`, `app/layout.tsx`, `Anime`, `GachaPageSkeleton`, `users/[userName]/page.tsx`, `error.tsx`, `HeroSlide.tsx`, `skins/page.tsx`, `room/[slug]/page.tsx`, `BlogForm`, `HeroAtmosphere.tsx`, `HomeHero.tsx`, `calendario/page.tsx`, `blog/[slug]/page.tsx`, `GachaNav.tsx`, `biblioteca/layout.tsx`, `next.config.ts`, `(app)/gacha/page.tsx`?**
+  _High betweenness centrality (0.223) - this node is a cross-community bridge._
+- **What connects `0.A Read these signals first`, `0.B Output a one-line "Design Read" before generating`, `0.C If the brief is ambiguous, ask one question, do not guess` to the rest of the system?**
   _1327 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `@playwright/test` be split into smaller, more focused modules?**
   _Cohesion score 0.053613053613053616 - nodes in this community are weakly interconnected._
-- **Why does `CSP detection (first-time only)` connect `blog/[slug]/page.tsx` to `live.md`?**
-  _High betweenness centrality (0.168) - this node is a cross-community bridge._
-- **Should `gacha_box_reveal.py` be split into smaller, more focused modules?**
-  _Cohesion score 0.10582010582010581 - nodes in this community are weakly interconnected._
-- **Should `Header` be split into smaller, more focused modules?**
-  _Cohesion score 0.08695652173913043 - nodes in this community are weakly interconnected._
+- **Why does `middleware()` connect `live.md` to `blog/[slug]/page.tsx`?**
+  _High betweenness centrality (0.161) - this node is a cross-community bridge._
+- **Should `Avatar` be split into smaller, more focused modules?**
+  _Cohesion score 0.04484099748341341 - nodes in this community are weakly interconnected._
 - **Should `live-browser.js` be split into smaller, more focused modules?**
   _Cohesion score 0.027676548803309366 - nodes in this community are weakly interconnected._
+- **Should `capas/page.tsx` be split into smaller, more focused modules?**
+  _Cohesion score 0.09042553191489362 - nodes in this community are weakly interconnected._
