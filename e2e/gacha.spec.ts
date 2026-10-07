@@ -267,7 +267,8 @@ test.describe("Gacha", () => {
     );
     await page.getByRole("button", { name: /Girar/ }).click();
     const dialog = page.getByRole("dialog");
-    await expect(dialog.getByText("Prévia revelada")).toBeVisible();
+    // EPICA+ mostra o callout de raridade no lugar de "Prévia revelada".
+    await expect(dialog.getByRole("heading")).toHaveText("ÉPICA!");
     await expect(dialog.locator("video")).toHaveCount(0);
     await expect(dialog.getByText("Waifu E2E")).toBeVisible();
     await dialog.getByRole("button", { name: "Continuar" }).click();
@@ -282,7 +283,7 @@ test.describe("Gacha", () => {
     await expect(dialog.getByRole("heading", { name: "Guardar carta?" })).toBeVisible();
     await expect(dialog.getByText("~9500 pts", { exact: true })).toBeVisible();
     await dialog.getByRole("button", { name: "Pegar carta", exact: true }).click();
-    await expect(page.getByRole("dialog").getByText("Sua carta")).toBeVisible();
+    await expect(page.getByRole("dialog", { name: "ÉPICA!" })).toBeVisible();
   });
 
   test("em lock: aviso anti-frustração e botão de desbloqueio", async ({
