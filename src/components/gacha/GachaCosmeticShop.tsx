@@ -5,6 +5,7 @@ import Link from "next/link";
 import { api } from "@/lib/api";
 import { CosmeticSvg } from "@/components/gacha/CosmeticSvg";
 import { CosmeticThumb } from "@/components/gacha/CosmeticThumb";
+import { GachaOfferGridSkeleton } from "@/components/gacha/GachaPageSkeleton";
 import { cosmeticTypeOf } from "@/lib/cosmetic-svg";
 import { useToast } from "@/components/common/ToastProvider";
 import type { GachaShopItem } from "@/types";
@@ -128,11 +129,10 @@ export function GachaCosmeticShop({
         </div>
       )}
       {loading ? (
-        <div
-          className="skeleton mt-4 h-56"
-          role="status"
-          aria-label="Carregando cosméticos"
-          aria-busy="true"
+        <GachaOfferGridSkeleton
+          count={3}
+          label="Carregando cosméticos"
+          className="mt-4"
         />
       ) : shop.length === 0 && !error ? (
         <p className="mt-4 border border-dashed border-hairline p-5 text-body-sm text-mist">

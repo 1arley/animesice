@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { api, ApiError } from "@/lib/api";
 import { CosmeticSlotPicker } from "@/components/gacha/CosmeticSlotPicker";
+import { GachaPanelGridSkeleton } from "@/components/gacha/GachaPageSkeleton";
 import { cosmeticTypeOf, type CosmeticType } from "@/lib/cosmetic-svg";
 import { useAuth } from "@/lib/auth-context";
 import { useToast } from "@/components/common/ToastProvider";
@@ -88,9 +89,10 @@ export function GachaLoadoutEditor() {
 
   if (authLoading) {
     return (
-      <p className="text-body-sm text-mist" aria-busy="true">
-        Carregando…
-      </p>
+      <GachaPanelGridSkeleton
+        label="Carregando cosméticos equipados"
+        className="mt-0"
+      />
     );
   }
   if (!user) {
@@ -128,11 +130,9 @@ export function GachaLoadoutEditor() {
       )}
 
       {loading ? (
-        <div
-          className="skeleton h-72"
-          role="status"
-          aria-label="Carregando coleção"
-          aria-busy="true"
+        <GachaPanelGridSkeleton
+          label="Carregando cosméticos equipados"
+          className="mt-0"
         />
       ) : (
         <div className="grid gap-4 lg:grid-cols-3">

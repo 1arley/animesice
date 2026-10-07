@@ -11,7 +11,13 @@ export function ProfileWishlist({
   loading: boolean;
 }) {
   if (loading) return <div className="skeleton h-48" />;
-  if (data?.private)
+  // Bug #2 fix: prefer isPublic (canonical field); fall back to !private so
+  // both API shapes are handled without ambiguity.
+  const isPrivate =
+    data !== null && data !== undefined
+      ? !(data.isPublic ?? !data.private)
+      : false;
+  if (isPrivate)
     return <p className="text-mist">Esta wishlist é privada.</p>;
   if (!data || (data.cards.length === 0 && data.sets.length === 0)) {
     return <p className="text-mist">Nenhum desejo público ainda.</p>;
