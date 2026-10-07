@@ -126,7 +126,12 @@ test.describe("Gacha harden — cerimônia", () => {
     await expect(page.getByText(/Pity ÉPICA\+ em 14d/)).toBeVisible();
     await expect(page.getByRole("button", { name: /^Girar \(5\)$/ })).toBeEnabled();
     await expect(page.getByRole("button", { name: "Pegar carta" })).toBeEnabled();
-    // Âncora no início: o nome acessível inclui a descrição em xl, e
+    // A nav virou acordeão de grupos: em /gacha só "Jogar" nasce aberto, os
+    // links de "Colecionar" ficam dentro de <details> fechado. Abre o grupo
+    // antes de checar os links.
+    const nav = page.getByRole("navigation", { name: "Áreas do gacha" });
+    await nav.getByText("Cartas e progresso").click();
+    // Âncora no início: o nome acessível inclui a descrição, e
     // "Loja — Ofertas e cosméticos" também conteria o termo.
     await expect(page.getByRole("link", { name: /^Minhas cartas/ })).toBeVisible();
     await expect(page.getByRole("link", { name: /^Cosméticos/ })).toBeVisible();
