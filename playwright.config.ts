@@ -11,7 +11,7 @@ export default defineConfig({
   // CI já usa retries (navegação SPA do Next tem um race residual raro que
   // ocasionalmente "engole" o primeiro clique na paginação; o retry cobre).
   retries: process.env.CI ? 2 : 1,
-  workers: process.env.CI ? 1 : undefined,
+  workers: process.env.CI ? 2 : undefined,
   reporter: "html",
   use: {
     baseURL: process.env.PLAYWRIGHT_TEST_BASE_URL || localBaseUrl,
