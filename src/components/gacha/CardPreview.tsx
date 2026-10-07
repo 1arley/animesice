@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { SpotlightCard } from "@/components/core/SpotlightCard";
 import { ConfirmDialog } from "@/components/common/ConfirmDialog";
+import { Modal } from "@/components/common/Modal";
 import { useFinePointer } from "@/lib/use-fine-pointer";
 import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
 import { GachaCard, gachaConditionLabel } from "@/components/gacha/GachaCard";
@@ -11,25 +13,25 @@ import { CosmeticSvg } from "@/components/gacha/CosmeticSvg";
 import { cosmeticTypeOf } from "@/lib/cosmetic-svg";
 import { api, ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
+import { safeImageSrc } from "@/lib/url";
 import type { GachaPull, GachaShopItem } from "@/types";
 
-export function CardPreview({
-  pull,
-  onClose,
-  canReroll = false,
-  rerolling = false,
-  onReroll,
-  rerollConfirm = false,
-  onRerollConfirm,
-  onRerollCancel,
-  onList,
-  listing = false,
-  burning = false,
-  onBurn,
-  applyingRanking = false,
-  onApplyRanking,
-  onChange,
-}: {
+export type GachaCardInspection = {
+  card: {
+    id: string;
+    name: string;
+    image: string | null;
+    imageHidden?: boolean;
+    rarity: string;
+    animeTitle?: string | null;
+  };
+  price?: number;
+  foil?: string;
+  condition?: number;
+  edition?: number;
+};
+
+type CardPreviewProps = {
   pull: GachaPull;
   onClose: () => void;
   canReroll?: boolean;
@@ -45,7 +47,117 @@ export function CardPreview({
   applyingRanking?: boolean;
   onApplyRanking?: () => void;
   onChange?: (pull: GachaPull) => void;
+};
+
+export function CardPreview(
+  props:
+    CardPreviewProps | { inspection: GachaCardInspection; onClose: () => void },
+) {
+  return "inspection" in props ? (
+    <CardInspectionPreview {...props} />
+  ) : (
+    <OwnedCardPreview {...props} />
+  );
+}
+
+function CardInspectionPreview({
+  inspection,
+  onClose,
+}: {
+  inspection: GachaCardInspection;
+  onClose: () => void;
 }) {
+  const src = inspection.card.imageHidden
+    ? null
+    : safeImageSrc(inspection.card.image);
+  const details = [
+    inspection.card.rarity,
+    inspection.foil,
+    inspection.edition == null ? null : `Edição #${inspection.edition}`,
+    inspection.condition == null
+      ? null
+      : `Desgaste ${inspection.condition.toLocaleString("pt-BR", { maximumFractionDigits: 4 })}`,
+  ].filter(Boolean);
+
+  return (
+    <Modal
+      open
+      size="wide"
+      onClose={onClose}
+      title={inspection.card.name}
+      footer={
+        <button
+          type="button"
+          onClick={onClose}
+          className="btn-ghost min-h-11 px-4"
+        >
+          Fechar prévia
+        </button>
+      }
+    >
+      <div className="grid gap-5 sm:grid-cols-[minmax(0,260px)_1fr]">
+        <div className="relative aspect-[3/4] overflow-hidden border border-hairline bg-ink">
+          {src ? (
+            <Image
+              src={src}
+              alt={inspection.card.name}
+              fill
+              sizes="(max-width: 640px) 80vw, 260px"
+              className="object-cover"
+            />
+          ) : (
+            <span className="absolute inset-0 flex items-center justify-center text-body-sm text-mist">
+              {inspection.card.imageHidden
+                ? "Imagem misteriosa"
+                : "Imagem indisponível"}
+            </span>
+          )}
+        </div>
+        <div className="min-w-0">
+          <p className="font-mono text-caption text-ice">
+            {inspection.card.rarity}
+          </p>
+          <h2 className="mt-1 break-words font-display text-display-md text-snow">
+            {inspection.card.name}
+          </h2>
+          {inspection.card.animeTitle && (
+            <p className="mt-3 text-body-sm text-mist">
+              Origem: {inspection.card.animeTitle}
+            </p>
+          )}
+          {details.length > 1 && (
+            <p className="mt-3 text-body-sm text-mist">
+              {details.slice(1).join(" · ")}
+            </p>
+          )}
+          {inspection.price != null && (
+            <p className="mt-5 border-t border-hairline pt-4 font-display text-xl tabular-nums text-ice">
+              {inspection.price.toLocaleString("pt-BR")} Cristais
+            </p>
+          )}
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+function OwnedCardPreview({
+  pull,
+  onClose,
+  canReroll = false,
+  rerolling = false,
+  onReroll,
+  rerollConfirm = false,
+  onRerollConfirm,
+  onRerollCancel,
+  onList,
+  listing = false,
+  burning = false,
+  onBurn,
+  applyingRanking = false,
+  onApplyRanking,
+  onChange,
+}: CardPreviewProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const { user } = useAuth();
   const isOwner = !!user && !!pull.user?.id && user.id === pull.user.id;
@@ -72,7 +184,7 @@ export function CardPreview({
   const rerollCost = Math.max(1, pull.value + Math.round(pull.value * 0.15));
   const applyCost =
     pull.rankedValue !== undefined && pull.value > pull.rankedValue
-      ? Math.max(1, Math.round((pull.value - pull.rankedValue) * 0.10))
+      ? Math.max(1, Math.round((pull.value - pull.rankedValue) * 0.1))
       : 0;
   const canApply = applyCost > 0;
   const condition = pull.conditionLabel ?? gachaConditionLabel(pull.condition);
@@ -162,7 +274,9 @@ export function CardPreview({
         if (!cancelled) {
           setCardBacks(
             s.cosmetics.filter(
-              (c) => c.owned && (c.type === "BACK" || (!c.type && c.key.startsWith("BACK_"))),
+              (c) =>
+                c.owned &&
+                (c.type === "BACK" || (!c.type && c.key.startsWith("BACK_"))),
             ),
           );
           setActiveBack(s.activeCardBack ?? null);
