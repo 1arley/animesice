@@ -5,6 +5,7 @@ import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { CardPreview } from "@/components/gacha/CardPreview";
 import { GachaCard } from "@/components/gacha/GachaCard";
+import { GachaRowsSkeleton } from "@/components/gacha/GachaPageSkeleton";
 import { Modal } from "@/components/common/Modal";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { SectionLabel } from "@/components/common/SectionLabel";
@@ -345,7 +346,11 @@ export function GachaTradeHub() {
       )}
 
       {loading ? (
-        <div className="skeleton mt-8 h-80" aria-busy="true" />
+        <GachaRowsSkeleton
+          count={4}
+          label="Carregando propostas de troca"
+          className="mt-8"
+        />
       ) : (
         <>
           <section className="mt-10">
@@ -765,9 +770,11 @@ function CardChoiceList({
       <h3 className="font-display text-lg text-snow">{title}</h3>
       <p className="mt-1 text-caption text-mist">{description}</p>
       {loading ? (
-        <p role="status" className="mt-3 text-body-sm text-mist">
-          Carregando cartas…
-        </p>
+        <GachaRowsSkeleton
+          count={4}
+          label={`Carregando cartas de ${title.toLowerCase()}`}
+          className="mt-3"
+        />
       ) : cards.length === 0 ? (
         <p className="mt-3 text-body-sm text-mist">{emptyText}</p>
       ) : (
