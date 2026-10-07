@@ -1077,7 +1077,6 @@ export interface GachaEngagementPilotDashboard {
     sharedCards: number;
     pause: boolean;
   };
-  satisfaction: { measured: boolean };
 }
 
 export type GachaTradeStatus =

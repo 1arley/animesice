@@ -194,13 +194,26 @@ export default function AdminGachaPage() {
       );
   }, []);
 
+  const pilotAlerts = pilot
+    ? [
+        pilot.economy.pause &&
+          `o piloto emite mais cristal do que o grupo gasta (${pilot.economy.emitted} emitidos contra ${pilot.economy.sinks} gastos; o alerta dispara acima de 120%).`,
+        pilot.behavior.rewardOnlyRate > 0.3 &&
+          `${(pilot.behavior.rewardOnlyRate * 100).toFixed(0)}% de quem ganhou cristais só volta pela recompensa, sem girar ou descobrir carta (alerta acima de 30%).`,
+        pilot.behavior.sharedCards > pilot.cohort.assigned * 0.1 &&
+          `${pilot.behavior.sharedCards} carta(s) estão com três ou mais contas do piloto (alerta acima de 10% da coorte).`,
+      ].filter(Boolean)
+    : [];
+
   async function savePilot() {
     if (savingPilot) return;
     setSavingPilot(true);
     setPilotMessage("");
     try {
       setPilot(await api.adminUpdateGachaEngagementPilot(pilotPercent));
-      setPilotMessage(`Piloto atualizado para ${pilotPercent}% da base.`);
+      setPilotMessage(
+        `Percentual do piloto em ${pilotPercent}% da base. As contas que entram agora entram na próxima vez que abrirem o gacha; as que já estavam dentro continuam dentro.`,
+      );
     } catch (e) {
       setError(
         e instanceof ApiError ? e.message : "Erro ao atualizar o piloto.",
@@ -528,9 +541,19 @@ export default function AdminGachaPage() {
               >
                 Piloto de destaque
               </h2>
-              <p className="mt-1 text-body-sm text-mist">
-                Coorte estável desde{" "}
+              <p className="mt-1 max-w-2xl text-body-sm text-mist">
+                Destaque, coleção e medalas só saem para parte da base — cada
+                conta entra ou não por um hash fixo do id, então o grupo nunca
+                muda no meio do teste. Grupo de{" "}
+                <strong className="text-snow">
+                  {pilot.config.percent}% da base
+                </strong>{" "}
+                desde{" "}
                 {new Date(pilot.config.startedAt).toLocaleDateString("pt-BR")}.
+                O percentual só cresce: cada conta tem um número fixo de 0 a 99
+                e entra no piloto quando esse número fica abaixo do valor
+                definido. Ninguém sai do grupo, então dá para comparar antes e
+                depois.
               </p>
             </div>
             <div className="flex flex-wrap items-end gap-2">
@@ -565,34 +588,56 @@ export default function AdminGachaPage() {
           </div>
           <dl className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <div className="border border-hairline p-3">
-              <dt className="font-mono text-caption text-mist">Coorte</dt>
+              <dt className="font-mono text-caption text-mist">
+                Contas no piloto
+              </dt>
               <dd className="mt-1 text-title text-snow">
                 {pilot.cohort.assigned}/{pilot.cohort.totalUsers}
               </dd>
+              <p className="mt-1 text-caption text-mist-soft">
+                {pilot.cohort.totalUsers === 0
+                  ? "Nenhuma conta cadastrada para comparar."
+                  : `As ${pilot.cohort.assigned} contas dentro do corte de ${pilot.cohort.totalUsers} veem destaque, coleção e medalhas; as outras recebem “Recurso ainda indisponível nesta conta”.`}
+              </p>
             </div>
             <div className="border border-hairline p-3">
               <dt className="font-mono text-caption text-mist">
-                Emissão / gasto
+                Cristais emitidos / gastos
               </dt>
               <dd className="mt-1 text-title text-snow">
                 {pilot.economy.emitted} / {pilot.economy.sinks}
               </dd>
+              <p className="mt-1 text-caption text-mist-soft">
+                {pilot.economy.emitted === 0
+                  ? "O piloto ainda não emitiu cristais."
+                  : `O grupo gastou ${pilot.economy.sinks} cristais contra ${pilot.economy.emitted} emitidos pelo piloto: a emissão equivale a ${((pilot.economy.ratio ?? 0) * 100).toFixed(0)}% do que o grupo gasta. Alerta acima de 120% (piloto dando mais cristal do que o grupo consegue queimar).`}
+              </p>
             </div>
             <div className="border border-hairline p-3">
               <dt className="font-mono text-caption text-mist">
-                Uso só por recompensa
+                Retorno só por recompensa
               </dt>
               <dd className="mt-1 text-title text-snow">
                 {(pilot.behavior.rewardOnlyRate * 100).toFixed(1)}%
               </dd>
+              <p className="mt-1 text-caption text-mist-soft">
+                {pilot.behavior.earners === 0
+                  ? "Ninguém ganhou cristais pelo piloto ainda."
+                  : `${pilot.behavior.rewardOnlyUsers} de ${pilot.behavior.earners} contas que ganharam cristais nunca giraram nem viram carta — só voltaram pela recompensa. Acima de 30% dispara alerta.`}
+              </p>
             </div>
             <div className="border border-hairline p-3">
               <dt className="font-mono text-caption text-mist">
-                Cartas muito circuladas
+                Cartas com 3+ donos
               </dt>
               <dd className="mt-1 text-title text-snow">
                 {pilot.behavior.sharedCards}
               </dd>
+              <p className="mt-1 text-caption text-mist-soft">
+                {pilot.behavior.sharedCards === 0
+                  ? "Nenhuma carta concentrada em várias contas."
+                  : "Mesma carta nas mãos de três contas ou mais do piloto: risco de carta comum demais ou de do farm entre elas."}
+              </p>
             </div>
           </dl>
           <p
@@ -603,11 +648,9 @@ export default function AdminGachaPage() {
                 : "border-ice/30 text-ice"
             }`}
           >
-            {pilot.economy.pause || pilot.behavior.pause
-              ? "Pausar expansão: um limite econômico ou comportamental foi excedido."
-              : pilot.satisfaction.measured
-                ? "Limites técnicos saudáveis; confira satisfação antes de expandir."
-                : "Limites técnicos saudáveis, mas satisfação ainda não foi medida: não expandir."}
+            {pilotAlerts.length > 0
+              ? `Não expanda ainda: ${pilotAlerts.join(" ")} O painel só avisa — nenhuma regra do gacha foi bloqueada por código.`
+              : "Nenhum limite estourou: emissão coberta pelo gasto, retorno de quem só quer recompensa e concentração de carta dentro do aceitável. O painel não mede satisfação do jogador — se o grupo não gostar de destaque, coleção e medalhas, nenhum número aqui denuncia. Expanda olhando retenção por conta."}
           </p>
           {pilotMessage && (
             <p
