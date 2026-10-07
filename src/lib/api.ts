@@ -39,6 +39,7 @@ import type {
   GachaPull,
   GachaCardInfo,
   AdminGachaCard,
+  AdminGachaSkin,
   GachaStatus,
   GachaPointsPage,
   CrystalPage,
@@ -1685,21 +1686,39 @@ export const api = {
       method: "PATCH",
       body: JSON.stringify(body),
     }),
+  adminListSkins: (page = 1, limit = 48, search = "", active?: boolean) =>
+    request<{
+      data: AdminGachaSkin[];
+      meta: { page: number; limit: number; total: number; totalPages: number };
+    }>(
+      `/gacha/admin/skins?page=${page}&limit=${limit}${search ? `&search=${encodeURIComponent(search)}` : ""}${active === undefined ? "" : `&active=${active}`}`,
+    ),
   adminCreateSkin: (body: {
     name: string;
     imageUrl: string;
-    cardId?: string;
-    sourceUrl?: string;
+    cardId?: string | null;
+    sourceUrl?: string | null;
     active?: boolean;
   }) =>
     request(`/gacha/admin/skins`, {
       method: "POST",
       body: JSON.stringify(body),
     }),
-  adminUpdateSkin: (id: string, body: Record<string, unknown>) =>
-    request(`/gacha/admin/skins/${encodeURIComponent(id)}`, {
+  adminUpdateSkin: (id: string, body: {
+    name?: string;
+    imageUrl?: string;
+    sourceUrl?: string | null;
+    cardId?: string | null;
+    active?: boolean;
+    blocked?: boolean;
+  }) =>
+    request<AdminGachaSkin>(`/gacha/admin/skins/${encodeURIComponent(id)}`, {
       method: "PATCH",
       body: JSON.stringify(body),
+    }),
+  adminDeleteSkin: (id: string) =>
+    request<AdminGachaSkin>(`/gacha/admin/skins/${encodeURIComponent(id)}`, {
+      method: "DELETE",
     }),
   adminGachaConfig: () =>
     request<

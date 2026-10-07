@@ -564,6 +564,20 @@ export interface AdminGachaCard {
   anime?: PostAnime | null;
 }
 
+export interface AdminGachaSkin {
+  id: string;
+  cardId: string | null;
+  name: string;
+  imageUrl: string;
+  sourceUrl: string | null;
+  active: boolean;
+  blocked: boolean;
+  rarity: string;
+  createdAt: string;
+  updatedAt: string;
+  card?: Pick<AdminGachaCard, "id" | "name" | "image"> | null;
+}
+
 export interface GachaCardInfo {
   id: string;
   name: string;
