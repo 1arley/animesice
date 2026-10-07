@@ -36,3 +36,5 @@ graphify-out/*
 .github/agents/
 .github/hooks/
 .github/skills/
+# Skills are restored from skills-lock.json with npm run skills:install
+/.agents/skills/*/
