@@ -11,7 +11,8 @@
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "release": "semantic-release",
-    "release:dry": "semantic-release --dry-run"
+    "release:dry": "semantic-release --dry-run",
+    "skills:install": "npx --yes skills@1.7.1 experimental_install"
   },
   "dependencies": {
     "@gsap/react": "^2.1.2",
