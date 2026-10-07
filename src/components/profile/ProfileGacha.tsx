@@ -1,6 +1,10 @@
+"use client";
+
+import { useState } from "react";
 import type { GachaPull } from "@/types";
 import { SectionLabel } from "@/components/common/SectionLabel";
 import { GachaCard } from "@/components/gacha/GachaCard";
+import { CardPreview } from "@/components/gacha/CardPreview";
 
 /**
  * ProfileGacha — coleção de cartas do gacha: grid poster-first como os
@@ -21,6 +25,8 @@ export function ProfileGacha({
   isPrivate: boolean;
   loading: boolean;
 }) {
+  const [preview, setPreview] = useState<GachaPull | null>(null);
+
   if (isPrivate) {
     return (
       <section>
@@ -57,6 +63,9 @@ export function ProfileGacha({
 
   return (
     <section>
+      {preview && (
+        <CardPreview pull={preview} onClose={() => setPreview(null)} />
+      )}
       <SectionLabel level={2}>
         Cartas <span className="shelf-label-data">{total}</span>{" "}
         <span className="shelf-label-data">{totalValue} pts</span>
@@ -78,7 +87,14 @@ export function ProfileGacha({
       )}
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
         {items.map((pull) => (
-          <GachaCard key={pull.id} pull={pull} />
+          <button
+            key={pull.id}
+            type="button"
+            onClick={() => setPreview(pull)}
+            className="w-full text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-ice"
+          >
+            <GachaCard pull={pull} linkAnime={false} />
+          </button>
         ))}
       </div>
     </section>
