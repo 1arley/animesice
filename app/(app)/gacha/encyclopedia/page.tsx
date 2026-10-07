@@ -9,6 +9,11 @@ import { useAuth } from "@/lib/auth-context";
 import { safeImageSrc } from "@/lib/url";
 import { GACHA_TIERS, RARITY } from "@/components/gacha/GachaCard";
 import { WishlistButton } from "@/components/gacha/WishlistButton";
+import {
+  GachaCardGridSkeleton,
+  GachaPageSkeleton,
+  GachaPanelGridSkeleton,
+} from "@/components/gacha/GachaPageSkeleton";
 import type { GachaEncyclopedia } from "@/types";
 
 function Encyclopedia() {
@@ -272,11 +277,15 @@ function Encyclopedia() {
           </button>
         </div>
       ) : !data ? (
-        <div
-          role="status"
-          aria-label="Carregando enciclopédia"
-          className="skeleton mt-8 h-80"
-        />
+        isSets ? (
+          <GachaPanelGridSkeleton
+            count={3}
+            label="Carregando conjuntos"
+            className="mt-8"
+          />
+        ) : (
+          <GachaCardGridSkeleton label="Carregando enciclopédia" className="mt-8" />
+        )
       ) : (
         <>
           <p role="status" className="mt-6 text-body-sm text-mist">
@@ -361,6 +370,8 @@ function Encyclopedia() {
                     <WishlistButton
                       cardId={card.id}
                       initialWishlisted={card.wishlisted}
+                      // Only block adding when already owned; removal is always
+                      // allowed (handled inside WishlistButton — Bug #3 fix).
                       disabled={card.owned && !card.wishlisted}
                     />
                   </article>
@@ -413,13 +424,7 @@ function Encyclopedia() {
 export default function EncyclopediaPage() {
   return (
     <Suspense
-      fallback={
-        <div
-          role="status"
-          aria-label="Carregando enciclopédia"
-          className="skeleton mx-auto mt-8 h-80 max-w-shelf"
-        />
-      }
+      fallback={<GachaPageSkeleton kind="encyclopedia" />}
     >
       <Encyclopedia />
     </Suspense>

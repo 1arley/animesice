@@ -6,6 +6,11 @@ import Image from "next/image";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { safeImageSrc } from "@/lib/url";
+import {
+  GachaCardGridSkeleton,
+  GachaPageSkeleton,
+  GachaPanelGridSkeleton,
+} from "@/components/gacha/GachaPageSkeleton";
 import { useToast } from "@/components/common/ToastProvider";
 import type { GachaWishlistResponse } from "@/types";
 
@@ -13,27 +18,31 @@ export default function GachaWishlistPage() {
   const { user, loading: authLoading } = useAuth();
   const [data, setData] = useState<GachaWishlistResponse | null>(null);
   const [error, setError] = useState("");
+  // Bug #2 fix: derive publicList from isPublic (preferred) or !private as
+  // fallback so both API shapes work without ambiguity.
   const [publicList, setPublicList] = useState(true);
   const [savingPrivacy, setSavingPrivacy] = useState(false);
+  // Bug #5: pagination state
+  const [page, setPage] = useState(1);
+  const [loadingPage, setLoadingPage] = useState(false);
+  const [reload, setReload] = useState(0);
   const { toast } = useToast();
 
   useEffect(() => {
     if (!user) return;
+    setError("");
     void api
-      .gachaWishlist(user.id)
+      .gachaWishlist(user.id, `page=${page}`)
       .then((result) => {
         setData(result);
-        setPublicList(result.isPublic);
+        // Bug #2 fix: prefer isPublic, fall back to !private
+        setPublicList(result.isPublic ?? !result.private);
       })
       .catch(() => setError("Não foi possível carregar sua wishlist."));
-  }, [user]);
+  }, [user, page, reload]);
 
   if (authLoading)
-    return (
-      <main className="mx-auto max-w-shelf px-4 py-12 text-mist">
-        Carregando...
-      </main>
-    );
+    return <GachaPageSkeleton kind="wishlist" />;
   if (!user) {
     return (
       <main className="mx-auto max-w-shelf px-4 py-12">
@@ -52,17 +61,36 @@ export default function GachaWishlistPage() {
     setSavingPrivacy(true);
     try {
       const next = await api.gachaWishlistPrivacy(!publicList);
-      setPublicList(next.gachaWishlistPublic);
-      toast(
-        next.gachaWishlistPublic ? "Wishlist pública." : "Wishlist privada.",
-        "success",
+      const nowPublic = next.gachaWishlistPublic;
+      setPublicList(nowPublic);
+      // Bug #1 fix: keep data in sync so the conditional render below reflects
+      // the new privacy state immediately. Without this the content stayed
+      // visible to the owner even after making the wishlist private.
+      setData((prev) =>
+        prev ? { ...prev, isPublic: nowPublic, private: !nowPublic } : prev,
       );
+      toast(nowPublic ? "Wishlist pública." : "Wishlist privada.", "success");
     } catch {
       setError("Não foi possível salvar a privacidade.");
     } finally {
       setSavingPrivacy(false);
     }
   }
+
+  async function goToPage(target: number) {
+    setLoadingPage(true);
+    try {
+      const result = await api.gachaWishlist(user!.id, `page=${target}`);
+      setData(result);
+      setPage(target);
+    } catch {
+      setError("Não foi possível carregar a página.");
+    } finally {
+      setLoadingPage(false);
+    }
+  }
+
+  const totalPages = data?.meta.totalPages ?? 1;
 
   return (
     <main className="mx-auto max-w-shelf px-4 pb-24 pt-8">
@@ -86,14 +114,38 @@ export default function GachaWishlistPage() {
               : "Wishlist privada"}
         </button>
       </div>
-      {error && (
+      {error && data && (
         <p role="alert" className="mt-6 text-signal">
           {error}
         </p>
       )}
-      {!data ? (
-        <div className="skeleton mt-8 h-64" />
-      ) : data.private ? (
+      {!data && error ? (
+        <div className="mt-8" role="alert">
+          <p className="text-signal">{error}</p>
+          <button
+            type="button"
+            onClick={() => setReload((value) => value + 1)}
+            className="btn-ghost mt-4 px-4 py-3"
+          >
+            Tentar novamente
+          </button>
+        </div>
+      ) : !data ? (
+        <>
+          <GachaPanelGridSkeleton
+            count={3}
+            label="Carregando conjuntos da wishlist"
+            className="mt-8"
+          />
+          <GachaCardGridSkeleton
+            count={6}
+            label="Carregando cartas da wishlist"
+            className="mt-8"
+          />
+        </>
+      ) : !publicList ? (
+        // Bug #2 fix: use `publicList` (live state) instead of `data.private`
+        // (stale initial value) so the owner sees the updated state immediately.
         <p className="mt-8 text-mist">Wishlist privada.</p>
       ) : (
         <>
@@ -160,6 +212,34 @@ export default function GachaWishlistPage() {
               </div>
             )}
           </section>
+
+          {/* Bug #5 fix: render pagination controls when totalPages > 1 */}
+          {totalPages > 1 && (
+            <nav
+              aria-label="Paginação da wishlist"
+              className="mt-10 flex flex-wrap items-center gap-4"
+            >
+              <button
+                type="button"
+                onClick={() => void goToPage(page - 1)}
+                disabled={page <= 1 || loadingPage}
+                className="btn-ghost px-4 py-3 disabled:opacity-40"
+              >
+                Anterior
+              </button>
+              <span className="text-body-sm text-mist">
+                Página {page} de {totalPages}
+              </span>
+              <button
+                type="button"
+                onClick={() => void goToPage(page + 1)}
+                disabled={page >= totalPages || loadingPage}
+                className="btn-ghost px-4 py-3 disabled:opacity-40"
+              >
+                Próxima
+              </button>
+            </nav>
+          )}
         </>
       )}
     </main>
