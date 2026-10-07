@@ -3,6 +3,19 @@
 import { FormEvent, useState } from "react";
 import { api, ApiError } from "@/lib/api";
 
+function needsManualTitle(value: string) {
+  try {
+    const url = new URL(value);
+    const host = url.hostname.toLowerCase().replace(/^www\./, "");
+    return !(
+      (host === "myanimelist.net" || host === "anilist.co") &&
+      /\/(anime|manga)\/\d+/i.test(url.pathname)
+    );
+  } catch {
+    return false;
+  }
+}
+
 export default function ExternalWorksPage() {
   const [url, setUrl] = useState("");
   const [title, setTitle] = useState("");
@@ -52,13 +65,13 @@ export default function ExternalWorksPage() {
   return (
     <div>
       <h1 className="font-display text-display-xl text-snow">Obra externa</h1>
-      <p className="mt-2 text-body-sm text-mist">Cadastre mangá do MAL ou AniList sem publicar obra no catálogo.</p>
+      <p className="mt-2 text-body-sm text-mist">Cadastre obras de qualquer site HTTPS sem publicar no catálogo. Para fontes fora do MAL e AniList, informe o título manualmente.</p>
       <form onSubmit={submit} className="admin-card mt-6 max-w-2xl space-y-4 p-5">
         <label className="block text-body-sm text-mist">Link da obra
           <input required type="url" value={url} onChange={(event) => setUrl(event.target.value)} placeholder="https://myanimelist.net/manga/123" className="admin-input mt-1 w-full" />
         </label>
-        <label className="block text-body-sm text-mist">Título manual (fallback)
-          <input value={title} onChange={(event) => setTitle(event.target.value)} className="admin-input mt-1 w-full" />
+        <label className="block text-body-sm text-mist">Título da obra{needsManualTitle(url) ? " (obrigatório para esta fonte)" : " (opcional)"}
+          <input required={needsManualTitle(url)} value={title} onChange={(event) => setTitle(event.target.value)} className="admin-input mt-1 w-full" />
         </label>
         <label className="block text-body-sm text-mist">Imagem manual (fallback)
           <input type="url" value={coverImage} onChange={(event) => setCoverImage(event.target.value)} className="admin-input mt-1 w-full" />
