@@ -1,45 +1,45 @@
 # Graph Report - animesice  (2026-10-07)
 
 ## Corpus Check
-- 331 files · ~323,375 words
+- 333 files · ~326,538 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 18 file(s) not represented in the graph (top: (none) 12, .example 1, .css 1)
 
 ## Summary
-- 1960 nodes · 4729 edges · 166 communities (117 shown, 49 thin omitted)
+- 1970 nodes · 4749 edges · 166 communities (118 shown, 48 thin omitted)
 - Extraction: 99% EXTRACTED · 1% INFERRED · 0% AMBIGUOUS · INFERRED: 52 edges (avg confidence: 0.92)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `7dfeebf6`
+- Built from commit: `a1126d43`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
 ## Community Hubs (Navigation)
-- @playwright/test
-- Avatar
-- me/page.tsx
-- time.ts
+- loginAs
+- ContinueWatchingRail.tsx
+- index.ts
+- EmptyState
 - capas/page.tsx
 - usePrefersReducedMotion
-- index.ts
-- blog.ts
-- blur.ts
+- admin/gacha/page.tsx
+- api-server.ts
 - CardPreview.tsx
-- ProfileHero.tsx
+- HIGH
+- GachaCard.tsx
 - GachaEconomyHub.tsx
 - HomeSections.tsx
-- users/[userName]/page.tsx
-- RatingStars.tsx
+- SEO & Tráfego — Plano de Implementação
+- NightMarket.tsx
 - Baixa prioridade (acessibilidade)
 - episode/[slug]/[number]/page.tsx
-- FeedActivityItem.tsx
+- safeImageSrc
 - cartas/page.tsx
-- (app)/gacha/page.tsx
+- RollStage.tsx
 - package.json
 - compilerOptions
 - components.json
-- animes/page.tsx
+- crystals/page.tsx
 - Mobile Menu / Hamburger Menu Analysis
 - react
 - room/[slug]/page.tsx
@@ -48,66 +48,59 @@
 - AnimesIce - Frontend (Next.js + React + Tailwind CSS + TypeScript)
 - AdminGachaPage
 - wishlist/page.tsx
+- Header
+- INFO
+- Avatar
 - next
-- CrystalLoader
-- EmptyState
-- BlogForm.tsx
 - pr-description.mjs
-- PublicProfilePage
+- HomeHero.tsx
 - mock-backend.js
 - GachaPageSkeleton
-- obras-externas/page.tsx
-- RollStage.tsx
+- useToast
+- AdminGachaSkinsPage
 - error.tsx
 - dependencies
 - Process
 - AdminWatchtowerPage
-- HeroSlide.tsx
-- SectionLabel.tsx
+- SettingsPage
+- (app)/gacha/page.tsx
 - scripts
-- admin/gacha/page.tsx
-- skins/page.tsx
-- GachaCard.tsx
-- motion
+- animes/[slug]/page.tsx
+- Findings
+- NotificationPreferencesSection.tsx
+- users/[userName]/page.tsx
 - test-crystal/page.tsx
 - CHANGELOG.md
+- obras-externas/page.tsx
+- AdminGenerosPage
+- AuthProvider
 - buscar/page.tsx
-- PageTitle
-- ensureRefresh
-- animes/[slug]/[number]/page.tsx
 - Product
-- ProfileActivity.tsx
+- next.config.ts
 - moderacao/page.tsx
 - console-debug.js
 - check-chunk-recovery-build.mjs
 - Team Playbook
 - 1. Directory Structure Overview
-- 1.0.0 (2026-08-26)
-- 1.0.0 (2026-09-15)
+- AnimesIce Frontend Audit
+- AdminImportPage
 - [1.1.0](https://github.com/1arley/animesice/compare/v1.0.0...v1.1.0) (2026-10-04)
 - dmca/page.tsx
 - privacidade/page.tsx
-- animes/[slug]/page.tsx
 - .eslintrc.json
 - postcss.config.mjs
 - 1.0.0 (2026-09-18)
-- 1.0.0 (2026-08-15)
+- (app)/gacha/skins/page.tsx
 - create/page.tsx
-- 1.0.0 (2026-08-18)
 - NightMarketIntro
 - Repository Guidelines
-- 1.0.0 (2026-08-18)
-- 1.0.0 (2026-08-20)
-- 1.0.0 (2026-08-20)
+- [1.1.0](https://github.com/1arley/animesice/compare/v1.0.0...v1.1.0) (2026-10-06)
 - Auditoria de UI/UX do mercado
-- Anime
-- 1.0.0 (2026-08-20)
-- HeroAtmosphere.tsx
+- 1.0.0 (2026-08-18)
 - GachaNav.tsx
 - 1.0.0 (2026-08-12)
 - 1.0.0 (2026-08-25)
 - 1.0.0 (2026-08-26)
-- 1.0.0 (2026-08-20)
 - 1.0.0 (2026-08-31)
 - 1.0.0 (2026-09-04)
 - 1.0.0 (2026-09-08)
@@ -115,49 +108,56 @@
 - 1.0.0 (2026-09-15)
 - 1.0.0 (2026-08-20)
 - 1.0.0 (2026-09-16)
-- [1.1.0](https://github.com/1arley/animesice/compare/v1.0.0...v1.1.0) (2026-10-06)
-- useToast
-- 1.0.0 (2026-08-20)
-- blog/[slug]/page.tsx
+- [1.1.0](https://github.com/1arley/animesice/compare/v1.0.0...v1.1.0) (2026-10-07)
+- allowScripts
 - 1.0.0 (2026-08-14)
 - 1.0.0 (2026-08-15)
-- [1.1.0](https://github.com/1arley/animesice/compare/v1.0.0...v1.1.0) (2026-09-18)
+- 1.0.0 (2026-08-26)
 - 1.0.0 (2026-08-17)
-- biblioteca/layout.tsx
+- feedbacks/page.tsx
 - implementer.md
 - leader.md
 - 1.0.0 (2026-08-19)
 - researcher.md
 - reviewer.md
-- CompensationModal.tsx
-- feedbacks/page.tsx
-- CommentSection
+- 1.0.0 (2026-09-15)
+- opengraph-image.tsx
+- gacha-harden.spec.ts
 - 1.0.0 (2026-08-21)
 - [1.1.0](https://github.com/1arley/animesice/compare/v1.0.1...v1.1.0) (2026-08-12)
 - FeedPost.tsx
-- gsap.ts
-- NotificationPreferencesSection.tsx
-- smooth-scroll.tsx
+- helpers.ts
+- @playwright/test
 - gacha_box_reveal.py
-- api-server.ts
-- next.config.ts
-- User
-- allowScripts
-- AdminGenerosPage
-- AdminBlogPage
-- AdminImportPage
-- safeImageSrc
+- 1.0.0 (2026-08-15)
+- gacha-trades.spec.ts
+- encyclopedia/page.tsx
+- 1.0.0 (2026-08-18)
+- processBatch
+- 1.0.0 (2026-08-18)
+- Anime
+- perfil-wishlist-url.spec.ts
+- comunidade-feed.spec.ts
+- gacha-card-back.spec.ts
+- 1.0.0 (2026-08-20)
+- 1.0.0 (2026-08-20)
+- 1.0.0 (2026-08-20)
+- 1.0.0 (2026-08-20)
+- NotificationBell.tsx
+- comunidade-usuarios.spec.ts
+- perfil-seguidores.spec.ts
+- [1.1.0](https://github.com/1arley/animesice/compare/v1.0.0...v1.1.0) (2026-09-18)
 - biblioteca/page.tsx
-- Wordmark
+- biblioteca/layout.tsx
 - admin/usuarios/page.tsx
 
 ## God Nodes (most connected - your core abstractions)
-1. `react` - 142 edges
+1. `react` - 144 edges
 2. `useAuth()` - 126 edges
-3. `next` - 123 edges
-4. `api` - 81 edges
-5. `ApiError` - 64 edges
-6. `safeImageSrc()` - 54 edges
+3. `next` - 124 edges
+4. `api` - 82 edges
+5. `ApiError` - 65 edges
+6. `safeImageSrc()` - 56 edges
 7. `usePrefersReducedMotion()` - 46 edges
 8. `isPrivileged()` - 40 edges
 9. `Anime` - 38 edges
@@ -170,75 +170,75 @@
   docs/AUDIT.md → src/components/common/AdminGate.tsx
 - `F17: Reduced Motion Is Comprehensive and Well-Implemented` --references--> `usePrefersReducedMotion()`  [INFERRED]
   docs/AUDIT.md → src/lib/use-prefers-reduced-motion.ts
-- `Positive Findings` --references--> `safeNext()`  [INFERRED]
-  docs/AUDIT.md → app/(auth)/login/page.tsx
-- `Positive Findings` --references--> `DeferredCrystalSplash()`  [INFERRED]
-  docs/AUDIT.md → src/components/animesice/DeferredCrystalSplash.tsx
+- `1a. Schema (Prisma)` --references--> `BlogPost`  [INFERRED]
+  docs/seo-traffic-plan.md → src/types/index.ts
+- `1b. Backend (NestJS)` --references--> `BlogPost`  [INFERRED]
+  docs/seo-traffic-plan.md → src/types/index.ts
 
 ## Import Cycles
 - None detected.
 
-## Communities (166 total, 49 thin omitted)
+## Communities (166 total, 48 thin omitted)
 
-### Community 0 - "@playwright/test"
+### Community 0 - "loginAs"
+Cohesion: 0.16
+Nodes (9): cosmetics, svg(), card, meta, spin, card, cosmetic, loginAs() (+1 more)
+
+### Community 1 - "ContinueWatchingRail.tsx"
+Cohesion: 0.12
+Nodes (19): CommentRow(), ContinueWatchingRail(), FavoriteButton(), FavoriteButtonProps, AnimeStatsDisplay(), RatingStars(), handleKeyDown(), handleRate() (+11 more)
+
+### Community 2 - "index.ts"
 Cohesion: 0.05
-Nodes (51): API(), mockFeed(), API(), makeUsers(), mockUsersDirectory(), EBML_MAGIC, FTYP_BOX, pull (+43 more)
+Nodes (55): AdminDashboardStats, AdminPostItem, AdminUserDetail, AdminUserListItem, AuditLogItem, AuthResponse, GachaPullResponse, readErrorMessage() (+47 more)
 
-### Community 1 - "Avatar"
-Cohesion: 0.07
-Nodes (27): AdminUserDetailPage(), MetadataRow(), AppLayout(), AVATAR_ACCEPT, prepareAvatar(), SettingsPage(), handleFilePicked(), AuthButtons() (+19 more)
-
-### Community 2 - "me/page.tsx"
-Cohesion: 0.14
-Nodes (18): AdminLayout(), AdminShell(), AdminSidebar(), NAV_ITEMS, NavItem, MyProfilePage(), ConfirmEmailContent(), ConfirmEmailPage() (+10 more)
-
-### Community 3 - "time.ts"
-Cohesion: 0.25
-Nodes (9): SORT_TABS, SortKey, UsuariosPage(), FollowRow(), ProfileFollowList(), FollowButton(), UserCard(), formatDate() (+1 more)
+### Community 3 - "EmptyState"
+Cohesion: 0.19
+Nodes (13): SORT_TABS, SortKey, UsuariosPage(), EpisodeCard(), EpisodeCardProps, LatestEpisode, FollowRow(), ProfileFollowList() (+5 more)
 
 ### Community 4 - "capas/page.tsx"
 Cohesion: 0.06
-Nodes (61): AdminCapasPage(), addLayer(), cancelEditing(), changeType(), save(), startEditing(), sync(), updateLayer() (+53 more)
+Nodes (60): AdminCapasPage(), addLayer(), cancelEditing(), changeType(), save(), startEditing(), sync(), updateLayer() (+52 more)
 
 ### Community 5 - "usePrefersReducedMotion"
-Cohesion: 0.17
-Nodes (16): CrystalMotion(), CrystalMotionMode, CrystalMotionProps, MoteStyle, moteValue(), VIDEO_SOURCES, CrystalSplash(), CrystalTransition() (+8 more)
+Cohesion: 0.06
+Nodes (47): Loading(), Loading(), RegrasPage(), Loading(), Loading(), Loading(), lenis, motion (+39 more)
 
-### Community 7 - "index.ts"
-Cohesion: 0.05
-Nodes (53): AdminDashboardStats, AdminPostItem, AdminUserDetail, AdminUserListItem, AuditLogItem, AuthResponse, GachaPullResponse, SiteSettings (+45 more)
+### Community 7 - "admin/gacha/page.tsx"
+Cohesion: 0.18
+Nodes (9): animeLabel(), AnimeOption, TIERS, EMPTY_FORM, SkinForm, AdminGachaCard, AdminGachaSkin, GachaEngagementPilotDashboard (+1 more)
 
-### Community 8 - "blog.ts"
-Cohesion: 0.24
-Nodes (16): BlogPage(), metadata, revalidate, GET(), revalidate, sitemap(), STATIC_ROUTES, serverListBlogPosts() (+8 more)
+### Community 8 - "api-server.ts"
+Cohesion: 0.07
+Nodes (42): POST(), POST(), BlogPage(), metadata, revalidate, GET(), revalidate, BlogPostPage() (+34 more)
 
-### Community 9 - "blur.ts"
-Cohesion: 0.16
-Nodes (9): CalendarioPage(), metadata, PosterThumb(), revalidate, YearFilter(), land69, post89, square (+1 more)
-
-### Community 10 - "CardPreview.tsx"
+### Community 9 - "CardPreview.tsx"
 Cohesion: 0.19
 Nodes (16): ConfirmDialog(), Modal(), CardInspectionPreview(), CardPreview(), CardPreviewProps, OwnedCardPreview(), share(), GachaRowsSkeleton() (+8 more)
 
-### Community 11 - "ProfileHero.tsx"
-Cohesion: 0.23
-Nodes (9): FeaturedPortrait(), FeaturedPortraitSkeleton(), CalendarIcon(), ExternalIcon(), FlagIcon(), ProfileHero(), REPORT_REASONS, ShareIcon() (+1 more)
+### Community 10 - "HIGH"
+Cohesion: 0.18
+Nodes (11): F02: Modal Focus Trap Not Implemented, F03: Toast Notifications Not Announced to Screen Readers, F04: `api.ts` ensureRefresh() Can Permanently Lock Refresh State, F05: CSP Uses `unsafe-inline` for `script-src`, HIGH, P0 (Immediate — Ship blockers), P1 (Next sprint), P2 (Short-term) (+3 more)
+
+### Community 11 - "GachaCard.tsx"
+Cohesion: 0.09
+Nodes (24): CONDITION_ART, CONDITION_COLOR, CONDITION_GLYPH, CONDITION_SURFACE, FOIL_TEXT, GALAXY_FRAME, GALAXY_TEXT, RARITY (+16 more)
 
 ### Community 12 - "GachaEconomyHub.tsx"
 Cohesion: 0.09
 Nodes (35): GachaShopPage(), GachaMarketPage(), FOCUSABLE, ACCENT, BOX_LABEL, BoxReveal(), boxRewardLabel(), GachaCardInspection (+27 more)
 
 ### Community 13 - "HomeSections.tsx"
-Cohesion: 0.19
-Nodes (23): HomePage(), metadata, revalidate, HomeBackdrop(), DeferredPersonalizedRails(), Rail, SectionLabel(), Reveal() (+15 more)
+Cohesion: 0.14
+Nodes (29): HomePage(), metadata, revalidate, gsap, @gsap/react, DividerSvg(), HomeBackdrop(), IceBeamDivider() (+21 more)
 
-### Community 14 - "users/[userName]/page.tsx"
-Cohesion: 0.19
-Nodes (12): TAB_ALIASES, ProfileAbout(), ProfileNav(), ProfileTab, TABS, ProfileStats(), StatItem, buildTaste() (+4 more)
+### Community 14 - "SEO & Tráfego — Plano de Implementação"
+Cohesion: 0.18
+Nodes (10): 2. Página de índice `/generos`, 3. Schema VideoObject nos episódios, 4. Gêneros no sitemap, 5. hreflang `pt-BR`, Contexto, Decisões fechadas, Ordem de execução recomendada, SEO & Tráfego — Plano de Implementação (+2 more)
 
-### Community 15 - "RatingStars.tsx"
-Cohesion: 0.26
-Nodes (11): AnimeStatsDisplay(), RatingStars(), handleKeyDown(), handleRate(), handleRemove(), moveFocus(), RatingStarsProps, HeartIcon() (+3 more)
+### Community 15 - "NightMarket.tsx"
+Cohesion: 0.21
+Nodes (13): metadata, NightMarketPage(), Block(), GachaOfferGridSkeleton(), NightMarket(), offerImage(), offerKind(), offerName() (+5 more)
 
 ### Community 18 - "Baixa prioridade (acessibilidade)"
 Cohesion: 0.06
@@ -248,17 +248,17 @@ Nodes (30): Alta prioridade (bugs reais), anchor-is-valid ×2, Baixa prioridade 
 Cohesion: 0.18
 Nodes (11): AdminEditEpisodePage(), DeleteZone(), DeleteZoneProps, FieldLabel(), Hint(), ScrapeImportPanel(), ScrapeImportPanelProps, VideoUploadPanel() (+3 more)
 
-### Community 21 - "FeedActivityItem.tsx"
-Cohesion: 0.23
-Nodes (11): ProfileCurrentlyWatching(), ProfileRatings(), Star(), Stars(), CommentGlyph(), CommentLike(), EventVerb(), FeedActivityItem() (+3 more)
+### Community 21 - "safeImageSrc"
+Cohesion: 0.12
+Nodes (24): CalendarioPage(), metadata, PosterThumb(), revalidate, YearFilter(), PosterTileProps, ActivityRow(), CommentGlyph() (+16 more)
 
 ### Community 22 - "cartas/page.tsx"
-Cohesion: 0.16
-Nodes (10): GachaCollectionPage(), handleReroll(), CardsFilterBar(), ChevronDown(), FilterBadge(), buildSlots(), CardsPagination(), GACHA_TIERS (+2 more)
+Cohesion: 0.17
+Nodes (9): GachaCollectionPage(), handleReroll(), CardsFilterBar(), ChevronDown(), FilterBadge(), buildSlots(), CardsPagination(), gachaConditionLabel() (+1 more)
 
-### Community 23 - "(app)/gacha/page.tsx"
-Cohesion: 0.20
-Nodes (18): CrystalIcon(), formatCountdown(), GachaPage(), GachaPageContent(), closePreview(), handleApplyRanking(), handleBypass(), handleClaim() (+10 more)
+### Community 23 - "RollStage.tsx"
+Cohesion: 0.14
+Nodes (16): Cristal do gacha (Manim), CountUp(), RARITY_TEXT, PARTICLE_GALAXY, particleCount(), revealSpeed(), ringCount(), RollStage() (+8 more)
 
 ### Community 24 - "package.json"
 Cohesion: 0.11
@@ -272,29 +272,29 @@ Nodes (18): compilerOptions, allowJs, esModuleInterop, incremental, isolatedModu
 Cohesion: 0.11
 Nodes (17): aliases, components, hooks, lib, ui, utils, iconLibrary, rsc (+9 more)
 
-### Community 28 - "animes/page.tsx"
-Cohesion: 0.20
-Nodes (13): AnimesPage(), generateMetadata(), revalidate, dynamic, generateMetadata(), GenrePage(), generateMetadata(), LancamentosPage() (+5 more)
+### Community 28 - "crystals/page.tsx"
+Cohesion: 0.22
+Nodes (6): CRYSTAL_PACKAGES, GachaCrystalsPage(), TYPE_LABEL, GachaPanelGridSkeleton(), CrystalEvent, CrystalEventType
 
 ### Community 29 - "Mobile Menu / Hamburger Menu Analysis"
 Cohesion: 0.08
 Nodes (25): 1. Overall Project Structure, 2. Mobile Menu / Hamburger Functionality, 3. Key Files, 4. Data Flow Summary: Main Mobile Nav Open/Close, 5. Essential Files for Understanding the Feature, 6. Architecture Insights, 7. Summary of Files Searched, A. Main Site Mobile Navigation (Bottom Sheet Drawer) (+17 more)
 
 ### Community 30 - "react"
-Cohesion: 0.07
-Nodes (33): AdminAuditPage(), AuditTab, RESOURCE_TYPES, AdminAnime, AdminCatalogoPage(), AdminConfigPage(), AdminCreateEpisodePage(), AdminEditAnimePage() (+25 more)
+Cohesion: 0.08
+Nodes (34): AdminAuditPage(), AuditTab, RESOURCE_TYPES, AdminAnime, AdminCatalogoPage(), AdminConfigPage(), AdminCreateEpisodePage(), AdminEditAnimePage() (+26 more)
 
 ### Community 31 - "room/[slug]/page.tsx"
-Cohesion: 0.06
-Nodes (52): mergeMessages(), Participant, RoomPage(), Architecture Overview, F06: SyncedVideoPlayer Exceeds 800 Lines, F07: CommentSection Missing Loading Feedback on Submit/Delete, F08: RatingStars Radiogroup Keyboard Navigation Broken, F09: ServiceNotice Uses Hardcoded Date Key (+44 more)
+Cohesion: 0.05
+Nodes (59): GET(), generateMetadata(), getEpisode, revalidate, toIso8601Duration(), WatchPage(), mergeMessages(), Participant (+51 more)
 
 ### Community 32 - "devDependencies"
 Cohesion: 0.13
 Nodes (15): devDependencies, autoprefixer, eslint, eslint-config-next, @playwright/test, postcss, semantic-release, @semantic-release/changelog (+7 more)
 
 ### Community 33 - "app/layout.tsx"
-Cohesion: 0.05
-Nodes (42): handleSubmit(), safeNext(), fontDisplay, fontPlexMono, fontPlexSans, metadata, RootLayout(), viewport (+34 more)
+Cohesion: 0.19
+Nodes (10): fontDisplay, fontPlexMono, fontPlexSans, metadata, RootLayout(), viewport, DeferredCrystalSplash(), MonetagVignette() (+2 more)
 
 ### Community 34 - "AnimesIce - Frontend (Next.js + React + Tailwind CSS + TypeScript)"
 Cohesion: 0.06
@@ -308,41 +308,45 @@ Nodes (8): AdminGachaPage(), cancelEdit(), clearAnime(), onAnimeFilterChange(), 
 Cohesion: 0.25
 Nodes (10): GachaWishlistContent(), GachaWishlistPage(), ProfileWishlist(), pageWindow(), PaginationControls(), GACHA_WISHLIST_PAGE_SIZE, readPage(), useGachaWishlist() (+2 more)
 
-### Community 37 - "next"
-Cohesion: 0.20
-Nodes (4): ConfigEntry, GROUP_LABELS, next, YEARS
+### Community 37 - "Header"
+Cohesion: 0.11
+Nodes (23): AdminLayout(), AdminShell(), AdminSidebar(), NAV_ITEMS, NavItem, AppLayout(), ConfirmEmailContent(), ConfirmEmailPage() (+15 more)
 
-### Community 38 - "CrystalLoader"
-Cohesion: 0.28
-Nodes (7): Loading(), Loading(), Loading(), Loading(), Loading(), CrystalLoader(), CrystalLoaderProps
+### Community 38 - "INFO"
+Cohesion: 0.29
+Nodes (7): handleSubmit(), safeNext(), F16: Build, Typecheck, and Lint Pass Cleanly, F17: Reduced Motion Is Comprehensive and Well-Implemented, F18: Open Redirect Protection in Login Is Correct, F19: Chunk Recovery System Is Well-Designed, INFO
 
-### Community 39 - "EmptyState"
-Cohesion: 0.17
-Nodes (9): CRYSTAL_PACKAGES, GachaCrystalsPage(), TYPE_LABEL, GenerosPage(), metadata, revalidate, EmptyState(), CrystalEvent (+1 more)
+### Community 39 - "Avatar"
+Cohesion: 0.14
+Nodes (17): AVATAR_ACCEPT, AuthButtons(), Avatar(), AvatarProps, CommentSectionProps, Glyph(), MobileTabBar(), DashStat() (+9 more)
 
-### Community 40 - "BlogForm.tsx"
-Cohesion: 0.09
-Nodes (24): EditBlogPostPage(), NewBlogPostPage(), 1. CMS — Conteúdo editorial nos animes + Blog, 1a. Schema (Prisma), 1b. Backend (NestJS), 1c. Frontend, 1d. Migração de dados, 2. Página de índice `/generos` (+16 more)
+### Community 40 - "next"
+Cohesion: 0.14
+Nodes (11): EditBlogPostPage(), NewBlogPostPage(), AdminBlogPage(), next, BlogForm(), changeTitle(), submit(), slugify() (+3 more)
 
 ### Community 41 - "pr-description.mjs"
 Cohesion: 0.13
 Nodes (11): breaking, dirs, fileLines, files, groups, isBack, LABELS, out (+3 more)
 
-### Community 43 - "PublicProfilePage"
-Cohesion: 0.17
-Nodes (5): OverviewSkeleton(), ProfileSkeleton(), PublicProfilePage(), ensureTab(), handleNavigate()
+### Community 43 - "HomeHero.tsx"
+Cohesion: 0.43
+Nodes (5): DeferredHomeHero(), HeroProps, highlightLabelForHour(), HomeHero(), useIsMobile()
 
 ### Community 44 - "mock-backend.js"
 Cohesion: 0.18
 Nodes (8): EPISODE, http, server, CORS_HEADERS, http, json(), server, url
 
 ### Community 45 - "GachaPageSkeleton"
-Cohesion: 0.07
-Nodes (33): Loading(), Loading(), Loading(), Loading(), Loading(), Loading(), CardOwners(), Encyclopedia() (+25 more)
+Cohesion: 0.13
+Nodes (15): Loading(), Loading(), Loading(), Loading(), Loading(), Loading(), Loading(), Loading() (+7 more)
 
-### Community 47 - "RollStage.tsx"
-Cohesion: 0.24
-Nodes (9): Cristal do gacha (Manim), CountUp(), PARTICLE_GALAXY, particleCount(), revealSpeed(), ringCount(), RollStage(), shakeAmp() (+1 more)
+### Community 46 - "useToast"
+Cohesion: 0.10
+Nodes (16): AdminCrystalCodesPage(), cancelEditing(), save(), blank, Code, AdminGachaConfigPage(), ConfigEntry, GROUP_LABELS (+8 more)
+
+### Community 47 - "AdminGachaSkinsPage"
+Cohesion: 0.50
+Nodes (3): AdminGachaSkinsPage(), resetForm(), save()
 
 ### Community 48 - "error.tsx"
 Cohesion: 0.47
@@ -360,33 +364,33 @@ Nodes (7): 1. Pin the fixed point, 2. Identify the spec source, 3. Identify the 
 Cohesion: 0.33
 Nodes (11): AdminWatchtowerPage(), handleBackfillAnilist(), handleCheck(), handleDiscover(), handleRepair(), handleRetry(), handleScanAll(), handleSyncSchedules() (+3 more)
 
-### Community 52 - "HeroSlide.tsx"
-Cohesion: 0.13
-Nodes (17): DeferredHomeHero(), HeroProps, ParallaxValues, useHeroParallax(), HeroCharacter(), HeroCharacterProps, HeroEnvironment(), HeroEnvironmentProps (+9 more)
+### Community 52 - "SettingsPage"
+Cohesion: 0.07
+Nodes (25): LoginForm(), LoginPage(), RecuperarSenhaPage(), RedefinirSenhaForm(), handleSubmit(), RedefinirSenhaPage(), RegisterPage(), handleSubmit() (+17 more)
 
-### Community 53 - "SectionLabel.tsx"
-Cohesion: 0.22
-Nodes (9): HeadingLevel, SectionLabelProps, PosterTile(), PosterTileProps, ProfileCollection(), STATUS_FILTERS, STATUS_LABELS, ProfileFavorites() (+1 more)
+### Community 53 - "(app)/gacha/page.tsx"
+Cohesion: 0.15
+Nodes (23): CrystalIcon(), formatCountdown(), GachaPage(), GachaPageContent(), closePreview(), handleApplyRanking(), handleBypass(), handleClaim() (+15 more)
 
 ### Community 54 - "scripts"
 Cohesion: 0.18
 Nodes (11): scripts, build, check:chunk-recovery, dev, lint, release, release:dry, skills:install (+3 more)
 
-### Community 55 - "admin/gacha/page.tsx"
-Cohesion: 0.33
-Nodes (5): animeLabel(), AnimeOption, TIERS, AdminGachaCard, GachaEngagementPilotDashboard
+### Community 55 - "animes/[slug]/page.tsx"
+Cohesion: 0.12
+Nodes (19): AnimeDetailPage(), generateMetadata(), getAnime, revalidate, Positive Findings, AdaptiveImage(), AdaptiveImageProps, AnimeListButton() (+11 more)
 
-### Community 57 - "skins/page.tsx"
-Cohesion: 0.24
-Nodes (6): countdown(), GachaSkinsPage(), SkinTile(), SkinReveal(), GachaSkin, GachaSkinsResponse
+### Community 57 - "Findings"
+Cohesion: 0.29
+Nodes (7): CRITICAL, F01: Cross-Project Brand Contamination in hentaisice Fork, F12: FavoriteButton Has No Visual Loading Feedback, F13: FeedPost Silently Swallows Share Error, F15: AdminGate Has No Dedicated Layout Guard, Findings, LOW
 
-### Community 58 - "GachaCard.tsx"
-Cohesion: 0.14
-Nodes (17): CONDITION_ART, CONDITION_COLOR, CONDITION_GLYPH, CONDITION_SURFACE, FOIL_TEXT, GachaCard, GALAXY_FRAME, GALAXY_TEXT (+9 more)
+### Community 58 - "NotificationPreferencesSection.tsx"
+Cohesion: 0.29
+Nodes (6): ALL_TYPES, channels, NOTIFICATION_LABELS, NotificationChannel, NotificationPreference, NotificationType
 
-### Community 59 - "motion"
-Cohesion: 0.25
-Nodes (4): motion, HoloTilt(), TiltedCard(), TiltedCardProps
+### Community 59 - "users/[userName]/page.tsx"
+Cohesion: 0.10
+Nodes (21): OverviewSkeleton(), ProfileSkeleton(), PublicProfilePage(), ensureTab(), handleNavigate(), TAB_ALIASES, HeadingLevel, SectionLabel() (+13 more)
 
 ### Community 60 - "test-crystal/page.tsx"
 Cohesion: 0.43
@@ -394,31 +398,23 @@ Nodes (5): metadata, TestCrystalPage(), CrystalVideoClean(), compileShader(), Cr
 
 ### Community 61 - "CHANGELOG.md"
 Cohesion: 0.11
-Nodes (17): 1.0.0 (2026-08-18), [1.1.0](https://github.com/1arley/animesice/compare/v1.0.0...v1.1.0) (2026-09-18), [1.1.0](https://github.com/1arley/animesice/compare/v1.0.0...v1.1.0) (2026-09-18), [1.1.0](https://github.com/1arley/animesice/compare/v1.0.0...v1.1.0) (2026-09-18), [1.1.0](https://github.com/1arley/animesice/compare/v1.0.0...v1.1.0) (2026-09-18), [1.2.0](https://github.com/1arley/animesice/compare/v1.1.0...v1.2.0) (2026-08-13), Bug Fixes, Bug Fixes (+9 more)
+Nodes (17): 1.0.0 (2026-08-20), [1.1.0](https://github.com/1arley/animesice/compare/v1.0.0...v1.1.0) (2026-09-18), [1.1.0](https://github.com/1arley/animesice/compare/v1.0.0...v1.1.0) (2026-09-18), [1.1.0](https://github.com/1arley/animesice/compare/v1.0.0...v1.1.0) (2026-09-18), [1.1.0](https://github.com/1arley/animesice/compare/v1.0.0...v1.1.0) (2026-09-18), [1.2.0](https://github.com/1arley/animesice/compare/v1.1.0...v1.2.0) (2026-08-13), Bug Fixes, Bug Fixes (+9 more)
 
-### Community 62 - "buscar/page.tsx"
-Cohesion: 0.22
-Nodes (12): first(), metadata, revalidate, SearchPage(), SearchParam, YEARS, animeFormatLabel(), animeSeasonLabel() (+4 more)
+### Community 63 - "AdminGenerosPage"
+Cohesion: 0.67
+Nodes (3): AdminGenerosPage(), handleNameChange(), slugify()
 
-### Community 63 - "PageTitle"
-Cohesion: 0.33
-Nodes (6): RegrasPage(), BlurText(), BlurTextProps, BlurTextTag, PageTitle(), PageTitleProps
+### Community 64 - "AuthProvider"
+Cohesion: 0.50
+Nodes (4): F14: Auth Context Shows Loading Flash on First Render, Key Design Decisions, AuthProvider(), loadApi()
 
-### Community 64 - "ensureRefresh"
-Cohesion: 0.40
-Nodes (5): F04: `api.ts` ensureRefresh() Can Permanently Lock Refresh State, P1 (Next sprint), ensureRefresh(), readErrorMessage(), request()
-
-### Community 65 - "animes/[slug]/[number]/page.tsx"
-Cohesion: 0.16
-Nodes (12): generateMetadata(), getEpisode, revalidate, toIso8601Duration(), WatchPage(), metadata, SobrePage(), config (+4 more)
+### Community 65 - "buscar/page.tsx"
+Cohesion: 0.12
+Nodes (27): AnimesPage(), generateMetadata(), revalidate, first(), metadata, revalidate, SearchPage(), SearchParam (+19 more)
 
 ### Community 66 - "Product"
 Cohesion: 0.17
 Nodes (11): Accessibility & Inclusion, Brand Commitments, Capabilities and Constraints, Evidence on Hand, Operating Context, Platform, Positioning, Product (+3 more)
-
-### Community 67 - "ProfileActivity.tsx"
-Cohesion: 0.36
-Nodes (7): ActivityRow(), CommentGlyph(), CommentLike(), EventVerb(), ProfileActivity(), ProfileActivityProps, PublicActivityEvent
 
 ### Community 68 - "moderacao/page.tsx"
 Cohesion: 0.18
@@ -436,69 +432,41 @@ Nodes (4): Execution And Handoff, Roles And Coordination, Team Formation, Team P
 Cohesion: 0.17
 Nodes (11): 1. Directory Structure Overview, Animesice - Next.js Frontend Structure Analysis, `app/` Directory (Next.js App Router), Architectural Patterns Identified, Code Quality Observations, Essential Files for Understanding the Feature Architecture, Pages Directory & Routing Summary, Root Level (+3 more)
 
-### Community 73 - "1.0.0 (2026-08-26)"
-Cohesion: 0.40
-Nodes (5): 1.0.0 (2026-08-26), Bug Fixes, Features, Performance Improvements, Reverts
-
-### Community 74 - "1.0.0 (2026-09-15)"
-Cohesion: 0.40
-Nodes (5): 1.0.0 (2026-09-15), Bug Fixes, Features, Performance Improvements, Reverts
+### Community 73 - "AnimesIce Frontend Audit"
+Cohesion: 0.22
+Nodes (8): 1. Silent Error Swallowing, 2. No SWR/React Query — Manual Cache Invalidation, 3. Large Client Components, AnimesIce Frontend Audit, Cross-cutting Problems, Executive Summary, Skills Used, Test Coverage Gaps
 
 ### Community 75 - "[1.1.0](https://github.com/1arley/animesice/compare/v1.0.0...v1.1.0) (2026-10-04)"
 Cohesion: 0.40
 Nodes (5): [1.1.0](https://github.com/1arley/animesice/compare/v1.0.0...v1.1.0) (2026-10-04), Bug Fixes, Features, Performance Improvements, Reverts
 
-### Community 78 - "animes/[slug]/page.tsx"
-Cohesion: 0.14
-Nodes (17): AnimeDetailPage(), generateMetadata(), getAnime, revalidate, AnimeListButton(), handleRemove(), handleSave(), refreshState() (+9 more)
-
 ### Community 85 - "1.0.0 (2026-09-18)"
 Cohesion: 0.40
 Nodes (5): 1.0.0 (2026-09-18), Bug Fixes, Features, Performance Improvements, Reverts
 
-### Community 86 - "1.0.0 (2026-08-15)"
-Cohesion: 0.50
-Nodes (4): 1.0.0 (2026-08-15), Bug Fixes, Features, Performance Improvements
+### Community 86 - "(app)/gacha/skins/page.tsx"
+Cohesion: 0.24
+Nodes (6): countdown(), GachaSkinsPage(), SkinTile(), SkinReveal(), GachaSkin, GachaSkinsResponse
 
 ### Community 90 - "create/page.tsx"
 Cohesion: 0.36
 Nodes (5): AdminCreateAnimePage(), animeAudioLabelFromTitle(), isDubbedTitle(), slugify(), Genre
 
-### Community 91 - "1.0.0 (2026-08-18)"
-Cohesion: 0.50
-Nodes (4): 1.0.0 (2026-08-18), Bug Fixes, Features, Performance Improvements
-
 ### Community 93 - "Repository Guidelines"
 Cohesion: 0.25
 Nodes (7): Agent Team, Code, Tests, Delivery, Commands, Project Structure, Repository Guidelines, Role and First Checks, UI, Security, Technology
 
-### Community 94 - "1.0.0 (2026-08-18)"
-Cohesion: 0.50
-Nodes (4): 1.0.0 (2026-08-18), Bug Fixes, Features, Performance Improvements
-
-### Community 95 - "1.0.0 (2026-08-20)"
-Cohesion: 0.50
-Nodes (4): 1.0.0 (2026-08-20), Bug Fixes, Features, Performance Improvements
-
-### Community 96 - "1.0.0 (2026-08-20)"
-Cohesion: 0.50
-Nodes (4): 1.0.0 (2026-08-20), Bug Fixes, Features, Performance Improvements
+### Community 96 - "[1.1.0](https://github.com/1arley/animesice/compare/v1.0.0...v1.1.0) (2026-10-06)"
+Cohesion: 0.40
+Nodes (5): [1.1.0](https://github.com/1arley/animesice/compare/v1.0.0...v1.1.0) (2026-10-06), Bug Fixes, Features, Performance Improvements, Reverts
 
 ### Community 98 - "Auditoria de UI/UX do mercado"
 Cohesion: 0.33
 Nodes (5): Achados tratados, Auditoria de UI/UX do mercado, Direcao visual, Limites e proximas prioridades, Verificacao
 
-### Community 99 - "Anime"
-Cohesion: 0.16
-Nodes (9): dynamic, contentType, revalidate, size, AnimeCardProps, HeroUI(), HeroUIProps, RevealLabel() (+1 more)
-
-### Community 100 - "1.0.0 (2026-08-20)"
+### Community 101 - "1.0.0 (2026-08-18)"
 Cohesion: 0.50
-Nodes (4): 1.0.0 (2026-08-20), Bug Fixes, Features, Performance Improvements
-
-### Community 101 - "HeroAtmosphere.tsx"
-Cohesion: 0.32
-Nodes (6): ogl, Aurora, HeroAtmosphere(), HeroAtmosphereProps, Aurora(), DEFAULT_COLOR_STOPS
+Nodes (4): 1.0.0 (2026-08-18), Bug Fixes, Features, Performance Improvements
 
 ### Community 102 - "GachaNav.tsx"
 Cohesion: 0.38
@@ -515,10 +483,6 @@ Nodes (5): 1.0.0 (2026-08-25), Bug Fixes, Features, Performance Improvements, Re
 ### Community 105 - "1.0.0 (2026-08-26)"
 Cohesion: 0.40
 Nodes (5): 1.0.0 (2026-08-26), Bug Fixes, Features, Performance Improvements, Reverts
-
-### Community 106 - "1.0.0 (2026-08-20)"
-Cohesion: 0.50
-Nodes (4): 1.0.0 (2026-08-20), Bug Fixes, Features, Performance Improvements
 
 ### Community 107 - "1.0.0 (2026-08-31)"
 Cohesion: 0.40
@@ -548,21 +512,9 @@ Nodes (4): 1.0.0 (2026-08-20), Bug Fixes, Features, Performance Improvements
 Cohesion: 0.40
 Nodes (5): 1.0.0 (2026-09-16), Bug Fixes, Features, Performance Improvements, Reverts
 
-### Community 114 - "[1.1.0](https://github.com/1arley/animesice/compare/v1.0.0...v1.1.0) (2026-10-06)"
+### Community 114 - "[1.1.0](https://github.com/1arley/animesice/compare/v1.0.0...v1.1.0) (2026-10-07)"
 Cohesion: 0.40
-Nodes (5): [1.1.0](https://github.com/1arley/animesice/compare/v1.0.0...v1.1.0) (2026-10-06), Bug Fixes, Features, Performance Improvements, Reverts
-
-### Community 116 - "useToast"
-Cohesion: 0.11
-Nodes (14): AdminCrystalCodesPage(), cancelEditing(), save(), blank, Code, AdminGachaConfigPage(), Toast, ToastContext (+6 more)
-
-### Community 117 - "1.0.0 (2026-08-20)"
-Cohesion: 0.50
-Nodes (4): 1.0.0 (2026-08-20), Bug Fixes, Features, Performance Improvements
-
-### Community 118 - "blog/[slug]/page.tsx"
-Cohesion: 0.21
-Nodes (11): BlogPostPage(), findPost(), generateMetadata(), revalidate, BlogAdminActions(), ShareButtons(), ShareButtonsProps, serverGetBlogPost() (+3 more)
+Nodes (5): [1.1.0](https://github.com/1arley/animesice/compare/v1.0.0...v1.1.0) (2026-10-07), Bug Fixes, Features, Performance Improvements, Reverts
 
 ### Community 119 - "1.0.0 (2026-08-14)"
 Cohesion: 0.50
@@ -572,29 +524,33 @@ Nodes (4): 1.0.0 (2026-08-14), Bug Fixes, Features, Performance Improvements
 Cohesion: 0.50
 Nodes (4): 1.0.0 (2026-08-15), Bug Fixes, Features, Performance Improvements
 
-### Community 121 - "[1.1.0](https://github.com/1arley/animesice/compare/v1.0.0...v1.1.0) (2026-09-18)"
-Cohesion: 0.67
-Nodes (3): [1.1.0](https://github.com/1arley/animesice/compare/v1.0.0...v1.1.0) (2026-09-18), Bug Fixes, Features
+### Community 121 - "1.0.0 (2026-08-26)"
+Cohesion: 0.40
+Nodes (5): 1.0.0 (2026-08-26), Bug Fixes, Features, Performance Improvements, Reverts
 
 ### Community 122 - "1.0.0 (2026-08-17)"
 Cohesion: 0.50
 Nodes (4): 1.0.0 (2026-08-17), Bug Fixes, Features, Performance Improvements
 
-### Community 123 - "biblioteca/layout.tsx"
-Cohesion: 0.30
-Nodes (3): metadata, EpisodePrefetcher(), processBatch()
+### Community 123 - "feedbacks/page.tsx"
+Cohesion: 0.29
+Nodes (6): STATUS_BADGE, STATUS_LABELS, TYPE_LABELS, FeedbackStatus, FeedbackType, SiteFeedbackItem
 
 ### Community 126 - "1.0.0 (2026-08-19)"
 Cohesion: 0.50
 Nodes (4): 1.0.0 (2026-08-19), Bug Fixes, Features, Performance Improvements
 
-### Community 129 - "CompensationModal.tsx"
-Cohesion: 0.32
-Nodes (5): CompensationModal(), loadApi(), NotificationBell(), markAllRead(), NotificationItem
+### Community 129 - "1.0.0 (2026-09-15)"
+Cohesion: 0.40
+Nodes (5): 1.0.0 (2026-09-15), Bug Fixes, Features, Performance Improvements, Reverts
 
-### Community 130 - "feedbacks/page.tsx"
-Cohesion: 0.29
-Nodes (6): STATUS_BADGE, STATUS_LABELS, TYPE_LABELS, FeedbackStatus, FeedbackType, SiteFeedbackItem
+### Community 130 - "opengraph-image.tsx"
+Cohesion: 0.40
+Nodes (3): contentType, revalidate, size
+
+### Community 131 - "gacha-harden.spec.ts"
+Cohesion: 0.30
+Nodes (9): A(), CARDS, ceremonyFixture(), collectionFixture(), ENC, nowIso(), profileFixture(), pull() (+1 more)
 
 ### Community 132 - "1.0.0 (2026-08-21)"
 Cohesion: 0.50
@@ -606,67 +562,115 @@ Nodes (4): [1.0.1](https://github.com/1arley/animesice/compare/v1.0.0...v1.0.1) 
 
 ### Community 135 - "FeedPost.tsx"
 Cohesion: 0.11
-Nodes (13): FeedPage(), revalidate, CommentGlyph(), FeedPost(), HeartGlyph(), ShareGlyph(), FeedView(), FeedViewProps (+5 more)
+Nodes (12): FeedPage(), revalidate, CommentGlyph(), FeedPost(), HeartGlyph(), ShareGlyph(), FeedView(), FeedViewProps (+4 more)
 
-### Community 136 - "gsap.ts"
-Cohesion: 0.35
-Nodes (7): gsap, @gsap/react, DividerSvg(), IceBeamDivider(), alreadyTriggered(), RevealStagger(), useFinePointer()
+### Community 136 - "helpers.ts"
+Cohesion: 0.27
+Nodes (5): openEditor(), VIEWER, AD_PATTERNS, blockAds(), clickCentered()
 
-### Community 137 - "NotificationPreferencesSection.tsx"
-Cohesion: 0.29
-Nodes (6): ALL_TYPES, channels, NOTIFICATION_LABELS, NotificationChannel, NotificationPreference, NotificationType
+### Community 139 - "@playwright/test"
+Cohesion: 0.20
+Nodes (3): EBML_MAGIC, FTYP_BOX, @playwright/test
 
 ### Community 142 - "gacha_box_reveal.py"
 Cohesion: 0.10
 Nodes (9): CommonBox, GachaBoxReveal, PremiumBox, RareBox, render_assets(), diamond(), NightMarketCardReveal, render_asset() (+1 more)
 
-### Community 148 - "api-server.ts"
-Cohesion: 0.26
-Nodes (8): POST(), POST(), GET(), API_URL, RETRYABLE_STATUS, serverStreamSourceAsync(), sleep(), isPrivilegedRole()
+### Community 148 - "1.0.0 (2026-08-15)"
+Cohesion: 0.50
+Nodes (4): 1.0.0 (2026-08-15), Bug Fixes, Features, Performance Improvements
 
-### Community 156 - "User"
-Cohesion: 0.67
-Nodes (3): RegisterResponse, User, AuthContextValue
+### Community 155 - "gacha-trades.spec.ts"
+Cohesion: 0.24
+Nodes (8): MY_A, MY_B, nowIso(), pull(), trade(), ZOE, ZOE_BERU, ZOE_GOJO
 
-### Community 158 - "AdminGenerosPage"
-Cohesion: 0.67
-Nodes (3): AdminGenerosPage(), handleNameChange(), slugify()
-
-### Community 221 - "safeImageSrc"
+### Community 156 - "encyclopedia/page.tsx"
 Cohesion: 0.21
-Nodes (17): metadata, revalidate, TopPage(), Positive Findings, Key Design Decisions, AdaptiveImage(), AdaptiveImageProps, AnimeCard() (+9 more)
+Nodes (8): CardOwners(), Encyclopedia(), EncyclopediaPage(), GACHA_TIERS, CardGrid(), GachaCardGridSkeleton(), GachaEncyclopedia, GachaEncyclopediaOwner
+
+### Community 157 - "1.0.0 (2026-08-18)"
+Cohesion: 0.50
+Nodes (4): 1.0.0 (2026-08-18), Bug Fixes, Features, Performance Improvements
+
+### Community 159 - "1.0.0 (2026-08-18)"
+Cohesion: 0.50
+Nodes (4): 1.0.0 (2026-08-18), Bug Fixes, Features, Performance Improvements
+
+### Community 160 - "Anime"
+Cohesion: 0.10
+Nodes (21): dynamic, metadata, revalidate, TopPage(), 1. CMS — Conteúdo editorial nos animes + Blog, 1a. Schema (Prisma), 1b. Backend (NestJS), 1c. Frontend (+13 more)
+
+### Community 161 - "perfil-wishlist-url.spec.ts"
+Cohesion: 0.50
+Nodes (4): API(), mockProfileAndWishlist(), PROFILE, WISHLIST
+
+### Community 164 - "comunidade-feed.spec.ts"
+Cohesion: 0.50
+Nodes (3): API(), mockFeed(), mockGeneric()
+
+### Community 165 - "gacha-card-back.spec.ts"
+Cohesion: 0.40
+Nodes (4): pull, showBack(), SLOT, stage()
+
+### Community 166 - "1.0.0 (2026-08-20)"
+Cohesion: 0.50
+Nodes (4): 1.0.0 (2026-08-20), Bug Fixes, Features, Performance Improvements
+
+### Community 167 - "1.0.0 (2026-08-20)"
+Cohesion: 0.50
+Nodes (4): 1.0.0 (2026-08-20), Bug Fixes, Features, Performance Improvements
+
+### Community 168 - "1.0.0 (2026-08-20)"
+Cohesion: 0.50
+Nodes (4): 1.0.0 (2026-08-20), Bug Fixes, Features, Performance Improvements
+
+### Community 169 - "1.0.0 (2026-08-20)"
+Cohesion: 0.50
+Nodes (4): 1.0.0 (2026-08-20), Bug Fixes, Features, Performance Improvements
+
+### Community 170 - "NotificationBell.tsx"
+Cohesion: 0.47
+Nodes (4): loadApi(), NotificationBell(), markAllRead(), NotificationItem
+
+### Community 171 - "comunidade-usuarios.spec.ts"
+Cohesion: 0.83
+Nodes (3): API(), makeUsers(), mockUsersDirectory()
+
+### Community 172 - "perfil-seguidores.spec.ts"
+Cohesion: 0.83
+Nodes (3): API(), mockFollowLists(), mockProfile()
+
+### Community 173 - "[1.1.0](https://github.com/1arley/animesice/compare/v1.0.0...v1.1.0) (2026-09-18)"
+Cohesion: 0.67
+Nodes (3): [1.1.0](https://github.com/1arley/animesice/compare/v1.0.0...v1.1.0) (2026-09-18), Bug Fixes, Features
 
 ### Community 232 - "biblioteca/page.tsx"
-Cohesion: 0.20
-Nodes (10): EmptyState(), HistoryRow(), LibraryPage(), Tab, TAB_LABELS, TAB_STATUS, TABS, UserAnimeListItem (+2 more)
-
-### Community 238 - "Wordmark"
-Cohesion: 0.11
-Nodes (20): LoginForm(), LoginPage(), RecuperarSenhaPage(), RedefinirSenhaForm(), handleSubmit(), RedefinirSenhaPage(), RegisterPage(), handleSubmit() (+12 more)
+Cohesion: 0.22
+Nodes (9): EmptyState(), HistoryRow(), LibraryPage(), Tab, TAB_LABELS, TAB_STATUS, TABS, UserAnimeListItem (+1 more)
 
 ### Community 239 - "admin/usuarios/page.tsx"
-Cohesion: 0.14
-Nodes (9): ACTION_DESC, ACTION_LABELS, AdminUsersPage(), ModerateAction, ModerateUserModal(), ROLE_BADGE, ROLE_LABELS, NotificationsPage() (+1 more)
+Cohesion: 0.12
+Nodes (10): ACTION_DESC, ACTION_LABELS, AdminUsersPage(), ModerateAction, ModerateUserModal(), ROLE_BADGE, ROLE_LABELS, MyProfilePage() (+2 more)
 
 ## Knowledge Gaps
-- **600 isolated node(s):** `extends`, `next/core-web-vitals`, `dynamic`, `revalidate`, `size` (+595 more)
-  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 851 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
-- **49 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **606 isolated node(s):** `RarityStyle`, `CONDITION_COLOR`, `CONDITION_GLYPH`, `CONDITION_ART`, `CONDITION_SURFACE` (+601 more)
+  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 858 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
+- **48 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `react` connect `react` to `Avatar`, `feedbacks/page.tsx`, `me/page.tsx`, `capas/page.tsx`, `time.ts`, `usePrefersReducedMotion`, `CompensationModal.tsx`, `gsap.ts`, `NotificationPreferencesSection.tsx`, `CardPreview.tsx`, `ProfileHero.tsx`, `GachaEconomyHub.tsx`, `HomeSections.tsx`, `users/[userName]/page.tsx`, `RatingStars.tsx`, `FeedPost.tsx`, `smooth-scroll.tsx`, `episode/[slug]/[number]/page.tsx`, `FeedActivityItem.tsx`, `cartas/page.tsx`, `(app)/gacha/page.tsx`, `package.json`, `room/[slug]/page.tsx`, `app/layout.tsx`, `wishlist/page.tsx`, `next`, `EmptyState`, `BlogForm.tsx`, `GachaPageSkeleton`, `obras-externas/page.tsx`, `RollStage.tsx`, `error.tsx`, `HeroSlide.tsx`, `admin/gacha/page.tsx`, `skins/page.tsx`, `GachaCard.tsx`, `motion`, `test-crystal/page.tsx`, `PageTitle`, `animes/[slug]/[number]/page.tsx`, `ProfileActivity.tsx`, `moderacao/page.tsx`, `animes/[slug]/page.tsx`, `create/page.tsx`, `safeImageSrc`, `HeroAtmosphere.tsx`, `GachaNav.tsx`, `biblioteca/page.tsx`, `Wordmark`, `admin/usuarios/page.tsx`, `useToast`, `blog/[slug]/page.tsx`?**
-  _High betweenness centrality (0.140) - this node is a cross-community bridge._
-- **What connects `extends`, `next/core-web-vitals`, `dynamic` to the rest of the system?**
-  _600 weakly-connected nodes found - possible documentation gaps or missing edges._
-- **Should `@playwright/test` be split into smaller, more focused modules?**
-  _Cohesion score 0.050774526678141134 - nodes in this community are weakly interconnected._
-- **Why does `next` connect `next` to `Avatar`, `me/page.tsx`, `CompensationModal.tsx`, `capas/page.tsx`, `usePrefersReducedMotion`, `time.ts`, `FeedPost.tsx`, `blog.ts`, `blur.ts`, `CardPreview.tsx`, `ProfileHero.tsx`, `GachaEconomyHub.tsx`, `HomeSections.tsx`, `users/[userName]/page.tsx`, `RatingStars.tsx`, `smooth-scroll.tsx`, `episode/[slug]/[number]/page.tsx`, `api-server.ts`, `cartas/page.tsx`, `(app)/gacha/page.tsx`, `package.json`, `FeedActivityItem.tsx`, `next.config.ts`, `animes/page.tsx`, `react`, `room/[slug]/page.tsx`, `app/layout.tsx`, `wishlist/page.tsx`, `EmptyState`, `BlogForm.tsx`, `GachaPageSkeleton`, `error.tsx`, `HeroSlide.tsx`, `SectionLabel.tsx`, `admin/gacha/page.tsx`, `skins/page.tsx`, `GachaCard.tsx`, `buscar/page.tsx`, `animes/[slug]/[number]/page.tsx`, `ProfileActivity.tsx`, `animes/[slug]/page.tsx`, `create/page.tsx`, `safeImageSrc`, `Anime`, `HeroAtmosphere.tsx`, `GachaNav.tsx`, `biblioteca/page.tsx`, `Wordmark`, `admin/usuarios/page.tsx`, `blog/[slug]/page.tsx`, `biblioteca/layout.tsx`?**
-  _High betweenness centrality (0.131) - this node is a cross-community bridge._
-- **Should `Avatar` be split into smaller, more focused modules?**
-  _Cohesion score 0.07058001397624039 - nodes in this community are weakly interconnected._
-- **Why does `@playwright/test` connect `@playwright/test` to `package.json`?**
-  _High betweenness centrality (0.070) - this node is a cross-community bridge._
-- **Should `me/page.tsx` be split into smaller, more focused modules?**
-  _Cohesion score 0.14039408866995073 - nodes in this community are weakly interconnected._
+- **Why does `react` connect `react` to `ContinueWatchingRail.tsx`, `EmptyState`, `capas/page.tsx`, `usePrefersReducedMotion`, `admin/gacha/page.tsx`, `api-server.ts`, `CardPreview.tsx`, `FeedPost.tsx`, `GachaCard.tsx`, `GachaEconomyHub.tsx`, `HomeSections.tsx`, `NightMarket.tsx`, `episode/[slug]/[number]/page.tsx`, `safeImageSrc`, `cartas/page.tsx`, `RollStage.tsx`, `package.json`, `encyclopedia/page.tsx`, `crystals/page.tsx`, `room/[slug]/page.tsx`, `Anime`, `app/layout.tsx`, `wishlist/page.tsx`, `Header`, `Avatar`, `next`, `NotificationBell.tsx`, `HomeHero.tsx`, `useToast`, `error.tsx`, `SettingsPage`, `(app)/gacha/page.tsx`, `animes/[slug]/page.tsx`, `NotificationPreferencesSection.tsx`, `users/[userName]/page.tsx`, `test-crystal/page.tsx`, `obras-externas/page.tsx`, `moderacao/page.tsx`, `(app)/gacha/skins/page.tsx`, `create/page.tsx`, `GachaNav.tsx`, `biblioteca/page.tsx`, `admin/usuarios/page.tsx`, `feedbacks/page.tsx`?**
+  _High betweenness centrality (0.152) - this node is a cross-community bridge._
+- **What connects `RarityStyle`, `CONDITION_COLOR`, `CONDITION_GLYPH` to the rest of the system?**
+  _606 weakly-connected nodes found - possible documentation gaps or missing edges._
+- **Should `ContinueWatchingRail.tsx` be split into smaller, more focused modules?**
+  _Cohesion score 0.12169312169312169 - nodes in this community are weakly interconnected._
+- **Why does `next` connect `next` to `ContinueWatchingRail.tsx`, `opengraph-image.tsx`, `EmptyState`, `capas/page.tsx`, `usePrefersReducedMotion`, `admin/gacha/page.tsx`, `api-server.ts`, `CardPreview.tsx`, `FeedPost.tsx`, `GachaCard.tsx`, `GachaEconomyHub.tsx`, `HomeSections.tsx`, `NightMarket.tsx`, `episode/[slug]/[number]/page.tsx`, `safeImageSrc`, `cartas/page.tsx`, `package.json`, `crystals/page.tsx`, `encyclopedia/page.tsx`, `react`, `room/[slug]/page.tsx`, `Anime`, `app/layout.tsx`, `wishlist/page.tsx`, `Header`, `Avatar`, `NotificationBell.tsx`, `HomeHero.tsx`, `useToast`, `error.tsx`, `SettingsPage`, `(app)/gacha/page.tsx`, `animes/[slug]/page.tsx`, `users/[userName]/page.tsx`, `buscar/page.tsx`, `next.config.ts`, `(app)/gacha/skins/page.tsx`, `create/page.tsx`, `GachaNav.tsx`, `biblioteca/page.tsx`, `biblioteca/layout.tsx`, `admin/usuarios/page.tsx`?**
+  _High betweenness centrality (0.111) - this node is a cross-community bridge._
+- **Should `index.ts` be split into smaller, more focused modules?**
+  _Cohesion score 0.04858757062146893 - nodes in this community are weakly interconnected._
+- **Why does `useAuth()` connect `react` to `ContinueWatchingRail.tsx`, `EmptyState`, `capas/page.tsx`, `admin/gacha/page.tsx`, `api-server.ts`, `CardPreview.tsx`, `FeedPost.tsx`, `GachaCard.tsx`, `GachaEconomyHub.tsx`, `NightMarket.tsx`, `episode/[slug]/[number]/page.tsx`, `safeImageSrc`, `cartas/page.tsx`, `encyclopedia/page.tsx`, `crystals/page.tsx`, `room/[slug]/page.tsx`, `Anime`, `AdminGachaPage`, `wishlist/page.tsx`, `Header`, `Avatar`, `NotificationBell.tsx`, `useToast`, `AdminWatchtowerPage`, `SettingsPage`, `(app)/gacha/page.tsx`, `animes/[slug]/page.tsx`, `AdminGenerosPage`, `AuthProvider`, `moderacao/page.tsx`, `create/page.tsx`, `biblioteca/page.tsx`, `admin/usuarios/page.tsx`, `feedbacks/page.tsx`?**
+  _High betweenness centrality (0.087) - this node is a cross-community bridge._
+- **Should `capas/page.tsx` be split into smaller, more focused modules?**
+  _Cohesion score 0.0649452269170579 - nodes in this community are weakly interconnected._
