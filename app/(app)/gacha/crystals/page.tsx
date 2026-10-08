@@ -11,7 +11,11 @@ import {
   GachaRowsSkeleton,
 } from "@/components/gacha/GachaPageSkeleton";
 import { useToast } from "@/components/common/ToastProvider";
-import type { CrystalEvent, CrystalEventType } from "@/types";
+import type {
+  CrystalEvent,
+  CrystalEventType,
+  GachaFeatured,
+} from "@/types";
 
 const PAGE_SIZE = 20;
 
@@ -34,6 +38,8 @@ const TYPE_LABEL: Record<CrystalEventType, string> = {
   ADMIN: "Ajuste da equipe",
   BURN: "Carta queimada",
   CHARGEBACK: "Reversão de pagamento",
+  FEATURED: "Carta em destaque",
+  COLLECTION: "Coleção completa",
 };
 
 export default function GachaCrystalsPage() {
@@ -52,6 +58,7 @@ export default function GachaCrystalsPage() {
   >([...CRYSTAL_PACKAGES]);
   const [redeemCode, setRedeemCode] = useState("");
   const [redeeming, setRedeeming] = useState(false);
+  const [featured, setFeatured] = useState<GachaFeatured | null>(null);
   const purchaseKeys = useRef<Record<string, string>>({});
   const { toast } = useToast();
 
@@ -128,6 +135,11 @@ export default function GachaCrystalsPage() {
     if (!user) return;
     void load(1, false);
     void loadPackages();
+    // Taxas do destaque vêm do backend; mudar no admin muda o texto aqui.
+    api
+      .gachaFeatured()
+      .then(setFeatured)
+      .catch(() => setFeatured(null));
   }, [user, load, loadPackages]);
 
   useEffect(() => {
@@ -352,6 +364,31 @@ export default function GachaCrystalsPage() {
 
       <div id="statement" className="scroll-mt-24">
         <SectionLabel level={2}>Extrato</SectionLabel>
+        {featured?.featured?.enabled && (
+          <p className="-mt-4 max-w-prose text-caption text-mist">
+            Sua carta em destaque gera{" "}
+            <span className="text-snow">
+              {featured.featured.ratePercentPerTwoHours}% do valor dela a cada 2h
+            </span>
+            {featured.featured.medal
+              ? ` (a medalha ${featured.featured.medal.name} já está contabilizada nesse valor)`
+              : ""}
+            , com teto de{" "}
+            <span className="text-snow">
+              {featured.featured.dailyCapPercent}% ao dia
+            </span>{" "}
+            e acúmulo por até{" "}
+            <span className="text-snow">
+              {featured.featured.accumulationDays} dias
+            </span>
+            . A renda entra aqui como <strong>Carta em destaque</strong> quando o
+            saldo é liquidado —{" "}
+            <Link href="/gacha/cartas" className="text-ice underline">
+              veja qual carta está em destaque
+            </Link>
+            .
+          </p>
+        )}
       </div>
 
       {loading ? (

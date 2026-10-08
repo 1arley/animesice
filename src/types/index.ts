@@ -733,7 +733,9 @@ export type CrystalEventType =
   | "TAX"
   | "ADMIN"
   | "BURN"
-  | "CHARGEBACK";
+  | "CHARGEBACK"
+  | "FEATURED"
+  | "COLLECTION";
 
 export interface CrystalEvent {
   id: string;
@@ -903,6 +905,11 @@ export interface GachaEconomyOdds {
   categories: Record<GachaBoxTier, Record<string, number>>;
   qualities: Record<GachaBoxTier, Record<string, number>>;
   foilWeights: Record<string, number>;
+  // Pesos de raridade e pity vêm do GachaConfig do admin (fonte do sorteio).
+  // pityWeights/pityDays podem ser null se as chaves não estiverem no cache.
+  tierWeights: Record<string, number> | null;
+  pityWeights: Record<string, number> | null;
+  pityDays: number | null;
   crystalPackages: Array<{ id: string; cents: number; crystals: number }>;
 }
 

@@ -13,6 +13,9 @@ import {
   GachaCard,
   FOIL_TEXT,
   GACHA_FOILS,
+  GACHA_TIERS,
+  GALAXY_TEXT,
+  RARITY_TEXT,
   gachaConditionLabel,
 } from "@/components/gacha/GachaCard";
 import { ConfirmDialog } from "@/components/common/ConfirmDialog";
@@ -22,6 +25,7 @@ import { Avatar } from "@/components/common/Avatar";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { CardPreview } from "@/components/gacha/CardPreview";
 import type {
+  GachaEconomyOdds,
   GachaPull,
   GachaRankingEntry,
   GachaSpinPreview,
@@ -64,6 +68,17 @@ function pct(weight: number, total: number): string {
   const value = (weight / total) * 100;
   return `${value.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}%`;
 }
+
+/** Só o rótulo: a chave vem do config do admin, a acento fica aqui. */
+const TIER_LABEL: Record<string, string> = {
+  COMUM: "Comum",
+  INCOMUM: "Incomum",
+  RARA: "Rara",
+  EPICA: "Épica",
+  LENDARIA: "Lendária",
+  MITICA: "Mítica",
+  GALACTICA: "Galáctica",
+};
 
 /** Cristal do gacha — motivo de identidade do hero da sala. */
 function CrystalIcon({ className }: { className?: string }) {
@@ -129,21 +144,20 @@ function GachaPageContent() {
   const [now, setNow] = useState(() => Date.now());
   // Odds vêm do economy snapshot, não de literal aqui: em 2026-10-07 o backend
   // somou INK e NEGATIVE e esta página continuou anunciando 85/12/3. Sem o dado
-  // a linha lista os foils sem porcentagem, em vez de chutar um número.
-  const [foilWeights, setFoilWeights] = useState<Record<string, number> | null>(
-    null,
-  );
+  // a linha lista os foils sem porcentagem, em vez de chutar um número. Mesmo
+  // motivo vale para raridade e pity: saem de GachaConfig, o que o admin edita.
+  const [odds, setOdds] = useState<GachaEconomyOdds | null>(null);
 
   // Endpoint público: a linha de odds aparece para visitante anônimo também.
   useEffect(() => {
     let cancelled = false;
     api
       .gachaEconomyOdds()
-      .then((odds) => {
-        if (!cancelled) setFoilWeights(odds.foilWeights ?? null);
+      .then((data) => {
+        if (!cancelled) setOdds(data);
       })
       .catch(() => {
-        if (!cancelled) setFoilWeights(null);
+        if (!cancelled) setOdds(null);
       });
     return () => {
       cancelled = true;
@@ -448,9 +462,25 @@ function GachaPageContent() {
 
   // Soma de foil_weights no snapshot; o config não garante fechamento em 100.
   const foilTotal = useMemo(
-    () => Object.values(foilWeights ?? {}).reduce((acc, w) => acc + w, 0) || 1,
-    [foilWeights],
+    () =>
+      Object.values(odds?.foilWeights ?? {}).reduce((acc, w) => acc + w, 0) || 1,
+    [odds?.foilWeights],
   );
+
+  // Raridade e pity: soma real do config. Sem dado, a lista sai sem
+  // porcentagem e o texto vira genérico — melhor que número inventado.
+  const tierWeights = odds?.tierWeights;
+  const pityWeights = odds?.pityWeights;
+  const tierTotal = useMemo(
+    () => Object.values(tierWeights ?? {}).reduce((a, w) => a + w, 0),
+    [tierWeights],
+  );
+  const pityTotal = useMemo(
+    () => Object.values(pityWeights ?? {}).reduce((a, w) => a + w, 0),
+    [pityWeights],
+  );
+  const galacticPity = pityWeights?.GALACTICA;
+  const pityDays = odds?.pityDays;
 
   return (
     <div className="mx-auto max-w-shelf px-4 pb-16 pt-5 sm:pt-8">
@@ -816,19 +846,38 @@ function GachaPageContent() {
             <div className="border border-hairline bg-panel p-4 text-body-sm text-mist">
               <p className="font-medium text-snow">Raridade</p>
               <ul className="mt-2 space-y-1 font-mono text-caption">
-                <li className="text-mist">COMUM — 55%</li>
-                <li className="text-emerald-400">INCOMUM — 25%</li>
-                <li className="text-sky-400">RARA — 12%</li>
-                <li className="text-violet-400">ÉPICA — 5,5%</li>
-                <li className="text-amber-300">LENDÁRIA — 2%</li>
-                <li className="text-rose-400">MÍTICA — 0,4%</li>
-                <li className="bg-gradient-to-r from-violet-400 via-pink-400 to-sky-400 bg-clip-text text-transparent">
-                  GALÁCTICA — 0,1%
-                </li>
+                {GACHA_TIERS.map((tier) => {
+                  const weight = tierWeights?.[tier];
+                  const label = TIER_LABEL[tier] ?? tier;
+                  return (
+                    <li
+                      key={tier}
+                      className={
+                        tier === "GALACTICA"
+                          ? GALAXY_TEXT
+                          : (RARITY_TEXT[tier] ?? "text-snow")
+                      }
+                    >
+                      {label}
+                      {weight == null
+                        ? ""
+                        : ` — ${pct(weight, tierTotal)}`}
+                    </li>
+                  );
+                })}
               </ul>
               <p className="mt-3">
-                30 dias sem ÉPICA+ ativa o pity: próximo roll garante ÉPICA ou
-                melhor — com 2% de chance de GALÁCTICA.
+                {pityDays == null ? (
+                  "O pity garante ÉPICA ou melhor depois de alguns dias sem ÉPICA+."
+                ) : (
+                  <>
+                    {pityDays} dias sem ÉPICA+ ativa o pity: próximo roll
+                    garante ÉPICA ou melhor
+                    {galacticPity == null
+                      ? "."
+                      : ` — com ${pct(galacticPity, pityTotal)} de chance de GALÁCTICA.`}
+                  </>
+                )}
               </p>
             </div>
             <div className="border border-hairline bg-panel p-4 text-body-sm text-mist">
@@ -837,7 +886,7 @@ function GachaPageContent() {
                 <li>
                   Foil:{" "}
                   {GACHA_FOILS.map((foil, i) => {
-                    const weight = foilWeights?.[foil];
+                    const weight = odds?.foilWeights?.[foil];
                     return (
                       <span key={foil}>
                         {i > 0 && " · "}
