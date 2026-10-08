@@ -71,9 +71,42 @@ export const GALAXY_FRAME =
 export const GALAXY_TEXT =
   "bg-gradient-to-r from-violet-400 via-pink-400 to-sky-400 bg-clip-text text-transparent";
 
+// Espelha GACHA_FOILS do backend (gacha.constants.ts). Fonte unica: badge,
+// filtro de arte e select de /gacha/cartas saem daqui.
+export const GACHA_FOILS = [
+  "NORMAL",
+  "HOLO",
+  "GOLD",
+  "INK",
+  "NEGATIVE",
+] as const;
+
 export const FOIL_TEXT: Record<string, string> = {
   HOLO: "text-ice",
   GOLD: "text-amber-300",
+  INK: "text-zinc-200",
+  NEGATIVE: "text-fuchsia-300",
+};
+
+// Filtro da arte por foil. NORMAL e HOLO ficam de fora: NORMAL e a arte crua,
+// HOLO usa HoloTilt. Badge de texto carrega a semantica, cor nunca sozinha.
+const FOIL_ART: Record<string, string> = {
+  GOLD: "[--foil-art:sepia(1)_saturate(1.7)_contrast(1.08)_brightness(0.92)]",
+  INK: "[--foil-art:grayscale(0.85)_contrast(1.3)_brightness(0.66)]",
+  NEGATIVE: "[--foil-art:invert(1)_hue-rotate(180deg)_contrast(1.12)_brightness(0.94)]",
+};
+
+const FOIL_OVERLAY: Record<string, string> = {
+  GOLD: "gold-foil-overlay",
+  INK: "ink-foil-overlay",
+  NEGATIVE: "negative-foil-overlay",
+};
+
+// Cor do brilho que cruza a carta, so nos foils com aura propria.
+const FOIL_SHEEN: Record<string, string> = {
+  GOLD: "via-amber-100/50",
+  INK: "via-ice/40",
+  NEGATIVE: "via-fuchsia-300/45",
 };
 
 export const CONDITION_COLOR: Record<string, string> = {
@@ -93,12 +126,14 @@ export const CONDITION_GLYPH: Record<string, string> = {
 };
 
 // Arte decaiu junto com a condição: PLAYED dessatura, POOR dessatura + escurece.
+// Escreve var, nao `filter`: foil e condition disputam a MESMA propriedade e
+// o vencedor apaga o perdedor (utilitario ganha por camada). `.foil-art` compoe.
 const CONDITION_ART: Record<string, string> = {
-  MINT: "saturate-[1.08] brightness-[1.03]",
-  NM: "saturate-[1.02] brightness-[1.01]",
-  EX: "saturate-[.82] brightness-[.96]",
-  PLAYED: "saturate-[.75]",
-  POOR: "saturate-[.55] brightness-[.88]",
+  MINT: "[--cond-art:saturate(1.08)_brightness(1.03)]",
+  NM: "[--cond-art:saturate(1.02)_brightness(1.01)]",
+  EX: "[--cond-art:saturate(.82)_brightness(.96)]",
+  PLAYED: "[--cond-art:saturate(.75)]",
+  POOR: "[--cond-art:saturate(.55)_brightness(.88)]",
 };
 
 const CONDITION_SURFACE: Record<string, string> = {
@@ -212,7 +247,7 @@ export const GachaCard = memo(function GachaCard({ pull, preview = false, linkAn
               sizes="(max-width: 480px) 50vw, (max-width: 1024px) 25vw, 16vw"
               placeholder="blur"
               blurDataURL={blur.portrait}
-              className={`object-cover ${CONDITION_ART[label] ?? ""} ${pull.foil === "GOLD" ? "gold-foil-art" : ""}`}
+              className={`foil-art object-cover ${CONDITION_ART[label] ?? ""} ${FOIL_ART[pull.foil] ?? ""}`}
               quality={80}
             />
           ) : (
@@ -222,15 +257,15 @@ export const GachaCard = memo(function GachaCard({ pull, preview = false, linkAn
               </span>
             </div>
           )}
-          {pull.foil === "GOLD" && (
+          {FOIL_OVERLAY[pull.foil] && (
             <>
               <div
                 aria-hidden
-                className="gold-foil-overlay pointer-events-none absolute inset-0"
+                className={`${FOIL_OVERLAY[pull.foil]} pointer-events-none absolute inset-0`}
               />
               <div
                 aria-hidden
-                className="pointer-events-none absolute inset-y-[-25%] left-0 w-1/3 bg-gradient-to-r from-transparent via-amber-100/50 to-transparent mix-blend-screen motion-safe:animate-[gold-shine_5s_ease-in-out_infinite]"
+                className={`pointer-events-none absolute inset-y-[-25%] left-0 w-1/3 bg-gradient-to-r from-transparent ${FOIL_SHEEN[pull.foil]} to-transparent mix-blend-screen motion-safe:animate-[foil-shine_5s_ease-in-out_infinite]`}
               />
             </>
           )}

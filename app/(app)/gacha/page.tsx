@@ -787,8 +787,11 @@ function GachaPageContent() {
               <p className="font-medium text-snow">Sua cópia é única</p>
               <ul className="mt-2 space-y-1 font-mono text-caption">
                 <li>
-                  Foil: NORMAL 85% · <span className="text-ice">HOLO 12%</span>{" "}
-                  · <span className="text-amber-300">GOLD 3%</span>
+                  Foil: NORMAL 79% ·{" "}
+                  <span className="text-ice">HOLO 12%</span> ·{" "}
+                  <span className="text-amber-300">GOLD 3%</span> ·{" "}
+                  <span className="text-zinc-200">INK 3%</span> ·{" "}
+                  <span className="text-fuchsia-300">NEGATIVE 3%</span>
                 </li>
                 <li>
                   Condition: <span className="text-ice">◆◆◆ MINT</span> &gt;{" "}
