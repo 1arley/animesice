@@ -212,7 +212,7 @@ export const GachaCard = memo(function GachaCard({ pull, preview = false, linkAn
               sizes="(max-width: 480px) 50vw, (max-width: 1024px) 25vw, 16vw"
               placeholder="blur"
               blurDataURL={blur.portrait}
-              className={`object-cover ${CONDITION_ART[label] ?? ""}`}
+              className={`object-cover ${CONDITION_ART[label] ?? ""} ${pull.foil === "GOLD" ? "gold-foil-art" : ""}`}
               quality={80}
             />
           ) : (
@@ -226,7 +226,7 @@ export const GachaCard = memo(function GachaCard({ pull, preview = false, linkAn
             <>
               <div
                 aria-hidden
-                className="pointer-events-none absolute inset-0 mix-blend-screen bg-[radial-gradient(120%_90%_at_50%_45%,transparent_40%,rgba(251,191,36,0.28)_72%,rgba(252,211,77,0.55)_100%)]"
+                className="gold-foil-overlay pointer-events-none absolute inset-0"
               />
               <div
                 aria-hidden

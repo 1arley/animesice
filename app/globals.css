@@ -779,6 +779,56 @@
     }
   }
 
+  .gold-foil-art {
+    filter: sepia(1) saturate(1.7) contrast(1.08) brightness(0.92);
+  }
+
+  .gold-foil-overlay {
+    border: 1px solid rgba(255, 231, 151, 0.72);
+    background: linear-gradient(
+      132deg,
+      #573600 0%,
+      #c58b16 13%,
+      #ffe99a 25%,
+      #94600b 36%,
+      #fff2b7 47%,
+      #9c6708 57%,
+      #f5cc4c 70%,
+      #694300 83%,
+      #ffe58b 100%
+    );
+    box-shadow: inset 0 0 0 2px rgba(255, 231, 151, 0.22);
+    mix-blend-mode: color;
+    opacity: 0.82;
+  }
+
+  .gold-foil-overlay::before,
+  .gold-foil-overlay::after {
+    position: absolute;
+    inset: 0;
+    content: "";
+    pointer-events: none;
+  }
+
+  .gold-foil-overlay::before {
+    background:
+      linear-gradient(115deg, transparent 23%, rgba(255, 246, 206, 0.7) 29%, transparent 34%),
+      linear-gradient(165deg, transparent 48%, rgba(255, 220, 105, 0.42) 53%, transparent 59%),
+      radial-gradient(ellipse at 50% 0%, rgba(255, 246, 210, 0.5), transparent 58%);
+    mix-blend-mode: screen;
+    opacity: 0.78;
+  }
+
+  .gold-foil-overlay::after {
+    background:
+      repeating-linear-gradient(42deg, transparent 0 5px, rgba(255, 247, 215, 0.12) 5px 6px),
+      radial-gradient(circle, rgba(255, 244, 194, 0.52) 0 0.6px, transparent 0.9px);
+    background-size: auto, 7px 7px;
+    box-shadow: inset 0 0 18px 3px rgba(255, 224, 119, 0.42);
+    mix-blend-mode: soft-light;
+    opacity: 0.72;
+  }
+
   /* Textura de dano por condition: PLAYED risca pouco, POOR risca muito +
      sujeira nas bordas. Overlay CSS puro; angulo (--sc1/--sc2) e espacamento
      (--scg) vem de seed do pull.id, com fallback p/ quando nao houver. */
