@@ -104,6 +104,7 @@ function CardInspectionPreview({
               fill
               sizes="(max-width: 640px) 80vw, 260px"
               className="object-cover"
+              style={inspection.foil === "INK" ? { filter: "grayscale(1) contrast(1.12)" } : inspection.foil === "NEGATIVE" ? { filter: "invert(1) hue-rotate(180deg) contrast(1.08)" } : undefined}
             />
           ) : (
             <span className="absolute inset-0 flex items-center justify-center text-body-sm text-mist">
