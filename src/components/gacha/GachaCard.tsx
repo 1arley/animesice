@@ -74,6 +74,8 @@ export const GALAXY_TEXT =
 export const FOIL_TEXT: Record<string, string> = {
   HOLO: "text-ice",
   GOLD: "text-amber-300",
+  INK: "text-zinc-200",
+  NEGATIVE: "text-cyan-200",
 };
 
 export const CONDITION_COLOR: Record<string, string> = {
@@ -212,7 +214,8 @@ export const GachaCard = memo(function GachaCard({ pull, preview = false, linkAn
               sizes="(max-width: 480px) 50vw, (max-width: 1024px) 25vw, 16vw"
               placeholder="blur"
               blurDataURL={blur.portrait}
-              className={`object-cover ${CONDITION_ART[label] ?? ""}`}
+              className={`object-cover ${pull.foil === "INK" || pull.foil === "NEGATIVE" ? "" : CONDITION_ART[label] ?? ""}`}
+              style={pull.foil === "INK" ? { filter: "grayscale(1) contrast(1.12)" } : pull.foil === "NEGATIVE" ? { filter: "invert(1) hue-rotate(180deg) contrast(1.08)" } : undefined}
               quality={80}
             />
           ) : (
@@ -233,6 +236,12 @@ export const GachaCard = memo(function GachaCard({ pull, preview = false, linkAn
                 className="pointer-events-none absolute inset-y-[-25%] left-0 w-1/3 bg-gradient-to-r from-transparent via-amber-100/50 to-transparent mix-blend-screen motion-safe:animate-[gold-shine_5s_ease-in-out_infinite]"
               />
             </>
+          )}
+          {pull.foil === "INK" && (
+            <div aria-hidden className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_45%,rgba(0,0,0,.48)_100%)] shadow-[inset_0_0_0_1px_rgba(255,255,255,.28)]" />
+          )}
+          {pull.foil === "NEGATIVE" && (
+            <div aria-hidden className="pointer-events-none absolute inset-0 shadow-[inset_0_0_0_2px_rgba(165,243,252,.8),inset_0_0_24px_rgba(34,211,238,.15)]" />
           )}
           {(label === "PLAYED" || label === "POOR") && (
             <div

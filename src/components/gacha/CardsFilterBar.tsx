@@ -92,6 +92,8 @@ export function CardsFilterBar({
             <option value="NORMAL">Normal</option>
             <option value="HOLO">Holo</option>
             <option value="GOLD">Gold</option>
+            <option value="INK">Ink</option>
+            <option value="NEGATIVE">Negative</option>
           </select>
           <ChevronDown active={foil !== ""} />
         </div>

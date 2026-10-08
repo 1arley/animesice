@@ -63,6 +63,7 @@ export function FeaturedPortrait({ pull }: { pull: GachaFeatured }) {
                     placeholder="blur"
                     blurDataURL={blur.portrait}
                     className="object-cover"
+                    style={pull.foil === "INK" ? { filter: "grayscale(1) contrast(1.12)" } : pull.foil === "NEGATIVE" ? { filter: "invert(1) hue-rotate(180deg) contrast(1.08)" } : undefined}
                     quality={80}
                     onError={() => setFailed(true)}
                   />
