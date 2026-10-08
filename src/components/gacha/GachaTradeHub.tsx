@@ -25,14 +25,39 @@ function humansLeft(expiresAt: string, now: number): string {
   return "expira em minutos";
 }
 
+function CrystalAmount({
+  label,
+  amount,
+  empty = true,
+}: {
+  label: string;
+  amount: number;
+  empty?: boolean;
+}) {
+  if (!amount) {
+    return empty ? null : (
+      <p className="text-caption text-mist">{label}: 0</p>
+    );
+  }
+  return (
+    <p className="font-mono text-caption text-ice">
+      {label}: {amount.toLocaleString("pt-BR")}
+    </p>
+  );
+}
+
 function MiniPair({
   mine,
   theirs,
   onPreview,
+  mineLabel = "Sua",
+  theirsLabel = "desse",
 }: {
   mine: GachaPull[];
   theirs: GachaPull[];
   onPreview: (pull: GachaPull) => void;
+  mineLabel?: string;
+  theirsLabel?: string;
 }) {
   return (
     <div className="flex items-stretch gap-4">
@@ -41,7 +66,7 @@ function MiniPair({
           <div key={p.id} className="w-28 shrink-0">
             <GachaCard pull={p} linkAnime={false} />
             <p className="mt-1 truncate text-caption text-mist">
-              Sua {p.card.name}
+              {mineLabel} {p.card.name}
             </p>
             <button
               type="button"
@@ -62,7 +87,8 @@ function MiniPair({
           <div key={p.id} className="w-28 shrink-0">
             <GachaCard pull={p} linkAnime={false} />
             <p className="mt-1 truncate text-caption text-mist">
-              {p.user?.name?.trim() || p.user?.userName || "o outro"} desse
+              {p.user?.name?.trim() || p.user?.userName || "o outro"}{" "}
+              {theirsLabel}
             </p>
             <button
               type="button"
@@ -88,6 +114,7 @@ function TradeRow({
   busyId,
   now,
   onPreview,
+  onCounter,
 }: {
   trade: GachaTrade;
   myId: string;
@@ -97,9 +124,17 @@ function TradeRow({
   busyId: string | null;
   now: number;
   onPreview: (pull: GachaPull) => void;
+  onCounter: () => void;
 }) {
   const incoming = trade.requestedUserId === myId;
   const expired = new Date(trade.expiresAt).getTime() <= now;
+  const counterparty = incoming
+    ? trade.offeredUserCard.user?.name?.trim() ||
+      trade.offeredUserCard.user?.userName ||
+      "outro usuário"
+    : trade.requestedUserCard.user?.name?.trim() ||
+      trade.requestedUserCard.user?.userName ||
+      "outro usuário";
   const busy = busyId?.startsWith(`${trade.id}:`) ?? false;
   const acceptActive = busyId === `${trade.id}:accept`;
   const declineActive = busyId === `${trade.id}:decline`;
@@ -160,9 +195,20 @@ function TradeRow({
             </div>
           </>
         )}
-        <p className="mt-3 font-mono text-caption text-mist">
-          {humansLeft(trade.expiresAt, now)}
-        </p>
+        <div className="mt-3 space-y-1">
+          <p className="font-mono text-caption text-mist">
+            {humansLeft(trade.expiresAt, now)}
+            {trade.round > 1 ? ` · rodada ${trade.round}` : ""}
+          </p>
+          <CrystalAmount
+            label="Você envia"
+            amount={incoming ? trade.crystalsRequested : trade.crystalsOffered}
+          />
+          <CrystalAmount
+            label="Você recebe"
+            amount={incoming ? trade.crystalsOffered : trade.crystalsRequested}
+          />
+        </div>
         <div className="mt-3 flex flex-wrap gap-3">
           {incoming ? (
             <>
@@ -174,6 +220,16 @@ function TradeRow({
                 className="btn-ice min-h-11 px-5 disabled:opacity-50"
               >
                 {acceptActive ? "…" : "Aceitar"}
+              </button>
+              <button
+                type="button"
+                aria-label={`Contra-propor para ${counterparty}`}
+                disabled={busy || expired}
+                title={expired ? "Troca expirada" : undefined}
+                onClick={onCounter}
+                className="btn-ghost min-h-11 px-5 disabled:opacity-50"
+              >
+                {busyId === `${trade.id}:counter` ? "…" : "Contra-propor"}
               </button>
               <button
                 type="button"
@@ -204,7 +260,13 @@ function TradeRow({
       ? "Troca concluída"
       : trade.status === "EXPIRED"
         ? "Troca expirada"
-        : "Troca cancelada";
+        : trade.closedReason === "COUNTERED"
+          ? "Troca contra-proposta"
+          : trade.closedReason === "DECLINED"
+            ? "Troca recusada"
+            : trade.closedReason === "CARD_BLOCKED"
+              ? "Troca cancelada (carta bloqueada)"
+              : "Troca cancelada";
   return (
     <li className="border border-hairline bg-panel p-4 opacity-70">
       <p className="font-mono text-caption tracking-wider text-mist">
@@ -399,6 +461,14 @@ export function GachaTradeHub() {
                         "Proposta cancelada.",
                       )
                     }
+                    onCounter={() =>
+                      void act(
+                        `${t.id}:counter`,
+                        // Sem corpo: devolve as cartas e Cristais do outro lado.
+                        () => api.gachaTradeCounter(t.id, {}),
+                        "Contra-proposta enviada.",
+                      )
+                    }
                   />
                 ))}
               </ul>
@@ -443,6 +513,14 @@ export function GachaTradeHub() {
                         "Proposta cancelada.",
                       )
                     }
+                    onCounter={() =>
+                      void act(
+                        `${t.id}:counter`,
+                        // Sem corpo: devolve as cartas e Cristais do outro lado.
+                        () => api.gachaTradeCounter(t.id, {}),
+                        "Contra-proposta enviada.",
+                      )
+                    }
                   />
                 ))}
               </ul>
@@ -480,6 +558,14 @@ export function GachaTradeHub() {
                         `${t.id}:cancel`,
                         () => api.gachaTradeCancel(t.id),
                         "Proposta cancelada.",
+                      )
+                    }
+                    onCounter={() =>
+                      void act(
+                        `${t.id}:counter`,
+                        // Sem corpo: devolve as cartas e Cristais do outro lado.
+                        () => api.gachaTradeCounter(t.id, {}),
+                        "Contra-proposta enviada.",
                       )
                     }
                   />
@@ -527,6 +613,9 @@ function ProposalComposer({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [preview, setPreview] = useState<GachaPull | null>(null);
+  const [crystalsOffered, setCrystalsOffered] = useState("0");
+  const [crystalsRequested, setCrystalsRequested] = useState("0");
+  const [available, setAvailable] = useState<number | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -542,10 +631,24 @@ function ProposalComposer({
       .finally(() => {
         if (current) setLoadingMine(false);
       });
+    api
+      .gachaEconomyInventory()
+      .then((wallet) => {
+        if (current) setAvailable(wallet.available);
+      })
+      .catch(() => {
+        // Sem saldo conhecido: o campo de Cristais simplesmente não limita.
+        if (current) setAvailable(null);
+      });
     return () => {
       current = false;
     };
   }, [myId]);
+
+  const parseCrystals = (raw: string) => {
+    const value = Number.parseInt(raw, 10);
+    return Number.isSafeInteger(value) && value > 0 ? value : 0;
+  };
 
   const search = async () => {
     const name = userName.trim().replace(/^@/, "");
@@ -601,12 +704,20 @@ function ProposalComposer({
       setError("Você já tem a carta que está pedindo.");
       return;
     }
+    const offered = parseCrystals(crystalsOffered);
+    const requested = parseCrystals(crystalsRequested);
+    if (available !== null && offered > available) {
+      setError("Você não tem Cristais disponíveis para Offercer.");
+      return;
+    }
     setBusy(true);
     setError("");
     try {
       await api.gachaTradeCreate({
         offeredUserCardIds: myCardIds,
         requestedUserCardIds: targetCardIds,
+        crystalsOffered: offered,
+        crystalsRequested: requested,
       });
       toast("Proposta enviada.", "success");
       await onCreated();
@@ -726,12 +837,48 @@ function ProposalComposer({
           </div>
         )}
 
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          <label className="text-body-sm text-snow">
+            Cristais que você oferece
+            <input
+              type="number"
+              min={0}
+              max={available ?? undefined}
+              step={1}
+              inputMode="numeric"
+              autoComplete="off"
+              value={crystalsOffered}
+              onChange={(event) => setCrystalsOffered(event.target.value)}
+              className="field mt-2 min-h-11 w-full"
+            />
+          </label>
+          <label className="text-body-sm text-snow">
+            Cristais que você pede
+            <input
+              type="number"
+              min={0}
+              max={2_147_483_647}
+              step={1}
+              inputMode="numeric"
+              autoComplete="off"
+              value={crystalsRequested}
+              onChange={(event) => setCrystalsRequested(event.target.value)}
+              className="field mt-2 min-h-11 w-full"
+            />
+          </label>
+        </div>
         <p role="status" className="mt-4 text-body-sm text-mist">
           Sua proposta: {myCardIds.length} carta
           {myCardIds.length === 1 ? "" : "s"} oferecida
           {myCardIds.length === 1 ? "" : "s"} · {targetCardIds.length} carta
           {targetCardIds.length === 1 ? "" : "s"} solicitada
           {targetCardIds.length === 1 ? "" : "s"}
+          {parseCrystals(crystalsOffered) > 0
+            ? ` · ${parseCrystals(crystalsOffered).toLocaleString("pt-BR")} Crystals enviados`
+            : ""}
+          {parseCrystals(crystalsRequested) > 0
+            ? ` · ${parseCrystals(crystalsRequested).toLocaleString("pt-BR")} Crystals pedidos`
+            : ""}
         </p>
 
         {error && (
@@ -744,7 +891,8 @@ function ProposalComposer({
         )}
 
         <p className="mt-4 text-caption text-mist">
-          Nenhuma carta muda de dono até a outra pessoa aceitar a proposta.
+          Nenhuma carta ou Crystal muda de dono até a outra pessoa aceitar a
+          proposta. Recusar, cancelar ou expirar devolve tudo.
         </p>
       </Modal>
       {preview && (
