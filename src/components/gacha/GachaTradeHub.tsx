@@ -35,7 +35,7 @@ function CrystalAmount({
   empty?: boolean;
 }) {
   if (!amount) {
-    return empty ? null : <p className="text-caption text-mist">{label}: 0</p>;
+return empty ? null : <p className="text-caption text-mist">{label}: 0</p>;
   }
   return (
     <p className="font-mono text-caption text-ice">
@@ -705,7 +705,7 @@ function ProposalComposer({
     const offered = parseCrystals(crystalsOffered);
     const requested = parseCrystals(crystalsRequested);
     if (available !== null && offered > available) {
-      setError("Você não tem Cristais disponíveis suficientes para oferecer.");
+setError("Você não tem Cristais disponíveis suficientes para oferecer.");
       return;
     }
     setBusy(true);
@@ -903,7 +903,7 @@ function ProposalComposer({
         )}
 
         <p className="mt-4 text-caption text-mist">
-          Os Crystals oferecidos ficam reservados assim que a proposta é
+Os Crystals oferecidos ficam reservados assim que a proposta é
           enviada. Eles só serão transferidos se a troca for aceita; cancelar,
           recusar ou expirar libera a reserva.
         </p>
