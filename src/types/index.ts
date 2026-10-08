@@ -624,6 +624,7 @@ export interface GachaStatus {
   pointsBalance?: number;
   pointsCosmetics?: string[];
   crystalBalance?: number;
+  crystalReserved?: number;
 }
 
 export interface GachaSkin {
@@ -642,6 +643,7 @@ export interface GachaSkinsResponse {
   owned: GachaSkin[];
   equippedSkinId: string | null;
   crystalBalance: number;
+  crystalReserved: number;
   canSpin: boolean;
   nextSpinAt: string | null;
   spinPrice: number;
@@ -744,6 +746,8 @@ export interface CrystalEvent {
 
 export interface CrystalPage {
   balance: number;
+  reserved: number;
+  available: number;
   dailyClaimedToday: boolean;
   events: CrystalEvent[];
   meta: { page: number; limit: number; total: number; totalPages: number };

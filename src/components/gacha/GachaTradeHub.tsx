@@ -35,9 +35,7 @@ function CrystalAmount({
   empty?: boolean;
 }) {
   if (!amount) {
-    return empty ? null : (
-      <p className="text-caption text-mist">{label}: 0</p>
-    );
+    return empty ? null : <p className="text-caption text-mist">{label}: 0</p>;
   }
   return (
     <p className="font-mono text-caption text-ice">
@@ -707,7 +705,7 @@ function ProposalComposer({
     const offered = parseCrystals(crystalsOffered);
     const requested = parseCrystals(crystalsRequested);
     if (available !== null && offered > available) {
-      setError("Você não tem Cristais disponíveis para Offercer.");
+      setError("Você não tem Cristais disponíveis suficientes para oferecer.");
       return;
     }
     setBusy(true);
@@ -868,6 +866,11 @@ function ProposalComposer({
           </label>
         </div>
         <p role="status" className="mt-4 text-body-sm text-mist">
+          {available !== null && (
+            <span className="block mb-2">
+              Disponíveis: {available.toLocaleString("pt-BR")} Cristais.
+            </span>
+          )}
           Sua proposta: {myCardIds.length} carta
           {myCardIds.length === 1 ? "" : "s"} oferecida
           {myCardIds.length === 1 ? "" : "s"} · {targetCardIds.length} carta
@@ -880,6 +883,15 @@ function ProposalComposer({
             ? ` · ${parseCrystals(crystalsRequested).toLocaleString("pt-BR")} Crystals pedidos`
             : ""}
         </p>
+        {parseCrystals(crystalsOffered) > 0 && (
+          <p
+            role="status"
+            className="mt-2 border border-ice/30 bg-ice/5 p-3 text-body-sm text-ice"
+          >
+            Atenção: {parseCrystals(crystalsOffered).toLocaleString("pt-BR")}{" "}
+            Cristais ficarão bloqueados assim que você enviar esta proposta.
+          </p>
+        )}
 
         {error && (
           <p
@@ -891,8 +903,9 @@ function ProposalComposer({
         )}
 
         <p className="mt-4 text-caption text-mist">
-          Nenhuma carta ou Crystal muda de dono até a outra pessoa aceitar a
-          proposta. Recusar, cancelar ou expirar devolve tudo.
+          Os Crystals oferecidos ficam reservados assim que a proposta é
+          enviada. Eles só serão transferidos se a troca for aceita; cancelar,
+          recusar ou expirar libera a reserva.
         </p>
       </Modal>
       {preview && (

@@ -39,6 +39,7 @@ const TYPE_LABEL: Record<CrystalEventType, string> = {
 export default function GachaCrystalsPage() {
   const { user, loading: authLoading } = useAuth();
   const [balance, setBalance] = useState<number | null>(null);
+  const [reserved, setReserved] = useState(0);
   const [events, setEvents] = useState<CrystalEvent[]>([]);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
@@ -112,6 +113,7 @@ export default function GachaCrystalsPage() {
     try {
       const data = await api.gachaCrystals(target, PAGE_SIZE);
       setBalance(data.balance);
+      setReserved(data.reserved);
       setTotal(data.meta.total);
       setEvents((prev) => (append ? [...prev, ...data.events] : data.events));
       setPage(target);
@@ -203,10 +205,16 @@ export default function GachaCrystalsPage() {
             className="mt-2 font-display text-4xl tabular-nums text-snow sm:text-5xl"
             aria-live="polite"
           >
-            {balance == null ? "—" : balance.toLocaleString("pt-BR")}
+            {balance == null
+              ? "—"
+              : (balance - reserved).toLocaleString("pt-BR")}
             <span className="ml-2 text-base font-normal text-mist">
-              cristais
+              disponíveis
             </span>
+          </p>
+          <p className="mt-2 text-body-sm text-mist">
+            Total: {balance == null ? "—" : balance.toLocaleString("pt-BR")} ·{" "}
+            {reserved.toLocaleString("pt-BR")} reservados em trocas pendentes
           </p>
         </section>
         <form
