@@ -1938,11 +1938,27 @@ export const api = {
   gachaTradeCreate: (body: {
     offeredUserCardIds: string[];
     requestedUserCardIds: string[];
+    crystalsOffered?: number;
+    crystalsRequested?: number;
   }) =>
     request<GachaTrade>(`/gacha/trades`, {
       method: "POST",
       body: JSON.stringify(body),
     }),
+
+  gachaTradeCounter: (
+    id: string,
+    body: {
+      offeredUserCardIds?: string[];
+      requestedUserCardIds?: string[];
+      crystalsOffered?: number;
+      crystalsRequested?: number;
+    },
+  ) =>
+    request<GachaTrade>(
+      `/gacha/trades/${encodeURIComponent(id)}/counter`,
+      { method: "POST", body: JSON.stringify(body) },
+    ),
 
   gachaMyTrades: () => request<GachaTrade[]>(`/gacha/trades/mine`),
 
