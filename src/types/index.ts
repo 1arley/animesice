@@ -1110,6 +1110,17 @@ export interface GachaTrade {
   requestedUserCard: GachaPull;
   offeredUserCards: GachaPull[];
   requestedUserCards: GachaPull[];
+  /** Cristais que o offeredUser reservou enquanto PENDING. */
+  crystalsOffered: number;
+  /** Cristais que o requestedUser reservou enquanto PENDING. */
+  crystalsRequested: number;
+  /** Rodada da cadeia de contrapropostas (1 = proposta original). */
+  round: number;
+  /** Raiz da cadeia de contrapropostas. */
+  parentTradeId: string | null;
+  closedBy: string | null;
+  /** ACCEPTED, CANCELLED, DECLINED, COUNTERED, EXPIRED, CARD_BLOCKED. */
+  closedReason: string | null;
 }
 
 /**
