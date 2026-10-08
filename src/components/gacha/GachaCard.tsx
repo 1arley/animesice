@@ -96,11 +96,11 @@ export const CONDITION_GLYPH: Record<string, string> = {
 
 // Arte decaiu junto com a condição: PLAYED dessatura, POOR dessatura + escurece.
 const CONDITION_ART: Record<string, string> = {
-  MINT: "saturate-[1.08] brightness-[1.03]",
-  NM: "saturate-[1.02] brightness-[1.01]",
-  EX: "saturate-[.82] brightness-[.96]",
-  PLAYED: "saturate-[.75]",
-  POOR: "saturate-[.55] brightness-[.88]",
+  MINT: "saturate(1.08) brightness(1.03)",
+  NM: "saturate(1.02) brightness(1.01)",
+  EX: "saturate(.82) brightness(.96)",
+  PLAYED: "saturate(.75)",
+  POOR: "saturate(.55) brightness(.88)",
 };
 
 const CONDITION_SURFACE: Record<string, string> = {
@@ -126,6 +126,15 @@ export const GachaCard = memo(function GachaCard({ pull, preview = false, linkAn
   const { card } = pull;
   const art = safeImageSrc(card.image);
   const label = pull.conditionLabel ?? gachaConditionLabel(pull.condition);
+  const artFilter = [
+    pull.foil === "INK" ? "grayscale(1) contrast(1.12)" : "",
+    pull.foil === "NEGATIVE"
+      ? "invert(1) hue-rotate(180deg) contrast(1.08)"
+      : "",
+    CONDITION_ART[label] ?? "",
+  ]
+    .filter(Boolean)
+    .join(" ");
   const animeSlug = card.anime?.slug ?? null;
   const animeTitle = card.anime?.title ?? card.animeTitle;
   const rarity = RARITY[card.rarity] ?? RARITY.COMUM!;
@@ -214,8 +223,8 @@ export const GachaCard = memo(function GachaCard({ pull, preview = false, linkAn
               sizes="(max-width: 480px) 50vw, (max-width: 1024px) 25vw, 16vw"
               placeholder="blur"
               blurDataURL={blur.portrait}
-              className={`object-cover ${pull.foil === "INK" || pull.foil === "NEGATIVE" ? "" : CONDITION_ART[label] ?? ""}`}
-              style={pull.foil === "INK" ? { filter: "grayscale(1) contrast(1.12)" } : pull.foil === "NEGATIVE" ? { filter: "invert(1) hue-rotate(180deg) contrast(1.08)" } : undefined}
+              className="object-cover"
+              style={{ filter: artFilter || undefined }}
               quality={80}
             />
           ) : (
