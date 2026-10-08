@@ -8,7 +8,12 @@ import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import { Modal } from "@/components/common/Modal";
 import { useFinePointer } from "@/lib/use-fine-pointer";
 import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
-import { GachaCard, gachaConditionLabel } from "@/components/gacha/GachaCard";
+import {
+  GachaCard,
+  FOIL_ART,
+  FoilArt,
+  gachaConditionLabel,
+} from "@/components/gacha/GachaCard";
 import { CosmeticSvg } from "@/components/gacha/CosmeticSvg";
 import { cosmeticTypeOf } from "@/lib/cosmetic-svg";
 import { api, ApiError } from "@/lib/api";
@@ -103,7 +108,7 @@ function CardInspectionPreview({
               alt={inspection.card.name}
               fill
               sizes="(max-width: 640px) 80vw, 260px"
-              className="object-cover"
+              className={`foil-art object-cover ${FOIL_ART[inspection.foil ?? ""] ?? ""}`}
             />
           ) : (
             <span className="absolute inset-0 flex items-center justify-center text-body-sm text-mist">
@@ -112,6 +117,7 @@ function CardInspectionPreview({
                 : "Imagem indisponível"}
             </span>
           )}
+          {src && <FoilArt foil={inspection.foil ?? ""} />}
         </div>
         <div className="min-w-0">
           <p className="font-mono text-caption text-ice">
