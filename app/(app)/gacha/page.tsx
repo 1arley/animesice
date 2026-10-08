@@ -631,9 +631,18 @@ function GachaPageContent() {
                         href="/gacha/cristais"
                         className="text-ice decoration-hairline underline-offset-4 hover:text-snow hover:underline"
                       >
-                        {status?.crystalBalance?.toLocaleString("pt-BR") ?? 0}
+                        {(
+                          (status?.crystalBalance ?? 0) -
+                          (status?.crystalReserved ?? 0)
+                        ).toLocaleString("pt-BR")}
                       </Link>
                     </span>
+                    {!!status?.crystalReserved && (
+                      <span className="block text-caption text-mist">
+                        {status.crystalReserved.toLocaleString("pt-BR")}{" "}
+                        reservados em trocas
+                      </span>
+                    )}
                   </span>
                 </div>
 
@@ -835,9 +844,7 @@ function GachaPageContent() {
                         <span className={FOIL_TEXT[foil] ?? "text-snow"}>
                           {foil}
                         </span>
-                        {weight == null
-                          ? ""
-                          : ` ${pct(weight, foilTotal)}`}
+                        {weight == null ? "" : ` ${pct(weight, foilTotal)}`}
                       </span>
                     );
                   })}

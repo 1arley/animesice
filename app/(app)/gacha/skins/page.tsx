@@ -140,11 +140,7 @@ export default function GachaSkinsPage() {
         <p role="alert" className="mb-4 text-sm text-red-300">
           {error}
         </p>
-        <button
-          type="button"
-          className="btn-ice"
-          onClick={() => void load(1)}
-        >
+        <button type="button" className="btn-ice" onClick={() => void load(1)}>
           Tentar de novo
         </button>
       </main>
@@ -174,8 +170,16 @@ export default function GachaSkinsPage() {
             Cristais
           </p>
           <p className="font-display text-2xl text-ice">
-            {data.crystalBalance.toLocaleString("pt-BR")}
+            {(data.crystalBalance - data.crystalReserved).toLocaleString(
+              "pt-BR",
+            )}
           </p>
+          {!!data.crystalReserved && (
+            <p className="text-caption text-mist">
+              {data.crystalReserved.toLocaleString("pt-BR")} reservados em
+              trocas
+            </p>
+          )}
         </div>
       </div>
       <section className="mb-10 flex flex-wrap items-center justify-between gap-4 border border-hairline bg-panel p-5">
