@@ -50,6 +50,12 @@ function trade(
     requestedUserCardId: requestedPull.id,
     offeredUserCard: offeredPull,
     requestedUserCard: requestedPull,
+    crystalsOffered: 0,
+    crystalsRequested: 0,
+    round: 1,
+    parentTradeId: null,
+    closedBy: null,
+    closedReason: null,
   };
 }
 
