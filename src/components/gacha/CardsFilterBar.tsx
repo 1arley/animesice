@@ -1,6 +1,11 @@
 "use client";
 
-import { GACHA_TIERS } from "@/components/gacha/GachaCard";
+import { GACHA_FOILS, GACHA_TIERS } from "@/components/gacha/GachaCard";
+
+/** "NEGATIVE" -> "Negative". O value enviado ao backend segue o enum cru. */
+function foilLabel(foil: string): string {
+  return foil.charAt(0) + foil.slice(1).toLowerCase();
+}
 
 /**
  * CardsFilterBar — barra de filtros para /gacha/cartas.
@@ -89,9 +94,11 @@ export function CardsFilterBar({
             }`}
           >
             <option value="">Todos os foils</option>
-            <option value="NORMAL">Normal</option>
-            <option value="HOLO">Holo</option>
-            <option value="GOLD">Gold</option>
+            {GACHA_FOILS.map((option) => (
+              <option key={option} value={option}>
+                {foilLabel(option)}
+              </option>
+            ))}
           </select>
           <ChevronDown active={foil !== ""} />
         </div>

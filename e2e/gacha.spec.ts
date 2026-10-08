@@ -151,6 +151,62 @@ test.describe("Gacha", () => {
     await expect(page.getByText("Nenhuma carta ainda.")).toBeVisible();
   });
 
+  // Regressão: `filter` é propriedade única e o utilitário de condition
+  // chegava por último, apagando a arte do foil. INK e NEGATIVE entram aqui
+  // para travar a composição de --foil-art + --cond-art.
+  for (const foil of ["GOLD", "INK", "NEGATIVE"]) {
+    test(`arte do foil ${foil} sobrevive à condition`, async ({ page }) => {
+      await blockAds(page);
+      await mockGeneric(page);
+      await loginAs(page);
+      await page.emulateMedia({ reducedMotion: "reduce" });
+      await page.route("**/gacha/collection?**", (route) =>
+        route.fulfill({
+          json: {
+            data: [
+              {
+                id: "foil-probe",
+                condition: 0.9, // POOR: --cond-art é o mais agressivo, usa brightness(.88)
+                conditionLabel: "POOR",
+                foil,
+                edition: 1,
+                value: 100,
+                obtainedAt: new Date().toISOString(),
+                user: { id: "u1", name: "Probe", userName: "probe" },
+                card: {
+                  id: "c1",
+                  name: "Carta Foil",
+                  image: "https://img1.ak.crunchyroll.com/i/spire4-tmb/1.webp",
+                  imageHidden: false,
+                  rarity: "LENDARIA",
+                  favourites: 0,
+                  animeId: null,
+                  animeTitle: null,
+                  anime: null,
+                },
+              },
+            ],
+            stats: { total: 1, totalValue: 100, medals: [] },
+            meta: { total: 1, page: 1, limit: 24, totalPages: 1 },
+          },
+        }),
+      );
+      await page.goto("/gacha/cartas");
+      const art = page.locator("img.foil-art").first();
+      await expect(art).toBeVisible();
+      const filter = await art.evaluate((el) => getComputedStyle(el).filter);
+      // Ambos precisam compor: filtro do foil E o de condition (POOR).
+      expect(filter).toMatch(/sepia|grayscale|invert/);
+      expect(filter).toMatch(/brightness\(0\.88\)/);
+
+      // O select precisa ter a opção do foil: value cru pro backend, label legível.
+      const select = page.getByLabel("Tipo de foil");
+      await expect(select.locator(`option[value="${foil}"]`)).toHaveText(
+        foil.charAt(0) + foil.slice(1).toLowerCase(),
+      );
+    });
+  }
+
   test("preview por deep-link fecha com Escape e backdrop", async ({
     page,
   }) => {

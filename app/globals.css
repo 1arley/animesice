@@ -762,8 +762,9 @@
     }
   }
 
-  /* Raio dourado dos cards GOLD: atravessa a carta e descansa ~2/3 do ciclo. */
-  @keyframes gold-shine {
+  /* Raio dos foils com aura (GOLD/INK/NEGATIVE): atravessa a carta e descansa
+     ~2/3 do ciclo. */
+  @keyframes foil-shine {
     0%,
     55% {
       transform: translateX(-160%) skewX(-18deg);
@@ -777,10 +778,6 @@
       transform: translateX(260%) skewX(-18deg);
       opacity: 0;
     }
-  }
-
-  .gold-foil-art {
-    filter: sepia(1) saturate(1.7) contrast(1.08) brightness(0.92);
   }
 
   .gold-foil-overlay {
@@ -827,6 +824,56 @@
     box-shadow: inset 0 0 18px 3px rgba(255, 224, 119, 0.42);
     mix-blend-mode: soft-light;
     opacity: 0.72;
+  }
+
+  /* Composicao de `filter` da arte. `filter` e propriedade unica: condition e
+     foil precisam contribuid juntos, e o utilitario declarado por ultimo
+     apagaria o outro. Ambos entram por var e compoem aqui. */
+  .foil-art {
+    filter: var(--foil-art, ) var(--cond-art, );
+  }
+
+  /* INK: foil preto fosco. Sem brilho — a identidade vem do escuro e da
+     microtextura cinza. Overlay em multiply afunda a arte em vez de tingi-la;
+     o filtro vive em `--foil-art`, sao eixos distintos. */
+  .ink-foil-overlay {
+    border: 1px solid rgba(148, 163, 184, 0.5);
+    background:
+      repeating-linear-gradient(48deg, transparent 0 6px, rgba(203, 213, 225, 0.05) 6px 7px),
+      radial-gradient(ellipse at 50% 0%, rgba(226, 232, 240, 0.24), transparent 60%);
+    box-shadow: inset 0 0 22px 4px rgba(2, 6, 23, 0.75);
+    mix-blend-mode: multiply;
+    opacity: 0.9;
+  }
+
+  /* NEGATIVE: arte invertida com assinatura violeta. invert(1) sozinho
+     ficaria verde por causa do canal G; o hue-rotate devolve a cor. */
+  .negative-foil-overlay {
+    border: 1px solid rgba(232, 121, 249, 0.55);
+    background: linear-gradient(
+      132deg,
+      #4a0d6b 0%,
+      #a21caf 16%,
+      #f0abfc 27%,
+      #3b0764 40%,
+      #e879f9 52%,
+      #581c87 68%,
+      #f5d0fe 83%,
+      #4a0d6b 100%
+    );
+    box-shadow: inset 0 0 0 2px rgba(232, 121, 249, 0.2);
+    mix-blend-mode: color;
+    opacity: 0.7;
+  }
+
+  .negative-foil-overlay::before {
+    position: absolute;
+    inset: 0;
+    content: "";
+    pointer-events: none;
+    background: radial-gradient(ellipse at 50% 12%, rgba(255, 255, 255, 0.4), transparent 56%);
+    mix-blend-mode: screen;
+    opacity: 0.6;
   }
 
   /* Textura de dano por condition: PLAYED risca pouco, POOR risca muito +
