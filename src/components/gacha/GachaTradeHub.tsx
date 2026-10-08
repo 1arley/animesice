@@ -251,8 +251,16 @@ export function GachaTradeHub() {
   const load = useCallback(async () => {
     try {
       setTrades(await api.gachaMyTrades());
-    } catch {
-      setError("Não foi possível carregar suas trocas.");
+    } catch (e) {
+      // `catch {}` esconde o status: 401, 403 (conta nao verificada) e 500 de
+      // schema drift apareciam todos como a mesma frase, o que torna o
+      // diagnostico impossivel. request() ja lanca ApiError com a mensagem do
+      // backend — usa ela.
+      setError(
+        e instanceof Error && e.message && e.message !== "Erro desconhecido"
+          ? e.message
+          : "Não foi possível carregar suas trocas.",
+      );
     } finally {
       setLoading(false);
     }
