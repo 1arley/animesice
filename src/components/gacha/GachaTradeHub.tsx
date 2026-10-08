@@ -128,6 +128,13 @@ function TradeRow({
 }) {
   const incoming = trade.requestedUserId === myId;
   const expired = new Date(trade.expiresAt).getTime() <= now;
+  const counterparty = incoming
+    ? trade.offeredUserCard.user?.name?.trim() ||
+      trade.offeredUserCard.user?.userName ||
+      "outro usuário"
+    : trade.requestedUserCard.user?.name?.trim() ||
+      trade.requestedUserCard.user?.userName ||
+      "outro usuário";
   const busy = busyId?.startsWith(`${trade.id}:`) ?? false;
   const acceptActive = busyId === `${trade.id}:accept`;
   const declineActive = busyId === `${trade.id}:decline`;
@@ -193,10 +200,13 @@ function TradeRow({
             {humansLeft(trade.expiresAt, now)}
             {trade.round > 1 ? ` · rodada ${trade.round}` : ""}
           </p>
-          <CrystalAmount label="Você envia" amount={trade.crystalsOffered} />
+          <CrystalAmount
+            label="Você envia"
+            amount={incoming ? trade.crystalsRequested : trade.crystalsOffered}
+          />
           <CrystalAmount
             label="Você recebe"
-            amount={trade.crystalsRequested}
+            amount={incoming ? trade.crystalsOffered : trade.crystalsRequested}
           />
         </div>
         <div className="mt-3 flex flex-wrap gap-3">
@@ -213,6 +223,7 @@ function TradeRow({
               </button>
               <button
                 type="button"
+                aria-label={`Contra-propor para ${counterparty}`}
                 disabled={busy || expired}
                 title={expired ? "Troca expirada" : undefined}
                 onClick={onCounter}
