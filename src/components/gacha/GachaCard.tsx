@@ -74,6 +74,8 @@ export const GALAXY_TEXT =
 export const FOIL_TEXT: Record<string, string> = {
   HOLO: "text-ice",
   GOLD: "text-amber-300",
+  INK: "text-zinc-200",
+  NEGATIVE: "text-cyan-200",
 };
 
 export const CONDITION_COLOR: Record<string, string> = {
@@ -94,11 +96,11 @@ export const CONDITION_GLYPH: Record<string, string> = {
 
 // Arte decaiu junto com a condição: PLAYED dessatura, POOR dessatura + escurece.
 const CONDITION_ART: Record<string, string> = {
-  MINT: "saturate-[1.08] brightness-[1.03]",
-  NM: "saturate-[1.02] brightness-[1.01]",
-  EX: "saturate-[.82] brightness-[.96]",
-  PLAYED: "saturate-[.75]",
-  POOR: "saturate-[.55] brightness-[.88]",
+  MINT: "saturate(1.08) brightness(1.03)",
+  NM: "saturate(1.02) brightness(1.01)",
+  EX: "saturate(.82) brightness(.96)",
+  PLAYED: "saturate(.75)",
+  POOR: "saturate(.55) brightness(.88)",
 };
 
 const CONDITION_SURFACE: Record<string, string> = {
@@ -124,6 +126,15 @@ export const GachaCard = memo(function GachaCard({ pull, preview = false, linkAn
   const { card } = pull;
   const art = safeImageSrc(card.image);
   const label = pull.conditionLabel ?? gachaConditionLabel(pull.condition);
+  const artFilter = [
+    pull.foil === "INK" ? "grayscale(1) contrast(1.12)" : "",
+    pull.foil === "NEGATIVE"
+      ? "invert(1) hue-rotate(180deg) contrast(1.08)"
+      : "",
+    CONDITION_ART[label] ?? "",
+  ]
+    .filter(Boolean)
+    .join(" ");
   const animeSlug = card.anime?.slug ?? null;
   const animeTitle = card.anime?.title ?? card.animeTitle;
   const rarity = RARITY[card.rarity] ?? RARITY.COMUM!;
@@ -212,7 +223,8 @@ export const GachaCard = memo(function GachaCard({ pull, preview = false, linkAn
               sizes="(max-width: 480px) 50vw, (max-width: 1024px) 25vw, 16vw"
               placeholder="blur"
               blurDataURL={blur.portrait}
-              className={`object-cover ${CONDITION_ART[label] ?? ""} ${pull.foil === "GOLD" ? "gold-foil-art" : ""}`}
+              className="object-cover"
+              style={{ filter: artFilter || undefined }}
               quality={80}
             />
           ) : (
@@ -233,6 +245,12 @@ export const GachaCard = memo(function GachaCard({ pull, preview = false, linkAn
                 className="pointer-events-none absolute inset-y-[-25%] left-0 w-1/3 bg-gradient-to-r from-transparent via-amber-100/50 to-transparent mix-blend-screen motion-safe:animate-[gold-shine_5s_ease-in-out_infinite]"
               />
             </>
+          )}
+          {pull.foil === "INK" && (
+            <div aria-hidden className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_45%,rgba(0,0,0,.48)_100%)] shadow-[inset_0_0_0_1px_rgba(255,255,255,.28)]" />
+          )}
+          {pull.foil === "NEGATIVE" && (
+            <div aria-hidden className="pointer-events-none absolute inset-0 shadow-[inset_0_0_0_2px_rgba(165,243,252,.8),inset_0_0_24px_rgba(34,211,238,.15)]" />
           )}
           {(label === "PLAYED" || label === "POOR") && (
             <div

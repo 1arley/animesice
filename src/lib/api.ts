@@ -1556,7 +1556,7 @@ export const api = {
     itemType: "CARD" | "SKIN";
     itemId: string;
     price: number;
-    foil?: "NORMAL" | "HOLO" | "GOLD";
+    foil?: "NORMAL" | "HOLO" | "GOLD" | "INK" | "NEGATIVE";
     condition?: string;
     maxEdition?: number;
   }) =>
