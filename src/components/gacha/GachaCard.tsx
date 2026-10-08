@@ -90,9 +90,9 @@ export const FOIL_TEXT: Record<string, string> = {
 
 // Filtro da arte por foil. NORMAL e HOLO ficam de fora: NORMAL e a arte crua,
 // HOLO usa HoloTilt. Badge de texto carrega a semantica, cor nunca sozinha.
-const FOIL_ART: Record<string, string> = {
+export const FOIL_ART: Record<string, string> = {
   GOLD: "[--foil-art:sepia(1)_saturate(1.7)_contrast(1.08)_brightness(0.92)]",
-  INK: "[--foil-art:grayscale(0.85)_contrast(1.3)_brightness(0.66)]",
+  INK: "[--foil-art:grayscale(1)_contrast(1.3)_brightness(0.66)]",
   NEGATIVE: "[--foil-art:invert(1)_hue-rotate(180deg)_contrast(1.12)_brightness(0.94)]",
 };
 
@@ -105,9 +105,33 @@ const FOIL_OVERLAY: Record<string, string> = {
 // Cor do brilho que cruza a carta, so nos foils com aura propria.
 const FOIL_SHEEN: Record<string, string> = {
   GOLD: "via-amber-100/50",
-  INK: "via-ice/40",
+  INK: "via-white/30",
   NEGATIVE: "via-fuchsia-300/45",
 };
+
+/**
+ * Camadas de foil sobre a arte: overlay de borda + varredura de brilho.
+ *
+ * Precisa de um pai `relative` com a arte como `fill` e `overflow-hidden`.
+ * NORMAL e HOLO não têm overlay (HOLO usa HoloTilt); o componente devolve
+ * nada nesse caso, então chamar sempre é seguro.
+ */
+export function FoilArt({ foil }: { foil: string }) {
+  const overlay = FOIL_OVERLAY[foil];
+  if (!overlay) return null;
+  return (
+    <>
+      <div
+        aria-hidden
+        className={`${overlay} pointer-events-none absolute inset-0`}
+      />
+      <div
+        aria-hidden
+        className={`pointer-events-none absolute inset-y-[-25%] left-0 w-1/3 bg-gradient-to-r from-transparent ${FOIL_SHEEN[foil]} to-transparent mix-blend-screen motion-safe:animate-[foil-shine_5s_ease-in-out_infinite]`}
+      />
+    </>
+  );
+}
 
 export const CONDITION_COLOR: Record<string, string> = {
   MINT: "text-ice",
@@ -257,18 +281,7 @@ export const GachaCard = memo(function GachaCard({ pull, preview = false, linkAn
               </span>
             </div>
           )}
-          {FOIL_OVERLAY[pull.foil] && (
-            <>
-              <div
-                aria-hidden
-                className={`${FOIL_OVERLAY[pull.foil]} pointer-events-none absolute inset-0`}
-              />
-              <div
-                aria-hidden
-                className={`pointer-events-none absolute inset-y-[-25%] left-0 w-1/3 bg-gradient-to-r from-transparent ${FOIL_SHEEN[pull.foil]} to-transparent mix-blend-screen motion-safe:animate-[foil-shine_5s_ease-in-out_infinite]`}
-              />
-            </>
-          )}
+          <FoilArt foil={pull.foil} />
           {(label === "PLAYED" || label === "POOR") && (
             <div
               aria-hidden

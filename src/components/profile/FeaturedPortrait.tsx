@@ -9,7 +9,9 @@ import {
   RARITY,
   GALAXY_FRAME,
   GALAXY_TEXT,
+  FOIL_ART,
   FOIL_TEXT,
+  FoilArt,
 } from "@/components/gacha/GachaCard";
 import type { GachaFeatured } from "@/types";
 
@@ -62,7 +64,7 @@ export function FeaturedPortrait({ pull }: { pull: GachaFeatured }) {
                     sizes="(max-width: 639px) 112px, (max-width: 767px) 128px, 160px"
                     placeholder="blur"
                     blurDataURL={blur.portrait}
-                    className="object-cover"
+                    className={`foil-art object-cover ${FOIL_ART[pull.foil] ?? ""}`}
                     quality={80}
                     onError={() => setFailed(true)}
                   />
@@ -73,14 +75,15 @@ export function FeaturedPortrait({ pull }: { pull: GachaFeatured }) {
                     </span>
                   </div>
                 )}
+                <FoilArt foil={pull.foil} />
                 <span
-                  className={`absolute left-1.5 top-1.5 bg-ink/85 px-1.5 py-0.5 font-mono text-caption font-medium backdrop-blur-sm ${isGalaxy ? GALAXY_TEXT : rarity.text}`}
+                  className={`absolute left-1.5 top-1.5 z-20 bg-ink/85 px-1.5 py-0.5 font-mono text-caption font-medium backdrop-blur-sm ${isGalaxy ? GALAXY_TEXT : rarity.text}`}
                 >
                   {card.rarity}
                 </span>
                 {pull.foil !== "NORMAL" && (
                   <span
-                    className={`absolute right-1.5 top-1.5 bg-ink/85 px-1.5 py-0.5 font-mono text-caption font-medium backdrop-blur-sm ${foilText ?? "text-snow"}`}
+                    className={`absolute right-1.5 top-1.5 z-20 bg-ink/85 px-1.5 py-0.5 font-mono text-caption font-medium backdrop-blur-sm ${foilText ?? "text-snow"}`}
                   >
                     {pull.foil}
                   </span>

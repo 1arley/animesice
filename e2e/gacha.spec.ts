@@ -143,6 +143,45 @@ test.describe("Gacha", () => {
     });
   }
 
+  // A linha de odds vinha de literal na página e dessincronizou quando o
+  // backend somou INK/NEGATIVE. Trava a fonte: percentuais vêm de foilWeights.
+  test("odds de foil vêm do economy snapshot", async ({ page }) => {
+    await blockAds(page);
+    await mockGeneric(page);
+    await page.route("**/gacha/economy/odds", (route) =>
+      route.fulfill({
+        json: {
+          versionId: "v1",
+          version: 1,
+          dailyBonus: 350,
+          crystalPackages: [],
+          boxPrices: {},
+          keyPrice: 0,
+          categories: {},
+          qualities: {},
+          // Fecha em 100 de propósito: 3 vira 3%, 5 vira 5%.
+          foilWeights: { NORMAL: 70, HOLO: 12, GOLD: 8, INK: 5, NEGATIVE: 5 },
+        },
+      }),
+    );
+    await page.goto("/gacha");
+    await expect(page.getByText(/Foil:/)).toContainText("NORMAL 70%");
+    await expect(page.getByText(/Foil:/)).toContainText("GOLD 8%");
+    await expect(page.getByText(/Foil:/)).toContainText("NEGATIVE 5%");
+  });
+
+  test("sem odds do backend a linha lista os foils sem porcentagem", async ({
+    page,
+  }) => {
+    await blockAds(page);
+    await mockGeneric(page);
+    await page.route("**/gacha/economy/odds", (route) => route.abort());
+    await page.goto("/gacha");
+    const linha = page.getByText(/Foil:/);
+    await expect(linha).toContainText("NEGATIVE");
+    await expect(linha).not.toContainText("%");
+  });
+
   test("perfil: aba Cartas mostra estado vazio", async ({ page }) => {
     await blockAds(page);
     await mockGeneric(page);

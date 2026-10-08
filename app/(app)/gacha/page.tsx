@@ -9,7 +9,12 @@ import { RollStage } from "@/components/gacha/RollStage";
 import { SpinPreviewCard } from "@/components/gacha/SpinPreviewCard";
 import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
 import { isValidRemoteUrl } from "@/lib/url";
-import { GachaCard, gachaConditionLabel } from "@/components/gacha/GachaCard";
+import {
+  GachaCard,
+  FOIL_TEXT,
+  GACHA_FOILS,
+  gachaConditionLabel,
+} from "@/components/gacha/GachaCard";
 import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import { useToast } from "@/components/common/ToastProvider";
 import { SectionLabel } from "@/components/common/SectionLabel";
@@ -52,6 +57,12 @@ function spinToStagePull(spin: GachaSpinPreview): GachaPull {
     user: { id: "", name: null, userName: null, avatar: null },
     card: spin.card,
   };
+}
+
+/** Peso do config vira porcentagem legível em pt-BR: 3/100 -> "3%". */
+function pct(weight: number, total: number): string {
+  const value = (weight / total) * 100;
+  return `${value.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}%`;
 }
 
 /** Cristal do gacha — motivo de identidade do hero da sala. */
@@ -116,6 +127,28 @@ function GachaPageContent() {
   const [bypassReference, setBypassReference] = useState<string | null>(null);
   const [checkoutUrl, setCheckoutUrl] = useState<string | null>(null);
   const [now, setNow] = useState(() => Date.now());
+  // Odds vêm do economy snapshot, não de literal aqui: em 2026-10-07 o backend
+  // somou INK e NEGATIVE e esta página continuou anunciando 85/12/3. Sem o dado
+  // a linha lista os foils sem porcentagem, em vez de chutar um número.
+  const [foilWeights, setFoilWeights] = useState<Record<string, number> | null>(
+    null,
+  );
+
+  // Endpoint público: a linha de odds aparece para visitante anônimo também.
+  useEffect(() => {
+    let cancelled = false;
+    api
+      .gachaEconomyOdds()
+      .then((odds) => {
+        if (!cancelled) setFoilWeights(odds.foilWeights ?? null);
+      })
+      .catch(() => {
+        if (!cancelled) setFoilWeights(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     const id = searchParams.get("card");
@@ -411,6 +444,12 @@ function GachaPageContent() {
           : null
         : (claimResult ?? result),
     [stagePreview, spinResult, claimResult, result],
+  );
+
+  // Soma de foil_weights no snapshot; o config não garante fechamento em 100.
+  const foilTotal = useMemo(
+    () => Object.values(foilWeights ?? {}).reduce((acc, w) => acc + w, 0) || 1,
+    [foilWeights],
   );
 
   return (
@@ -787,11 +826,21 @@ function GachaPageContent() {
               <p className="font-medium text-snow">Sua cópia é única</p>
               <ul className="mt-2 space-y-1 font-mono text-caption">
                 <li>
-                  Foil: NORMAL 79% ·{" "}
-                  <span className="text-ice">HOLO 12%</span> ·{" "}
-                  <span className="text-amber-300">GOLD 3%</span> ·{" "}
-                  <span className="text-zinc-200">INK 3%</span> ·{" "}
-                  <span className="text-fuchsia-300">NEGATIVE 3%</span>
+                  Foil:{" "}
+                  {GACHA_FOILS.map((foil, i) => {
+                    const weight = foilWeights?.[foil];
+                    return (
+                      <span key={foil}>
+                        {i > 0 && " · "}
+                        <span className={FOIL_TEXT[foil] ?? "text-snow"}>
+                          {foil}
+                        </span>
+                        {weight == null
+                          ? ""
+                          : ` ${pct(weight, foilTotal)}`}
+                      </span>
+                    );
+                  })}
                 </li>
                 <li>
                   Condition: <span className="text-ice">◆◆◆ MINT</span> &gt;{" "}
