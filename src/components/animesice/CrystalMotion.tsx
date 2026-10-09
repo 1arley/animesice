@@ -1,207 +1,123 @@
 "use client";
 
 import Image from "next/image";
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { useRef, type CSSProperties } from "react";
+import { gsap, useGSAP } from "@/lib/gsap";
 import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
 
 export type CrystalMotionMode = "reveal" | "loop" | "transition" | "micro";
 
 export interface CrystalMotionProps {
-  /** Modo da identidade de motion. */
   mode: CrystalMotionMode;
-  /** Lado do cristal em px (número) ou qualquer CSS size (string). */
   size?: number | string;
   className?: string;
   style?: CSSProperties;
 }
 
-/** O logo do motion é o cristal animado (sem fundo, sobre fundo preto que some
- *  via screen blend). O WebP estático fica como poster/fallback e no modo
- *  prefers-reduced-motion. O vídeo circula em splash/loading/transition. */
 const LOGO_URL = "/images/logo.webp";
-/** Fontes do cristal em cascata: o navegador carrega só a primeira que sabe
- *  decodificar, então quem tem WebM não paga o MP4.
- *
- *  O WebM (VP9) é o principal: menor e é o único com alpha. O MP4 (H.264) é o
- *  fallback para o Safari — o WebKit só decodifica WebM a partir do iOS 17.4
- *  e nunca no macOS anterior ao Big Sur, então antes disso o cristal caía no
- *  fallback em CSS e perdia a animação. Nenhum dos dois precisa de alpha para
- *  funcionar: os dois têm fundo preto opaco, que o `mix-blend-mode: screen` do
- *  `.crystal-video` apaga sobre os fundos escuros da identidade. */
-const VIDEO_SOURCES = [
-  { src: "/icons/crystal_animation_clean.webm", type: "video/webm" },
-  { src: "/icons/crystal_animation_h264.mp4", type: "video/mp4" },
-] as const;
-const MOTE_COUNT = 14;
 
-interface MoteStyle {
-  "--x": string;
-  "--y": string;
-  "--s": string;
-  "--o": string;
-  "--d": string;
-  "--dur": string;
-}
-
-/** Pseudoaleatorio deterministico: SSR e primeiro render do cliente precisam
- * produzir exatamente os mesmos estilos para a hidratacao do React. */
-function moteValue(index: number, salt: number): number {
-  const value = Math.sin((index + 1) * 12.9898 + salt * 78.233) * 43758.5453;
-  return value - Math.floor(value);
-}
-
-/**
- * O cristal AnimesIce em 4 modos da identidade de motion:
- * reveal (abertura), loop (loading), transition (wipe) e micro (tap/hover).
- * A animação roda num <video> sem fundo (screen blend); os motes de gelo são
- * gerados em JS com custom props. Com `prefers-reduced-motion`, renderiza o
- * cristal estático, sem animação.
- *
- * Fallback mobile: quando o navegador bloqueia autoplay (comum em iOS/Android
- * em modo bateria, low-power, ou WebM VP9+alpha sem suporte), o componente
- * detecta e ativa um fallback CSS que pulsa o poster + glow via keyframes,
- * evitando o PNG estático com fundo preto do <video>.
- */
 export function CrystalMotion({
   mode,
   size = 220,
   className = "",
   style,
 }: CrystalMotionProps) {
-  const reduce = usePrefersReducedMotion();
-  const rootRef = useRef<HTMLDivElement | null>(null);
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  const [videoFailed, setVideoFailed] = useState(false);
+  const reduzir = usePrefersReducedMotion();
+  const raiz = useRef<HTMLDivElement>(null);
+  const costura = useRef<HTMLSpanElement>(null);
+  const microTimeline = useRef<gsap.core.Timeline | null>(null);
+  const medida = typeof size === "number" ? `${size}px` : size;
 
-  useEffect(() => {
-    const v = videoRef.current;
-    if (!v || reduce || videoFailed) return;
+  useGSAP(() => {
+    const elemento = raiz.current;
+    if (!elemento) return;
 
-    let cancelled = false;
+    if (reduzir) {
+      // Único recurso e único gesto permitido: fade de opacidade inferior a 400ms.
+      gsap.fromTo(elemento, { opacity: 0 }, {
+        opacity: 1,
+        duration: 0.18,
+        ease: "power1.out",
+      });
+      return;
+    }
 
-    const tryPlay = async () => {
-      try {
-        await v.play();
-      } catch {
-        if (!cancelled) setVideoFailed(true);
-      }
-    };
+    const largura = elemento.getBoundingClientRect().width;
+    const tl = gsap.timeline({ paused: true, repeat: mode === "loop" ? -1 : 0 });
 
-    tryPlay();
+    if (mode === "reveal") {
+      tl.set(elemento, { willChange: "transform, opacity" }, 0)
+        .fromTo(elemento, { opacity: 0, y: 8 }, {
+          opacity: 1, y: 0, duration: 0.25, ease: "expo.out",
+          immediateRender: false,
+        }, 0)
+        .set(elemento, { clearProps: "willChange" }, 0.25);
+    } else if (mode === "loop") {
+      tl.set(elemento, { willChange: "opacity" }, 0)
+        .to(elemento, { opacity: 0.74, duration: 0.75, ease: "sine.inOut" }, 0)
+        .to(elemento, { opacity: 1, duration: 0.75, ease: "sine.inOut" }, 0.75);
+    } else if (mode === "transition" && costura.current) {
+      const distancia = Math.max(1, largura);
+      const duracao = distancia / 650; // px / px por segundo.
+      tl.set(costura.current, { willChange: "transform, opacity" }, 0)
+        .fromTo(costura.current, { x: -distancia / 2, opacity: 1 }, {
+          x: distancia / 2,
+          opacity: 0,
+          duration: duracao,
+          ease: "power1.inOut",
+          immediateRender: false,
+        }, 0)
+        .set(costura.current, { clearProps: "willChange" }, duracao);
+    } else if (mode === "micro") {
+      tl.set(elemento, { willChange: "transform" }, 0)
+        .to(elemento, { scale: 0.97, duration: 0.09, ease: "power2.out" }, 0)
+        .to(elemento, { scale: 1, duration: 0.16, ease: "power2.out" }, 0.09)
+        .set(elemento, { clearProps: "willChange" }, 0.25);
+      microTimeline.current = tl;
+    }
 
-    const stallTimer = setTimeout(() => {
-      if (!cancelled && v.paused && !v.ended) {
-        setVideoFailed(true);
-      }
-    }, 800);
-
+    if (mode !== "micro") tl.play();
     return () => {
-      cancelled = true;
-      clearTimeout(stallTimer);
+      tl.kill();
+      microTimeline.current = null;
+      gsap.set(elemento, { clearProps: "willChange" });
+      if (costura.current) gsap.set(costura.current, { clearProps: "willChange" });
     };
-  }, [reduce, videoFailed]);
+  }, { scope: raiz, dependencies: [mode, reduzir], revertOnUpdate: true });
 
-  const motes = useMemo<MoteStyle[]>(
-    () =>
-      Array.from({ length: MOTE_COUNT }, (_, index) => ({
-        "--x": `${10 + moteValue(index, 1) * 80}%`,
-        "--y": `${10 + moteValue(index, 2) * 80}%`,
-        "--s": `${(1.5 + moteValue(index, 3) * 2.5).toFixed(1)}px`,
-        "--o": (0.35 + moteValue(index, 4) * 0.45).toFixed(2),
-        "--d": `${moteValue(index, 5).toFixed(2)}s`,
-        "--dur": `${(2.8 + moteValue(index, 6) * 2.2).toFixed(2)}s`,
-      })),
-    [],
-  );
-
-  const rootStyle = {
-    "--crystal-size": typeof size === "number" ? `${size}px` : size,
-    ...style,
-  } as CSSProperties;
-
-  const firePulse = useCallback(() => {
-    const el = rootRef.current;
-    if (!el || mode !== "micro") return;
-    el.classList.remove("crystal-pulsing");
-    void el.offsetWidth;
-    el.classList.add("crystal-pulsing");
-  }, [mode]);
-
-  const showFallback = !reduce && videoFailed;
-
-  if (reduce) {
-    return (
-      <div
-        ref={rootRef}
-        className={`crystal-motion ${className}`}
-        style={rootStyle}
-        data-mode={mode}
-        aria-hidden="true"
-      >
-        <div className="crystal-wrap">
-          <Image
-            className="crystal-logo"
-            src={LOGO_URL}
-            alt=""
-            width={220}
-            height={220}
-            draggable={false}
-            style={{ animation: "none", opacity: 1, filter: "none" }}
-            aria-hidden="true"
-          />
-        </div>
-      </div>
-    );
-  }
+  const tamanho = { width: medida, height: medida, ...style } as CSSProperties;
 
   return (
     <div
-      ref={rootRef}
-      className={`crystal-motion ${showFallback ? "crystal-fallback-active" : ""} ${className}`}
-      style={rootStyle}
+      ref={raiz}
       data-mode={mode}
       aria-hidden="true"
-      onPointerDown={firePulse}
-      onMouseEnter={firePulse}
+      className={`relative inline-grid shrink-0 place-items-center overflow-hidden ${className}`}
+      style={tamanho}
+      onPointerDown={() => {
+        if (mode === "micro" && !reduzir) microTimeline.current?.restart();
+      }}
     >
-      <div className="crystal-wrap">
-        <div className="crystal-glow" />
-        <div className="crystal-motes">
-          {motes.map((m, i) => (
-            <span key={i} className="crystal-mote" style={m as CSSProperties} />
-          ))}
-        </div>
-        {showFallback ? (
-          <Image
-            className="crystal-logo"
-            src={LOGO_URL}
-            alt=""
-            width={220}
-            height={220}
-            draggable={false}
-            aria-hidden="true"
-          />
-        ) : (
-          /* eslint-disable-next-line jsx-a11y/media-has-caption */
-          <video
-            className="crystal-logo crystal-video"
-            poster={LOGO_URL}
-            autoPlay
-            muted
-            loop
-            playsInline
-            preload="auto"
-            ref={videoRef}
-            aria-hidden="true"
-          >
-            {VIDEO_SOURCES.map((source) => (
-              <source key={source.src} src={source.src} type={source.type} />
-            ))}
-          </video>
-        )}
-      </div>
+      <Image
+        className="block h-full w-full select-none object-contain"
+        src={LOGO_URL}
+        alt=""
+        width={220}
+        height={220}
+        draggable={false}
+      />
+      {mode === "transition" && !reduzir && (
+        <span
+          ref={costura}
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-y-0 left-1/2 w-px bg-ice"
+        />
+      )}
     </div>
   );
 }
 
 export default CrystalMotion;
+
+// ponytail: teto visual = WebP + uma costura simples. Upgrade:
+// adicionar iluminação real apenas se o teste em dispositivo justificar custo.

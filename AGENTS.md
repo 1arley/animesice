@@ -1,16 +1,8 @@
-<!-- herdr-agent-team:start -->
-## Agent Team
-
-- By default, read `.agents/team/playbook.md` and `.agents/team/roles/leader.md` and adopt the leader role.
-- An explicitly assigned member reads the playbook and its matching role file instead.
-- Team coordination uses Herdr and its official `herdr` Skill. Project owner rules and user authorization always prevail.
-<!-- herdr-agent-team:end -->
-
 # Repository Guidelines
 
 ## Role and First Checks
 
-Act as repository leader. Read relevant `SKILL.md` before work; required for UI work: `frontend-design`, `web-design-guidelines`, and `accessibility`. Use `grilling` for `$grill-me` requests. Read `.agents/team/playbook.md` and matching role file; use Herdr only when `HERDR_ENV=1` and user asks for coordination.
+Act as repository leader. Read relevant `SKILL.md` before work; required for UI work: `frontend-design`, `web-design-guidelines`, and `accessibility`. Use `grilling` for `$grill-me` requests.
 
 Inspect `git status`, existing diffs, route structure, and installed dependencies before editing. Preserve user changes. Prefer smallest working diff; reuse or delete before adding abstractions.
 
