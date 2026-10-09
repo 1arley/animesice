@@ -86,6 +86,8 @@ export function mountCrystalScene(threeHost, pixiHost) {
         spark.alpha = 0.35 + (Math.sin(time * 2 + index) + 1) * 0.3;
       });
     });
+  }).catch(() => {
+    if (particles.renderer) particles.destroy(true, { children: true });
   });
 
   const resize = () => {
