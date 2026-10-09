@@ -3,7 +3,7 @@ import { blockAds, mockGeneric, loginAs } from "./helpers";
 
 test.describe("Gacha", () => {
   for (const mediaFails of [false, true]) {
-    test(`Manim: ${mediaFails ? "fallback" : "vídeo"} e Pular com API pendente`, async ({ page }) => {
+    test(`Remotion: ${mediaFails ? "fallback" : "vídeo"} e Pular com API pendente`, async ({ page }) => {
       await page.emulateMedia({ reducedMotion: "no-preference" });
       await blockAds(page);
       await mockGeneric(page);
@@ -29,7 +29,7 @@ test.describe("Gacha", () => {
           )).toBe(true);
         }
         await expect(dialog.getByRole("button", { name: "Pular", exact: true })).toHaveAttribute("aria-disabled", "false");
-        await page.screenshot({ path: test.info().outputPath("gacha-manim.png") });
+        await page.screenshot({ path: test.info().outputPath("gacha-crystal.png") });
         await dialog.getByRole("button", { name: "Pular", exact: true }).click();
         await expect(dialog.locator("video")).toHaveCount(0);
         await expect(dialog.getByRole("button", { name: "Aguardando carta…" })).toBeVisible();
@@ -44,6 +44,23 @@ test.describe("Gacha", () => {
       await expect(page.getByRole("button", { name: /^Girar/ })).toBeFocused();
     });
   }
+
+  test("movimento reduzido não baixa vídeo nem monta canvas", async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await blockAds(page);
+    await mockGeneric(page);
+    await loginAs(page);
+    const crystalRequests: string[] = [];
+    page.on("request", request => {
+      if (/\/gacha\/crystal\.(mp4|webp)(?:\?|$)/.test(request.url())) crystalRequests.push(request.url());
+    });
+    await page.goto("/gacha");
+    await page.getByRole("button", { name: /^Girar/ }).click();
+    const dialog = page.getByRole("dialog");
+    await expect(dialog.getByRole("button", { name: "Continuar" })).toBeVisible();
+    await expect(dialog.locator("video, canvas")).toHaveCount(0);
+    expect(crystalRequests).toEqual([]);
+  });
 
   test("anônimo: explica o jogo, pede login e mostra listas vazias", async ({
     page,
