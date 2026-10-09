@@ -7,7 +7,6 @@ import { api, ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { RollStage } from "@/components/gacha/RollStage";
 import { SpinPreviewCard } from "@/components/gacha/SpinPreviewCard";
-import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
 import { isValidRemoteUrl } from "@/lib/url";
 import {
   GachaCard,
@@ -114,7 +113,6 @@ function CrystalIcon({ className }: { className?: string }) {
 function GachaPageContent() {
   const { user } = useAuth();
   const searchParams = useSearchParams();
-  const reduceMotion = usePrefersReducedMotion();
   const [stageOpen, setStageOpen] = useState(false);
   const [status, setStatus] = useState<GachaStatus | null>(null);
   const [statusError, setStatusError] = useState(false);
