@@ -5,6 +5,7 @@ import { gsap, useGSAP } from "@/lib/gsap";
 import { GachaCard, GACHA_TIERS, GALAXY_TEXT, RARITY_TEXT } from "./GachaCard";
 import { CountUp } from "@/components/core/CountUp";
 import type { GachaPull } from "@/types";
+import { CrystalCanvas } from "./CrystalCanvas";
 
 const PARTICLE_SLOTS = 24;
 const PARTICLE_GALAXY = ["#a78bfa", "#f472b6", "#38bdf8"];
@@ -107,6 +108,10 @@ export function RollStage({ pull, reduceMotion, onClose, preview = false }: {
         .fromTo(select("[data-screen-flash]"), { opacity: idx >= 5 ? 0.32 : rare ? 0.22 : 0.1 }, {
           opacity: 0, duration: rare ? 0.8 : 0.55, immediateRender: false,
         }, frontAt)
+        .fromTo(select("[data-stage]"), { filter: "saturate(1)" }, {
+          filter: `saturate(${1 + idx * 0.4})`, duration: 0.35, yoyo: true, repeat: 1,
+          ease: "power1.inOut", immediateRender: false,
+        }, frontAt)
         .to(select("[data-stage]"), {
           x: shakeAmp(idx), rotation: 0.7, yoyo: true, repeat: 9,
           duration: 0.045, ease: "none",
@@ -204,6 +209,7 @@ export function RollStage({ pull, reduceMotion, onClose, preview = false }: {
           {!reduceMotion && <div aria-hidden="true" className="pointer-events-none absolute inset-0 flex items-center justify-center">
             <div data-crystal className="aspect-square w-[min(90vw,26rem)] shrink-0 bg-cover bg-center mix-blend-screen"
               style={{ backgroundImage: "url(/gacha/crystal.webp)", maskImage: "radial-gradient(closest-side, black 75%, transparent 100%)" }}>
+              <CrystalCanvas active={!revealed && !skipped} />
               {!videoFailed && !revealed && !skipped && <video
                 src="/gacha/crystal.mp4" poster="/gacha/crystal.webp"
                 autoPlay muted loop playsInline preload="auto" tabIndex={-1}
