@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import { CrystalMotion } from "@/components/animesice/CrystalMotion";
-import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
 
 /** Só roda uma vez por sessão (guardrail da identidade: abertura de
  *  conteúdo nunca repete dentro da mesma sessão). */
@@ -28,7 +27,6 @@ const LEAVE_MS = 250;
  * nunca aconteça (primeira visita em mobile não interage).
  */
 export function CrystalSplash() {
-  const reduce = usePrefersReducedMotion();
   // Começa "gone" para nunca flashar a abertura em quem já a viu na sessão
   // (o SSR não conhece sessionStorage); a exibição só acontece pós-hidratação.
   const [phase, setPhase] = useState<"show" | "leaving" | "gone">("gone");
@@ -41,11 +39,6 @@ export function CrystalSplash() {
     } catch {
       /* storage indisponível: mostra a abertura mesmo assim */
     }
-    if (reduce) {
-      setPhase("gone");
-      return;
-    }
-
     if (!seen) {
       try {
         sessionStorage.setItem(SESSION_KEY, "1");
@@ -84,9 +77,9 @@ export function CrystalSplash() {
       window.removeEventListener("pointerdown", dismiss);
       window.removeEventListener("touchstart", dismiss);
     };
-  }, [reduce]);
+  }, []);
 
-  if (phase === "gone" || reduce) return null;
+  if (phase === "gone") return null;
 
   return (
     <div

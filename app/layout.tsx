@@ -5,7 +5,7 @@ import { AuthProvider } from "@/lib/auth-context";
 import { ToastProvider } from "@/components/common/ToastProvider";
 import { SITE_URL } from "@/lib/site";
 import { escapeJsonLd } from "@/lib/url";
-import { DeferredCrystalSplash } from "@/components/animesice/DeferredCrystalSplash";
+import { CrystalSplash } from "@/components/animesice/CrystalSplash";
 import { chunkRecoveryScript } from "@/lib/chunk-recovery-script";
 import { CompensationModal } from "@/components/common/CompensationModal";
 import { MonetagVignette } from "@/components/common/MonetagVignette";
@@ -156,7 +156,7 @@ export default function RootLayout({
         </AuthProvider>
         {/* Abertura da identidade de motion: cristal em foco puxado, uma vez
             por sessão, dispensável a qualquer toque/tecla. Nunca bloqueia. */}
-        <DeferredCrystalSplash />
+        <CrystalSplash />
         <MonetagVignette />
       </body>
     </html>
