@@ -144,7 +144,7 @@ test.describe("Gacha", () => {
   }
 
   // A linha de odds vinha de literal na página e dessincronizou quando o
-  // backend somou INK/NEGATIVE. Trava a fonte: percentuais vêm de foilWeights.
+  // backend somou INK/PRISM. Trava a fonte: percentuais vêm de foilWeights.
   test("odds de foil vêm do economy snapshot", async ({ page }) => {
     await blockAds(page);
     await mockGeneric(page);
@@ -160,14 +160,14 @@ test.describe("Gacha", () => {
           categories: {},
           qualities: {},
           // Fecha em 100 de propósito: 3 vira 3%, 5 vira 5%.
-          foilWeights: { NORMAL: 70, HOLO: 12, GOLD: 8, INK: 5, NEGATIVE: 5 },
+          foilWeights: { NORMAL: 70, HOLO: 12, GOLD: 8, INK: 5, PRISM: 5 },
         },
       }),
     );
     await page.goto("/gacha");
     await expect(page.getByText(/Foil:/)).toContainText("NORMAL 70%");
     await expect(page.getByText(/Foil:/)).toContainText("GOLD 8%");
-    await expect(page.getByText(/Foil:/)).toContainText("NEGATIVE 5%");
+    await expect(page.getByText(/Foil:/)).toContainText("PRISM 5%");
   });
 
   test("sem odds do backend a linha lista os foils sem porcentagem", async ({
@@ -178,7 +178,7 @@ test.describe("Gacha", () => {
     await page.route("**/gacha/economy/odds", (route) => route.abort());
     await page.goto("/gacha");
     const linha = page.getByText(/Foil:/);
-    await expect(linha).toContainText("NEGATIVE");
+    await expect(linha).toContainText("PRISM");
     await expect(linha).not.toContainText("%");
   });
 
@@ -191,9 +191,22 @@ test.describe("Gacha", () => {
   });
 
   // Regressão: `filter` é propriedade única e o utilitário de condition
-  // chegava por último, apagando a arte do foil. INK e NEGATIVE entram aqui
-  // para travar a composição de --foil-art + --cond-art.
-  for (const foil of ["GOLD", "INK", "NEGATIVE"]) {
+  // chegava por último, apagando a arte do foil. Trava a composição de
+  // --foil-art + --cond-art. PRISM é o caso oposto: sem --foil-art nenhum,
+  // a arte do anime fica intacta (o foil NEGATIVE invertia e foi removido).
+  const foilFilter: Record<string, RegExp> = {
+    GOLD: /sepia/,
+    INK: /grayscale/,
+    PRISM: /^(?!.*(sepia|grayscale|invert|hue-rotate)).*$/,
+  };
+  // A identidade do foil mora no overlay. Sem esta asserção, um rename errado
+  // em FOIL_OVERLAY sai como carta lisa e o teste continua verde.
+  const foilOverlay: Record<string, string> = {
+    GOLD: "gold-foil-overlay",
+    INK: "ink-foil-overlay",
+    PRISM: "prism-foil-overlay",
+  };
+  for (const foil of ["GOLD", "INK", "PRISM"]) {
     test(`arte do foil ${foil} sobrevive à condition`, async ({ page }) => {
       await blockAds(page);
       await mockGeneric(page);
@@ -235,7 +248,7 @@ test.describe("Gacha", () => {
       await expect(art).toBeVisible();
       const filter = await art.evaluate((el) => getComputedStyle(el).filter);
       // Ambos precisam compor: filtro do foil E o de condition (POOR).
-      expect(filter).toMatch(/sepia|grayscale|invert/);
+      expect(filter).toMatch(foilFilter[foil]!);
       expect(filter).toMatch(/brightness\(0\.88\)/);
 
       // O select precisa ter a opção do foil: value cru pro backend, label legível.
@@ -243,6 +256,8 @@ test.describe("Gacha", () => {
       await expect(select.locator(`option[value="${foil}"]`)).toHaveText(
         foil.charAt(0) + foil.slice(1).toLowerCase(),
       );
+
+      await expect(page.locator(`.${foilOverlay[foil]!}`).first()).toBeVisible();
     });
   }
 
