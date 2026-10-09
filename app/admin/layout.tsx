@@ -150,7 +150,7 @@ function AdminSidebar({ pathname, mobileNavOpen, setMobileNavOpen, isSuperadmin 
       {mobileNavOpen && <button type="button" className="fixed inset-0 z-40 bg-black/70 md:hidden" onClick={() => setMobileNavOpen(false)} aria-label="Fechar menu administrativo" />}
 
       <aside id="admin-navigation" className={`${mobileNavOpen ? "translate-x-0" : "-translate-x-full"} fixed inset-y-0 left-0 z-50 w-[min(86vw,20rem)] overflow-y-auto border-r border-hairline bg-ink p-4 transition-transform duration-200 md:static md:block md:w-52 md:flex-none md:translate-x-0 md:overflow-visible md:border-0 md:bg-transparent md:p-0 md:transition-none`}>
-        <nav className="border border-hairline bg-panel p-3 md:sticky md:top-4">
+        <nav className="border border-hairline bg-panel p-3">
           <div className="mb-3 px-2 pt-1">
             <span className="font-display text-display-lg text-snow">Admin</span>
             <span className="ml-2 inline-block h-2 w-2 bg-ice" />

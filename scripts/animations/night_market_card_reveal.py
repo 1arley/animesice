@@ -1,203 +1,175 @@
-"""Render the decorative Mercado Noturno card-reveal burst as a web MP4.
+"""Render the Night Market card reveal with ModernGL.
 
-    python -m pip install manim==0.20.1
-    python scripts/animations/night_market_card_reveal.py
-
-The black background is screen-blended over the live card in the browser. The
-offer and its art remain React content; the clip only adds the reveal flourish.
+Requires ``python -m pip install moderngl numpy`` and FFmpeg with libx264.
+Run from the repository root with ``python scripts/animations/night_market_card_reveal.py``.
 """
-import math
 import subprocess
-import tempfile
 from pathlib import Path
 
+import moderngl
 import numpy as np
-from manim import (
-    Circle,
-    Dot,
-    FadeIn,
-    FadeOut,
-    LaggedStart,
-    Line,
-    Polygon,
-    Scene,
-    VGroup,
-    rate_functions,
-    tempconfig,
-)
 
 
-ICE = "#38E8DA"
-FROST = "#E9FFFF"
+WIDTH, HEIGHT, FPS = 720, 960, 30
+DURATION = 1.2
+
+VERTEX_SHADER = """
+#version 330
+in vec2 in_position;
+void main() {
+    gl_Position = vec4(in_position, 0.0, 1.0);
+}
+"""
+
+FRAGMENT_SHADER = """
+#version 330
+uniform vec2 resolution;
+uniform float time;
+out vec4 frag_color;
+
+float line(vec2 p, vec2 a, vec2 b) {
+    vec2 pa = p - a;
+    vec2 ba = b - a;
+    return length(pa - ba * clamp(dot(pa, ba) / dot(ba, ba), 0.0, 1.0));
+}
+
+float stroke(float distance, float width) {
+    return 1.0 - smoothstep(width, width + 1.0, distance);
+}
+
+float trace(vec2 p, vec2 a, vec2 b, float progress) {
+    vec2 ba = b - a;
+    float along = clamp(dot(p - a, ba) / dot(ba, ba), 0.0, 1.0);
+    return stroke(line(p, a, b), 1.4) * smoothstep(along - 0.025, along + 0.025, progress);
+}
+
+float traceHead(vec2 p, vec2 a, vec2 b, float progress) {
+    vec2 point = mix(a, b, clamp(progress, 0.0, 1.0));
+    return exp(-length(p - point) * 0.09) * step(0.0, progress) * step(progress, 1.0);
+}
+
+void main() {
+    vec2 p = (gl_FragCoord.xy - 0.5 * resolution) / resolution.y;
+    vec2 card = vec2(150.0 + p.x * 400.0, 200.0 - p.y * 400.0);
+    float t = clamp(time / 1.2, 0.0, 1.0);
+    float fade = 1.0 - smoothstep(0.84, 1.0, t);
+    float pulse = exp(-pow((t - 0.46) / 0.11, 2.0));
+    vec3 ice = vec3(0.30, 0.83, 0.94);
+    vec3 frost = vec3(0.84, 0.97, 1.0);
+    vec3 color = vec3(0.0);
+
+    // Coordinates and paths mirror the pre-reveal card's 300x400 SVG.
+    vec2 diamond[4] = vec2[4](vec2(150, 145), vec2(205, 200), vec2(150, 255), vec2(95, 200));
+    vec2 inner[4] = vec2[4](vec2(150, 168), vec2(182, 200), vec2(150, 232), vec2(118, 200));
+    vec2 core[4] = vec2[4](vec2(150, 187), vec2(163, 200), vec2(150, 213), vec2(137, 200));
+
+    float frameDistance = 1000.0;
+    frameDistance = min(frameDistance, line(card, vec2(18, 48), vec2(18, 18)));
+    frameDistance = min(frameDistance, line(card, vec2(18, 18), vec2(282, 18)));
+    frameDistance = min(frameDistance, line(card, vec2(282, 18), vec2(282, 382)));
+    frameDistance = min(frameDistance, line(card, vec2(282, 382), vec2(18, 382)));
+    frameDistance = min(frameDistance, line(card, vec2(18, 382), vec2(18, 352)));
+
+    float motifDistance = 1000.0;
+    for (int i = 0; i < 4; i++) {
+        motifDistance = min(motifDistance, line(card, diamond[i], diamond[(i + 1) % 4]));
+        motifDistance = min(motifDistance, line(card, inner[i], inner[(i + 1) % 4]));
+        motifDistance = min(motifDistance, line(card, core[i], core[(i + 1) % 4]));
+    }
+    motifDistance = min(motifDistance, line(card, vec2(150, 135), vec2(150, 97)));
+    motifDistance = min(motifDistance, line(card, vec2(150, 303), vec2(150, 265)));
+    motifDistance = min(motifDistance, line(card, vec2(93, 200), vec2(58, 200)));
+    motifDistance = min(motifDistance, line(card, vec2(242, 200), vec2(207, 200)));
+
+    float circuitDistance = 1000.0;
+    circuitDistance = min(circuitDistance, line(card, vec2(18, 90), vec2(42, 90)));
+    circuitDistance = min(circuitDistance, line(card, vec2(42, 90), vec2(76, 124)));
+    circuitDistance = min(circuitDistance, line(card, vec2(76, 124), vec2(76, 170)));
+    circuitDistance = min(circuitDistance, line(card, vec2(282, 90), vec2(258, 90)));
+    circuitDistance = min(circuitDistance, line(card, vec2(258, 90), vec2(224, 124)));
+    circuitDistance = min(circuitDistance, line(card, vec2(224, 124), vec2(224, 170)));
+    circuitDistance = min(circuitDistance, line(card, vec2(18, 310), vec2(42, 310)));
+    circuitDistance = min(circuitDistance, line(card, vec2(42, 310), vec2(76, 276)));
+    circuitDistance = min(circuitDistance, line(card, vec2(76, 276), vec2(76, 230)));
+    circuitDistance = min(circuitDistance, line(card, vec2(282, 310), vec2(258, 310)));
+    circuitDistance = min(circuitDistance, line(card, vec2(258, 310), vec2(224, 276)));
+    circuitDistance = min(circuitDistance, line(card, vec2(224, 276), vec2(224, 230)));
+
+    float outerProgress = smoothstep(0.10, 0.50, t) * 4.0;
+    float innerProgress = smoothstep(0.28, 0.60, t) * 4.0;
+    float outerTrace = 0.0;
+    float innerTrace = 0.0;
+    float movingGlint = 0.0;
+    for (int i = 0; i < 4; i++) {
+        float outerStep = clamp(outerProgress - float(i), 0.0, 1.0);
+        float innerStep = clamp(innerProgress - float(i), 0.0, 1.0);
+        vec2 a = diamond[i];
+        vec2 b = diamond[(i + 1) % 4];
+        vec2 ia = inner[i];
+        vec2 ib = inner[(i + 1) % 4];
+        outerTrace += trace(card, a, b, outerStep);
+        innerTrace += trace(card, ia, ib, innerStep);
+        movingGlint += traceHead(card, a, b, outerStep) * step(0.0, outerProgress - float(i)) * step(outerProgress - float(i), 1.0);
+    }
+
+    float coreFlash = pulse * exp(-length(card - vec2(150, 200)) * 0.045);
+    color += ice * stroke(frameDistance, 1.2) * fade * 0.16;
+    color += ice * stroke(circuitDistance, 1.1) * fade * 0.12;
+    color += ice * stroke(motifDistance, 1.1) * fade * 0.10;
+    color += frost * outerTrace * fade * 0.8;
+    color += frost * innerTrace * fade * 0.52;
+    color += frost * movingGlint * pulse * 0.52;
+    color += frost * coreFlash * 0.36;
+
+    frag_color = vec4(color, 1.0);
+}
+"""
 
 
-def diamond(radius: float, opacity: float = 0.08) -> Polygon:
-    return Polygon(
-        (0, radius, 0),
-        (radius * 0.72, 0, 0),
-        (0, -radius, 0),
-        (-radius * 0.72, 0, 0),
-        stroke_color=FROST,
-        stroke_width=1.6,
-        fill_color=ICE,
-        fill_opacity=opacity,
-    )
-
-
-class NightMarketCardReveal(Scene):
-    def construct(self):
-        aura = VGroup(
-            *[
-                Circle(radius=1.15 + index * 0.075, stroke_width=0)
-                .set_fill(ICE, opacity=0.011)
-                for index in range(15)
-            ]
-        )
-        sigil = VGroup(
-            diamond(1.6, 0.035),
-            diamond(1.12, 0),
-            diamond(0.46, 0.13),
-            Dot(radius=0.085, color=FROST),
-        )
-        ring = Circle(radius=0.51, color=FROST, stroke_width=1.4)
-        charge_lines = VGroup(
-            *[
-                Line(
-                    (math.cos(angle) * 1.86, math.sin(angle) * 1.86, 0),
-                    (math.cos(angle) * 2.16, math.sin(angle) * 2.16, 0),
-                    color=ICE if index % 2 else FROST,
-                    stroke_width=1.7,
-                ).set_opacity(0.72)
-                for index, angle in enumerate(
-                    [index * math.tau / 12 for index in range(12)]
-                )
-            ]
-        )
-
-        shards = VGroup()
-        shard_moves = []
-        for index in range(18):
-            angle = index * math.tau / 18 + 0.07
-            length = 0.18 + (index % 4) * 0.045
-            shard = Polygon(
-                (-length * 0.18, -0.045, 0),
-                (length, 0, 0),
-                (-length * 0.18, 0.045, 0),
-                stroke_color=FROST,
-                stroke_width=0.55,
-                fill_color=ICE if index % 3 else FROST,
-                fill_opacity=0.9,
-            ).rotate(angle)
-            shard.move_to((0, 0, 0)).set_opacity(0)
-            distance = 1.45 + (index % 5) * 0.15
-            shards.add(shard)
-            shard_moves.append(
-                shard.animate
-                .shift(
-                    np.array(
-                        [math.cos(angle) * distance, math.sin(angle) * distance, 0]
-                    )
-                )
-                .rotate(0.3 if index % 2 else -0.3)
-                .set_opacity(0.82)
-            )
-
-        motes = VGroup()
-        mote_moves = []
-        for index in range(24):
-            angle = index * math.tau / 24 + 0.11
-            mote = Dot(
-                radius=0.018 + (index % 3) * 0.008,
-                color=FROST if index % 4 else ICE,
-            ).move_to((0, 0, 0))
-            mote.set_opacity(0)
-            motes.add(mote)
-            distance = 1.0 + (index % 7) * 0.26
-            mote_moves.append(
-                mote.animate
-                .shift(
-                    np.array(
-                        [math.cos(angle) * distance, math.sin(angle) * distance, 0]
-                    )
-                )
-                .set_opacity(0.78)
-            )
-
-        self.play(
-            FadeIn(aura, scale=0.72),
-            FadeIn(sigil, scale=0.74),
-            FadeIn(ring, scale=0.7),
-            FadeIn(charge_lines, scale=0.88),
-            run_time=0.15,
-            rate_func=rate_functions.ease_out_cubic,
-        )
-
-        self.add(shards, motes)
-        self.play(
-            aura.animate.scale(3.1).set_opacity(0),
-            ring.animate.scale(4.4).set_opacity(0).set_rate_func(rate_functions.linear),
-            sigil.animate.scale(0.22).rotate(0.2).set_opacity(0),
-            charge_lines.animate.scale(1.7).set_opacity(0),
-            LaggedStart(*shard_moves, lag_ratio=0.012),
-            LaggedStart(*mote_moves, lag_ratio=0.006),
-            run_time=0.62,
-            rate_func=rate_functions.ease_out_cubic,
-        )
-
-        self.play(
-            FadeOut(shards, shift=np.array([0, 0.12, 0])),
-            FadeOut(motes, shift=np.array([0, 0.16, 0])),
-            run_time=0.24,
-            rate_func=rate_functions.ease_out_cubic,
-        )
-        self.wait(0.14)
-
-
-def render_asset():
+def render_asset() -> None:
     root = Path(__file__).resolve().parents[2]
     output = root / "public" / "gacha" / "night-market-card-reveal.mp4"
     output.parent.mkdir(parents=True, exist_ok=True)
 
-    with tempfile.TemporaryDirectory(prefix="animesice-card-reveal-") as media:
-        with tempconfig(
-            {
-                "media_dir": media,
-                "output_file": "night-market-card-reveal",
-                "disable_caching": True,
-                "pixel_width": 720,
-                "pixel_height": 960,
-                "frame_rate": 30,
-                "frame_width": 5.4,
-                "frame_height": 7.2,
-                "background_color": "#000000",
-            }
-        ):
-            scene = NightMarketCardReveal()
-            scene.render()
+    context = moderngl.create_standalone_context(require=330, backend="egl")
+    framebuffer_texture = context.texture((WIDTH, HEIGHT), components=3, dtype="f1")
+    framebuffer = context.framebuffer(color_attachments=[framebuffer_texture])
+    program = context.program(vertex_shader=VERTEX_SHADER, fragment_shader=FRAGMENT_SHADER)
+    vertices = np.array([-1, -1, 1, -1, -1, 1, 1, 1], dtype="f4")
+    buffer = context.buffer(vertices.tobytes())
+    vao = context.vertex_array(program, [(buffer, "2f", "in_position")])
+    program["resolution"].value = (WIDTH, HEIGHT)
+    framebuffer.use()
+    context.viewport = (0, 0, WIDTH, HEIGHT)
 
-        subprocess.run(
-            [
-                "ffmpeg",
-                "-y",
-                "-loglevel",
-                "error",
-                "-i",
-                str(scene.renderer.file_writer.movie_file_path),
-                "-an",
-                "-c:v",
-                "libx264",
-                "-crf",
-                "23",
-                "-preset",
-                "slow",
-                "-pix_fmt",
-                "yuv420p",
-                "-movflags",
-                "+faststart",
-                str(output),
-            ],
-            check=True,
-        )
+    encoder = subprocess.Popen(
+        [
+            "ffmpeg", "-y", "-loglevel", "error",
+            "-f", "rawvideo", "-pixel_format", "rgb24", "-video_size", f"{WIDTH}x{HEIGHT}",
+            "-framerate", str(FPS), "-i", "-", "-an", "-c:v", "libx264", "-crf", "20",
+            "-preset", "slow", "-pix_fmt", "yuv420p", "-movflags", "+faststart", str(output),
+        ],
+        stdin=subprocess.PIPE,
+    )
+    assert encoder.stdin is not None
+    try:
+        for frame in range(round(DURATION * FPS)):
+            program["time"].value = frame / FPS
+            vao.render(mode=moderngl.TRIANGLE_STRIP)
+            pixels = framebuffer.read(components=3, alignment=1)
+            assert len(pixels) == WIDTH * HEIGHT * 3
+            encoder.stdin.write(np.frombuffer(pixels, dtype=np.uint8).reshape(HEIGHT, WIDTH, 3)[::-1].tobytes())
+    finally:
+        encoder.stdin.close()
+        return_code = encoder.wait()
+        vao.release()
+        buffer.release()
+        program.release()
+        framebuffer.release()
+        framebuffer_texture.release()
+        context.release()
+    if return_code:
+        raise subprocess.CalledProcessError(return_code, encoder.args)
 
 
 if __name__ == "__main__":

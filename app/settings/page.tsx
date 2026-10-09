@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { api, ApiError } from "@/lib/api";
 import { Header } from "@/components/common/Header";
@@ -62,6 +62,7 @@ async function prepareAvatar(file: File): Promise<File> {
 
 export default function SettingsPage() {
   const router = useRouter();
+  const inAppLayout = usePathname() === "/configuracoes";
   const { user, loading, logout, refreshUser } = useAuth();
 
   const [newName, setNewName] = useState(user?.name ?? "");
@@ -289,10 +290,12 @@ export default function SettingsPage() {
     }
   }
 
+  const ContentWrapper = inAppLayout ? "div" : "main";
+
   return (
     <>
-      <Header />
-      <main id="body-content">
+      {!inAppLayout && <Header />}
+      <ContentWrapper id={inAppLayout ? undefined : "body-content"}>
         <div className="mx-auto max-w-shelf px-4 py-8">
           <h1 className="shelf-label">
             Configurações{" "}
@@ -691,8 +694,8 @@ export default function SettingsPage() {
             </section>
           </div>
         </div>
-      </main>
-      <Footer />
+      </ContentWrapper>
+      {!inAppLayout && <Footer />}
     </>
   );
 }

@@ -31,6 +31,8 @@ const RARITY_LABEL: Record<string, string> = {
   GALACTICA: "Galáctica",
 };
 
+const REVEAL_CLIP_SECONDS = 1.2; // Keep in sync with the ModernGL clip duration.
+
 function offerName(offer: GachaEconomyOffer) {
   return offer.card?.name ?? offer.skin?.name ?? "Oferta";
 }
@@ -146,41 +148,49 @@ export function NightMarket() {
           finishReveal();
           return;
         }
+        const playFlip = () => {
+          if (!flipper.isConnected) {
+            finishReveal();
+            return;
+          }
+          gsap
+            .timeline({
+              onComplete: () => {
+                gsap.set(flipper, { clearProps: "transform" });
+                finishReveal();
+              },
+            })
+            .fromTo(
+              flipper,
+              { rotationY: 0, scale: 1, z: 0 },
+              {
+                rotationY: 82,
+                scale: 0.94,
+                z: 36,
+                duration: 0.4,
+                ease: "power2.in",
+              },
+            )
+            .to(flipper, {
+              rotationY: 180,
+              scale: 1.045,
+              z: 18,
+              duration: 0.42,
+              ease: "power3.out",
+            })
+            .to(flipper, {
+              scale: 1,
+              z: 0,
+              duration: REVEAL_CLIP_SECONDS - 0.4 - 0.42,
+              ease: "back.out(1.35)",
+            });
+        };
         if (burst) {
           burst.currentTime = 0;
-          void burst.play().catch(() => {});
+          void burst.play().then(playFlip).catch(playFlip);
+        } else {
+          playFlip();
         }
-        gsap
-          .timeline({
-            onComplete: () => {
-              gsap.set(flipper, { clearProps: "transform" });
-              finishReveal();
-            },
-          })
-          .fromTo(
-            flipper,
-            { rotationY: 0, scale: 1, z: 0 },
-            {
-              rotationY: 82,
-              scale: 0.94,
-              z: 36,
-              duration: 0.4,
-              ease: "power2.in",
-            },
-          )
-          .to(flipper, {
-            rotationY: 180,
-            scale: 1.045,
-            z: 18,
-            duration: 0.42,
-            ease: "power3.out",
-          })
-          .to(flipper, {
-            scale: 1,
-            z: 0,
-            duration: 0.33,
-            ease: "back.out(1.35)",
-          });
       })
       .catch(finishReveal);
   };
@@ -343,18 +353,35 @@ export function NightMarket() {
                         aria-hidden={isRevealed}
                         tabIndex={isRevealed ? -1 : 0}
                         onClick={() => void revealOffer(offer)}
+                        data-rarity={rarity}
                         className={`night-offer-card__face night-offer-card__back border bg-panel p-5 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ice ${rarityStyle.border} ${rarityStyle.glow ?? ""}`}
                       >
-                        <span className="flex items-center justify-between gap-3 text-caption">
+                        <svg
+                          className="night-offer-card__back-art"
+                          viewBox="0 0 300 400"
+                          preserveAspectRatio="none"
+                          aria-hidden="true"
+                        >
+                          <path
+                            className="night-offer-card__frame-lines"
+                            d="M18 48V18h264v364H18v-30M18 90h24l34 34v46M282 90h-24l-34 34v46M18 310h24l34-34v-46M282 310h-24l-34-34v-46"
+                          />
+                          <path
+                            className="night-offer-card__glyph-lines"
+                            d="M150 135v-38M150 303v-38M93 200h-35M242 200h-35M150 145l55 55-55 55-55-55 55-55Zm0 23 32 32-32 32-32-32 32-32Zm0 19 13 13-13 13-13-13 13-13Z"
+                          />
+                          <circle className="night-offer-card__glyph-core" cx="150" cy="200" r="3" />
+                          <circle className="night-offer-card__glyph-star" cx="150" cy="82" r="2" />
+                          <circle className="night-offer-card__glyph-star" cx="150" cy="318" r="2" />
+                        </svg>
+                        <span className="night-offer-card__sheen" aria-hidden="true" />
+                        <span className="night-offer-card__content flex items-center justify-between gap-3 text-caption">
                           <span className="text-mist">{kind} · Oferta {index + 1}</span>
                           <span className="bg-ice px-2 py-1 font-semibold text-ink">
                             −{offer.discount}%
                           </span>
                         </span>
-                        <span className="night-offer-card__sigil" aria-hidden="true">
-                          <span className="night-offer-card__sigil-inner" />
-                        </span>
-                        <span className="mt-auto block">
+                        <span className="night-offer-card__content mt-auto block">
                           <span className="block text-caption text-mist">Raridade</span>
                           <span className={`mt-1 block font-display text-lg ${rarityStyle.text}`}>
                             {rarityLabel(rarity)}
@@ -369,6 +396,22 @@ export function NightMarket() {
                             Toque para revelar
                           </span>
                         </span>
+                        <video
+                          ref={(element) => {
+                            revealBursts.current[offer.id] = element;
+                          }}
+                          className={`night-offer-card__burst ${isAnimating ? "is-playing" : ""}`}
+                          aria-hidden="true"
+                          muted
+                          playsInline
+                          preload="metadata"
+                          tabIndex={-1}
+                        >
+                          <source
+                            src="/gacha/night-market-card-reveal.mp4"
+                            type="video/mp4"
+                          />
+                        </video>
                       </button>
                       <div
                         ref={(element) => {
@@ -431,22 +474,6 @@ export function NightMarket() {
                         </div>
                       </div>
                     </div>
-                    <video
-                      ref={(element) => {
-                        revealBursts.current[offer.id] = element;
-                      }}
-                      className={`night-offer-card__burst ${isAnimating ? "is-playing" : ""}`}
-                      aria-hidden="true"
-                      muted
-                      playsInline
-                      preload="none"
-                      tabIndex={-1}
-                    >
-                      <source
-                        src="/gacha/night-market-card-reveal.mp4"
-                        type="video/mp4"
-                      />
-                    </video>
                   </li>
                 );
               })}
