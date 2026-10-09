@@ -1,5 +1,5 @@
 // Garante que o espelho de GACHA_FOILS no frontend não divirja do backend.
-// Divergiu em 2026-10-07: o backend somou INK e NEGATIVE e /gacha/ continuou
+// Divergiu em 2026-10-07: o backend somou INK e /gacha/ continuou
 // anunciando 85/12/3 sem nenhum aviso.
 //
 // Sem o backend no disco (CI, deploy) não há o que comparar: avisa e passa.

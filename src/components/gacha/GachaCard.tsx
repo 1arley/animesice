@@ -78,35 +78,36 @@ export const GACHA_FOILS = [
   "HOLO",
   "GOLD",
   "INK",
-  "NEGATIVE",
+  "PRISM",
 ] as const;
 
 export const FOIL_TEXT: Record<string, string> = {
   HOLO: "text-ice",
   GOLD: "text-amber-300",
   INK: "text-zinc-200",
-  NEGATIVE: "text-fuchsia-300",
+  PRISM: "text-violet-200",
 };
 
 // Filtro da arte por foil. NORMAL e HOLO ficam de fora: NORMAL e a arte crua,
-// HOLO usa HoloTilt. Badge de texto carrega a semantica, cor nunca sozinha.
+// HOLO usa HoloTilt. PRISM tambem nao entra: a identidade dele e o overlay
+// prismatico, e filtrar a arte era o que fazia o foil anterior (NEGATIVE)
+// ficar feio. Badge de texto carrega a semantica, cor nunca sozinha.
 export const FOIL_ART: Record<string, string> = {
   GOLD: "[--foil-art:sepia(1)_saturate(1.7)_contrast(1.08)_brightness(0.92)]",
   INK: "[--foil-art:grayscale(1)_contrast(1.3)_brightness(0.66)]",
-  NEGATIVE: "[--foil-art:invert(1)_hue-rotate(180deg)_contrast(1.12)_brightness(0.94)]",
 };
 
 const FOIL_OVERLAY: Record<string, string> = {
   GOLD: "gold-foil-overlay",
   INK: "ink-foil-overlay",
-  NEGATIVE: "negative-foil-overlay",
+  PRISM: "prism-foil-overlay",
 };
 
 // Cor do brilho que cruza a carta, so nos foils com aura propria.
 const FOIL_SHEEN: Record<string, string> = {
   GOLD: "via-amber-100/50",
   INK: "via-white/30",
-  NEGATIVE: "via-fuchsia-300/45",
+  PRISM: "via-violet-200/50",
 };
 
 /**

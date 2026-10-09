@@ -143,7 +143,7 @@ function GachaPageContent() {
   const [checkoutUrl, setCheckoutUrl] = useState<string | null>(null);
   const [now, setNow] = useState(() => Date.now());
   // Odds vêm do economy snapshot, não de literal aqui: em 2026-10-07 o backend
-  // somou INK e NEGATIVE e esta página continuou anunciando 85/12/3. Sem o dado
+  // somou INK e esta página continuou anunciando 85/12/3. Sem o dado
   // a linha lista os foils sem porcentagem, em vez de chutar um número. Mesmo
   // motivo vale para raridade e pity: saem de GachaConfig, o que o admin edita.
   const [odds, setOdds] = useState<GachaEconomyOdds | null>(null);

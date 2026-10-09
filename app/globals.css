@@ -762,7 +762,7 @@
     }
   }
 
-  /* Raio dos foils com aura (GOLD/INK/NEGATIVE): atravessa a carta e descansa
+  /* Raio dos foils com aura (GOLD/INK/PRISM): atravessa a carta e descansa
      ~2/3 do ciclo. */
   @keyframes foil-shine {
     0%,
@@ -846,34 +846,128 @@
     opacity: 0.9;
   }
 
-  /* NEGATIVE: arte invertida com assinatura violeta. invert(1) sozinho
-     ficaria verde por causa do canal G; o hue-rotate devolve a cor. */
-  .negative-foil-overlay {
-    border: 1px solid rgba(232, 121, 249, 0.55);
-    background: linear-gradient(
-      132deg,
-      #4a0d6b 0%,
-      #a21caf 16%,
-      #f0abfc 27%,
-      #3b0764 40%,
-      #e879f9 52%,
-      #581c87 68%,
-      #f5d0fe 83%,
-      #4a0d6b 100%
-    );
-    box-shadow: inset 0 0 0 2px rgba(232, 121, 249, 0.2);
-    mix-blend-mode: color;
-    opacity: 0.7;
+  /* PRISM: dispersao de prisma. A arte do anime NAO e tocada — nao entra em
+     --foil-art (o foil NEGATIVE invertia a arte e e o que o usuario rejeitou).
+     Tres gradientes empilhados num unico background-image, sob UM mix-blend-mode:
+     mix-blend-mode/opacity no elemento cria stacking context, entao pseudo-elementos
+     com blend proprioariam contra o fundo do overlay, nao contra a arte.
+
+     `--spec`  bandas de espectro de ~7deg a 114deg (repeating-linear, nao conico:
+               conico de fatias largas vira torta de pizza).
+     `--facets` arestas de refracao em diagonal — grade fina vira halftone barato.
+     `--soft`  brilho de topo/base, o "papel" que o vinil prisma real tem.
+
+     Distinto de HOLO de proposito: HOLO e varredura LINEAR so no hover, com tilt
+     3D. PRISM e diagonal, texturizado, e aparece em repouso. Repouso quieto (sem
+     loop de GPU); o sparkle roda so no hover. */
+  .prism-foil-overlay {
+    --spec:
+      repeating-linear-gradient(
+        114deg,
+        rgba(255, 110, 140, 0.3) 0 9px,
+        rgba(255, 180, 90, 0.3) 9px 18px,
+        rgba(250, 250, 140, 0.28) 18px 27px,
+        rgba(130, 255, 180, 0.3) 27px 36px,
+        rgba(90, 200, 255, 0.3) 36px 45px,
+        rgba(130, 150, 255, 0.3) 45px 54px,
+        rgba(200, 120, 255, 0.3) 54px 63px,
+        rgba(255, 120, 210, 0.3) 63px 72px,
+        rgba(255, 110, 140, 0.3) 72px 81px
+      );
+    --facets:
+      repeating-linear-gradient(
+        114deg,
+        rgba(255, 255, 255, 0.16) 0 2px,
+        transparent 2px 21px,
+        rgba(255, 255, 255, 0.08) 21px 22px,
+        transparent 22px 49px
+      );
+    --soft:
+      radial-gradient(ellipse at 50% 0%, rgba(255, 255, 255, 0.26), transparent 58%),
+      radial-gradient(ellipse at 50% 100%, rgba(255, 255, 255, 0.18), transparent 58%);
+    background-image: var(--spec), var(--facets), var(--soft);
+    mix-blend-mode: color-dodge;
+    opacity: 0.45;
+    transition: opacity 400ms ease;
   }
 
-  .negative-foil-overlay::before {
+  /* Anel de Spectrum Rainbow — o detalhe que separa a carta da comum. Borda
+     conica furada por mask content-box (o pseudo precisa de 2 masks + composite
+     exclude pra sobrar so a faixa). O pai ja e overflow-hidden com raio, entao
+     o anel herda o recorte do card e nao precisa do proprio raio. */
+  .prism-foil-overlay::before,
+  .prism-foil-overlay::after {
     position: absolute;
     inset: 0;
     content: "";
     pointer-events: none;
-    background: radial-gradient(ellipse at 50% 12%, rgba(255, 255, 255, 0.4), transparent 56%);
+  }
+
+  .prism-foil-overlay::before {
+    background: conic-gradient(
+      from 200deg,
+      #ffd9a8,
+      #fff6d8,
+      #c9f7e0,
+      #aee6ff,
+      #cfc2ff,
+      #ffc7ec,
+      #ffd9a8
+    );
+    -webkit-mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    mask-composite: exclude;
+    padding: 3px;
+  }
+
+  .prism-foil-overlay::after {
+    background:
+      radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.5) 0 0.8px, transparent 1.2px),
+      radial-gradient(circle at 18% 74%, rgba(255, 255, 255, 0.42) 0 0.7px, transparent 1.1px),
+      radial-gradient(circle at 82% 26%, rgba(255, 255, 255, 0.46) 0 0.9px, transparent 1.3px);
+    background-size:
+      37% 37%,
+      29% 29%,
+      41% 41%;
+    background-position:
+      14% 22%,
+      68% 64%,
+      36% 78%;
     mix-blend-mode: screen;
-    opacity: 0.6;
+    opacity: 0.55;
+  }
+
+  .group:hover .prism-foil-overlay,
+  .group:focus-within .prism-foil-overlay {
+    opacity: 0.62;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .group:hover .prism-foil-overlay::after,
+    .group:focus-within .prism-foil-overlay::after {
+      animation: prism-sparkle 1.6s ease-in-out infinite;
+    }
+  }
+
+  @keyframes prism-sparkle {
+    0%,
+    100% {
+      background-position:
+        14% 22%,
+        68% 64%,
+        36% 78%;
+    }
+    50% {
+      background-position:
+        22% 30%,
+        62% 56%,
+        44% 86%;
+    }
   }
 
   /* Textura de dano por condition: PLAYED risca pouco, POOR risca muito +
