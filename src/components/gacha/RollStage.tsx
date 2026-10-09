@@ -2,366 +2,168 @@
 
 import { useEffect, useRef, useState } from "react";
 import { gsap, useGSAP } from "@/lib/gsap";
-import { GachaCard, GACHA_TIERS } from "./GachaCard";
-import {
-  PLANO_GACHA,
-  corDoSelo,
-  duracaoDoAssentamento,
-} from "./crystal-scene";
-import { CrystalLive, type CristalControle } from "@/components/animesice/CrystalLive";
+import { GachaCard, GACHA_TIERS, GALAXY_TEXT, RARITY_TEXT } from "./GachaCard";
+import { CountUp } from "@/components/core/CountUp";
 import type { GachaPull } from "@/types";
 
-type Fase = "invoking" | "waiting" | "revealing" | "settled";
+const PARTICLE_SLOTS = 24;
+const PARTICLE_GALAXY = ["#a78bfa", "#f472b6", "#38bdf8"];
 
-type RollStageProps = {
+function tierOf(p: GachaPull | null): number {
+  return p ? GACHA_TIERS.indexOf(p.card.rarity as (typeof GACHA_TIERS)[number]) : -1;
+}
+function revealSpeed(idx: number): number {
+  return idx >= 4 ? 0.85 : idx === 3 ? 1 : 1.8;
+}
+function ringCount(idx: number): number {
+  return idx >= 5 ? 3 : idx === 4 ? 2 : idx >= 3 ? 1 : 0;
+}
+function particleCount(idx: number): number {
+  return idx >= 5 ? 24 : idx === 4 ? 12 : idx >= 3 ? 8 : 0;
+}
+export function RollStage({ pull, onClose, preview = false }: {
   pull: GachaPull | null;
   onClose: () => void;
+  /** Preview de giro: carta revelada, ainda sem dono. */
   preview?: boolean;
-};
-
-function indiceDeRaridade(pull: GachaPull | null) {
-  return pull
-    ? GACHA_TIERS.indexOf(
-        pull.card.rarity as (typeof GACHA_TIERS)[number],
-      )
-    : -1;
-}
-
-function tituloDoResultado(pull: GachaPull, preview: boolean) {
-  const indice = indiceDeRaridade(pull);
-  if (indice >= 6) return "GALÁCTICA!";
-  if (indice >= 5) return "MÍTICA!";
-  if (indice >= 4) return "LENDÁRIA!";
-  if (indice >= 3) return "ÉPICA!";
-  return preview ? "Prévia revelada" : "Sua carta";
-}
-
-export function RollStage({ pull, onClose, preview = false }: RollStageProps) {
+}) {
   const dialog = useRef<HTMLDialogElement>(null);
-  // Objeto plano que o GSAP anima e o RAF do shader lê. Duas camadas, um relógio.
-  const cristal = useRef<CristalControle>({ selo: 0, dissolver: 0 });
-  // Timeline: único relógio do reveal. pullAtual: ponte da API para a pausa GSAP.
   const timeline = useRef<gsap.core.Timeline | null>(null);
-  const pullAtual = useRef<GachaPull | null>(pull);
-  // transicaoAtiva impede duplo skip, não representa uma segunda fase.
-  const transicaoAtiva = useRef(false);
-  const [fase, setFase] = useState<Fase>("invoking");
-  // Snapshot: esta abertura sempre revela a primeira resposta da API.
-  // ponytail: teto = um pull por modal; reroll futuramente abre nova sessão.
-  const [resultado, setResultado] = useState<GachaPull | null>(pull);
-  const [puloPendente, setPuloPendente] = useState(false);
-  const [focoAnterior] = useState<HTMLElement | null>(() =>
-    typeof document === "undefined"
-      ? null
-      : (document.activeElement as HTMLElement | null),
-  );
-
-  const pronto = Boolean(resultado && fase === "settled");
-  const destaque = resultado?.card.rarity === "GALACTICA" ? "text-violet-400" : "text-ice";
-  const bloqueado = fase === "invoking" || (puloPendente && !resultado);
-  const titulo = pronto && resultado
-    ? tituloDoResultado(resultado, preview)
-    : puloPendente && !resultado
-      ? "Aguardando carta…"
-      : "Invocando sua carta…";
+  const flipBuilder = useRef<(idx: number) => void>(() => {});
+  const latestPull = useRef(pull);
+  latestPull.current = pull;
+  const skipped = useRef(false);
+  const waiting = useRef(false);
+  const [revealed, setRevealed] = useState(false);
+  const [canSkip, setCanSkip] = useState(false);
+  const ready = !!pull && revealed;
+  const tierIndex = tierOf(pull);
+  const tierText = pull
+    ? pull.card.rarity === "GALACTICA"
+      ? "text-violet-400"
+      : RARITY_TEXT[pull.card.rarity] ?? "text-ice"
+    : "";
 
   useEffect(() => {
-    if (pull && !resultado) setResultado(pull);
-  }, [pull, resultado]);
-
-  useEffect(() => {
-    pullAtual.current = resultado;
-  }, [resultado]);
-
-  useEffect(() => {
-    const elemento = dialog.current;
-    if (!elemento) return;
-
-    const overflowAnterior = document.body.style.overflow;
-    if (!elemento.open) elemento.showModal();
+    const el = dialog.current!;
+    const previous = document.activeElement as HTMLElement | null;
+    const overflow = document.body.style.overflow;
+    el.showModal();
     document.body.style.overflow = "hidden";
-
     return () => {
-      if (elemento.open) elemento.close();
-      document.body.style.overflow = overflowAnterior;
-      focoAnterior?.focus();
+      el.close();
+      document.body.style.overflow = overflow;
+      previous?.focus();
     };
-  }, [focoAnterior]);
-
-  useGSAP(() => {
-    const plano = PLANO_GACHA;
-    const zonaMorta = plano.entradaCamera + plano.pausaMinima;
-    const emSelo = zonaMorta;
-    const emRetirada = emSelo + plano.seloRaridade;
-    const emCarta = emRetirada + plano.retirada;
-
-    const tl = gsap.timeline({ paused: true });
-    timeline.current = tl;
-
-    // 01 Entrada — a câmera encontra o cristal, que já gira sozinho no vídeo.
-    tl.set("[data-cristal]", {
-      y: plano.entradaY,
-      scale: plano.entradaEscala,
-      opacity: 1,
-      willChange: "transform",
-    }, 0)
-      .to("[data-cristal]", {
-        y: 0,
-        scale: 1,
-        duration: plano.entradaCamera,
-        ease: "power3.out",
-      }, 0)
-      .set("[data-cristal]", { clearProps: "willChange" }, plano.entradaCamera)
-      // 02 Dead zone — nada se move sem nova causa. A API decide.
-      .call(() => {
-        if (!pullAtual.current) {
-          setFase("waiting");
-          tl.pause();
-        } else {
-          setFase("revealing");
-        }
-      }, [], zonaMorta)
-      // 03 Selo de raridade — o objeto em movimento anuncia antes do prêmio.
-      .to(cristal.current, {
-        selo: 1,
-        duration: plano.seloRaridade,
-        ease: "power1.inOut",
-      }, emSelo)
-      // 04 Retirada — o cristal se fragmenta; a camada só sai depois.
-      .to(cristal.current, {
-        dissolver: 1,
-        duration: plano.retirada,
-        ease: "power2.in",
-      }, emRetirada)
-      .to("[data-cristal]", {
-        scale: 0.94,
-        opacity: 0,
-        duration: plano.retirada * 0.5,
-        ease: "power2.in",
-      }, emRetirada + plano.retirada * 0.5)
-      .set("[data-cristal]", { clearProps: "willChange" }, emCarta)
-      // 05 Assentamento — placa subindo por atrito. Sem meia-volta.
-      .set("[data-carta]", { willChange: "transform, opacity" }, emCarta)
-      .fromTo("[data-carta]", {
-        y: plano.percursoCarta,
-        scale: plano.cartaEscala,
-        rotationX: plano.cartaTilt,
-        opacity: 0,
-      }, {
-        y: 0,
-        scale: 1,
-        rotationX: 0,
-        opacity: 1,
-        duration: () => duracaoDoAssentamento(indiceDeRaridade(pullAtual.current)),
-        ease: "power3.out",
-        immediateRender: false,
-      }, emCarta)
-      // 06 Resposta única — um reflexo, um pico, sem mover a carta.
-      .set("[data-reflexo]", { willChange: "opacity" }, "<0.08")
-      .fromTo("[data-reflexo]", { opacity: 0 }, {
-        opacity: plano.reflexoPico,
-        duration: plano.reflexo / 2,
-        ease: "power1.out",
-        immediateRender: false,
-      }, "<")
-      .to("[data-reflexo]", {
-        opacity: 0,
-        duration: plano.reflexo / 2,
-        ease: "power1.in",
-      }, "<")
-      // O cristal mantém um brilho residual enquanto a carta estática lê.
-      .to(cristal.current, {
-        selo: plano.brilhoResidual,
-        duration: plano.reflexo,
-        ease: "power2.out",
-      }, "<")
-      .set("[data-reflexo]", { clearProps: "willChange" })
-      // 07 Leitura — só depois que o objeto parou.
-      .call(() => setFase("settled"))
-      .set("[data-resultado]", { willChange: "opacity" }, "<0.05")
-      .to("[data-resultado]", {
-        opacity: 1,
-        duration: plano.leitura,
-        ease: "power2.out",
-      }, "<")
-      .set("[data-resultado]", { clearProps: "willChange" });
-
-    tl.play();
-    return () => {
-      timeline.current = null;
-    };
-  }, { scope: dialog, revertOnUpdate: true });
-
-  function concluirComDissolucao() {
-    if (!pullAtual.current || transicaoAtiva.current) return;
-    const raiz = dialog.current;
-    const conteudo = raiz?.querySelector<HTMLElement>("[data-conteudo]");
-    if (!raiz || !conteudo) return;
-
-    transicaoAtiva.current = true;
-    timeline.current?.pause();
-    gsap.killTweensOf(conteudo);
-    gsap.killTweensOf(cristal.current);
-    gsap.set(conteudo, { willChange: "opacity" });
-    gsap.to(conteudo, {
-      opacity: 0,
-      duration: 0.13,
-      ease: "power1.in",
-      onComplete: () => {
-        if (!dialog.current) return;
-        const camada = raiz.querySelector("[data-cristal]");
-        const carta = raiz.querySelector("[data-carta]");
-        const reflexo = raiz.querySelector("[data-reflexo]");
-        const leitura = raiz.querySelector("[data-resultado]");
-        // Sem pull não existe estado final: nada de inventar prêmio. O cristal
-        // fica dissolvido e o modal continua esperando a API.
-        gsap.set(cristal.current, { selo: 0, dissolver: 1 });
-        if (camada) gsap.set(camada, { opacity: 0, y: 0, scale: 1 });
-        if (carta) gsap.set(carta, { opacity: 1, y: 0, scale: 1, rotationX: 0 });
-        if (reflexo) gsap.set(reflexo, { opacity: 0 });
-        if (leitura) gsap.set(leitura, { opacity: 1 });
-        setFase("settled");
-        gsap.to(conteudo, {
-          opacity: 1,
-          duration: 0.14,
-          ease: "power2.out",
-          onComplete: () => {
-            gsap.set(conteudo, { clearProps: "willChange" });
-            transicaoAtiva.current = false;
-          },
-        });
-      },
-    });
-  }
-
-  useEffect(() => {
-    if (!resultado || fase === "settled") return;
-    if (puloPendente) {
-      concluirComDissolucao();
-      return;
-    }
-    const tl = timeline.current;
-    if (fase === "waiting" && tl?.paused() && !transicaoAtiva.current) {
-      setFase("revealing");
-      tl.play();
-    }
-  // concluirComDissolucao usa apenas refs e o pull atual; não é um sinal reativo.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [resultado, fase, puloPendente]);
-
-  useEffect(() => () => {
-    const conteudo = dialog.current?.querySelector("[data-conteudo]");
-    if (conteudo) gsap.killTweensOf(conteudo);
   }, []);
 
-  function pularOuFechar() {
-    if (pronto) {
-      onClose();
-      return;
+  useGSAP(() => {
+    const tl = gsap.timeline();
+    timeline.current = tl;
+    if (pull) tl.timeScale(revealSpeed(tierIndex));
+    const buildFlip = (idx: number) => {
+      const el = dialog.current?.querySelector("[data-flip]");
+      if (!el) return;
+      tl.killTweensOf(el);
+      tl.to(el, { rotationY: 180, scale: 0.94, duration: 0.48, ease: "power2.inOut" }, "reveal+=0.12")
+        .to(el, { scale: 1, duration: 0.3, ease: "power2.out" }, ">");
+    };
+    flipBuilder.current = buildFlip;
+    tl.addLabel("reveal", 1.8);
+    buildFlip(tierIndex);
+    tl.from("[data-stage]", { scale: 0.94, opacity: 0, duration: 0.15 })
+      .to("[data-crystal]", { rotation: 360, scale: 1.12, duration: 1.2, ease: "power2.inOut" }, 0.2)
+      .fromTo("[data-glow]", { opacity: 0.25, scale: 1 }, { opacity: 0.8, scale: 1.25, duration: 1.3, ease: "power2.in", immediateRender: false }, 0.3)
+      .call(() => setCanSkip(true), [], 0.6)
+      .call(() => {
+        waiting.current = true;
+        if (!latestPull.current) tl.pause();
+        else tl.timeScale(revealSpeed(tierOf(latestPull.current)));
+      }, [], 1.8)
+      .to("[data-crystal]", { scale: 0, opacity: 0, duration: 0.25, ease: "back.in(2)" }, "reveal")
+      .fromTo("[data-ring]", { scale: 0.4, opacity: 0.8 }, { scale: 2, opacity: 0, duration: 0.55, stagger: 0.12, immediateRender: false }, "reveal")
+      .fromTo("[data-particle]", { x: 0, y: 0, opacity: 1 }, {
+        x: (i) => Math.cos(i * Math.PI * 2 / PARTICLE_SLOTS) * 180,
+        y: (i) => Math.sin(i * Math.PI * 2 / PARTICLE_SLOTS) * 230,
+        opacity: 0, duration: 0.65, immediateRender: false, ease: "power2.out",
+      }, "reveal")
+      .fromTo("[data-sweep]", { x: "-150%" }, { x: "150%", duration: 0.6, ease: "power1.inOut", immediateRender: false }, "reveal+=0.75")
+      .fromTo("[data-badge]", { scale: 0.3, opacity: 0 }, { scale: 1, opacity: 1, ease: "back.out(2)", duration: 0.3, immediateRender: false }, "reveal+=0.9")
+      .call(() => setRevealed(true), [], "reveal+=0.9");
+    return () => { timeline.current = null; };
+  }, { scope: dialog, revertOnUpdate: true });
+
+  useEffect(() => {
+    if (!pull) return;
+    const tl = timeline.current;
+    if (skipped.current) {
+      tl?.progress(1, true).pause();
+      setRevealed(true);
+    } else if (waiting.current) {
+      flipBuilder.current(tierIndex);
+      tl?.play("reveal");
+    } else {
+      flipBuilder.current(tierIndex);
+      tl?.timeScale(revealSpeed(tierIndex));
     }
-    if (bloqueado || transicaoAtiva.current) return;
-    if (!pullAtual.current) {
-      // A API ainda não forneceu a recompensa: nenhum frame pode inventá-la.
-      timeline.current?.pause();
-      gsap.killTweensOf(cristal.current);
-      gsap.set(cristal.current, { selo: 0, dissolver: 1 });
-      setFase("waiting");
-      setPuloPendente(true);
-      return;
+  }, [pull, tierIndex]);
+
+  function skipOrClose() {
+    if (ready) return onClose();
+    skipped.current = true;
+    if (pull) {
+      timeline.current?.progress(1, true).pause();
+      setRevealed(true);
     }
-    concluirComDissolucao();
   }
 
   return (
-    <dialog
-      ref={dialog}
-      aria-labelledby="roll-title"
-      className="fixed inset-0 m-0 h-[100dvh] max-h-none w-screen max-w-none overflow-y-auto border-0 bg-ink-deep p-4 text-snow backdrop:bg-ink-deep"
-      onCancel={(evento) => {
-        evento.preventDefault();
-        pularOuFechar();
-      }}
-      onClick={(evento) => {
-        if (evento.target === evento.currentTarget && pronto) onClose();
-      }}
-    >
-      <div className="flex min-h-full flex-col items-center justify-center gap-5">
-        <div data-conteudo className="flex w-full flex-col items-center gap-5">
-          <h2
-            id="roll-title"
-            aria-live="polite"
-            className="text-center font-display text-display-lg"
-          >
-            {titulo}
-          </h2>
-
-          <div
-            data-palco
-            className={`relative flex min-h-80 w-56 max-w-[72vw] items-center justify-center ${destaque}`}
-            style={{ perspective: 900 }}
-          >
-            {!pronto && (
-              <div
-                data-cristal
-                aria-hidden="true"
-                className="pointer-events-none absolute inset-0 flex items-center justify-center"
-              >
-                <CrystalLive
-                  controle={cristal}
-                  cor={corDoSelo(indiceDeRaridade(resultado))}
-                  className="h-auto w-[min(85vw,22rem)] object-contain"
-                />
-              </div>
-            )}
-
-            <div
-              data-carta
-              className="relative w-full"
-              style={{ opacity: 0, transformStyle: "preserve-3d" }}
-            >
-              <div
-                data-reflexo
-                aria-hidden="true"
-                className="pointer-events-none absolute inset-0 opacity-0 mix-blend-screen"
-                style={{
-                  background:
-                    "linear-gradient(115deg, transparent 39%, rgba(212,245,255,.5) 49%, transparent 59%)",
-                }}
-              />
-              <div
-                inert={!pronto}
-                aria-hidden={!pronto}
-                className="relative"
-                style={{ backfaceVisibility: "hidden" }}
-              >
-                {resultado && <GachaCard pull={resultado} preview={preview} />}
-              </div>
+    <dialog ref={dialog} aria-labelledby="roll-title"
+      className="fixed inset-0 m-0 h-[100dvh] max-h-none w-screen max-w-none overflow-y-auto border-0 bg-ink-deep/95 p-4 text-snow backdrop:bg-ink-deep/95"
+      onCancel={(event) => { event.preventDefault(); skipOrClose(); }}
+      onClick={(event) => { if (event.target === event.currentTarget && ready) onClose(); }}>
+      <div className="pointer-events-none flex min-h-full flex-col items-center justify-center gap-5">
+        <h2 id="roll-title" className="font-display text-display-lg" aria-live="polite">
+          {ready ? (preview ? "Prévia revelada" : "Sua carta") : "Invocando sua carta…"}
+        </h2>
+        <div data-stage className={`pointer-events-auto relative w-56 max-w-[65vw] ${tierText || "text-ice"}`} style={{ perspective: 1000 }}>
+          <>
+            <div data-glow aria-hidden="true" className="absolute inset-0 rounded-full bg-current opacity-20 blur-3xl" />
+            {Array.from({ length: 3 }, (_, i) => (
+              <div key={i} data-ring aria-hidden="true"
+                className={`absolute inset-0 rounded-full border border-current opacity-0 ${i < ringCount(tierIndex) ? "" : "hidden"}`} />
+            ))}
+            {Array.from({ length: PARTICLE_SLOTS }, (_, i) => {
+              const count = particleCount(tierIndex);
+              const visible = count > 0 && i % (PARTICLE_SLOTS / count) === 0;
+              return <i key={i} data-particle aria-hidden="true"
+                style={pull?.card.rarity === "GALACTICA" ? { backgroundColor: PARTICLE_GALAXY[i % 3] } : undefined}
+                className={`absolute left-1/2 top-1/2 h-2 w-1 bg-current opacity-0 ${visible ? "" : "hidden"}`} />;
+            })}
+          </>
+          <div data-flip className="relative" style={{ transformStyle: "preserve-3d" }}>
+            <div aria-hidden="true" className="absolute inset-0 flex items-center justify-center overflow-hidden border border-ice/40 bg-panel" style={{ backfaceVisibility: "hidden" }}>
+              <div data-crystal className="h-28 w-28 rotate-45 border border-ice/70 bg-gradient-to-tr from-transparent via-ice/30 to-ice/5 shadow-glow-ice" />
+              <div className="absolute inset-0 animate-rollShine bg-gradient-to-r from-transparent via-snow/15 to-transparent" />
+            </div>
+            <div inert={!ready} aria-hidden={!ready} className="relative min-h-80" style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg)" }}>
+              {pull && <GachaCard pull={pull} preview={preview} />}
+              {pull?.foil !== "NORMAL" && pull && <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
+                <div data-sweep className="h-full w-full -translate-x-[150%] bg-gradient-to-r from-transparent via-snow/40 to-transparent mix-blend-screen" />
+                <div className={`h-full w-full bg-gradient-to-r from-transparent via-snow/30 to-transparent motion-reduce:animate-none ${revealed ? "animate-rollShine" : "invisible"}`} />
+              </div>}
             </div>
           </div>
-
-          <div
-            data-resultado
-            aria-hidden={!pronto}
-            className="text-center"
-            style={{ opacity: 0 }}
-          >
-            <p className={`font-mono text-sm tracking-[0.16em] ${destaque}`}>
-              {resultado?.card.rarity}
-            </p>
-            {resultado && <p className="font-mono text-mist">{resultado.value} pts</p>}
-          </div>
         </div>
-
-        <button
-          autoFocus
-          type="button"
-          onClick={pularOuFechar}
-          aria-disabled={bloqueado}
-          className={`min-h-11 px-6 py-3 focus-visible:outline focus-visible:outline-2 focus-visible:outline-ice ${
-            pronto ? "btn-ice" : "text-mist"
-          }`}
-        >
-          {pronto ? "Continuar" : puloPendente ? "Aguardando carta…" : "Pular"}
+        <div data-badge className="text-center" style={{ opacity: 0 }} aria-hidden={!ready}>
+          <p className={`font-mono ${pull?.card.rarity === "GALACTICA" ? GALAXY_TEXT : tierText || "text-ice"}`}>{pull?.card.rarity}</p>
+          {pull && <p><CountUp to={pull.value} startWhen={ready} /> pts</p>}
+        </div>
+        <button autoFocus type="button" onClick={() => { if (ready || canSkip) skipOrClose(); }}
+          className={`pointer-events-auto min-h-11 px-6 py-3 focus-visible:outline focus-visible:outline-ice ${ready ? "btn-ice" : "text-mist"}`}
+          aria-disabled={!ready && !canSkip}
+          style={{ opacity: ready || canSkip ? 1 : 0 }}>
+          {ready ? "Continuar" : skipped.current ? "Aguardando carta…" : "Pular"}
         </button>
       </div>
     </dialog>
