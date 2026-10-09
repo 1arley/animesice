@@ -27,27 +27,3 @@ export const PLANO_GACHA = Object.freeze({
 export function tipoDeEntrada(indiceRaridade) {
   return indiceRaridade >= 4 ? "ascensao" : "giro";
 }
-
-/**
- * Compatibilidade provisória com chamadas antigas de CrystalCanvas.
- * Um único recurso estático, sem THREE/PIXI/WebGL, ticker ou loop.
- * @param {HTMLElement} threeHost
- * @param {HTMLElement} _pixiHost
- */
-export function mountCrystalScene(threeHost, _pixiHost) {
-  const imagem = document.createElement("img");
-  imagem.src = "/gacha/crystal.webp";
-  imagem.alt = "";
-  imagem.decoding = "async";
-  imagem.draggable = false;
-  imagem.setAttribute("aria-hidden", "true");
-  imagem.style.width = "100%";
-  imagem.style.height = "100%";
-  imagem.style.objectFit = "contain";
-  imagem.style.pointerEvents = "none";
-  threeHost.appendChild(imagem);
-
-  // ponytail: teto visual = WebP estático. Upgrade: refração só após
-  // telemetria provar ganho sobre imagens em celulares de gama baixa.
-  return () => imagem.remove();
-}
