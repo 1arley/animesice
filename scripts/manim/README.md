@@ -6,16 +6,24 @@ e usa o WebP como fallback se o vídeo falhar ou o autoplay for bloqueado.
 A timeline GSAP continua responsável por esperar a API e revelar a carta.
 O vídeo não determina o resultado nem bloqueia a revelação.
 
+O loop é fechado: o cristal completa três voltas inteiras e a curva de
+velocidade `breathe` tem valor e derivada iguais em 0 e 1, então a emenda
+entre o último e o primeiro frame é invisível. Duas cópias defasadas do
+cristal desenham o rastro.
+
 Para regenerar os dois assets em `public/gacha/`, a partir da raiz do projeto:
 
 ```sh
-python3 -m venv /tmp/animesice-manim-venv
-/tmp/animesice-manim-venv/bin/pip install 'manim==0.20.1'
+uv python install 3.12
+uv venv --python 3.12 /tmp/animesice-manim-venv
+VIRTUAL_ENV=/tmp/animesice-manim-venv uv pip install 'manim==0.20.1'
 /tmp/animesice-manim-venv/bin/python scripts/manim/gacha_crystal.py
 ```
 
-Pré-requisitos locais: Python compatível com Manim, FFmpeg com libx264 e,
-para compilar dependências nativas quando necessário, Cairo, Pango e pkg-config.
+O Python 3.12 é fixo: o interpretador padrão do sistema é 3.14 e o Manim ainda
+não tem wheels para ele. `uv` resolve o interpretador e o venv em um passo.
+
+Pré-requisitos locais: `uv`, FFmpeg com libx264 e Cairo, Pango e pkg-config.
 Não usa LaTeX. Python e Manim não são necessários no deploy do Next.js:
 os arquivos gerados são versionados como assets estáticos.
 
