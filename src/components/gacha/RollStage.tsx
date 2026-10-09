@@ -1,18 +1,20 @@
 "use client";
 
-import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { gsap, useGSAP } from "@/lib/gsap";
-import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
 import { GachaCard, GACHA_TIERS } from "./GachaCard";
-import { PLANO_GACHA, tipoDeEntrada } from "./crystal-scene";
+import {
+  PLANO_GACHA,
+  corDoSelo,
+  duracaoDoAssentamento,
+} from "./crystal-scene";
+import { CrystalLive, type CristalControle } from "@/components/animesice/CrystalLive";
 import type { GachaPull } from "@/types";
 
 type Fase = "invoking" | "waiting" | "revealing" | "settled";
 
 type RollStageProps = {
   pull: GachaPull | null;
-  reduceMotion: boolean;
   onClose: () => void;
   preview?: boolean;
 };
@@ -30,20 +32,14 @@ function tituloDoResultado(pull: GachaPull, preview: boolean) {
   if (indice >= 6) return "GALÁCTICA!";
   if (indice >= 5) return "MÍTICA!";
   if (indice >= 4) return "LENDÁRIA!";
-  if (indice === 3) return "ÉPICA!";
+  if (indice >= 3) return "ÉPICA!";
   return preview ? "Prévia revelada" : "Sua carta";
 }
 
-export function RollStage({
-  pull,
-  reduceMotion,
-  onClose,
-  preview = false,
-}: RollStageProps) {
-  const reduzirPeloSistema = usePrefersReducedMotion();
-  const reduzir = reduceMotion || reduzirPeloSistema;
-
+export function RollStage({ pull, onClose, preview = false }: RollStageProps) {
   const dialog = useRef<HTMLDialogElement>(null);
+  // Objeto plano que o GSAP anima e o RAF do shader lê. Duas camadas, um relógio.
+  const cristal = useRef<CristalControle>({ selo: 0, dissolver: 0 });
   // Timeline: único relógio do reveal. pullAtual: ponte da API para a pausa GSAP.
   const timeline = useRef<gsap.core.Timeline | null>(null);
   const pullAtual = useRef<GachaPull | null>(pull);
@@ -93,37 +89,30 @@ export function RollStage({
   }, [focoAnterior]);
 
   useGSAP(() => {
-    if (reduzir) {
-      timeline.current = null;
-      return;
-    }
-
     const plano = PLANO_GACHA;
-    const retiradaEm = plano.invocacao + plano.pausaMinima;
-    const cartaEm = retiradaEm + plano.retirada;
-    const reflexoEm = cartaEm + plano.entrada;
-    const leituraEm = reflexoEm + plano.reflexo;
-    const finalEm = leituraEm + plano.leitura;
-    const entradaAlta = () =>
-      tipoDeEntrada(indiceDeRaridade(pullAtual.current)) === "ascensao";
+    const zonaMorta = plano.entradaCamera + plano.pausaMinima;
+    const emSelo = zonaMorta;
+    const emRetirada = emSelo + plano.seloRaridade;
+    const emCarta = emRetirada + plano.retirada;
 
     const tl = gsap.timeline({ paused: true });
     timeline.current = tl;
 
+    // 01 Entrada — a câmera encontra o cristal, que já gira sozinho no vídeo.
     tl.set("[data-cristal]", {
-      y: -plano.percursoCristal,
+      y: plano.entradaY,
+      scale: plano.entradaEscala,
       opacity: 1,
       willChange: "transform",
     }, 0)
-      .set("[data-carta]", { opacity: 0, rotationY: 0, y: 0 }, 0)
-      .set("[data-reflexo]", { opacity: 0 }, 0)
-      .set("[data-resultado]", { opacity: 0 }, 0)
       .to("[data-cristal]", {
         y: 0,
-        duration: plano.invocacao,
-        ease: "expo.out",
+        scale: 1,
+        duration: plano.entradaCamera,
+        ease: "power3.out",
       }, 0)
-      .set("[data-cristal]", { clearProps: "willChange" }, plano.invocacao)
+      .set("[data-cristal]", { clearProps: "willChange" }, plano.entradaCamera)
+      // 02 Dead zone — nada se move sem nova causa. A API decide.
       .call(() => {
         if (!pullAtual.current) {
           setFase("waiting");
@@ -131,55 +120,77 @@ export function RollStage({
         } else {
           setFase("revealing");
         }
-      }, [], retiradaEm)
-      .set("[data-cristal]", { willChange: "opacity" }, retiradaEm)
-      .to("[data-cristal]", {
-        opacity: 0,
+      }, [], zonaMorta)
+      // 03 Selo de raridade — o objeto em movimento anuncia antes do prêmio.
+      .to(cristal.current, {
+        selo: 1,
+        duration: plano.seloRaridade,
+        ease: "power1.inOut",
+      }, emSelo)
+      // 04 Retirada — o cristal se fragmenta; a camada só sai depois.
+      .to(cristal.current, {
+        dissolver: 1,
         duration: plano.retirada,
-        ease: "power1.in",
-      }, retiradaEm)
-      .set("[data-cristal]", { clearProps: "willChange" }, cartaEm)
-      .set("[data-carta]", { willChange: "transform, opacity" }, cartaEm)
+        ease: "power2.in",
+      }, emRetirada)
+      .to("[data-cristal]", {
+        scale: 0.94,
+        opacity: 0,
+        duration: plano.retirada * 0.5,
+        ease: "power2.in",
+      }, emRetirada + plano.retirada * 0.5)
+      .set("[data-cristal]", { clearProps: "willChange" }, emCarta)
+      // 05 Assentamento — placa subindo por atrito. Sem meia-volta.
+      .set("[data-carta]", { willChange: "transform, opacity" }, emCarta)
       .fromTo("[data-carta]", {
-        rotationY: () => (entradaAlta() ? 0 : 180),
-        y: () => (entradaAlta() ? plano.percursoCartaAlta : 0),
-        opacity: () => (entradaAlta() ? 0 : 1),
+        y: plano.percursoCarta,
+        scale: plano.cartaEscala,
+        rotationX: plano.cartaTilt,
+        opacity: 0,
       }, {
-        rotationY: 0,
         y: 0,
+        scale: 1,
+        rotationX: 0,
         opacity: 1,
-        duration: plano.entrada,
+        duration: () => duracaoDoAssentamento(indiceDeRaridade(pullAtual.current)),
         ease: "power3.out",
         immediateRender: false,
-      }, cartaEm)
-      .set("[data-carta]", { clearProps: "willChange" }, reflexoEm)
-      .set("[data-reflexo]", { willChange: "opacity" }, reflexoEm)
+      }, emCarta)
+      // 06 Resposta única — um reflexo, um pico, sem mover a carta.
+      .set("[data-reflexo]", { willChange: "opacity" }, "<0.08")
       .fromTo("[data-reflexo]", { opacity: 0 }, {
-        opacity: 0.68,
+        opacity: plano.reflexoPico,
         duration: plano.reflexo / 2,
         ease: "power1.out",
         immediateRender: false,
-      }, reflexoEm)
+      }, "<")
       .to("[data-reflexo]", {
         opacity: 0,
         duration: plano.reflexo / 2,
         ease: "power1.in",
-      }, reflexoEm + plano.reflexo / 2)
-      .set("[data-reflexo]", { clearProps: "willChange" }, leituraEm)
-      .call(() => setFase("settled"), [], leituraEm)
-      .set("[data-resultado]", { willChange: "opacity" }, leituraEm)
+      }, "<")
+      // O cristal mantém um brilho residual enquanto a carta estática lê.
+      .to(cristal.current, {
+        selo: plano.brilhoResidual,
+        duration: plano.reflexo,
+        ease: "power2.out",
+      }, "<")
+      .set("[data-reflexo]", { clearProps: "willChange" })
+      // 07 Leitura — só depois que o objeto parou.
+      .call(() => setFase("settled"))
+      .set("[data-resultado]", { willChange: "opacity" }, "<0.05")
       .to("[data-resultado]", {
         opacity: 1,
         duration: plano.leitura,
         ease: "power2.out",
-      }, leituraEm)
-      .set("[data-resultado]", { clearProps: "willChange" }, finalEm);
+      }, "<")
+      .set("[data-resultado]", { clearProps: "willChange" });
 
     tl.play();
     return () => {
       timeline.current = null;
     };
-  }, { scope: dialog, dependencies: [reduzir], revertOnUpdate: true });
+  }, { scope: dialog, revertOnUpdate: true });
 
   function concluirComDissolucao() {
     if (!pullAtual.current || transicaoAtiva.current) return;
@@ -190,6 +201,7 @@ export function RollStage({
     transicaoAtiva.current = true;
     timeline.current?.pause();
     gsap.killTweensOf(conteudo);
+    gsap.killTweensOf(cristal.current);
     gsap.set(conteudo, { willChange: "opacity" });
     gsap.to(conteudo, {
       opacity: 0,
@@ -197,14 +209,17 @@ export function RollStage({
       ease: "power1.in",
       onComplete: () => {
         if (!dialog.current) return;
-        const cristal = raiz.querySelector("[data-cristal]");
+        const camada = raiz.querySelector("[data-cristal]");
         const carta = raiz.querySelector("[data-carta]");
         const reflexo = raiz.querySelector("[data-reflexo]");
-        const resultado = raiz.querySelector("[data-resultado]");
-        if (cristal) gsap.set(cristal, { opacity: 0, y: 0 });
-        if (carta) gsap.set(carta, { opacity: 1, rotationY: 0, y: 0 });
+        const leitura = raiz.querySelector("[data-resultado]");
+        // Sem pull não existe estado final: nada de inventar prêmio. O cristal
+        // fica dissolvido e o modal continua esperando a API.
+        gsap.set(cristal.current, { selo: 0, dissolver: 1 });
+        if (camada) gsap.set(camada, { opacity: 0, y: 0, scale: 1 });
+        if (carta) gsap.set(carta, { opacity: 1, y: 0, scale: 1, rotationX: 0 });
         if (reflexo) gsap.set(reflexo, { opacity: 0 });
-        if (resultado) gsap.set(resultado, { opacity: 1 });
+        if (leitura) gsap.set(leitura, { opacity: 1 });
         setFase("settled");
         gsap.to(conteudo, {
           opacity: 1,
@@ -221,10 +236,6 @@ export function RollStage({
 
   useEffect(() => {
     if (!resultado || fase === "settled") return;
-    if (reduzir) {
-      setFase("settled");
-      return;
-    }
     if (puloPendente) {
       concluirComDissolucao();
       return;
@@ -236,18 +247,7 @@ export function RollStage({
     }
   // concluirComDissolucao usa apenas refs e o pull atual; não é um sinal reativo.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [resultado, fase, reduzir, puloPendente]);
-
-  useEffect(() => {
-    if (!reduzir || !pronto) return;
-    const conteudo = dialog.current?.querySelector("[data-conteudo]");
-    if (!conteudo) return;
-    gsap.fromTo(conteudo, { opacity: 0 }, {
-      opacity: 1,
-      duration: 0.18,
-      ease: "power1.out",
-    });
-  }, [reduzir, pronto]);
+  }, [resultado, fase, puloPendente]);
 
   useEffect(() => () => {
     const conteudo = dialog.current?.querySelector("[data-conteudo]");
@@ -263,6 +263,8 @@ export function RollStage({
     if (!pullAtual.current) {
       // A API ainda não forneceu a recompensa: nenhum frame pode inventá-la.
       timeline.current?.pause();
+      gsap.killTweensOf(cristal.current);
+      gsap.set(cristal.current, { selo: 0, dissolver: 1 });
       setFase("waiting");
       setPuloPendente(true);
       return;
@@ -296,7 +298,7 @@ export function RollStage({
           <div
             data-palco
             className={`relative flex min-h-80 w-56 max-w-[72vw] items-center justify-center ${destaque}`}
-            style={reduzir ? undefined : { perspective: 900 }}
+            style={{ perspective: 900 }}
           >
             {!pronto && (
               <div
@@ -304,13 +306,10 @@ export function RollStage({
                 aria-hidden="true"
                 className="pointer-events-none absolute inset-0 flex items-center justify-center"
               >
-                <Image
-                  src="/gacha/crystal.webp"
-                  alt=""
-                  width={360}
-                  height={360}
-                  draggable={false}
-                  className="h-auto w-[min(85vw,20rem)] max-w-none object-contain"
+                <CrystalLive
+                  controle={cristal}
+                  cor={corDoSelo(indiceDeRaridade(resultado))}
+                  className="h-auto w-[min(85vw,22rem)] object-contain"
                 />
               </div>
             )}
@@ -318,41 +317,25 @@ export function RollStage({
             <div
               data-carta
               className="relative w-full"
-              style={reduzir
-                ? { opacity: resultado ? 1 : 0 }
-                : { opacity: 0, transformStyle: "preserve-3d" }}
+              style={{ opacity: 0, transformStyle: "preserve-3d" }}
             >
-              {!reduzir && (
-                <div
-                  aria-hidden="true"
-                  className="absolute inset-0 flex min-h-80 items-center justify-center border border-ice/40 bg-ink-deep"
-                  style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg)" }}
-                >
-                  <span className="font-display text-3xl tracking-[0.18em] text-ice">
-                    ANIMESICE
-                  </span>
-                </div>
-              )}
+              <div
+                data-reflexo
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-0 opacity-0 mix-blend-screen"
+                style={{
+                  background:
+                    "linear-gradient(115deg, transparent 39%, rgba(212,245,255,.5) 49%, transparent 59%)",
+                }}
+              />
               <div
                 inert={!pronto}
                 aria-hidden={!pronto}
-                className={reduzir
-                  ? "[&_*]:!animate-none [&_*]:!transition-none [&_*]:!transform-none"
-                  : "[&_*]:!animate-none [&_*]:!transition-none"}
-                style={reduzir ? undefined : { backfaceVisibility: "hidden" }}
+                className="relative"
+                style={{ backfaceVisibility: "hidden" }}
               >
                 {resultado && <GachaCard pull={resultado} preview={preview} />}
               </div>
-              {!reduzir && (
-                <div
-                  data-reflexo
-                  aria-hidden="true"
-                  className="pointer-events-none absolute inset-0 opacity-0"
-                  style={{
-                    background: "linear-gradient(115deg, transparent 39%, rgba(212,245,255,.36) 49%, transparent 59%)",
-                  }}
-                />
-              )}
             </div>
           </div>
 
@@ -360,7 +343,7 @@ export function RollStage({
             data-resultado
             aria-hidden={!pronto}
             className="text-center"
-            style={reduzir ? undefined : { opacity: 0 }}
+            style={{ opacity: 0 }}
           >
             <p className={`font-mono text-sm tracking-[0.16em] ${destaque}`}>
               {resultado?.card.rarity}

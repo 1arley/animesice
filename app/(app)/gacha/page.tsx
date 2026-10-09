@@ -484,11 +484,10 @@ function GachaPageContent() {
 
   return (
     <div className="mx-auto max-w-shelf px-4 pb-16 pt-5 sm:pt-8">
-      {stageOpen && (!reduceMotion || stagePull) && (
+      {stageOpen && (
         <RollStage
           pull={stagePull}
           preview={stagePreview}
-          reduceMotion={reduceMotion}
           onClose={() => {
             setStageOpen(false);
             setSpinResult(null);

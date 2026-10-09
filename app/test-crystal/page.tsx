@@ -1,3 +1,4 @@
+import { CrystalLiveProbe } from "@/components/animesice/CrystalLiveProbe";
 import { CrystalVideoClean } from "@/components/animesice/CrystalVideoClean";
 import { CrystalVideoPreview } from "@/components/animesice/CrystalVideoPreview";
 
@@ -17,6 +18,16 @@ export default function TestCrystalPage() {
         </p>
       </div>
       <div className="flex flex-col items-center gap-12 sm:flex-row sm:items-start sm:gap-16">
+        <div className="flex flex-col items-center gap-3">
+          {/* Fundo claro de propósito: se a chave de alpha falhar, o quadrado
+              preto do asset aparece na captura em vez de sumir no escuro. */}
+          <div className="rounded-lg bg-[#D9DEE7] p-2">
+            <CrystalLiveProbe size={288} />
+          </div>
+          <p className="font-mono text-caption uppercase tracking-[0.14em] text-snow/70">
+            Vivo — WebGL, selo e dissolução (reveal)
+          </p>
+        </div>
         <div className="flex flex-col items-center gap-3">
           <CrystalVideoClean size={288} />
           <p className="font-mono text-caption uppercase tracking-[0.14em] text-snow/70">
