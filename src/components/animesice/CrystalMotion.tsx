@@ -32,7 +32,7 @@ export function CrystalMotion({
     const elemento = raiz.current;
     if (!elemento) return;
 
-    if (reduzir) {
+    if (reduzir && mode !== "reveal") {
       // Único recurso e único gesto permitido: fade de opacidade inferior a 400ms.
       gsap.fromTo(elemento, { opacity: 0 }, {
         opacity: 1,
@@ -92,19 +92,20 @@ export function CrystalMotion({
       ref={raiz}
       data-mode={mode}
       aria-hidden="true"
-      className={`relative inline-grid shrink-0 place-items-center overflow-hidden ${className}`}
+      className={`crystal-motion relative inline-grid shrink-0 place-items-center overflow-hidden ${className}`}
       style={tamanho}
       onPointerDown={() => {
         if (mode === "micro" && !reduzir) microTimeline.current?.restart();
       }}
     >
       <Image
-        className="block h-full w-full select-none object-contain"
+        className="crystal-logo block h-full w-full select-none object-contain"
         src={LOGO_URL}
         alt=""
         width={220}
         height={220}
         draggable={false}
+        priority={mode === "reveal"}
       />
       {mode === "transition" && !reduzir && (
         <span

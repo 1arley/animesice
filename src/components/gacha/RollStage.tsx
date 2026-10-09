@@ -71,7 +71,8 @@ export function RollStage({ pull, onClose, preview = false }: {
     flipBuilder.current = buildFlip;
     tl.addLabel("reveal", 1.8);
     buildFlip(tierIndex);
-    tl.from("[data-stage]", { scale: 0.94, opacity: 0, duration: 0.15 })
+    // O flip já foi agendado; a entrada precisa começar no frame zero.
+    tl.from("[data-stage]", { scale: 0.94, opacity: 0, duration: 0.15 }, 0)
       .to("[data-crystal]", { rotation: 360, scale: 1.12, duration: 1.2, ease: "power2.inOut" }, 0.2)
       .fromTo("[data-glow]", { opacity: 0.25, scale: 1 }, { opacity: 0.8, scale: 1.25, duration: 1.3, ease: "power2.in", immediateRender: false }, 0.3)
       .call(() => setCanSkip(true), [], 0.6)

@@ -1728,9 +1728,9 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .crystal-motion .crystal-logo,
-  .crystal-motion .crystal-glow,
-  .crystal-motion .crystal-mote {
+  .crystal-motion:not([data-mode="reveal"]) .crystal-logo,
+  .crystal-motion:not([data-mode="reveal"]) .crystal-glow,
+  .crystal-motion:not([data-mode="reveal"]) .crystal-mote {
     animation: none !important;
     opacity: 1 !important;
     filter: none !important;
