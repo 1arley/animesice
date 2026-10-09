@@ -2,48 +2,38 @@ import { test, expect } from "@playwright/test";
 import { blockAds, mockGeneric, loginAs } from "./helpers";
 
 test.describe("Gacha", () => {
-  for (const mediaFails of [false, true]) {
-    test(`Remotion: ${mediaFails ? "fallback" : "vídeo"} e Pular com API pendente`, async ({ page }) => {
-      await page.emulateMedia({ reducedMotion: "no-preference" });
-      await blockAds(page);
-      await mockGeneric(page);
-      await loginAs(page);
-      if (mediaFails) await page.route("**/gacha/crystal.mp4", route => route.abort());
-      let release!: () => void;
-      const pending = new Promise<void>(resolve => { release = resolve; });
-      await page.route("**/gacha/spin", async route => {
-        const response = await route.fetch();
-        await pending;
-        await route.fulfill({ response });
-      });
-      await page.goto("/gacha");
-      await page.getByRole("button", { name: /^Girar/ }).click();
-      const dialog = page.getByRole("dialog");
-      try {
-        if (mediaFails) {
-          await expect(dialog.locator("video")).toHaveCount(0);
-          await expect(dialog.locator("[data-crystal]")).toHaveCSS("background-image", /crystal\.webp/);
-        } else {
-          await expect.poll(() => dialog.locator("video").evaluate((video: HTMLVideoElement) =>
-            video.currentTime > 0 && !video.paused && video.muted && video.playsInline,
-          )).toBe(true);
-        }
-        await expect(dialog.getByRole("button", { name: "Pular", exact: true })).toHaveAttribute("aria-disabled", "false");
-        await page.screenshot({ path: test.info().outputPath("gacha-crystal.png") });
-        await dialog.getByRole("button", { name: "Pular", exact: true }).click();
-        await expect(dialog.locator("video")).toHaveCount(0);
-        await expect(dialog.getByRole("button", { name: "Aguardando carta…" })).toBeVisible();
-        await expect(dialog.getByRole("button", { name: "Continuar" })).toHaveCount(0);
-      } finally {
-        release();
-      }
-      await expect(dialog.getByRole("button", { name: "Continuar" })).toBeVisible();
-      await expect(dialog.getByText("Waifu E2E")).toBeVisible();
-      await page.keyboard.press("Escape");
-      await expect(dialog).toHaveCount(0);
-      await expect(page.getByRole("button", { name: /^Girar/ })).toBeFocused();
+  test("cristal estático e Pular disponível com API pendente", async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: "no-preference" });
+    await blockAds(page);
+    await mockGeneric(page);
+    await loginAs(page);
+    let release!: () => void;
+    const pending = new Promise<void>(resolve => { release = resolve; });
+    await page.route("**/gacha/spin", async route => {
+      const response = await route.fetch();
+      await pending;
+      await route.fulfill({ response });
     });
-  }
+    await page.goto("/gacha");
+    await page.getByRole("button", { name: /^Girar/ }).click();
+    const dialog = page.getByRole("dialog");
+    try {
+      await expect(dialog.locator("video, canvas")).toHaveCount(0);
+      await expect(dialog.locator("[data-crystal]")).toHaveCSS("background-image", /crystal\.webp/);
+      await expect(dialog.getByRole("button", { name: "Pular", exact: true })).toBeEnabled();
+      await page.screenshot({ path: test.info().outputPath("gacha-crystal.png") });
+      await dialog.getByRole("button", { name: "Pular", exact: true }).click();
+      await expect(dialog.getByRole("button", { name: "Aguardando carta…" })).toBeVisible();
+      await expect(dialog.getByRole("button", { name: "Continuar" })).toHaveCount(0);
+    } finally {
+      release();
+    }
+    await expect(dialog.getByRole("button", { name: "Continuar" })).toBeVisible();
+    await expect(dialog.getByText("Waifu E2E")).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(dialog).toHaveCount(0);
+    await expect(page.getByRole("button", { name: /^Girar/ })).toBeFocused();
+  });
 
   test("movimento reduzido não baixa vídeo nem monta canvas", async ({ page }) => {
     await page.emulateMedia({ reducedMotion: "reduce" });
