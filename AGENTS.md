@@ -26,6 +26,8 @@ Use installed React 19, Next 15, Tailwind, Motion/GSAP, Lenis, and OGL. Do not a
 
 Use semantic HTML, visible focus, keyboard operation, labels, `aria-live`, targets >=44px, reduced-motion support, responsive layouts, and safe contrast. Keep controls outside artwork when interaction could obscure it. Sanitize untrusted SVG/HTML at backend boundaries.
 
+For animation work, read `.agents/skills/animesice-motion-design/SKILL.md`; derive motion from the host component and inspect it composited at its real size before handoff.
+
 ## Code, Tests, Delivery
 
 TypeScript strictness stays enabled. Components PascalCase; hooks `useX`; route folders lowercase Portuguese. Keep API/query contracts stable; add `308` redirects for renamed routes. Add one focused test/assertion for non-trivial logic. Run typecheck, lint, build, and `git diff --check` before handoff.

@@ -2060,60 +2060,115 @@
 }
 
 .night-offer-card__back {
+  --offer-accent: 56, 189, 248;
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
   transform: rotateY(0deg);
   background-image:
-    radial-gradient(ellipse at 50% 48%, rgba(56, 232, 218, 0.07), transparent 52%),
-    linear-gradient(145deg, rgba(255, 255, 255, 0.018), transparent 42%);
+    radial-gradient(ellipse at 50% 48%, rgba(var(--offer-accent), 0.2), transparent 54%),
+    linear-gradient(145deg, rgba(var(--offer-accent), 0.3), rgba(var(--offer-accent), 0.08) 62%, #0b1018 100%);
+}
+
+.night-offer-card__back[data-rarity="COMUM"] {
+  --offer-accent: 148, 163, 184;
+}
+
+.night-offer-card__back[data-rarity="INCOMUM"] {
+  --offer-accent: 52, 211, 153;
+}
+
+.night-offer-card__back[data-rarity="RARA"] {
+  --offer-accent: 56, 189, 248;
+}
+
+.night-offer-card__back[data-rarity="EPICA"] {
+  --offer-accent: 192, 132, 252;
+}
+
+.night-offer-card__back[data-rarity="LENDARIA"] {
+  --offer-accent: 251, 191, 36;
+}
+
+.night-offer-card__back[data-rarity="MITICA"] {
+  --offer-accent: 251, 113, 133;
+}
+
+.night-offer-card__back[data-rarity="GALACTICA"] {
+  --offer-accent: 168, 85, 247;
 }
 
 .night-offer-card__front {
   transform: rotateY(180deg);
 }
 
-.night-offer-card__sigil {
-  position: relative;
-  display: grid;
-  width: 9rem;
-  aspect-ratio: 1;
-  margin: auto;
-  place-items: center;
-  border: 1px solid rgba(56, 232, 218, 0.3);
-  transform: rotate(45deg);
-}
-
-.night-offer-card__sigil::before,
-.night-offer-card__sigil::after {
+.night-offer-card__back-art {
   position: absolute;
-  content: "";
-  border: 1px solid rgba(56, 232, 218, 0.22);
+  z-index: 0;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  color: rgb(var(--offer-accent));
+  pointer-events: none;
 }
 
-.night-offer-card__sigil::before {
-  inset: 0.75rem;
+.night-offer-card__frame-lines,
+.night-offer-card__glyph-lines {
+  fill: none;
+  stroke: currentColor;
+  vector-effect: non-scaling-stroke;
 }
 
-.night-offer-card__sigil::after {
-  width: 2.4rem;
-  aspect-ratio: 1;
-  background: rgba(56, 232, 218, 0.1);
+.night-offer-card__frame-lines {
+  stroke-width: 0.8;
+  opacity: 0.32;
 }
 
-.night-offer-card__sigil-inner {
+.night-offer-card__glyph-lines {
+  stroke-width: 1.1;
+  opacity: 0.72;
+  filter: drop-shadow(0 0 4px currentColor);
+}
+
+.night-offer-card__glyph-core {
+  fill: currentColor;
+  filter: drop-shadow(0 0 5px currentColor);
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: night-offer-core 2.8s ease-in-out infinite;
+}
+
+.night-offer-card__glyph-star {
+  fill: currentColor;
+  opacity: 0.55;
+}
+
+.night-offer-card__content {
+  position: relative;
+  z-index: 2;
+}
+
+.night-offer-card__sheen {
+  position: absolute;
   z-index: 1;
-  width: 0.55rem;
-  aspect-ratio: 1;
-  border: 1px solid rgba(56, 232, 218, 0.7);
+  inset: -35% -55%;
+  background: linear-gradient(112deg, transparent 47%, rgba(255, 255, 255, 0.12) 50%, transparent 53%);
+  pointer-events: none;
+  transform: translateX(-72%);
+  animation: night-offer-sheen 6.5s ease-in-out infinite;
 }
 
 .night-offer-card__burst {
   position: absolute;
-  z-index: 2;
+  z-index: 3;
   inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
   opacity: 0;
   mix-blend-mode: screen;
+  backface-visibility: hidden;
   pointer-events: none;
   transition: opacity 120ms linear;
 }
@@ -2123,8 +2178,48 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .night-offer-card__burst {
+  .night-offer-card__burst,
+  .night-offer-card__sheen {
     display: none;
+  }
+
+  .night-offer-card__glyph-core {
+    animation: none;
+  }
+}
+
+@keyframes night-offer-sheen {
+  0% {
+    transform: translateX(-72%);
+    opacity: 0;
+  }
+
+  8% {
+    opacity: 0.55;
+  }
+
+  26% {
+    transform: translateX(72%);
+    opacity: 0.55;
+  }
+
+  32%,
+  100% {
+    transform: translateX(72%);
+    opacity: 0;
+  }
+}
+
+@keyframes night-offer-core {
+  0%,
+  100% {
+    opacity: 0.45;
+    transform: scale(0.8);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.2);
   }
 }
 
