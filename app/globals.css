@@ -2036,12 +2036,14 @@
 .night-offer-card {
   position: relative;
   min-width: 0;
+  aspect-ratio: 3 / 4;
   perspective: 1400px;
 }
 
 .night-offer-card__flipper {
   position: relative;
-  aspect-ratio: 3 / 4;
+  width: 100%;
+  height: 100%;
   transform-style: preserve-3d;
 }
 
@@ -2052,6 +2054,7 @@
 .night-offer-card__face {
   position: absolute;
   inset: 0;
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
   overflow: hidden;
