@@ -8,6 +8,13 @@ import type { GachaPull } from "@/types";
 
 const PARTICLE_SLOTS = 24;
 const PARTICLE_GALAXY = ["#a78bfa", "#f472b6", "#38bdf8"];
+const MOTION = {
+  revealAt: 1.8,
+  flipDelay: 0.12,
+  flipDuration: 0.48,
+  shineDuration: 1.2,
+  shineDelay: 0.9,
+};
 
 function tierOf(p: GachaPull | null): number {
   return p ? GACHA_TIERS.indexOf(p.card.rarity as (typeof GACHA_TIERS)[number]) : -1;
@@ -21,6 +28,19 @@ function ringCount(idx: number): number {
 function particleCount(idx: number): number {
   return idx >= 5 ? 24 : idx === 4 ? 12 : idx >= 3 ? 8 : 0;
 }
+
+function animateShine(target: Element | null) {
+  if (!target || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return null;
+  return gsap.fromTo(target, { x: "-150%" }, {
+    x: "150%",
+    duration: MOTION.shineDuration,
+    delay: MOTION.shineDelay,
+    repeat: -1,
+    repeatDelay: MOTION.shineDelay,
+    ease: "none",
+  });
+}
+
 export function RollStage({ pull, onClose, preview = false }: {
   pull: GachaPull | null;
   onClose: () => void;
@@ -45,6 +65,12 @@ export function RollStage({ pull, onClose, preview = false }: {
     : "";
 
   useEffect(() => {
+    if (!revealed || !pull || pull.foil === "NORMAL") return;
+    const tween = animateShine(dialog.current?.querySelector("[data-foil-shine]") ?? null);
+    return () => { tween?.kill(); };
+  }, [pull, revealed]);
+
+  useEffect(() => {
     const el = dialog.current!;
     const previous = document.activeElement as HTMLElement | null;
     const overflow = document.body.style.overflow;
@@ -58,6 +84,7 @@ export function RollStage({ pull, onClose, preview = false }: {
   }, []);
 
   useGSAP(() => {
+    animateShine(dialog.current?.querySelector("[data-back-shine]") ?? null);
     const tl = gsap.timeline();
     timeline.current = tl;
     if (pull) tl.timeScale(revealSpeed(tierIndex));
@@ -65,11 +92,11 @@ export function RollStage({ pull, onClose, preview = false }: {
       const el = dialog.current?.querySelector("[data-flip]");
       if (!el) return;
       tl.killTweensOf(el);
-      tl.to(el, { rotationY: 180, scale: 0.94, duration: 0.48, ease: "power2.inOut" }, "reveal+=0.12")
+      tl.to(el, { rotationY: 180, scale: 0.94, duration: MOTION.flipDuration, ease: "power2.inOut" }, `reveal+=${MOTION.flipDelay}`)
         .to(el, { scale: 1, duration: 0.3, ease: "power2.out" }, ">");
     };
     flipBuilder.current = buildFlip;
-    tl.addLabel("reveal", 1.8);
+    tl.addLabel("reveal", MOTION.revealAt);
     buildFlip(tierIndex);
     // O flip já foi agendado; a entrada precisa começar no frame zero.
     tl.from("[data-stage]", { scale: 0.94, opacity: 0, duration: 0.15 }, 0)
@@ -80,7 +107,7 @@ export function RollStage({ pull, onClose, preview = false }: {
         waiting.current = true;
         if (!latestPull.current) tl.pause();
         else tl.timeScale(revealSpeed(tierOf(latestPull.current)));
-      }, [], 1.8)
+      }, [], MOTION.revealAt)
       .to("[data-crystal]", { scale: 0, opacity: 0, duration: 0.25, ease: "back.in(2)" }, "reveal")
       .fromTo("[data-ring]", { scale: 0.4, opacity: 0.8 }, { scale: 2, opacity: 0, duration: 0.55, stagger: 0.12, immediateRender: false }, "reveal")
       .fromTo("[data-particle]", { x: 0, y: 0, opacity: 1 }, {
@@ -142,22 +169,23 @@ export function RollStage({ pull, onClose, preview = false }: {
                 className={`absolute left-1/2 top-1/2 h-2 w-1 bg-current opacity-0 ${visible ? "" : "hidden"}`} />;
             })}
           </>
-          <div data-flip className="relative" style={{ transformStyle: "preserve-3d" }}>
+          <div data-flip className="relative aspect-[3/4]" style={{ transformStyle: "preserve-3d" }}>
             <div aria-hidden="true" className="absolute inset-0 flex items-center justify-center overflow-hidden border border-ice/40 bg-panel" style={{ backfaceVisibility: "hidden" }}>
               <div data-crystal className="h-28 w-28 rotate-45 border border-ice/70 bg-gradient-to-tr from-transparent via-ice/30 to-ice/5 shadow-glow-ice" />
-              <div className="absolute inset-0 animate-rollShine bg-gradient-to-r from-transparent via-snow/15 to-transparent" />
+              <div data-back-shine className="absolute inset-0 bg-gradient-to-r from-transparent via-snow/15 to-transparent" />
             </div>
-            <div inert={!ready} aria-hidden={!ready} className="relative min-h-80" style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg)" }}>
-              {pull && <GachaCard pull={pull} preview={preview} />}
+            <div inert={!ready} aria-hidden={!ready} className="absolute inset-0" style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg)" }}>
+              {pull && <GachaCard pull={pull} preview={preview} showInfo={false} />}
               {pull?.foil !== "NORMAL" && pull && <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
                 <div data-sweep className="h-full w-full -translate-x-[150%] bg-gradient-to-r from-transparent via-snow/40 to-transparent mix-blend-screen" />
-                <div className={`h-full w-full bg-gradient-to-r from-transparent via-snow/30 to-transparent motion-reduce:animate-none ${revealed ? "animate-rollShine" : "invisible"}`} />
+              <div data-foil-shine className={`h-full w-full bg-gradient-to-r from-transparent via-snow/30 to-transparent ${revealed ? "" : "invisible"}`} />
               </div>}
             </div>
           </div>
         </div>
         <div data-badge className="text-center" style={{ opacity: 0 }} aria-hidden={!ready}>
           <p className={`font-mono ${pull?.card.rarity === "GALACTICA" ? GALAXY_TEXT : tierText || "text-ice"}`}>{pull?.card.rarity}</p>
+          {pull && <p className="max-w-56 truncate font-medium text-snow">{pull.card.name}</p>}
           {pull && <p><CountUp to={pull.value} startWhen={ready} /> pts</p>}
         </div>
         <button autoFocus type="button" onClick={() => { if (ready || canSkip) skipOrClose(); }}
