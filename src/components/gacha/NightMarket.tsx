@@ -31,8 +31,6 @@ const RARITY_LABEL: Record<string, string> = {
   GALACTICA: "Galáctica",
 };
 
-const REVEAL_CLIP_SECONDS = 1.2; // Keep in sync with the ModernGL clip duration.
-
 function offerName(offer: GachaEconomyOffer) {
   return offer.card?.name ?? offer.skin?.name ?? "Oferta";
 }
@@ -62,6 +60,9 @@ export function NightMarket() {
   const [available, setAvailable] = useState<number | null>(null);
   const [revealed, setRevealed] = useState<Set<string>>(() => new Set());
   const [animatingOffers, setAnimatingOffers] = useState<Set<string>>(
+    () => new Set(),
+  );
+  const [playingBursts, setPlayingBursts] = useState<Set<string>>(
     () => new Set(),
   );
   const pendingReveals = useRef(new Set<string>());
@@ -134,9 +135,17 @@ export function NightMarket() {
     const burst = revealBursts.current[offer.id];
     setAnimatingOffers((current) => new Set(current).add(offer.id));
     const finishReveal = () => {
-      burst?.pause();
-      if (burst) burst.currentTime = 0;
+      if (burst) {
+        burst.onended = null;
+        burst.pause();
+        burst.currentTime = 0;
+      }
       setAnimatingOffers((current) => {
+        const next = new Set(current);
+        next.delete(offer.id);
+        return next;
+      });
+      setPlayingBursts((current) => {
         const next = new Set(current);
         next.delete(offer.id);
         return next;
@@ -154,43 +163,48 @@ export function NightMarket() {
             return;
           }
           gsap
-            .timeline({
-              onComplete: () => {
-                gsap.set(flipper, { clearProps: "transform" });
-                finishReveal();
-              },
-            })
+            .timeline({ onComplete: finishReveal })
             .fromTo(
               flipper,
-              { rotationY: 0, scale: 1, z: 0 },
+              { rotationY: 0 },
               {
                 rotationY: 82,
-                scale: 0.94,
-                z: 36,
                 duration: 0.4,
                 ease: "power2.in",
               },
             )
             .to(flipper, {
               rotationY: 180,
-              scale: 1.045,
-              z: 18,
               duration: 0.42,
               ease: "power3.out",
-            })
-            .to(flipper, {
-              scale: 1,
-              z: 0,
-              duration: REVEAL_CLIP_SECONDS - 0.4 - 0.42,
-              ease: "back.out(1.35)",
             });
         };
-        if (burst) {
-          burst.currentTime = 0;
-          void burst.play().then(playFlip).catch(playFlip);
-        } else {
+        if (!burst) {
           playFlip();
+          return;
         }
+        setPlayingBursts((current) => new Set(current).add(offer.id));
+        burst.currentTime = 0;
+        burst.onended = () => {
+          burst.onended = null;
+          burst.pause();
+          burst.currentTime = 0;
+          setPlayingBursts((current) => {
+            const next = new Set(current);
+            next.delete(offer.id);
+            return next;
+          });
+          playFlip();
+        };
+        void burst.play().catch(() => {
+          burst.onended = null;
+          setPlayingBursts((current) => {
+            const next = new Set(current);
+            next.delete(offer.id);
+            return next;
+          });
+          playFlip();
+        });
       })
       .catch(finishReveal);
   };
@@ -354,7 +368,7 @@ export function NightMarket() {
                         tabIndex={isRevealed ? -1 : 0}
                         onClick={() => void revealOffer(offer)}
                         data-rarity={rarity}
-                        className={`night-offer-card__face night-offer-card__back border bg-panel p-5 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ice ${rarityStyle.border} ${rarityStyle.glow ?? ""}`}
+                        className={`night-offer-card__face night-offer-card__back border bg-panel p-4 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ice ${rarityStyle.border} ${rarityStyle.glow ?? ""}`}
                       >
                         <svg
                           className="night-offer-card__back-art"
@@ -396,22 +410,6 @@ export function NightMarket() {
                             Toque para revelar
                           </span>
                         </span>
-                        <video
-                          ref={(element) => {
-                            revealBursts.current[offer.id] = element;
-                          }}
-                          className={`night-offer-card__burst ${isAnimating ? "is-playing" : ""}`}
-                          aria-hidden="true"
-                          muted
-                          playsInline
-                          preload="metadata"
-                          tabIndex={-1}
-                        >
-                          <source
-                            src="/gacha/night-market-card-reveal.mp4"
-                            type="video/mp4"
-                          />
-                        </video>
                       </button>
                       <div
                         ref={(element) => {
@@ -474,6 +472,22 @@ export function NightMarket() {
                         </div>
                       </div>
                     </div>
+                    <video
+                      ref={(element) => {
+                        revealBursts.current[offer.id] = element;
+                      }}
+                      className={`night-offer-card__burst ${playingBursts.has(offer.id) ? "is-playing" : ""}`}
+                      aria-hidden="true"
+                      muted
+                      playsInline
+                      preload="metadata"
+                      tabIndex={-1}
+                    >
+                      <source
+                        src="/gacha/night-market-card-reveal.mp4"
+                        type="video/mp4"
+                      />
+                    </video>
                   </li>
                 );
               })}
