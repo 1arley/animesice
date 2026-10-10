@@ -2010,6 +2010,28 @@
   padding-bottom: 2rem;
 }
 
+.night-market-nav-new {
+  border: 1px solid rgba(251, 191, 36, 0.9);
+  animation: night-market-nav-glow 1.8s ease-in-out infinite;
+}
+
+@keyframes night-market-nav-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 0 1px rgba(251, 191, 36, 0.24), 0 0 8px rgba(251, 191, 36, 0.2);
+  }
+
+  50% {
+    box-shadow: 0 0 0 2px rgba(251, 191, 36, 0.65), 0 0 18px rgba(251, 191, 36, 0.45);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .night-market-nav-new {
+    animation: none;
+  }
+}
+
 .night-market-hero__copy {
   position: relative;
   z-index: 1;
