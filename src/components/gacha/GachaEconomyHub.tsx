@@ -12,6 +12,7 @@ import {
   boxRewardLabel,
 } from "@/components/gacha/BoxReveal";
 import { Modal } from "@/components/common/Modal";
+import { SearchField } from "@/components/ui/SearchField";
 import { useToast } from "@/components/common/ToastProvider";
 import { GachaTradeHub } from "@/components/gacha/GachaTradeHub";
 import { GachaMarketOfferHub } from "@/components/gacha/GachaMarketOfferHub";
@@ -1787,14 +1788,14 @@ function MarketSection({
         </div>
         <label className="w-full text-caption text-mist sm:w-auto">
           Buscar {title.toLocaleLowerCase("pt-BR")}
-          <input
-            type="search"
+          <SearchField
             name={`market-search-${title}`}
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder="Nome ou anime…"
             autoComplete="off"
-            className="field mt-1 min-h-11 w-full sm:w-56"
+            className="mt-1"
+            containerClassName="w-full sm:w-56"
           />
         </label>
       </div>

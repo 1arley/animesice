@@ -8,6 +8,7 @@ import { isPrivileged } from "@/lib/role";
 import { formatDateTime } from "@/lib/time";
 import { Modal as SharedModal } from "@/components/common/Modal";
 import { PaginationControls } from "@/components/ui/PaginationControls";
+import { SearchField } from "@/components/ui/SearchField";
 import type { AdminUserListItem } from "@/lib/api";
 import type { Paginated } from "@/types";
 
@@ -126,7 +127,13 @@ export default function AdminUsersPage() {
       {error && <div className="mt-4 border border-signal/40 bg-signal/10 p-3 text-body-sm text-signal">{error}</div>}
 
       <div className="mt-4 flex items-center gap-3">
-        <input type="search" placeholder="Buscar por email, nome ou apelido..." aria-label="Buscar por email, nome ou apelido" value={search} onChange={(e) => handleSearchChange(e.target.value)} className="field max-w-xs" />
+        <SearchField
+          placeholder="Buscar por email, nome ou apelido..."
+          aria-label="Buscar por email, nome ou apelido"
+          value={search}
+          onChange={(e) => handleSearchChange(e.target.value)}
+          containerClassName="w-full max-w-xs"
+        />
       </div>
 
       {loading ? (

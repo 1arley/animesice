@@ -5,6 +5,7 @@ import { api } from "@/lib/api";
 import { UserCard } from "@/components/social/UserCard";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { PageTitle } from "@/components/ui/PageTitle";
+import { SearchField } from "@/components/ui/SearchField";
 import type { UserSearchResult } from "@/types";
 
 const LIMIT = 24;
@@ -75,27 +76,12 @@ export default function UsuariosPage() {
 
       {/* Busca */}
       <div className="mt-4 max-w-xl">
-        <div className="relative">
-          <input
-            type="search"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Buscar por nome ou @apelido…"
-            aria-label="Buscar usuários"
-            className="field w-full pl-9"
-          />
-          <svg
-            width="14"
-            height="14"
-            viewBox="0 0 16 16"
-            fill="none"
-            aria-hidden="true"
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-mist-soft"
-          >
-            <circle cx="7" cy="7" r="5" stroke="currentColor" strokeWidth="1.5" />
-            <path d="M11 11l3.5 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-          </svg>
-        </div>
+        <SearchField
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Buscar por nome ou @apelido…"
+          aria-label="Buscar usuários"
+        />
       </div>
 
       {/* Filtros */}

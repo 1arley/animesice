@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { api, ApiError } from "@/lib/api";
 import { isPrivileged } from "@/lib/role";
+import { SearchField } from "@/components/ui/SearchField";
 import type { Genre } from "@/types";
 
 export default function AdminGenerosPage() {
@@ -122,8 +123,7 @@ export default function AdminGenerosPage() {
       <section className="mt-6">
         <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center">
           <h2 className="shelf-label">Lista</h2>
-          <input
-            type="search"
+          <SearchField
             placeholder="Filtrar..."
             aria-label="Filtrar gêneros"
             value={search}
@@ -133,7 +133,7 @@ export default function AdminGenerosPage() {
               if (debounceRef.current) clearTimeout(debounceRef.current);
               debounceRef.current = setTimeout(() => setSearch(value), 100);
             }}
-            className="w-full border border-hairline bg-panel px-3 py-2.5 text-body-sm text-snow placeholder:text-mist focus:border-ice focus:outline-none sm:ml-auto sm:max-w-xs"
+            containerClassName="w-full sm:ml-auto sm:max-w-xs"
           />
         </div>
 
