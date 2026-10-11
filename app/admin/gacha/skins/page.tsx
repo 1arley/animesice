@@ -157,7 +157,8 @@ export default function AdminGachaSkinsPage() {
       await api.adminDeleteSkin(skin.id);
       setNotice("Skin excluída.");
       if (editing === skin.id) resetForm();
-      await load();
+      if (skins.length === 1 && page > 1) setPage((current) => current - 1);
+      else await load();
     } catch (e) {
       setError(e instanceof ApiError ? e.message : "Erro ao excluir skin.");
     } finally {
