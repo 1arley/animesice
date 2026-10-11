@@ -1,12 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { api, ApiError } from "@/lib/api";
 import { useToast } from "@/components/common/ToastProvider";
 import { useAuth } from "@/lib/auth-context";
 import {
   RollStage,
   DEFAULT_ROLL_ANIM_CONFIG,
+  parseRollAnimJson,
   type RollAnimConfig,
 } from "@/components/gacha/RollStage";
 import type { GachaPull } from "@/types";
@@ -191,6 +192,10 @@ export default function AdminGachaAnimacaoPage() {
   const [error, setError] = useState("");
   const [previewIndex, setPreviewIndex] = useState(0);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [jsonText, setJsonText] = useState(() => JSON.stringify(DEFAULT_ROLL_ANIM_CONFIG, null, 2));
+  const [jsonError, setJsonError] = useState("");
+  /** Evita reformatar a textarea (e roubar o cursor) quando quem mudou a config foi ela. */
+  const fromText = useRef(false);
   const { toast } = useToast();
   const { user } = useAuth();
   const canEdit = user?.role === "SUPERADMIN";
@@ -216,7 +221,34 @@ export default function AdminGachaAnimacaoPage() {
   }, []);
 
   function handleChange(key: string, value: unknown) {
+    fromText.current = false;
     setConfig((prev) => ({ ...prev, [key]: value }));
+  }
+
+  // Espelho da config em JSON. Só reformata quando a mudança veio dos campos.
+  useEffect(() => {
+    if (fromText.current) {
+      fromText.current = false;
+      return;
+    }
+    setJsonText(JSON.stringify(config, null, 2));
+  }, [config]);
+
+  /** Cola/aplica: objeto JSON parcial vira config na hora, sem salvar. */
+  function applyJson(text: string) {
+    setJsonText(text);
+    if (!text.trim()) {
+      setJsonError("");
+      return;
+    }
+    const parsed = parseRollAnimJson(text);
+    if (!parsed.ok) {
+      setJsonError(parsed.error);
+      return;
+    }
+    setJsonError("");
+    fromText.current = true;
+    setConfig((prev) => ({ ...prev, ...parsed.value }));
   }
 
   async function handleSave() {
@@ -412,14 +444,27 @@ export default function AdminGachaAnimacaoPage() {
                 {previewOpen ? "Preview aberto…" : "Abrir preview"}
               </button>
 
-              <details className="mt-4 border-t border-hairline pt-4">
-                <summary className="cursor-pointer font-mono text-xs text-mist">
-                  JSON atual (copiável)
-                </summary>
-                <pre className="mt-2 max-h-40 overflow-auto font-mono text-xs text-mist bg-ink-deep p-2 rounded">
-{JSON.stringify(config, null, 2)}
-                </pre>
-              </details>
+              <label className="mt-4 block border-t border-hairline pt-4">
+                <span className="font-mono text-xs text-mist">
+                  JSON (colar ou editar) - objeto parcial, aplica sem salvar
+                </span>
+                <textarea
+                  value={jsonText}
+                  onChange={(event) => applyJson(event.target.value)}
+                  spellCheck={false}
+                  rows={12}
+                  aria-invalid={jsonError ? true : undefined}
+                  aria-describedby="roll-anim-json-help"
+                  className="mt-2 max-h-56 w-full overflow-auto rounded bg-ink-deep p-2 font-mono text-xs text-snow focus-visible:outline focus-visible:outline-ice"
+                />
+                <span
+                  id="roll-anim-json-help"
+                  role={jsonError ? "alert" : undefined}
+                  className={`mt-1 block font-mono text-xs ${jsonError ? "text-signal" : "text-mist"}`}
+                >
+                  {jsonError || "Só as chaves enviadas mudam. Edite aqui ou nos campos acima."}
+                </span>
+              </label>
             </aside>
           </div>
 
