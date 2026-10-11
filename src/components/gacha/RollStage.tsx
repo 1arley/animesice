@@ -5,50 +5,10 @@ import { gsap, useGSAP } from "@/lib/gsap";
 import { GachaCard, GACHA_TIERS, GALAXY_TEXT, RARITY_TEXT } from "./GachaCard";
 import { CountUp } from "@/components/core/CountUp";
 import type { GachaPull } from "@/types";
+import { DEFAULT_ROLL_ANIM_CONFIG, type RollAnimConfig } from "@/lib/roll-anim-config";
 
-export type RollAnimConfig = {
-  enterDuration: number;
-  crystalSpinAt: number;
-  crystalSpinDuration: number;
-  glowAt: number;
-  glowDuration: number;
-  skipAt: number;
-  revealAt: number;
-  crystalOutDuration: number;
-  ringSlots: number;
-  ringDuration: number;
-  ringStagger: number;
-  particleSlots: number;
-  particleDuration: number;
-  particleReach: { x: number; y: number };
-  particleGalaxy: string[];
-  effectsGap: number;
-  flipDuration: number;
-  sweepDuration: number;
-  badgeDuration: number;
-};
-
-export const DEFAULT_ROLL_ANIM_CONFIG: RollAnimConfig = {
-  enterDuration: 0.15,
-  crystalSpinAt: 0.2,
-  crystalSpinDuration: 1.2,
-  glowAt: 0.3,
-  glowDuration: 1.3,
-  skipAt: 0.6,
-  revealAt: 1.8,
-  crystalOutDuration: 0.25,
-  ringSlots: 3,
-  ringDuration: 0.55,
-  ringStagger: 0.12,
-  particleSlots: 24,
-  particleDuration: 0.65,
-  particleReach: { x: 180, y: 230 },
-  particleGalaxy: ["#a78bfa", "#f472b6", "#38bdf8"],
-  effectsGap: 0.12,
-  flipDuration: 0.48,
-  sweepDuration: 0.6,
-  badgeDuration: 0.3,
-};
+export { DEFAULT_ROLL_ANIM_CONFIG, parseRollAnimJson } from "@/lib/roll-anim-config";
+export type { ParsedRollJson, RollAnimConfig } from "@/lib/roll-anim-config";
 
 function tierOf(p: GachaPull | null): number {
   return p ? GACHA_TIERS.indexOf(p.card.rarity as (typeof GACHA_TIERS)[number]) : -1;
