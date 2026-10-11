@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Image from "next/image";
 import { api, ApiError } from "@/lib/api";
 import { useToast } from "@/components/common/ToastProvider";
 import { useAuth } from "@/lib/auth-context";
@@ -421,10 +422,12 @@ export default function AdminGachaAnimacaoPage() {
                       i === previewIndex ? "border-ice" : "border-hairline hover:border-ice/50"
                     }`}
                   >
-                    <img
+                    <Image
                       src={sample.card.image ?? ""}
                       alt={sample.card.name}
-                      className="absolute inset-0 h-full w-full object-cover"
+                      fill
+                      sizes="(max-width: 640px) 50vw, 200px"
+                      className="object-cover"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-ink-deep/80 to-transparent" />
                     <div className="absolute bottom-0 left-0 right-0 p-2">
