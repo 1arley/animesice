@@ -24,6 +24,8 @@ export function MobileTabBar() {
   const pathname = usePathname();
   const { user } = useAuth();
 
+  if (pathname === "/gacha" || pathname.startsWith("/gacha/")) return null;
+
   const tabs = [
     {
       href: "/",

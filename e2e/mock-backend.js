@@ -239,7 +239,8 @@ const server = http.createServer((req, res) => {
     return json(res, {
       id: 'viewer-1', email: 'viewer@test.dev', name: 'Viewer', userName: 'viewer',
       avatar: null, bio: null, myAnimeList: null, role: 'USER',
-      createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
+      isVerified: true,
+      createdAt: '2020-01-01T00:00:00.000Z', updatedAt: new Date().toISOString(),
     });
   }
 
@@ -321,6 +322,9 @@ const server = http.createServer((req, res) => {
   }
   if (req.method === 'GET' && (p === '/api/gacha/economy/market/offers/mine' || p === '/gacha/economy/market/offers/mine')) {
     return json(res, []);
+  }
+  if (req.method === 'GET' && (p === '/api/gacha/economy/night-market/status' || p === '/gacha/economy/night-market/status')) {
+    return json(res, { open: false, periodStart: null });
   }
   if (req.method === 'GET' && (p === '/api/gacha/shop' || p === '/gacha/shop')) {
     return json(res, { balance: 0, cosmetics: [], activeCardBack: null, spinPrice: 0 });

@@ -16,6 +16,7 @@ function OfferCard({
   offer,
   incoming,
   busy,
+  canAccept,
   onAccept,
   onDecline,
   onCancel,
@@ -23,6 +24,7 @@ function OfferCard({
   offer: GachaMarketOffer;
   incoming: boolean;
   busy: boolean;
+  canAccept: boolean;
   onAccept: () => void;
   onDecline: () => void;
   onCancel: () => void;
@@ -97,7 +99,7 @@ function OfferCard({
             <>
               <button
                 type="button"
-                disabled={busy || !item}
+                disabled={busy || !item || !canAccept}
                 onClick={onAccept}
                 className="btn-ice min-h-11 px-4 disabled:opacity-40"
               >
@@ -130,8 +132,10 @@ function OfferCard({
 
 export function GachaMarketOfferHub({
   refreshKey = 0,
+  canAccept,
 }: {
   refreshKey?: number;
+  canAccept: boolean;
 }) {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -261,6 +265,7 @@ export function GachaMarketOfferHub({
                       offer={offer}
                       incoming={group.incoming}
                       busy={busyId === offer.id}
+                      canAccept={canAccept}
                       onAccept={() =>
                         void act(
                           offer,
@@ -303,6 +308,7 @@ export function GachaMarketOfferHub({
                 offer={offer}
                 incoming={offer.requestedUserId === user.id}
                 busy={false}
+                canAccept={canAccept}
                 onAccept={() => undefined}
                 onDecline={() => undefined}
                 onCancel={() => undefined}

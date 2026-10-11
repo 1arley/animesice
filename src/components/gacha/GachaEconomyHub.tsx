@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { api, ApiError } from "@/lib/api";
+import { api, ApiError, type User } from "@/lib/api";
 import { safeImageSrc } from "@/lib/url";
 import { useAuth } from "@/lib/auth-context";
 import {
@@ -120,6 +120,15 @@ function timeUntilReset(): string {
   return `${Math.floor(minutes / 60)}h ${minutes % 60}min`;
 }
 
+const MARKET_ACCOUNT_AGE_MS = 7 * 24 * 60 * 60 * 1000;
+
+function canUseMarket(user: User | null, now: number): boolean {
+  return (
+    !!user?.isVerified &&
+    now - new Date(user.createdAt).getTime() >= MARKET_ACCOUNT_AGE_MS
+  );
+}
+
 export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -167,8 +176,10 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
   const [offerCardIds, setOfferCardIds] = useState<string[]>([]);
   const [offerRefreshKey, setOfferRefreshKey] = useState(0);
   const [cardCopyId, setCardCopyId] = useState("");
+  const [cardCopySearch, setCardCopySearch] = useState("");
   const [cardPrice, setCardPrice] = useState("");
   const [skinCopyId, setSkinCopyId] = useState("");
+  const [skinCopySearch, setSkinCopySearch] = useState("");
   const [skinPrice, setSkinPrice] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -182,6 +193,35 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
   const [cardInspection, setCardInspection] =
     useState<GachaCardInspection | null>(null);
   const [resetCountdown, setResetCountdown] = useState(timeUntilReset);
+  const [marketClock, setMarketClock] = useState(0);
+  const marketReady = mode === "market" && canUseMarket(user, marketClock);
+  const accountEligibleAt = user
+    ? new Date(new Date(user.createdAt).getTime() + MARKET_ACCOUNT_AGE_MS)
+    : null;
+  const accountAgeReady =
+    !!accountEligibleAt && marketClock >= accountEligibleAt.getTime();
+  const cardSearchTerm = cardCopySearch.trim().toLocaleLowerCase("pt-BR");
+  const filteredCardCopies = ownedCards.filter((copy) =>
+    [
+      copy.card.imageHidden ? "carta misteriosa" : copy.card.name,
+      copy.card.imageHidden ? null : copy.card.animeTitle,
+      copy.card.rarity,
+      copy.foil,
+      `edição ${copy.edition}`,
+    ]
+      .filter(Boolean)
+      .join(" ")
+      .toLocaleLowerCase("pt-BR")
+      .includes(cardSearchTerm),
+  );
+  const selectedCardCopy = ownedCards.find((copy) => copy.id === cardCopyId);
+  const skinSearchTerm = skinCopySearch.trim().toLocaleLowerCase("pt-BR");
+  const filteredSkinCopies = ownedSkins.filter((copy) =>
+    `${copy.name} ${copy.rarity}`
+      .toLocaleLowerCase("pt-BR")
+      .includes(skinSearchTerm),
+  );
+  const selectedSkinCopy = ownedSkins.find((copy) => copy.id === skinCopyId);
 
   const refresh = useCallback(async () => {
     if (!user) return;
@@ -253,8 +293,12 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
   }, [load]);
 
   useEffect(() => {
+    setMarketClock(Date.now());
     const timer = window.setInterval(
-      () => setResetCountdown(timeUntilReset()),
+      () => {
+        setResetCountdown(timeUntilReset());
+        setMarketClock(Date.now());
+      },
       60_000,
     );
     return () => window.clearInterval(timer);
@@ -416,6 +460,19 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
       setCardCopyId("");
       setCardPrice("");
     }
+  }
+
+  async function cancelMarketListing(listing: GachaEconomyListingItem) {
+    if (
+      !window.confirm("Cancelar este anúncio e devolver o item à coleção?")
+    )
+      return;
+    await act(
+      `cancel-${listing.id}`,
+      () => api.gachaEconomyCancelListing(listing.itemType, listing.id),
+      "Anúncio cancelado.",
+      true,
+    );
   }
 
   async function listSkin(event: React.FormEvent<HTMLFormElement>) {
@@ -603,6 +660,47 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
           {mode === "market" ? "Ir para a Loja" : "Ir para o Mercado"}
         </Link>
       </nav>
+
+      {mode === "market" && user && (
+        <section
+          aria-labelledby="market-eligibility-title"
+          className="mt-5 border border-hairline bg-panel p-4 sm:flex sm:items-center sm:justify-between sm:gap-6"
+        >
+          <div>
+            <h2
+              id="market-eligibility-title"
+              className="font-display text-lg text-snow"
+            >
+              Regras para negociar
+            </h2>
+            <p className="mt-1 text-body-sm text-mist">
+              É necessário verificar o e-mail e ter uma conta com pelo menos 7 dias.
+            </p>
+          </div>
+          <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-body-sm sm:mt-0">
+            <span className={user.isVerified ? "text-ice" : "text-signal"}>
+              E-mail: {user.isVerified ? "verificado" : "verificação pendente"}
+            </span>
+            <span
+              className={
+                accountAgeReady ? "text-ice" : "text-signal"
+              }
+            >
+              Conta: {accountAgeReady
+                ? "7 dias completos"
+                : `libera em ${accountEligibleAt?.toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" }) ?? "—"}`}
+            </span>
+            {!user.isVerified && (
+              <Link
+                href={`/verificar-email?email=${encodeURIComponent(user.email)}`}
+                className="inline-flex min-h-11 items-center text-ice underline underline-offset-4"
+              >
+                Verificar e-mail
+              </Link>
+            )}
+          </div>
+        </section>
+      )}
 
       {error && (
         <div
@@ -949,7 +1047,7 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
               listings={cards}
               total={cardTotal}
               canLoadMore={cards.length < cardTotal}
-              userReady={!!user}
+              marketReady={marketReady}
               myId={user?.id}
               available={inventory?.available ?? 0}
               busy={busy}
@@ -980,6 +1078,7 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
                 setOfferCardIds([]);
               }}
               onHistory={(listing) => void showHistory(listing)}
+              onCancel={(listing) => void cancelMarketListing(listing)}
               onInspectCard={(listing) =>
                 listing.itemType === "CARD" &&
                 setCardInspection(listingInspection(listing))
@@ -992,7 +1091,7 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
               listings={skins}
               total={skinTotal}
               canLoadMore={skins.length < skinTotal}
-              userReady={!!user}
+              marketReady={marketReady}
               myId={user?.id}
               available={inventory?.available ?? 0}
               busy={busy}
@@ -1023,6 +1122,7 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
                 setOfferCardIds([]);
               }}
               onHistory={(listing) => void showHistory(listing)}
+              onCancel={(listing) => void cancelMarketListing(listing)}
               onInspectCard={(listing) =>
                 listing.itemType === "CARD" &&
                 setCardInspection(listingInspection(listing))
@@ -1327,11 +1427,12 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
                   id="listing-form-title"
                   className="scroll-mt-24 font-display text-2xl text-snow"
                 >
-                  Anuncie suas cartas e skins
+                  Anuncie cartas e skins
                 </h2>
-                <p className="mt-1 text-body-sm text-mist">
-                  Escolha uma cópia da sua coleção e defina o preço em Cristais.
-                  O item volta para sua coleção se você cancelar o anúncio.
+                <p className="mt-2 max-w-2xl text-body-sm text-mist">
+                  Escolha uma cópia da sua coleção e defina quanto quer receber.
+                  Enquanto o anúncio estiver ativo, a cópia fica reservada; ao
+                  cancelar, ela volta para sua coleção.
                 </p>
                 {listingError && (
                   <p role="alert" className="mt-3 text-body-sm text-signal">
@@ -1345,32 +1446,91 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
                   className="grid content-start gap-4 border border-hairline bg-panel p-5"
                 >
                   <h3 className="font-display text-xl text-snow">
-                    Anunciar carta
+                    Carta
                   </h3>
-                  <label className="text-body-sm text-mist">
-                    Carta da coleção
-                    <select
-                      name="card-copy"
-                      value={cardCopyId}
-                      onChange={(event) => setCardCopyId(event.target.value)}
-                      required
-                      className="field mt-2 min-h-11 w-full"
+                  <fieldset className="min-w-0">
+                    <legend className="text-body-sm text-mist">
+                      Escolha uma carta
+                    </legend>
+                    {ownedCards.length > 0 && (
+                      <SearchField
+                        name="card-copy-search"
+                        value={cardCopySearch}
+                        onChange={(event) => setCardCopySearch(event.target.value)}
+                        placeholder="Buscar por nome, anime ou edição…"
+                        autoComplete="off"
+                        aria-label="Buscar carta da coleção"
+                        className="mt-2 w-full"
+                      />
+                    )}
+                    <p className="mt-2 text-caption text-mist" role="status">
+                      {filteredCardCopies.length} de {ownedCards.length} cartas
+                      {cardCopyId ? " · 1 selecionada" : " disponíveis"}
+                    </p>
+                    {cardCopyId && (
+                      <p className="mt-1 text-body-sm text-ice">
+                        Selecionada: {selectedCardCopy?.card.imageHidden
+                          ? "Carta misteriosa"
+                          : selectedCardCopy?.card.name ?? "carta"}
+                      </p>
+                    )}
+                    <ul
+                      aria-label="Cartas disponíveis para anúncio"
+                      className="mt-2 grid max-h-72 grid-cols-1 gap-2 overflow-y-auto pr-1 sm:grid-cols-2"
                     >
-                      <option value="" disabled>
-                        {ownedCards.length
-                          ? "Escolha uma cópia"
-                          : "Nenhuma carta disponível"}
-                      </option>
-                      {ownedCards.map((copy) => (
-                        <option key={copy.id} value={copy.id}>
-                          {copy.card.name} · {copy.card.rarity} · {copy.foil} ·
-                          edição #{copy.edition}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
+                      {filteredCardCopies.map((copy) => {
+                        const selected = cardCopyId === copy.id;
+                        const name = copy.card.imageHidden
+                          ? "Carta misteriosa"
+                          : copy.card.name;
+                        return (
+                          <li key={copy.id}>
+                            <button
+                              type="button"
+                              aria-pressed={selected}
+                              onClick={() => setCardCopyId(copy.id)}
+                              className={`flex min-h-24 w-full items-center gap-3 border p-2 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-ice ${selected ? "border-ice bg-ice/10" : "border-hairline bg-ink hover:border-ice/50"}`}
+                            >
+                              <MarketItemThumbnail
+                                image={copy.card.imageHidden ? null : copy.card.image}
+                                className="h-20 w-14 shrink-0"
+                              />
+                              <span className="min-w-0">
+                                <span className="block break-words text-body-sm text-snow">
+                                  {name}
+                                </span>
+                                <span className="mt-1 block text-caption text-mist">
+                                  {copy.card.rarity} · {copy.foil}
+                                </span>
+                                <span className="block text-caption text-mist">
+                                  Edição #{copy.edition}
+                                </span>
+                              </span>
+                            </button>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                    {ownedCards.length > 0 && filteredCardCopies.length === 0 && (
+                      <p className="mt-3 text-body-sm text-mist">
+                        Nenhuma carta corresponde à busca.
+                      </p>
+                    )}
+                    {ownedCards.length === 0 && (
+                      <p className="mt-2 text-caption text-mist">
+                        Sem cópias disponíveis? Veja sua{" "}
+                        <Link
+                          href="/gacha/colecao"
+                          className="text-ice underline underline-offset-4"
+                        >
+                          coleção de cartas
+                        </Link>
+                        .
+                      </p>
+                    )}
+                  </fieldset>
                   <label className="text-body-sm text-mist">
-                    Preço em Cristais
+                    Quanto quer receber (Cristais)
                     <input
                       name="card-price"
                       type="number"
@@ -1381,12 +1541,18 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
                       required
                       value={cardPrice}
                       onChange={(event) => setCardPrice(event.target.value)}
+                      aria-describedby="card-price-help"
                       className="field mt-2 min-h-11 w-full"
                     />
+                    <span id="card-price-help" className="mt-1 block text-caption text-mist">
+                      Informe um valor inteiro, a partir de 1 cristal.
+                    </span>
                   </label>
                   <button
                     type="submit"
-                    disabled={busy !== null || ownedCards.length === 0}
+                    disabled={
+                      !marketReady || busy !== null || !cardCopyId
+                    }
                     className="btn-ice min-h-11 px-4 disabled:opacity-40"
                   >
                     {busy === `card-${cardCopyId}`
@@ -1399,31 +1565,83 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
                   className="grid content-start gap-4 border border-hairline bg-panel p-5"
                 >
                   <h3 className="font-display text-xl text-snow">
-                    Anunciar skin
+                    Skin
                   </h3>
-                  <label className="text-body-sm text-mist">
-                    Cópia de skin
-                    <select
-                      name="skin-copy"
-                      value={skinCopyId}
-                      onChange={(event) => setSkinCopyId(event.target.value)}
-                      required
-                      className="field mt-2 min-h-11 w-full"
+                  <fieldset className="min-w-0">
+                    <legend className="text-body-sm text-mist">
+                      Escolha uma skin
+                    </legend>
+                    {ownedSkins.length > 0 && (
+                      <SearchField
+                        name="skin-copy-search"
+                        value={skinCopySearch}
+                        onChange={(event) => setSkinCopySearch(event.target.value)}
+                        placeholder="Buscar por nome ou raridade…"
+                        autoComplete="off"
+                        aria-label="Buscar skin da coleção"
+                        className="mt-2 w-full"
+                      />
+                    )}
+                    <p className="mt-2 text-caption text-mist" role="status">
+                      {filteredSkinCopies.length} de {ownedSkins.length} skins
+                      {skinCopyId ? " · 1 selecionada" : " disponíveis"}
+                    </p>
+                    {skinCopyId && (
+                      <p className="mt-1 text-body-sm text-ice">
+                        Selecionada: {selectedSkinCopy?.name ?? "skin"}
+                      </p>
+                    )}
+                    <ul
+                      aria-label="Skins disponíveis para anúncio"
+                      className="mt-2 grid max-h-72 grid-cols-1 gap-2 overflow-y-auto pr-1 sm:grid-cols-2"
                     >
-                      <option value="" disabled>
-                        {ownedSkins.length
-                          ? "Escolha uma cópia"
-                          : "Nenhuma skin disponível"}
-                      </option>
-                      {ownedSkins.map((copy) => (
-                        <option key={copy.id} value={copy.id}>
-                          {copy.name} · {copy.rarity}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
+                      {filteredSkinCopies.map((copy) => {
+                        const selected = skinCopyId === copy.id;
+                        return (
+                          <li key={copy.id}>
+                            <button
+                              type="button"
+                              aria-pressed={selected}
+                              onClick={() => setSkinCopyId(copy.id)}
+                              className={`flex min-h-24 w-full items-center gap-3 border p-2 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-ice ${selected ? "border-ice bg-ice/10" : "border-hairline bg-ink hover:border-ice/50"}`}
+                            >
+                              <MarketItemThumbnail
+                                image={copy.imageUrl}
+                                className="h-20 w-14 shrink-0"
+                              />
+                              <span className="min-w-0">
+                                <span className="block break-words text-body-sm text-snow">
+                                  {copy.name}
+                                </span>
+                                <span className="mt-1 block text-caption text-mist">
+                                  {copy.rarity}
+                                </span>
+                              </span>
+                            </button>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                    {ownedSkins.length > 0 && filteredSkinCopies.length === 0 && (
+                      <p className="mt-3 text-body-sm text-mist">
+                        Nenhuma skin corresponde à busca.
+                      </p>
+                    )}
+                    {ownedSkins.length === 0 && (
+                      <p className="mt-2 text-caption text-mist">
+                        Sem skins disponíveis? Veja suas{" "}
+                        <Link
+                          href="/gacha/skins"
+                          className="text-ice underline underline-offset-4"
+                        >
+                          skins
+                        </Link>
+                        .
+                      </p>
+                    )}
+                  </fieldset>
                   <label className="text-body-sm text-mist">
-                    Preço em Cristais
+                    Quanto quer receber (Cristais)
                     <input
                       name="skin-price"
                       type="number"
@@ -1434,12 +1652,18 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
                       required
                       value={skinPrice}
                       onChange={(event) => setSkinPrice(event.target.value)}
+                      aria-describedby="skin-price-help"
                       className="field mt-2 min-h-11 w-full"
                     />
+                    <span id="skin-price-help" className="mt-1 block text-caption text-mist">
+                      Informe um valor inteiro, a partir de 1 cristal.
+                    </span>
                   </label>
                   <button
                     type="submit"
-                    disabled={busy !== null || ownedSkins.length === 0}
+                    disabled={
+                      !marketReady || busy !== null || !skinCopyId
+                    }
                     className="btn-ice min-h-11 px-4 disabled:opacity-40"
                   >
                     {busy === `skin-${skinCopyId}`
@@ -1452,7 +1676,10 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
           )}
 
           {mode === "market" && user && (
-            <GachaMarketOfferHub refreshKey={offerRefreshKey} />
+            <GachaMarketOfferHub
+              refreshKey={offerRefreshKey}
+              canAccept={marketReady}
+            />
           )}
           {mode === "market" && <GachaTradeHub />}
 
@@ -1726,7 +1953,7 @@ function MarketSection({
   listings,
   total,
   canLoadMore,
-  userReady,
+  marketReady,
   myId,
   available,
   busy,
@@ -1735,13 +1962,14 @@ function MarketSection({
   onOrder,
   onOffer,
   onHistory,
+  onCancel,
   onInspectCard,
 }: {
   title: string;
   listings: GachaEconomyListingItem[];
   total: number;
   canLoadMore: boolean;
-  userReady: boolean;
+  marketReady: boolean;
   myId?: string;
   available: number;
   busy: string | null;
@@ -1750,6 +1978,7 @@ function MarketSection({
   onOrder: (listing: GachaEconomyListingItem) => void;
   onOffer: (listing: GachaEconomyListingItem) => void;
   onHistory: (listing: GachaEconomyListingItem) => void;
+  onCancel: (listing: GachaEconomyListingItem) => void;
   onInspectCard: (listing: GachaEconomyListingItem) => void;
 }) {
   const [query, setQuery] = useState("");
@@ -1891,7 +2120,7 @@ function MarketSection({
                   {listing.user.name?.trim() ||
                     `@${listing.user.userName ?? "jogador"}`}
                 </p>
-                {userReady && available < listing.price && (
+                {marketReady && available < listing.price && (
                   <p className="mt-2 text-caption text-mist">
                     Faltam {(listing.price - available).toLocaleString("pt-BR")}{" "}
                     cristais.
@@ -1910,14 +2139,21 @@ function MarketSection({
                     Histórico
                   </button>
                   {own ? (
-                    <p className="flex min-h-11 items-center justify-center text-caption text-mist">
-                      Seu anúncio
-                    </p>
+                    <button
+                      type="button"
+                      disabled={busy !== null}
+                      onClick={() => onCancel(listing)}
+                      className="btn-ghost min-h-11 disabled:opacity-40"
+                    >
+                      {busy === `cancel-${listing.id}`
+                        ? "Removendo…"
+                        : "Cancelar anúncio"}
+                    </button>
                   ) : (
                     <>
                       <button
                         type="button"
-                        disabled={!userReady || busy !== null}
+                        disabled={!marketReady || busy !== null}
                         onClick={() => onOrder(listing)}
                         className="btn-ghost min-h-11 disabled:opacity-40"
                       >
@@ -1925,7 +2161,7 @@ function MarketSection({
                       </button>
                       <button
                         type="button"
-                        disabled={!userReady || busy !== null}
+                        disabled={!marketReady || busy !== null}
                         onClick={() => onOffer(listing)}
                         className="btn-ghost col-span-2 min-h-11 disabled:opacity-40"
                       >
@@ -1934,7 +2170,7 @@ function MarketSection({
                       <button
                         type="button"
                         disabled={
-                          !userReady ||
+                          !marketReady ||
                           busy !== null ||
                           available < listing.price
                         }
@@ -2132,5 +2368,38 @@ function MarketArtwork({
         </Modal>
       )}
     </>
+  );
+}
+
+function MarketItemThumbnail({
+  image,
+  className,
+}: {
+  image: string | null;
+  className: string;
+}) {
+  const [failed, setFailed] = useState(false);
+  const src = safeImageSrc(image);
+
+  return (
+    <span
+      className={`relative flex items-center justify-center overflow-hidden bg-panel ${className}`}
+    >
+      {src && !failed ? (
+        <Image
+          src={src}
+          alt=""
+          fill
+          sizes="64px"
+          onError={() => setFailed(true)}
+          aria-hidden="true"
+          className="object-contain"
+        />
+      ) : (
+        <span aria-hidden="true" className="px-1 text-center text-[10px] text-mist">
+          Sem arte
+        </span>
+      )}
+    </span>
   );
 }
