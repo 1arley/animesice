@@ -658,6 +658,13 @@ export interface GachaSkinsResponse {
   };
 }
 
+export interface GachaSkinSpinActivity {
+  id: string;
+  createdAt: string;
+  skin: Pick<GachaSkin, "id" | "name" | "imageUrl">;
+  user: Pick<SocialUser, "name" | "userName" | "avatar">;
+}
+
 /** Slots equipáveis de loadout. A capa tem coluna própria no backend. */
 export type GachaLoadoutSlot = "FRAME" | "HIGHLIGHT";
 

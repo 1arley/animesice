@@ -31,8 +31,8 @@ const FIELDS: Array<{
   },
   {
     key: "showGacha",
-    label: "Mostrar cartas do gacha",
-    hint: "Sua coleção e seus pulls Épicos no feed. Desligado = coleção privada.",
+    label: "Mostrar atividade do Gacha",
+    hint: "Sua coleção e giros de cartas e skins podem aparecer no perfil e em áreas públicas do Gacha. Desligado = atividade privada.",
   },
 ];
 
