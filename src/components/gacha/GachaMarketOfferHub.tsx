@@ -198,7 +198,7 @@ export function GachaMarketOfferHub({
   return (
     <section
       id="market-offers"
-      className="mt-10"
+      className="mt-10 scroll-mt-24"
       aria-labelledby="market-offers-title"
     >
       <div className="flex flex-wrap items-end justify-between gap-3">

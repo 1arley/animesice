@@ -617,13 +617,15 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
               Skins
             </a>
             {user && (
-              <a href="#listing-form-title" className="btn-ghost min-h-11 px-4">
-                Anunciar
-              </a>
+              <>
+                <a href="#market-offers" className="btn-ghost min-h-11 px-4">
+                  Propostas
+                </a>
+                <a href="#listing-form-title" className="btn-ghost min-h-11 px-4">
+                  Anunciar
+                </a>
+              </>
             )}
-            <a href="#market-offers" className="btn-ghost min-h-11 px-4">
-              Ofertas aos vendedores
-            </a>
             <a href="#trade-title" className="btn-ghost min-h-11 px-4">
               Trocas entre jogadores
             </a>
@@ -1127,6 +1129,13 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
                 listing.itemType === "CARD" &&
                 setCardInspection(listingInspection(listing))
               }
+            />
+          )}
+
+          {mode === "market" && user && (
+            <GachaMarketOfferHub
+              refreshKey={offerRefreshKey}
+              canAccept={marketReady}
             />
           )}
 
@@ -1675,12 +1684,6 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
             </section>
           )}
 
-          {mode === "market" && user && (
-            <GachaMarketOfferHub
-              refreshKey={offerRefreshKey}
-              canAccept={marketReady}
-            />
-          )}
           {mode === "market" && <GachaTradeHub />}
 
           {mode === "market" && user && (
