@@ -61,6 +61,7 @@ import type {
   GachaWishlistQuery,
   GachaInterestedUser,
   GachaFeatured,
+  GachaProfileShowcase,
   GachaSkinsResponse,
   GachaSkin,
   GachaBoxTier,
@@ -112,6 +113,7 @@ export interface User {
   name: string;
   userName: string | null;
   avatar: string | null;
+  profileCover: string | null;
   bio: string | null;
   myAnimeList: string | null;
   role: string;
@@ -952,6 +954,16 @@ export const api = {
   },
 
   deleteAvatar: () => request<User>(`/user/me/avatar`, { method: "DELETE" }),
+  uploadProfileCover: (file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    return request<User>(`/user/me/profile-cover`, {
+      method: "POST",
+      body: formData,
+    });
+  },
+  deleteProfileCover: () =>
+    request<User>(`/user/me/profile-cover`, { method: "DELETE" }),
 
   getRelatedAnime: (slug: string) => request<Anime[]>(`/anime/${slug}/related`),
 
@@ -1877,6 +1889,17 @@ export const api = {
     request<GachaFeatured | null>(
       `/gacha/featured/${encodeURIComponent(userId)}`,
     ),
+  gachaProfileShowcase: (userId: string) =>
+    request<GachaProfileShowcase | null>(
+      `/gacha/profile-showcase/${encodeURIComponent(userId)}`,
+    ),
+  gachaProfileFavoriteCardIds: () =>
+    request<string[]>(`/gacha/profile/favorites`),
+  updateGachaProfileFavoriteCardIds: (userCardIds: string[]) =>
+    request<string[]>(`/gacha/profile/favorites`, {
+      method: "PATCH",
+      body: JSON.stringify({ userCardIds }),
+    }),
 
   gachaEncyclopedia: (query: string, signal?: AbortSignal) =>
     request<GachaEncyclopedia>(`/gacha/encyclopedia?${query}`, { signal }),

@@ -249,6 +249,7 @@ export interface PublicUserProfile {
   name: string | null;
   userName: string | null;
   avatar: string | null;
+  profileCover: string | null;
   bio: string | null;
   myAnimeList: string | null;
   createdAt: string;
@@ -956,6 +957,12 @@ export interface GachaCollectionResponse {
     medals: Array<{ id: string; name: string; version: number }>;
   };
   meta: { total: number; page: number; limit: number; totalPages: number };
+}
+
+export interface GachaProfileShowcase {
+  cards: GachaPull[];
+  collection: { id: string; name: string; slug: string } | null;
+  medals: Array<{ id: string; name: string; version: number }>;
 }
 
 /** Linha do ranking de colecionadores. */

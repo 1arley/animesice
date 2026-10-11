@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { api, ApiError } from "@/lib/api";
 import type {
   GachaFeatured,
+  GachaProfileShowcase,
   GachaPull,
   PublicUserProfile,
   PublicActivityEvent,
@@ -27,6 +28,7 @@ import { ProfileCollection } from "@/components/profile/ProfileCollection";
 import { ProfileGacha } from "@/components/profile/ProfileGacha";
 import { ProfileFollowList } from "@/components/profile/ProfileFollowList";
 import { ProfileWishlist } from "@/components/profile/ProfileWishlist";
+import { ProfileShowcase } from "@/components/profile/ProfileShowcase";
 
 const LIMIT = 24;
 
@@ -103,6 +105,8 @@ export default function PublicProfilePage({
   const [tabGachaHasMore, setTabGachaHasMore] = useState(false);
   const [tabGachaPrivate, setTabGachaPrivate] = useState(false);
   const [featuredCard, setFeaturedCard] = useState<GachaFeatured | null>(null);
+  const [profileShowcase, setProfileShowcase] =
+    useState<GachaProfileShowcase | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -120,6 +124,7 @@ export default function PublicProfilePage({
       setFavorites([]);
       setFavoritesTotal(0);
       setFeaturedCard(null);
+      setProfileShowcase(null);
       setTabActivity([]);
       setTabActivityTotal(0);
       setTabActivityPage(1);
@@ -167,15 +172,17 @@ export default function PublicProfilePage({
 
         // Visão geral em paralelo — sem cascata de requests.
         const uid = prof.id;
-        const [l, a, r, f, featured] = await Promise.all([
+        const [l, a, r, f, featured, showcase] = await Promise.all([
           api.getUserAnimeList(uid, 1, 100),
           api.getUserActivity(uid, 1, 8),
           api.getUserRatings(uid, 1, 4),
           api.getUserFavorites(uid, 1, 12),
           api.gachaPublicFeatured(uid).catch(() => null),
+          api.gachaProfileShowcase(uid).catch(() => null),
         ]);
         if (cancelled) return;
         setFeaturedCard(featured);
+        setProfileShowcase(showcase);
         setList(l.data ?? []);
         setListTotal(l.meta?.total ?? 0);
         setActivity(a.data ?? []);
@@ -461,9 +468,12 @@ export default function PublicProfilePage({
     <>
       <ProfileHero
         profile={profile}
+        coverImage={profile.profileCover}
         featuredCard={featuredCard}
         featuredLoading={overviewLoading}
       />
+
+      <ProfileShowcase showcase={profileShowcase} />
 
       <div id="profile-content" className="mx-auto max-w-shelf px-4 pb-16 pt-4">
         <ProfileStats counts={profile._count} onNavigate={handleNavigate} />
