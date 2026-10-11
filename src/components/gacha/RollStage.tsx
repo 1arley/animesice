@@ -6,14 +6,48 @@ import { GachaCard, GACHA_TIERS, GALAXY_TEXT, RARITY_TEXT } from "./GachaCard";
 import { CountUp } from "@/components/core/CountUp";
 import type { GachaPull } from "@/types";
 
-const PARTICLE_SLOTS = 24;
-const PARTICLE_GALAXY = ["#a78bfa", "#f472b6", "#38bdf8"];
-const MOTION = {
+export type RollAnimConfig = {
+  enterDuration: number;
+  crystalSpinAt: number;
+  crystalSpinDuration: number;
+  glowAt: number;
+  glowDuration: number;
+  skipAt: number;
+  revealAt: number;
+  crystalOutDuration: number;
+  ringSlots: number;
+  ringDuration: number;
+  ringStagger: number;
+  particleSlots: number;
+  particleDuration: number;
+  particleReach: { x: number; y: number };
+  particleGalaxy: string[];
+  effectsGap: number;
+  flipDuration: number;
+  sweepDuration: number;
+  badgeDuration: number;
+};
+
+export const DEFAULT_ROLL_ANIM_CONFIG: RollAnimConfig = {
+  enterDuration: 0.15,
+  crystalSpinAt: 0.2,
+  crystalSpinDuration: 1.2,
+  glowAt: 0.3,
+  glowDuration: 1.3,
+  skipAt: 0.6,
   revealAt: 1.8,
-  flipDelay: 0.12,
+  crystalOutDuration: 0.25,
+  ringSlots: 3,
+  ringDuration: 0.55,
+  ringStagger: 0.12,
+  particleSlots: 24,
+  particleDuration: 0.65,
+  particleReach: { x: 180, y: 230 },
+  particleGalaxy: ["#a78bfa", "#f472b6", "#38bdf8"],
+  effectsGap: 0.12,
   flipDuration: 0.48,
-  shineDuration: 1.2,
-  shineDelay: 0.9,
+  sweepDuration: 0.6,
+  badgeDuration: 0.3,
 };
 
 function tierOf(p: GachaPull | null): number {
@@ -22,31 +56,41 @@ function tierOf(p: GachaPull | null): number {
 function revealSpeed(idx: number): number {
   return idx >= 4 ? 0.85 : idx === 3 ? 1 : 1.8;
 }
-function ringCount(idx: number): number {
-  return idx >= 5 ? 3 : idx === 4 ? 2 : idx >= 3 ? 1 : 0;
+function ringCount(idx: number, maxSlots: number): number {
+  if (idx >= 5) return Math.min(3, maxSlots);
+  if (idx === 4) return Math.min(2, maxSlots);
+  if (idx >= 3) return Math.min(1, maxSlots);
+  return 0;
 }
-function particleCount(idx: number): number {
-  return idx >= 5 ? 24 : idx === 4 ? 12 : idx >= 3 ? 8 : 0;
+function particleCount(idx: number, maxSlots: number): number {
+  if (idx >= 5) return Math.min(24, maxSlots);
+  if (idx === 4) return Math.min(12, maxSlots);
+  if (idx >= 3) return Math.min(8, maxSlots);
+  return 0;
 }
 
 function animateShine(target: Element | null) {
   if (!target || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return null;
   return gsap.fromTo(target, { x: "-150%" }, {
     x: "150%",
-    duration: MOTION.shineDuration,
-    delay: MOTION.shineDelay,
+    duration: 1.2,
+    delay: 0.9,
     repeat: -1,
-    repeatDelay: MOTION.shineDelay,
+    repeatDelay: 0.9,
     ease: "none",
   });
 }
 
-export function RollStage({ pull, onClose, preview = false }: {
+interface RollStageProps {
   pull: GachaPull | null;
   onClose: () => void;
-  /** Preview de giro: carta revelada, ainda sem dono. */
   preview?: boolean;
-}) {
+  /** Configuração de animação (opcional — usa DEFAULT_ROLL_ANIM_CONFIG se omitido) */
+  config?: Partial<RollAnimConfig>;
+}
+
+export function RollStage({ pull, onClose, preview = false, config }: RollStageProps) {
+  const cfg = { ...DEFAULT_ROLL_ANIM_CONFIG, ...config };
   const dialog = useRef<HTMLDialogElement>(null);
   const timeline = useRef<gsap.core.Timeline | null>(null);
   const flipBuilder = useRef<(idx: number) => void>(() => {});
@@ -63,6 +107,15 @@ export function RollStage({ pull, onClose, preview = false }: {
       ? "text-violet-400"
       : RARITY_TEXT[pull.card.rarity] ?? "text-ice"
     : "";
+
+  const particleSlots = cfg.particleSlots;
+  const particleGalaxy = cfg.particleGalaxy;
+  const ringSlots = cfg.ringSlots;
+
+  // Derivados: o flip sobrepõe os circuitos (não espera o fim deles), como antes.
+  const flipAt = cfg.revealAt + cfg.effectsGap;
+  const flipEnd = flipAt + cfg.flipDuration;
+  const readyAt = flipEnd + cfg.badgeDuration;
 
   useEffect(() => {
     if (!revealed || !pull || pull.foil === "NORMAL") return;
@@ -88,53 +141,82 @@ export function RollStage({ pull, onClose, preview = false }: {
     const tl = gsap.timeline();
     timeline.current = tl;
     if (pull) tl.timeScale(revealSpeed(tierIndex));
+
     const buildFlip = (idx: number) => {
       const el = dialog.current?.querySelector("[data-flip]");
       if (!el) return;
       tl.killTweensOf(el);
-      tl.to(el, { rotationY: 180, scale: 0.94, duration: MOTION.flipDuration, ease: "power2.inOut" }, `reveal+=${MOTION.flipDelay}`)
+      tl.to(el, { rotationY: 180, scale: 0.94, duration: cfg.flipDuration, ease: "power2.inOut" }, flipAt)
         .to(el, { scale: 1, duration: 0.3, ease: "power2.out" }, ">");
     };
     flipBuilder.current = buildFlip;
-    tl.addLabel("reveal", MOTION.revealAt);
-    buildFlip(tierIndex);
-    // O flip já foi agendado; a entrada precisa começar no frame zero.
-    tl.from("[data-stage]", { scale: 0.94, opacity: 0, duration: 0.15 }, 0)
-      .to("[data-crystal]", { rotation: 360, scale: 1.12, duration: 1.2, ease: "power2.inOut" }, 0.2)
-      .fromTo("[data-glow]", { opacity: 0.25, scale: 1 }, { opacity: 0.8, scale: 1.25, duration: 1.3, ease: "power2.in", immediateRender: false }, 0.3)
-      .call(() => setCanSkip(true), [], 0.6)
+
+    tl.from("[data-stage]", { scale: 0.94, opacity: 0, duration: cfg.enterDuration }, 0)
+      .to("[data-crystal]", { rotation: 360, scale: 1.12, duration: cfg.crystalSpinDuration, ease: "power2.inOut" }, cfg.crystalSpinAt)
+      .fromTo("[data-glow]", { opacity: 0.25, scale: 1 }, { opacity: 0.8, scale: 1.25, duration: cfg.glowDuration, ease: "power2.in", immediateRender: false }, cfg.glowAt)
+      .call(() => setCanSkip(true), [], cfg.skipAt)
       .call(() => {
         waiting.current = true;
         if (!latestPull.current) tl.pause();
         else tl.timeScale(revealSpeed(tierOf(latestPull.current)));
-      }, [], MOTION.revealAt)
-      .to("[data-crystal]", { scale: 0, opacity: 0, duration: 0.25, ease: "back.in(2)" }, "reveal")
-      .fromTo("[data-ring]", { scale: 0.4, opacity: 0.8 }, { scale: 2, opacity: 0, duration: 0.55, stagger: 0.12, immediateRender: false }, "reveal")
+      }, [], cfg.revealAt)
+      .to("[data-crystal]", { scale: 0, opacity: 0, duration: cfg.crystalOutDuration, ease: "back.in(2)" }, cfg.revealAt)
+      .fromTo("[data-ring]", { scale: 0.4, opacity: 0.8 }, { scale: 2, opacity: 0, duration: cfg.ringDuration, stagger: cfg.ringStagger, immediateRender: false }, cfg.revealAt)
       .fromTo("[data-particle]", { x: 0, y: 0, opacity: 1 }, {
-        x: (i) => Math.cos(i * Math.PI * 2 / PARTICLE_SLOTS) * 180,
-        y: (i) => Math.sin(i * Math.PI * 2 / PARTICLE_SLOTS) * 230,
-        opacity: 0, duration: 0.65, immediateRender: false, ease: "power2.out",
-      }, "reveal")
-      .fromTo("[data-sweep]", { x: "-150%" }, { x: "150%", duration: 0.6, ease: "power1.inOut", immediateRender: false }, "reveal+=0.75")
-      .fromTo("[data-badge]", { scale: 0.3, opacity: 0 }, { scale: 1, opacity: 1, ease: "back.out(2)", duration: 0.3, immediateRender: false }, "reveal+=0.9")
-      .call(() => setRevealed(true), [], "reveal+=0.9");
+        x: (i) => Math.cos(i * Math.PI * 2 / particleSlots) * cfg.particleReach.x,
+        y: (i) => Math.sin(i * Math.PI * 2 / particleSlots) * cfg.particleReach.y,
+        opacity: 0, duration: cfg.particleDuration, immediateRender: false, ease: "power2.out",
+      }, cfg.revealAt)
+      .fromTo("[data-sweep]", { x: "-150%" }, { x: "150%", duration: cfg.sweepDuration, ease: "power1.inOut", immediateRender: false }, flipEnd)
+      .fromTo("[data-badge]", { scale: 0.3, opacity: 0 }, { scale: 1, opacity: 1, ease: "back.out(2)", duration: cfg.badgeDuration, immediateRender: false }, flipEnd)
+      .call(() => setRevealed(true), [], readyAt);
+
+    // O flip precisa existir desde o frame zero: waiting.current só vira true
+    // dentro do .call() de revealAt, ou seja, tarde demais para agendar o tween.
+    buildFlip(tierIndex);
+
     return () => { timeline.current = null; };
-  }, { scope: dialog, revertOnUpdate: true });
+  }, {
+    scope: dialog,
+    revertOnUpdate: true,
+    dependencies: [
+      cfg.enterDuration,
+      cfg.crystalSpinAt,
+      cfg.crystalSpinDuration,
+      cfg.glowAt,
+      cfg.glowDuration,
+      cfg.skipAt,
+      cfg.revealAt,
+      cfg.crystalOutDuration,
+      cfg.ringSlots,
+      cfg.ringDuration,
+      cfg.ringStagger,
+      cfg.particleSlots,
+      cfg.particleDuration,
+      cfg.particleReach.x,
+      cfg.particleReach.y,
+      cfg.effectsGap,
+      cfg.flipDuration,
+      cfg.sweepDuration,
+      cfg.badgeDuration,
+    ],
+  });
 
   useEffect(() => {
     if (!pull) return;
     const tl = timeline.current;
+    if (!tl) return;
     if (skipped.current) {
-      tl?.progress(1, true).pause();
+      tl.progress(1, true).pause();
       setRevealed(true);
-    } else if (waiting.current) {
-      flipBuilder.current(tierIndex);
-      tl?.play("reveal");
-    } else {
-      flipBuilder.current(tierIndex);
-      tl?.timeScale(revealSpeed(tierIndex));
+      return;
     }
-  }, [pull, tierIndex]);
+    tl.timeScale(revealSpeed(tierIndex));
+    if (waiting.current) {
+      flipBuilder.current(tierIndex);
+      tl.play(cfg.revealAt);
+    }
+  }, [pull, tierIndex, cfg.revealAt]);
 
   function skipOrClose() {
     if (ready) return onClose();
@@ -154,18 +236,18 @@ export function RollStage({ pull, onClose, preview = false }: {
         <h2 id="roll-title" className="font-display text-display-lg" aria-live="polite">
           {ready ? (preview ? "Prévia revelada" : "Sua carta") : "Invocando sua carta…"}
         </h2>
-        <div data-stage className={`pointer-events-auto relative w-56 max-w-[65vw] ${tierText || "text-ice"}`} style={{ perspective: 1000 }}>
+        <div data-stage className={`pointer-events-auto relative aspect-[3/4] w-56 max-w-[65vw] ${tierText || "text-ice"}`} style={{ perspective: 1000 }}>
           <>
             <div data-glow aria-hidden="true" className="absolute inset-0 rounded-full bg-current opacity-20 blur-3xl" />
-            {Array.from({ length: 3 }, (_, i) => (
+            {Array.from({ length: ringSlots }, (_, i) => (
               <div key={i} data-ring aria-hidden="true"
-                className={`absolute inset-0 rounded-full border border-current opacity-0 ${i < ringCount(tierIndex) ? "" : "hidden"}`} />
+                className={`absolute inset-0 rounded-full border border-current opacity-0 ${i < ringCount(tierIndex, ringSlots) ? "" : "hidden"}`} />
             ))}
-            {Array.from({ length: PARTICLE_SLOTS }, (_, i) => {
-              const count = particleCount(tierIndex);
-              const visible = count > 0 && i % (PARTICLE_SLOTS / count) === 0;
+            {Array.from({ length: particleSlots }, (_, i) => {
+              const count = particleCount(tierIndex, particleSlots);
+              const visible = count > 0 && i % (particleSlots / count) === 0;
               return <i key={i} data-particle aria-hidden="true"
-                style={pull?.card.rarity === "GALACTICA" ? { backgroundColor: PARTICLE_GALAXY[i % 3] } : undefined}
+                style={pull?.card.rarity === "GALACTICA" ? { backgroundColor: particleGalaxy[i % 3] } : undefined}
                 className={`absolute left-1/2 top-1/2 h-2 w-1 bg-current opacity-0 ${visible ? "" : "hidden"}`} />;
             })}
           </>

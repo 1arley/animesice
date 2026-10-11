@@ -80,6 +80,7 @@ import type {
   BlogPost,
   BlogPostInput,
 } from "@/types";
+import type { RollAnimConfig } from "@/components/gacha/RollStage";
 
 // Re-export da sanção de URL — módulo puro em url.ts; aqui por compat.
 export { isValidRemoteUrl, safeImageSrc } from "@/lib/url";
@@ -1423,6 +1424,8 @@ export const api = {
     }),
 
   // --- Gacha ---
+  gachaRollAnimation: () => request<Partial<RollAnimConfig>>("/gacha/anim-config"),
+
   gachaStatus: () => request<GachaStatus>(`/gacha/status`),
 
   gachaPoints: (page = 1, limit = 20) =>

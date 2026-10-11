@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { api, ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
-import { RollStage } from "@/components/gacha/RollStage";
+import { RollStage, type RollAnimConfig } from "@/components/gacha/RollStage";
 import { SpinPreviewCard } from "@/components/gacha/SpinPreviewCard";
 import { isValidRemoteUrl } from "@/lib/url";
 import {
@@ -145,6 +145,7 @@ function GachaPageContent() {
   // a linha lista os foils sem porcentagem, em vez de chutar um número. Mesmo
   // motivo vale para raridade e pity: saem de GachaConfig, o que o admin edita.
   const [odds, setOdds] = useState<GachaEconomyOdds | null>(null);
+  const [rollAnimation, setRollAnimation] = useState<Partial<RollAnimConfig>>();
 
   // Endpoint público: a linha de odds aparece para visitante anônimo também.
   useEffect(() => {
@@ -156,6 +157,21 @@ function GachaPageContent() {
       })
       .catch(() => {
         if (!cancelled) setOdds(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    api
+      .gachaRollAnimation()
+      .then((config) => {
+        if (!cancelled) setRollAnimation(config);
+      })
+      .catch(() => {
+        if (!cancelled) setRollAnimation(undefined);
       });
     return () => {
       cancelled = true;
@@ -486,6 +502,7 @@ function GachaPageContent() {
         <RollStage
           pull={stagePull}
           preview={stagePreview}
+          config={rollAnimation}
           onClose={() => {
             setStageOpen(false);
             setSpinResult(null);
