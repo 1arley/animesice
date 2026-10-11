@@ -30,7 +30,7 @@ export async function POST(request: Request) {
 
   const tags = body.tags ?? [];
   for (const tag of tags) {
-    revalidateTag(tag);
+    revalidateTag(tag, "max");
   }
 
   if (body.slug) {

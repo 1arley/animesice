@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
 import {
   CHUNK_ERROR_EVENT,
   CHUNK_RECOVERY_EXHAUSTED_EVENT,
@@ -64,12 +65,12 @@ export default function GlobalError({
             >
               Tentar novamente
             </button>
-            <a
+            <Link
               href="/"
               style={{ padding: "0.6rem 1.5rem", background: "transparent", color: "#F1F5F9", border: "1px solid #1F2B3E", borderRadius: "3px", cursor: "pointer", textDecoration: "none" }}
             >
               Voltar à prateleira
-            </a>
+            </Link>
           </div>
         </div>
       </body>

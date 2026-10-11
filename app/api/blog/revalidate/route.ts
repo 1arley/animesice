@@ -23,7 +23,7 @@ export async function POST() {
     return NextResponse.json({ message: "Sem permissão." }, { status: 403 });
   }
 
-  revalidateTag("blog-posts");
+  revalidateTag("blog-posts", "max");
   revalidatePath("/blog", "layout");
   revalidatePath("/sitemap.xml");
   return NextResponse.json({ revalidated: true });
