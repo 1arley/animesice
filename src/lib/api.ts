@@ -117,6 +117,7 @@ export interface User {
   bio: string | null;
   myAnimeList: string | null;
   role: string;
+  isVerified: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -1615,6 +1616,10 @@ export const api = {
     }),
   gachaEconomyClaimMission: () =>
     request("/gacha/economy/market/mission/claim", { method: "POST" }),
+  gachaNightMarketStatus: () =>
+    request<{ open: boolean; periodStart: string | null }>(
+      "/gacha/economy/night-market/status",
+    ),
   gachaEconomyShop: () => request<GachaEconomyOffer[]>("/gacha/economy/shop"),
   gachaEconomyRevealOffer: (id: string) =>
     request<{ offerId: string; revealed: boolean }>(
