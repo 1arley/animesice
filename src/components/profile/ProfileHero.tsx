@@ -27,9 +27,8 @@ const REPORT_REASONS: Array<{ value: ReportReason; label: string }> = [
 /**
  * ProfileHero — a identidade da pessoa, não um cartão de banco de dados.
  *
- * Cover: usa `.profile-cover` (gradiente derivado da identidade do site,
- * "sinal da madrugada") por padrão. Aceita `coverImage` opcional para um
- * cover personalizado no futuro — sem inventar URLs hoje.
+ * Cover: mantém o gradiente do site como fallback e aceita a capa pública
+ * personalizada do perfil.
  */
 export function ProfileHero({
   profile,

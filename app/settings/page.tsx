@@ -14,6 +14,8 @@ import { formatDate } from "@/lib/time";
 import { passwordError } from "@/lib/password";
 import { displayName } from "@/lib/displayName";
 import { Avatar } from "@/components/common/Avatar";
+import { ProfileCoverSettings } from "@/components/profile/ProfileCoverSettings";
+import { ProfileShowcaseSettings } from "@/components/profile/ProfileShowcaseSettings";
 
 const AVATAR_MAX_BYTES = 1024 * 1024;
 const AVATAR_SOURCE_MAX_BYTES = 20 * 1024 * 1024;
@@ -448,6 +450,9 @@ export default function SettingsPage() {
                 </div>
               </div>
             </section>
+
+            <ProfileCoverSettings />
+            <ProfileShowcaseSettings userId={user.id} />
 
             {/* ── Bio ── */}
             <section className="border border-hairline bg-panel p-6">
