@@ -575,6 +575,7 @@ export interface AdminGachaSkin {
   rarity: string;
   createdAt: string;
   updatedAt: string;
+  _count?: { owners: number; buyOrders: number };
   card?: Pick<AdminGachaCard, "id" | "name" | "image"> | null;
 }
 
