@@ -1712,6 +1712,7 @@ export const api = {
     imageUrl?: string;
     sourceUrl?: string | null;
     cardId?: string | null;
+    rarity?: "COMMON" | "RARE" | "EPIC" | "LEGENDARY";
     active?: boolean;
     blocked?: boolean;
   }) =>
@@ -1720,7 +1721,7 @@ export const api = {
       body: JSON.stringify(body),
     }),
   adminDeleteSkin: (id: string) =>
-    request<AdminGachaSkin>(`/gacha/admin/skins/${encodeURIComponent(id)}`, {
+    request<void>(`/gacha/admin/skins/${encodeURIComponent(id)}`, {
       method: "DELETE",
     }),
   adminGachaConfig: () =>

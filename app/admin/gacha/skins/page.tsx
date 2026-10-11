@@ -8,11 +8,18 @@ import { safeImageSrc } from "@/lib/url";
 import type { AdminGachaCard, AdminGachaSkin } from "@/types";
 
 const PAGE_SIZE = 48;
+const SKIN_RARITIES = [
+  ["COMMON", "Comum"],
+  ["RARE", "Rara"],
+  ["EPIC", "Épica"],
+  ["LEGENDARY", "Lendária"],
+] as const;
 type SkinForm = {
   name: string;
   imageUrl: string;
   sourceUrl: string;
   cardId: string;
+  rarity: string;
   active: boolean;
 };
 const EMPTY_FORM: SkinForm = {
@@ -20,12 +27,14 @@ const EMPTY_FORM: SkinForm = {
   imageUrl: "",
   sourceUrl: "",
   cardId: "",
+  rarity: "COMMON",
   active: true,
 };
 
 export default function AdminGachaSkinsPage() {
   const [skins, setSkins] = useState<AdminGachaSkin[]>([]);
   const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
@@ -34,6 +43,7 @@ export default function AdminGachaSkinsPage() {
   const [cardQuery, setCardQuery] = useState("");
   const [cardResults, setCardResults] = useState<AdminGachaCard[]>([]);
   const [saving, setSaving] = useState(false);
+  const [busySkinId, setBusySkinId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -49,7 +59,8 @@ export default function AdminGachaSkinsPage() {
         filter === "all" ? undefined : filter === "active",
       );
       setSkins(result.data);
-      setTotalPages(result.meta.totalPages);
+      setTotal(result.meta.total);
+      setTotalPages(Math.max(1, result.meta.totalPages));
     } catch (e) {
       setError(e instanceof ApiError ? e.message : "Erro ao carregar skins.");
     } finally {
@@ -79,6 +90,7 @@ export default function AdminGachaSkinsPage() {
       imageUrl: skin.imageUrl,
       sourceUrl: skin.sourceUrl ?? "",
       cardId: skin.cardId ?? "",
+      rarity: skin.rarity,
       active: skin.active,
     });
     setCardQuery(skin.card?.name ?? "");
@@ -104,8 +116,10 @@ export default function AdminGachaSkinsPage() {
         cardId: form.cardId || null,
         active: form.active,
       };
-      if (editing) await api.adminUpdateSkin(editing, body);
-      else await api.adminCreateSkin(body);
+      if (editing) {
+        const rarity = SKIN_RARITIES.find(([value]) => value === form.rarity)?.[0];
+        await api.adminUpdateSkin(editing, { ...body, rarity });
+      } else await api.adminCreateSkin(body);
       setNotice(editing ? "Skin atualizada." : "Skin criada.");
       resetForm();
       await load();
@@ -117,14 +131,37 @@ export default function AdminGachaSkinsPage() {
   }
 
   async function archive(skin: AdminGachaSkin) {
+    if (saving || busySkinId) return;
     if (!window.confirm(`Desativar “${skin.name}”? Cópias já adquiridas serão preservadas.`)) return;
     setError("");
+    setBusySkinId(skin.id);
     try {
-      await api.adminDeleteSkin(skin.id);
-      setNotice("Skin desativada; coleções e histórico foram preservados.");
+      await api.adminUpdateSkin(skin.id, { active: false });
+      setNotice("Skin desativada; as cópias existentes foram preservadas.");
       await load();
     } catch (e) {
       setError(e instanceof ApiError ? e.message : "Erro ao desativar skin.");
+    } finally {
+      setBusySkinId(null);
+    }
+  }
+
+  async function remove(skin: AdminGachaSkin) {
+    const owners = skin._count?.owners ?? 0;
+    const buyOrders = skin._count?.buyOrders ?? 0;
+    if (skin.active || owners > 0 || buyOrders > 0 || saving || busySkinId) return;
+    if (!window.confirm(`Excluir “${skin.name}” permanentemente? Esta ação não pode ser desfeita.`)) return;
+    setError("");
+    setBusySkinId(skin.id);
+    try {
+      await api.adminDeleteSkin(skin.id);
+      setNotice("Skin excluída.");
+      if (editing === skin.id) resetForm();
+      await load();
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : "Erro ao excluir skin.");
+    } finally {
+      setBusySkinId(null);
     }
   }
 
@@ -141,7 +178,7 @@ export default function AdminGachaSkinsPage() {
       </header>
       <p className="mt-2 max-w-2xl text-body-sm text-mist">
         Cadastre artes alternativas, vincule-as a uma carta e controle quais aparecem no catálogo.
-        Desativar preserva as cópias que jogadores já possuem.
+        Desativar preserva as cópias dos jogadores. Só é possível excluir skins desativadas sem cópias ou pedidos de compra associados.
       </p>
 
       {error && <p role="alert" className="mt-4 border border-signal/40 bg-signal/10 p-3 text-body-sm text-signal">{error}</p>}
@@ -154,6 +191,13 @@ export default function AdminGachaSkinsPage() {
             Nome da skin
             <input required maxLength={120} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="field-input min-h-11" />
           </label>
+          {editing && <label className="grid gap-1 text-body-sm text-mist" htmlFor="skin-rarity">
+            Raridade
+            <select id="skin-rarity" value={SKIN_RARITIES.some(([value]) => value === form.rarity) ? form.rarity : ""} onChange={(e) => setForm({ ...form, rarity: e.target.value })} className="field-input min-h-11">
+              {!SKIN_RARITIES.some(([value]) => value === form.rarity) && <option value="">Manter valor atual: {form.rarity}</option>}
+              {SKIN_RARITIES.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+            </select>
+          </label>}
           <label className="grid gap-1 text-body-sm text-mist">
             URL da imagem (HTTPS)
             <input required type="url" pattern="https://.*" value={form.imageUrl} onChange={(e) => setForm({ ...form, imageUrl: e.target.value })} className="field-input min-h-11" />
@@ -177,8 +221,8 @@ export default function AdminGachaSkinsPage() {
             Ativa no catálogo
           </label>
           <div className="flex flex-wrap items-center gap-2 md:col-span-2">
-            <button type="submit" disabled={saving} className="btn-primary min-h-11 px-5">{saving ? "Salvando…" : editing ? "Salvar alterações" : "Criar skin"}</button>
-            {editing && <button type="button" onClick={resetForm} className="btn-ghost min-h-11 px-4">Cancelar edição</button>}
+            <button type="submit" disabled={saving || busySkinId !== null} className="btn-primary min-h-11 px-5">{saving ? "Salvando…" : editing ? "Salvar alterações" : "Criar skin"}</button>
+            {editing && <button type="button" disabled={busySkinId !== null} onClick={resetForm} className="btn-ghost min-h-11 px-4">Cancelar edição</button>}
           </div>
         </form>
       </section>
@@ -187,7 +231,7 @@ export default function AdminGachaSkinsPage() {
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <h2 id="skin-list-title" className="font-display text-title text-snow">Catálogo</h2>
-            <p className="mt-1 text-caption text-mist">{loading ? "Carregando skins…" : `${skins.length} nesta página`}</p>
+            <p className="mt-1 text-caption text-mist">{loading ? "Carregando skins…" : `${total} resultado${total === 1 ? "" : "s"} · ${skins.length} nesta página`}</p>
           </div>
           <div className="flex flex-wrap gap-2">
             <label className="sr-only" htmlFor="skin-search">Buscar skins</label>
@@ -199,7 +243,10 @@ export default function AdminGachaSkinsPage() {
           </div>
         </div>
         {loading ? <div aria-busy="true" aria-label="Carregando catálogo" className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">{Array.from({ length: 8 }, (_, i) => <div key={i} className="h-64 animate-pulse bg-panel" />)}</div> : skins.length === 0 ? (
-          <p role="status" className="mt-4 border border-hairline p-8 text-center text-body-sm text-mist">Nenhuma skin encontrada.</p>
+          <div className="mt-4 border border-hairline p-8 text-center text-body-sm text-mist">
+            <p role="status">Nenhuma skin encontrada.</p>
+            {(search || filter !== "all") && <button type="button" onClick={() => { setSearch(""); setFilter("all"); setPage(1); }} className="btn-ghost mt-3 min-h-11 px-4">Limpar busca e filtros</button>}
+          </div>
         ) : (
           <ul className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
             {skins.map((skin) => <li key={skin.id} className="overflow-hidden border border-hairline bg-panel">
@@ -210,9 +257,16 @@ export default function AdminGachaSkinsPage() {
               <div className="p-3">
                 <h3 className="truncate font-display text-body-md text-snow" title={skin.name}>{skin.name}</h3>
                 <p className="mt-1 truncate text-caption text-mist">{skin.card?.name ?? "Sem personagem vinculado"}</p>
-                <div className="mt-3 flex gap-2">
-                  <button type="button" onClick={() => startEdit(skin)} className="btn-ghost min-h-10 flex-1 px-2 text-caption">Editar</button>
-                  {skin.active && <button type="button" onClick={() => void archive(skin)} className="min-h-10 border border-signal/40 px-3 text-caption text-signal hover:bg-signal/10">Desativar</button>}
+                <p className="mt-1 text-caption text-mist">Raridade: {SKIN_RARITIES.find(([value]) => value === skin.rarity)?.[1] ?? skin.rarity}</p>
+                <p className="mt-1 text-caption text-mist">{skin._count?.owners ?? 0} cópias · {skin._count?.buyOrders ?? 0} pedidos de compra</p>
+                {!skin.active && ((skin._count?.owners ?? 0) > 0 || (skin._count?.buyOrders ?? 0) > 0) && <p className="mt-1 text-caption text-signal">Não pode excluir: existem cópias ou pedidos associados.</p>}
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <button type="button" disabled={busySkinId !== null || saving} onClick={() => startEdit(skin)} className="btn-ghost min-h-11 flex-1 px-2 text-caption">Editar</button>
+                  {skin.active ? (
+                    <button type="button" disabled={busySkinId !== null || saving} onClick={() => void archive(skin)} className="min-h-11 border border-signal/40 px-3 text-caption text-signal hover:bg-signal/10 disabled:opacity-50">{busySkinId === skin.id ? "Desativando…" : "Desativar"}</button>
+                  ) : (
+                    <button type="button" disabled={busySkinId !== null || saving || (skin._count?.owners ?? 0) > 0 || (skin._count?.buyOrders ?? 0) > 0} title={(skin._count?.owners ?? 0) > 0 || (skin._count?.buyOrders ?? 0) > 0 ? "Não é possível excluir: existem cópias ou pedidos de compra associados." : undefined} onClick={() => void remove(skin)} className="min-h-11 border border-signal/40 px-3 text-caption text-signal hover:bg-signal/10 disabled:cursor-not-allowed disabled:opacity-50">{busySkinId === skin.id ? "Excluindo…" : "Excluir"}</button>
+                  )}
                 </div>
               </div>
             </li>)}
