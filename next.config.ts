@@ -42,11 +42,7 @@ const nextConfig: NextConfig = {
   output: "standalone",
   outputFileTracingRoot: process.cwd(),
   images: {
-    // Servir as imagens remotas diretamente evita que todas as capas passem
-    // por /_next/image. Em provedores que cobram/limitam transformacoes esse
-    // endpoint responde 402 quando a cota acaba, deixando o catalogo sem arte.
-    // Os componentes continuam fornecendo `sizes`, lazy loading e dimensoes.
-    unoptimized: true,
+    unoptimized: false,
     remotePatterns: [
       { protocol: "https", hostname: "cdn.myanimelist.net" },
       { protocol: "https", hostname: "**.myanimelist.net" },
@@ -56,9 +52,7 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "svuaszdqsgztnetefcex.supabase.co" },
     ],
     formats: ["image/avif", "image/webp"],
-    // Mantém explícitos os níveis já usados pelos componentes. É inerte com
-    // `unoptimized`, mas evita incompatibilidade ao migrar para Next 16 ou
-    // reativar um otimizador/CDN no futuro.
+    // Permite os valores de `quality` usados pelos componentes.
     qualities: [60, 80, 85, 100],
     minimumCacheTTL: 60 * 60 * 24 * 60, // 60 dias
     // Breakpoints alinhados ao layout: cards ~16vw mobile, ~200px desktop;
