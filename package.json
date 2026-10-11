@@ -8,8 +8,9 @@
     "check:chunk-recovery": "node scripts/check-chunk-recovery-build.mjs",
     "check:gacha-foils": "node scripts/check-gacha-foils.mjs",
     "check:roll-anim-config": "node scripts/check-roll-anim-config.mjs",
+    "check:roll-anim-source": "node scripts/check-roll-anim-source.mjs",
     "render:gacha": "node scripts/remotion/render-gacha.mjs",
-    "predev": "npm run check:gacha-foils && npm run check:roll-anim-config",
+    "predev": "npm run check:gacha-foils && npm run check:roll-anim-config && npm run check:roll-anim-source",
     "start": "next start",
     "test:e2e": "playwright test",
     "lint": "next lint",
@@ -31,6 +32,7 @@
     "react-dom": "^19.0.0",
     "remotion": "^4.0.534",
     "socket.io-client": "^4.8.3",
+    "sucrase": "^3.35.0",
     "three": "^0.186.1"
   },
   "devDependencies": {
