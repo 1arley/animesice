@@ -68,6 +68,12 @@
       "computedHash": "6b92ffbe225bdd877e1245e843c5b79f1e37f7ab40d3f802937044f6aee29d20",
       "wellKnownDigest": "sha256:b117db775a77c436d7e46c2eeb1602de40f5f0256214cf6a9dc2bb056ddffd9d"
     },
+    "laws-of-ui": {
+      "source": "1arley/laws-of-ui-skill",
+      "sourceType": "github",
+      "skillPath": "skills/laws-of-ui/SKILL.md",
+      "computedHash": "dbe9e06bf76b483a1523e94e70ff4cd0c5c003b504d21d00dcb5f1c1aeb17fd8"
+    },
     "laws-of-ux": {
       "source": "1arley/laws-of-ux-skill",
       "sourceType": "github",
