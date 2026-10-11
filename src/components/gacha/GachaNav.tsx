@@ -21,11 +21,11 @@ const MARKET_CLOCK = new Intl.DateTimeFormat("en-CA", {
 
 const items = {
   spin: { href: "/gacha", label: "Girar", icon: "spin" },
-  skins: { href: "/gacha/skins", label: "Skins" },
+  skins: { href: "/gacha/skins", label: "Girar skins" },
   cards: { href: "/gacha/cartas", label: "Minhas cartas", icon: "cards" },
   encyclopedia: { href: "/gacha/enciclopedia", label: "Enciclopédia" },
   wishlist: { href: "/gacha/wishlist", label: "Wishlist" },
-  cosmetics: { href: "/gacha/colecao", label: "Cosméticos" },
+  cosmetics: { href: "/gacha/colecao", label: "Skins e cosméticos" },
   market: { href: "/gacha/mercado", label: "Mercado", icon: "market" },
   nightMarket: {
     href: NIGHT_MARKET_HREF,

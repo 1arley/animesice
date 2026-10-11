@@ -63,6 +63,7 @@ import type {
   GachaFeatured,
   GachaProfileShowcase,
   GachaSkinsResponse,
+  GachaSkinSpinActivity,
   GachaSkin,
   GachaBoxTier,
   GachaEconomyInventory,
@@ -1795,6 +1796,8 @@ export const api = {
     request<GachaSkinsResponse>(
       `/gacha/skins?page=${page}&limit=${limit}&search=${encodeURIComponent(search)}`,
     ),
+  gachaRecentSkinSpins: () =>
+    request<GachaSkinSpinActivity[]>(`/gacha/skins/recent`),
   gachaSkinSpin: () =>
     request<{
       skin: GachaSkin;
