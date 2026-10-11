@@ -17,7 +17,11 @@ import {
   GachaPageSkeleton,
   GachaPanelGridSkeleton,
 } from "@/components/gacha/GachaPageSkeleton";
-import type { GachaEncyclopedia, GachaEncyclopediaOwner } from "@/types";
+import type {
+  GachaEncyclopedia,
+  GachaEncyclopediaOwner,
+  GachaSkinsResponse,
+} from "@/types";
 
 function CardOwners({
   cardId,
@@ -121,7 +125,7 @@ function CardOwners({
   );
 }
 
-function Encyclopedia() {
+function CardEncyclopedia() {
   const params = useSearchParams();
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
@@ -260,6 +264,20 @@ function Encyclopedia() {
           className={`${view === "sets" ? "btn-ice" : "btn-ghost"} px-4 py-3`}
         >
           Completar conjuntos
+        </Link>
+        <Link
+          href={href({
+            view: "skins",
+            animeId: "",
+            title: "",
+            progress: "",
+            rarity: "",
+            ownership: "",
+            search: "",
+          })}
+          className="btn-ghost px-4 py-3"
+        >
+          Explorar skins
         </Link>
       </nav>
       {animeId && (
@@ -509,6 +527,188 @@ function Encyclopedia() {
       )}
     </main>
   );
+}
+
+function SkinCatalog() {
+  const params = useSearchParams();
+  const router = useRouter();
+  const rawPage = Number(params.get("page") ?? 1);
+  const page =
+    Number.isInteger(rawPage) && rawPage > 0 && rawPage <= 100000 ? rawPage : 1;
+  const search = (params.get("search") ?? "").slice(0, 100);
+  const [typedSearch, setTypedSearch] = useState(search);
+  const [result, setResult] = useState<{
+    key: string;
+    data?: GachaSkinsResponse;
+    error?: string;
+  } | null>(null);
+  const [retry, setRetry] = useState(0);
+  const requestKey = `${page}:${search}`;
+  const data = result?.key === requestKey ? result.data : undefined;
+  const error = result?.key === requestKey ? result.error : undefined;
+
+  useEffect(() => setTypedSearch(search), [search]);
+  useEffect(() => {
+    let cancelled = false;
+    setResult(null);
+    void api.gachaSkins(page, 48, search).then(
+      (data) => {
+        if (!cancelled) setResult({ key: requestKey, data });
+      },
+      () => {
+        if (!cancelled)
+          setResult({
+            key: requestKey,
+            error: "Não foi possível carregar o catálogo de skins.",
+          });
+      },
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, [page, requestKey, retry, search]);
+
+  function href(changes: Record<string, string>) {
+    const next = new URLSearchParams(params.toString());
+    next.delete("page");
+    for (const [key, value] of Object.entries(changes)) {
+      if (value) next.set(key, value);
+      else next.delete(key);
+    }
+    return `/gacha/enciclopedia?${next}`;
+  }
+
+  return (
+    <main id="body-content" className="mx-auto max-w-shelf px-4 pb-24 pt-8">
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 className="font-display text-display-lg text-snow">
+            Enciclopédia
+          </h1>
+          <p className="mt-2 text-body-sm text-mist">
+            Consulte as skins e veja quais já fazem parte da sua coleção.
+          </p>
+        </div>
+        <Link href="/gacha/skins" className="btn-ghost min-h-11 px-4 py-3">
+          Girar skins
+        </Link>
+      </div>
+      <nav
+        aria-label="Visão da enciclopédia"
+        className="mt-8 flex flex-wrap gap-3"
+      >
+        <Link href="/gacha/enciclopedia?view=cards" className="btn-ghost px-4 py-3">
+          Explorar cartas
+        </Link>
+        <Link href="/gacha/enciclopedia?view=sets" className="btn-ghost px-4 py-3">
+          Completar conjuntos
+        </Link>
+        <Link
+          href="/gacha/enciclopedia?view=skins"
+          aria-current="page"
+          className="btn-ice px-4 py-3"
+        >
+          Explorar skins
+        </Link>
+      </nav>
+      <form
+        key={search}
+        onSubmit={(event) => {
+          event.preventDefault();
+          const values = new FormData(event.currentTarget);
+          router.push(
+            href({ search: String(values.get("search") ?? "").trim() }),
+          );
+        }}
+        className="mt-6 flex flex-wrap gap-3"
+      >
+        <SearchField
+          aria-label="Buscar skin por nome"
+          name="search"
+          maxLength={100}
+          value={typedSearch}
+          onChange={(event) => setTypedSearch(event.target.value)}
+          placeholder="Buscar skin por nome…"
+          containerClassName="min-w-0 flex-1"
+        />
+        <button className="btn-ice min-h-11 px-4" type="submit">
+          Buscar
+        </button>
+      </form>
+      {error ? (
+        <div role="alert" className="mt-8 text-signal">
+          <p>{error}</p>
+          <button
+            type="button"
+            onClick={() => setRetry((value) => value + 1)}
+            className="btn-ghost mt-3 min-h-11 px-4"
+          >
+            Tentar novamente
+          </button>
+        </div>
+      ) : !data ? (
+        <GachaCardGridSkeleton label="Carregando skins" className="mt-8" />
+      ) : (
+        <>
+          <p role="status" className="mt-6 text-body-sm text-mist">
+            {data.meta.total.toLocaleString("pt-BR")} skins no catálogo
+          </p>
+          <div aria-live="polite">
+            {data.skins.length === 0 ? (
+              <p className="mt-6 border border-hairline bg-panel p-6 text-center text-body-sm text-mist">
+                Nenhuma skin encontrada. Tente outro nome.
+              </p>
+            ) : (
+              <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
+                {data.skins.map((skin) => (
+                  <article
+                    key={skin.id}
+                    className={`overflow-hidden border bg-panel ${skin.owned ? "border-ice/50" : "border-hairline"}`}
+                  >
+                    <div className="relative aspect-square bg-ink">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={skin.imageUrl}
+                        alt={skin.name}
+                        width={320}
+                        height={320}
+                        loading="lazy"
+                        decoding="async"
+                        className="h-full w-full object-cover"
+                      />
+                    </div>
+                    <div className="p-3">
+                      <h2 className="line-clamp-2 min-h-10 text-body-sm text-snow">
+                        {skin.name}
+                      </h2>
+                      <p className="mt-2 text-caption text-mist">
+                        {skin.equipped
+                          ? "Equipado"
+                          : skin.owned
+                            ? "Na sua coleção"
+                            : "Ainda não possui"}
+                      </p>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            )}
+          </div>
+          <PaginationControls
+            page={page}
+            totalPages={data.meta.totalPages}
+            onPageChange={(target) => router.push(href({ page: String(target) }))}
+            label="Paginação do catálogo de skins"
+          />
+        </>
+      )}
+    </main>
+  );
+}
+
+function Encyclopedia() {
+  const params = useSearchParams();
+  return params.get("view") === "skins" ? <SkinCatalog /> : <CardEncyclopedia />;
 }
 
 export default function EncyclopediaPage() {
