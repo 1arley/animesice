@@ -7,6 +7,7 @@ import { api, ApiError } from "@/lib/api";
 import { isPrivileged } from "@/lib/role";
 import { formatDateTime } from "@/lib/time";
 import { Modal as SharedModal } from "@/components/common/Modal";
+import { PaginationControls } from "@/components/ui/PaginationControls";
 import type { AdminUserListItem } from "@/lib/api";
 import type { Paginated } from "@/types";
 
@@ -229,19 +230,12 @@ export default function AdminUsersPage() {
             </table>
           </div>
 
-          {totalPages > 1 && (
-            <nav className="mt-6 flex items-center justify-center gap-3" aria-label="Paginação">
-              <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page <= 1} className="btn-ghost disabled:opacity-40 disabled:cursor-not-allowed">
-                ← Anterior
-              </button>
-              <span className="font-display text-body-sm text-mist tabular-nums">
-                {page} / {totalPages}
-              </span>
-              <button onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page >= totalPages} className="btn-ghost disabled:opacity-40 disabled:cursor-not-allowed">
-                Próxima →
-              </button>
-            </nav>
-          )}
+          <PaginationControls
+            page={page}
+            totalPages={totalPages}
+            onPageChange={setPage}
+            label="Paginação de usuários"
+          />
         </>
       )}
 

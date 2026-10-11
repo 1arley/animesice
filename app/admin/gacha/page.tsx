@@ -5,6 +5,7 @@ import Link from "next/link";
 import { api, ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { useToast } from "@/components/common/ToastProvider";
+import { PaginationControls } from "@/components/ui/PaginationControls";
 import type {
   AdminGachaCard,
   GachaEngagementPilotDashboard,
@@ -974,24 +975,12 @@ export default function AdminGachaPage() {
               </div>
             ))}
           </div>
-          {cardMeta.totalPages > 1 && (
-            <div className="mt-3 flex items-center justify-between">
-              <button
-                className="admin-tab"
-                disabled={cardMeta.page <= 1}
-                onClick={() => gotoCardPage(cardMeta.page - 1)}
-              >
-                Anterior
-              </button>
-              <button
-                className="admin-tab"
-                disabled={cardMeta.page >= cardMeta.totalPages}
-                onClick={() => gotoCardPage(cardMeta.page + 1)}
-              >
-                Próxima
-              </button>
-            </div>
-          )}
+          <PaginationControls
+            page={cardMeta.page}
+            totalPages={cardMeta.totalPages}
+            onPageChange={gotoCardPage}
+            label="Paginação de cartas"
+          />
         </div>
         <div className="border border-hairline bg-panel p-4">
           <h2 className="font-display text-display-lg text-snow">Usuário</h2>
@@ -1067,28 +1056,14 @@ export default function AdminGachaPage() {
                   </div>
                 ))}
               </div>
-              {userCardsMeta.totalPages > 1 && (
-                <div className="mt-3 flex items-center justify-between">
-                  <button
-                    className="admin-tab"
-                    disabled={userCardsMeta.page <= 1}
-                    onClick={() =>
-                      void loadUserCards(selectedUser, userCardsMeta.page - 1)
-                    }
-                  >
-                    Anterior
-                  </button>
-                  <button
-                    className="admin-tab"
-                    disabled={userCardsMeta.page >= userCardsMeta.totalPages}
-                    onClick={() =>
-                      void loadUserCards(selectedUser, userCardsMeta.page + 1)
-                    }
-                  >
-                    Próxima
-                  </button>
-                </div>
-              )}
+              <PaginationControls
+                page={userCardsMeta.page}
+                totalPages={userCardsMeta.totalPages}
+                onPageChange={(target) =>
+                  void loadUserCards(selectedUser, target)
+                }
+                label="Paginação das cartas do usuário"
+              />
             </>
           )}
         </div>

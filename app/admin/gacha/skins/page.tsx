@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { api, ApiError } from "@/lib/api";
 import { safeImageSrc } from "@/lib/url";
+import { PaginationControls } from "@/components/ui/PaginationControls";
 import type { AdminGachaCard, AdminGachaSkin } from "@/types";
 
 const PAGE_SIZE = 48;
@@ -273,11 +274,13 @@ export default function AdminGachaSkinsPage() {
             </li>)}
           </ul>
         )}
-        <nav aria-label="Paginação de skins" className="mt-5 flex items-center justify-center gap-3">
-          <button type="button" disabled={page <= 1 || loading} onClick={() => setPage((value) => value - 1)} className="btn-ghost min-h-11 px-4">Anterior</button>
-          <span aria-live="polite" className="text-body-sm text-mist">Página {page} de {totalPages}</span>
-          <button type="button" disabled={page >= totalPages || loading} onClick={() => setPage((value) => value + 1)} className="btn-ghost min-h-11 px-4">Próxima</button>
-        </nav>
+        <PaginationControls
+          page={page}
+          totalPages={totalPages}
+          onPageChange={setPage}
+          label="Paginação de skins"
+          busy={loading}
+        />
       </section>
     </div>
   );

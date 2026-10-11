@@ -1,5 +1,8 @@
 "use client";
 
+import { paginationSlots } from "@/lib/pagination";
+import { PAGINATION_CLASSES } from "@/components/ui/paginationStyles";
+
 /**
  * PaginationControls — navegação por páginas para listas paginadas no cliente.
  *
@@ -7,29 +10,6 @@
  * destino é uma URL. Aqui a página vive em estado React, então o controle é um
  * botão que dispara `onPageChange` e mantém o foco na navegação.
  */
-
-/** Janela de páginas com elipses: 1 … 4 5 6 … 20 */
-function pageWindow(page: number, totalPages: number): (number | "gap")[] {
-  if (totalPages <= 7) {
-    return Array.from({ length: totalPages }, (_, index) => index + 1);
-  }
-  const pages = new Set<number>([1, totalPages, page]);
-  for (const offset of [-1, 1]) {
-    const candidate = page + offset;
-    if (candidate > 1 && candidate < totalPages) pages.add(candidate);
-  }
-  const sorted = [...pages].sort((a, b) => a - b);
-  const result: (number | "gap")[] = [];
-  let previous = 0;
-  for (const value of sorted) {
-    if (previous && value - previous > 1) {
-      result.push(value - previous === 2 ? previous + 1 : "gap");
-    }
-    result.push(value);
-    previous = value;
-  }
-  return result;
-}
 
 export function PaginationControls({
   page,
@@ -56,25 +36,27 @@ export function PaginationControls({
   return (
     <nav
       aria-label={label}
-      className="mt-8 flex flex-wrap items-center justify-center gap-2"
+      className={PAGINATION_CLASSES.nav}
     >
       <button
         type="button"
         onClick={() => go(page - 1)}
         disabled={busy || page <= 1}
-        className="btn-ghost min-h-11 px-4 disabled:opacity-40"
+        aria-label="Página anterior"
+        className={`${PAGINATION_CLASSES.arrow} disabled:cursor-not-allowed disabled:opacity-30`}
       >
-        <span aria-hidden="true">←</span> Anterior
+        ←
       </button>
 
-      {pageWindow(page, totalPages).map((entry, index) =>
-        entry === "gap" ? (
+      {paginationSlots(page, totalPages).map((entry, index) =>
+        entry === "…" ? (
           <span
+            // eslint-disable-next-line react/no-array-index-key
             key={`gap-${index}`}
             aria-hidden="true"
-            className="px-1 text-body-sm text-mist"
+            className={PAGINATION_CLASSES.ellipsis}
           >
-            …
+            {entry}
           </span>
         ) : (
           <button
@@ -83,12 +65,8 @@ export function PaginationControls({
             onClick={() => go(entry)}
             disabled={busy}
             aria-current={entry === page ? "page" : undefined}
-            aria-label={`Página ${entry}`}
-            className={
-              entry === page
-                ? "btn-ice min-h-11 min-w-11 px-3"
-                : "btn-ghost min-h-11 min-w-11 px-3 disabled:opacity-40"
-            }
+            aria-label={`Ir para a página ${entry}`}
+            className={`${PAGINATION_CLASSES.page} ${entry === page ? PAGINATION_CLASSES.currentPage : `${PAGINATION_CLASSES.otherPage} disabled:opacity-40`}`}
           >
             {entry}
           </button>
@@ -99,9 +77,10 @@ export function PaginationControls({
         type="button"
         onClick={() => go(page + 1)}
         disabled={busy || page >= totalPages}
-        className="btn-ghost min-h-11 px-4 disabled:opacity-40"
+        aria-label="Próxima página"
+        className={`${PAGINATION_CLASSES.arrow} disabled:cursor-not-allowed disabled:opacity-30`}
       >
-        Próxima <span aria-hidden="true">→</span>
+        →
       </button>
 
       <span aria-live="polite" className="sr-only">
