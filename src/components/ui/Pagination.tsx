@@ -1,11 +1,7 @@
-/**
- * Pagination — navegação anterior/próxima com contador.
- * Fonte única: /lancamentos, /buscar e admin usavam markup duplicado.
- *
- * Os destinos são rotas server-rendered. Links HTML deliberados evitam uma
- * transição RSC concorrente ser perdida e preservam abertura em nova aba,
- * histórico e fallback sem JavaScript.
- */
+import { paginationSlots } from "@/lib/pagination";
+import { PAGINATION_CLASSES } from "@/components/ui/paginationStyles";
+
+/** Paginação numérica para rotas cujo destino é uma URL. */
 export function Pagination({
   page,
   totalPages,
@@ -18,24 +14,67 @@ export function Pagination({
   if (totalPages <= 1) return null;
 
   return (
-    <nav className="mt-8 flex items-center gap-3" aria-label="Paginação">
+    <nav
+      className={PAGINATION_CLASSES.nav}
+      aria-label="Paginação"
+    >
       {page > 1 ? (
-        <a href={hrefFor(page - 1)} className="btn-ghost">
-          ← Anterior
+        <a
+          href={hrefFor(page - 1)}
+          aria-label="Página anterior"
+          className={PAGINATION_CLASSES.arrow}
+        >
+          ←
         </a>
       ) : (
-        <span className="btn-ghost opacity-40">← Anterior</span>
+        <span
+          aria-hidden="true"
+          className={`${PAGINATION_CLASSES.arrow} opacity-30`}
+        >
+          ←
+        </span>
       )}
-      <span className="font-mono text-body-sm text-mist tabular-nums">
-        {page} / {totalPages}
-      </span>
+      {paginationSlots(page, totalPages).map((entry, index) =>
+        entry === "…" ? (
+          <span
+            // eslint-disable-next-line react/no-array-index-key
+            key={`gap-${index}`}
+            aria-hidden="true"
+            className={PAGINATION_CLASSES.ellipsis}
+          >
+            …
+          </span>
+        ) : (
+          <a
+            key={entry}
+            href={hrefFor(entry)}
+            aria-label={`Ir para a página ${entry}`}
+            aria-current={entry === page ? "page" : undefined}
+            className={`${PAGINATION_CLASSES.page} ${entry === page ? PAGINATION_CLASSES.currentPage : PAGINATION_CLASSES.otherPage}`}
+          >
+            {entry}
+          </a>
+        ),
+      )}
       {page < totalPages ? (
-        <a href={hrefFor(page + 1)} className="btn-ghost">
-          Próxima →
+        <a
+          href={hrefFor(page + 1)}
+          aria-label="Próxima página"
+          className={PAGINATION_CLASSES.arrow}
+        >
+          →
         </a>
       ) : (
-        <span className="btn-ghost opacity-40">Próxima →</span>
+        <span
+          aria-hidden="true"
+          className={`${PAGINATION_CLASSES.arrow} opacity-30`}
+        >
+          →
+        </span>
       )}
+      <span aria-live="polite" className="sr-only">
+        Página {page} de {totalPages}
+      </span>
     </nav>
   );
 }

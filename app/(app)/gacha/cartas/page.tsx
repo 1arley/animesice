@@ -12,7 +12,7 @@ import {
 import { CardPreview } from "@/components/gacha/CardPreview";
 import { GachaCardGridSkeleton, GachaPageSkeleton } from "@/components/gacha/GachaPageSkeleton";
 import { CardsFilterBar } from "@/components/gacha/CardsFilterBar";
-import { CardsPagination } from "@/components/gacha/CardsPagination";
+import { PaginationControls } from "@/components/ui/PaginationControls";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import { useToast } from "@/components/common/ToastProvider";
@@ -557,10 +557,12 @@ export default function GachaCollectionPage() {
         ))}
 
       {/* Paginação numérica */}
-      <CardsPagination
+      <PaginationControls
         page={page}
-        pages={pages}
+        totalPages={pages}
         onPageChange={handlePageChange}
+        label="Paginação da coleção"
+        busy={loading}
       />
     </main>
   );

@@ -10,6 +10,7 @@ import { safeImageSrc } from "@/lib/url";
 import { GACHA_TIERS, RARITY } from "@/components/gacha/GachaCard";
 import { WishlistButton } from "@/components/gacha/WishlistButton";
 import { Modal } from "@/components/common/Modal";
+import { PaginationControls } from "@/components/ui/PaginationControls";
 import {
   GachaCardGridSkeleton,
   GachaPageSkeleton,
@@ -488,32 +489,12 @@ function Encyclopedia() {
               })}
             </div>
           )}
-          {data.meta.totalPages > 1 && (
-            <nav
-              aria-label="Paginação da enciclopédia"
-              className="mt-8 flex flex-wrap items-center gap-4"
-            >
-              {page > 1 && (
-                <Link
-                  href={href({ page: String(page - 1) })}
-                  className="btn-ghost px-4 py-3"
-                >
-                  Anterior
-                </Link>
-              )}
-              <span className="text-body-sm text-mist">
-                Página {page} de {data.meta.totalPages}
-              </span>
-              {page < data.meta.totalPages && (
-                <Link
-                  href={href({ page: String(page + 1) })}
-                  className="btn-ghost px-4 py-3"
-                >
-                  Próxima
-                </Link>
-              )}
-            </nav>
-          )}
+          <PaginationControls
+            page={page}
+            totalPages={data.meta.totalPages}
+            onPageChange={(target) => router.push(href({ page: String(target) }))}
+            label="Paginação da enciclopédia"
+          />
           {data.meta.total > 0 &&
             data.cards.length === 0 &&
             data.sets.length === 0 && (

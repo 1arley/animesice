@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { AnimeCard } from "@/components/common/AnimeCard";
+import { Pagination } from "@/components/ui/Pagination";
 import type { GenreAnimesResponse } from "@/types";
 import { serverFetchJson } from "@/lib/api-server";
 import { parsePage } from "@/lib/page";
@@ -135,21 +136,11 @@ export default async function GenrePage({
             ))}
           </div>
 
-          <nav className="mt-8 flex items-center gap-3" aria-label="Paginação">
-            {page > 1 ? (
-              <a href={`/generos/${slug}?page=${page - 1}`} className="btn-ghost">← Anterior</a>
-            ) : (
-              <span className="btn-ghost opacity-40">← Anterior</span>
-            )}
-            <span className="font-mono text-body-sm text-mist tabular-nums">
-              {page} / {meta.totalPages}
-            </span>
-            {page < meta.totalPages ? (
-              <a href={`/generos/${slug}?page=${page + 1}`} className="btn-ghost">Próxima →</a>
-            ) : (
-              <span className="btn-ghost opacity-40">Próxima →</span>
-            )}
-          </nav>
+          <Pagination
+            page={page}
+            totalPages={meta.totalPages}
+            hrefFor={(target) => `/generos/${slug}?page=${target}`}
+          />
         </>
       )}
     </div>

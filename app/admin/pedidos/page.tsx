@@ -5,6 +5,7 @@ import { useAuth } from "@/lib/auth-context";
 import { api, ApiError } from "@/lib/api";
 import { isPrivileged } from "@/lib/role";
 import { Modal as SharedModal } from "@/components/common/Modal";
+import { PaginationControls } from "@/components/ui/PaginationControls";
 import type { AnimeRequestItem, Paginated, FeedbackStatus } from "@/types";
 
 const PAGE_SIZE = 20;
@@ -163,27 +164,12 @@ export default function AdminPedidosPage() {
         </div>
       )}
 
-      {totalPages > 1 && (
-        <nav className="mt-6 flex items-center justify-center gap-3" aria-label="Paginação">
-          <button
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
-            disabled={page <= 1}
-            className="btn-ghost disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            ← Anterior
-          </button>
-          <span className="font-display text-body-sm text-mist tabular-nums">
-            {page} / {totalPages}
-          </span>
-          <button
-            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-            disabled={page >= totalPages}
-            className="btn-ghost disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            Próxima →
-          </button>
-        </nav>
-      )}
+      <PaginationControls
+        page={page}
+        totalPages={totalPages}
+        onPageChange={setPage}
+        label="Paginação de pedidos"
+      />
 
       {actionModal && (
         <SharedModal

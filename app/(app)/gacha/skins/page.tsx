@@ -7,6 +7,7 @@ import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
 import { useToast } from "@/components/common/ToastProvider";
 import { SkinReveal } from "@/components/gacha/SkinReveal";
 import { GachaPageSkeleton } from "@/components/gacha/GachaPageSkeleton";
+import { PaginationControls } from "@/components/ui/PaginationControls";
 import type { GachaSkin, GachaSkinsResponse } from "@/types";
 
 const PAGE_LIMIT = 48;
@@ -271,29 +272,13 @@ export default function GachaSkinsPage() {
             </div>
           )}
         </div>
-        {totalPages > 1 && (
-          <div className="mt-6 flex items-center justify-center gap-3">
-            <button
-              type="button"
-              disabled={loading || currentPage === 1}
-              onClick={() => void load(currentPage - 1)}
-              className="btn-ghost disabled:opacity-40"
-            >
-              Anterior
-            </button>
-            <span className="text-sm text-mist">
-              Página {currentPage} de {totalPages}
-            </span>
-            <button
-              type="button"
-              disabled={loading || currentPage === totalPages}
-              onClick={() => void load(currentPage + 1)}
-              className="btn-ghost disabled:opacity-40"
-            >
-              Próxima
-            </button>
-          </div>
-        )}
+        <PaginationControls
+          page={currentPage}
+          totalPages={totalPages}
+          onPageChange={(target) => void load(target)}
+          label="Paginação das skins"
+          busy={loading}
+        />
       </section>
       <p className="mt-8 text-xs text-mist">
         <Link href="/gacha" className="text-ice underline">
