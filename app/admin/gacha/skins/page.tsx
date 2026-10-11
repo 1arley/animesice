@@ -2,9 +2,10 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { api, ApiError } from "@/lib/api";
 import { safeImageSrc } from "@/lib/url";
+import { useToast } from "@/components/common/ToastProvider";
 import { PaginationControls } from "@/components/ui/PaginationControls";
 import { SearchField } from "@/components/ui/SearchField";
 import type { AdminGachaCard, AdminGachaSkin } from "@/types";
@@ -34,6 +35,7 @@ const EMPTY_FORM: SkinForm = {
 };
 
 export default function AdminGachaSkinsPage() {
+  const { toast } = useToast();
   const [skins, setSkins] = useState<AdminGachaSkin[]>([]);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
@@ -48,7 +50,7 @@ export default function AdminGachaSkinsPage() {
   const [busySkinId, setBusySkinId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [notice, setNotice] = useState("");
+  const editorRef = useRef<HTMLDialogElement>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -85,8 +87,15 @@ export default function AdminGachaSkinsPage() {
     return () => clearTimeout(timer);
   }, [cardQuery]);
 
+  useEffect(() => {
+    if (editing && editorRef.current && !editorRef.current.open) {
+      editorRef.current.showModal();
+    }
+  }, [editing]);
+
   function startEdit(skin: AdminGachaSkin) {
     setEditing(skin.id);
+    setError("");
     setForm({
       name: skin.name,
       imageUrl: skin.imageUrl,
@@ -96,10 +105,10 @@ export default function AdminGachaSkinsPage() {
       active: skin.active,
     });
     setCardQuery(skin.card?.name ?? "");
-    setNotice("");
   }
 
   function resetForm() {
+    if (editorRef.current?.open) editorRef.current.close();
     setEditing(null);
     setForm(EMPTY_FORM);
     setCardQuery("");
@@ -122,7 +131,7 @@ export default function AdminGachaSkinsPage() {
         const rarity = SKIN_RARITIES.find(([value]) => value === form.rarity)?.[0];
         await api.adminUpdateSkin(editing, { ...body, rarity });
       } else await api.adminCreateSkin(body);
-      setNotice(editing ? "Skin atualizada." : "Skin criada.");
+      toast(editing ? "Skin atualizada." : "Skin criada.", "success");
       resetForm();
       await load();
     } catch (e) {
@@ -139,10 +148,10 @@ export default function AdminGachaSkinsPage() {
     setBusySkinId(skin.id);
     try {
       await api.adminUpdateSkin(skin.id, { active: false });
-      setNotice("Skin desativada; as cópias existentes foram preservadas.");
+      toast("Skin desativada; as cópias existentes foram preservadas.", "success");
       await load();
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : "Erro ao desativar skin.");
+      toast(e instanceof ApiError ? e.message : "Erro ao desativar skin.");
     } finally {
       setBusySkinId(null);
     }
@@ -157,18 +166,65 @@ export default function AdminGachaSkinsPage() {
     setBusySkinId(skin.id);
     try {
       await api.adminDeleteSkin(skin.id);
-      setNotice("Skin excluída.");
+      toast("Skin excluída.", "success");
       if (editing === skin.id) resetForm();
       if (skins.length === 1 && page > 1) setPage((current) => current - 1);
       else await load();
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : "Erro ao excluir skin.");
+      toast(e instanceof ApiError ? e.message : "Erro ao excluir skin.");
     } finally {
       setBusySkinId(null);
     }
   }
 
   const selectedCard = cardResults.find((card) => card.id === form.cardId);
+  const skinForm = (isEditing: boolean) => (
+    <form onSubmit={(event) => void save(event)} className="mt-4 grid gap-4 md:grid-cols-2">
+      <label className="grid gap-1 text-body-sm text-mist">
+        Nome da skin
+        <input autoFocus={isEditing} required maxLength={120} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="field-input min-h-11" />
+      </label>
+      {isEditing && <label className="grid gap-1 text-body-sm text-mist" htmlFor="skin-rarity">
+        Raridade
+        <select id="skin-rarity" value={SKIN_RARITIES.some(([value]) => value === form.rarity) ? form.rarity : ""} onChange={(e) => setForm({ ...form, rarity: e.target.value })} className="field-input min-h-11">
+          {!SKIN_RARITIES.some(([value]) => value === form.rarity) && <option value="">Manter valor atual: {form.rarity}</option>}
+          {SKIN_RARITIES.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+        </select>
+      </label>}
+      <label className="grid gap-1 text-body-sm text-mist">
+        URL da imagem (HTTPS)
+        <input required type="url" pattern="https://.*" value={form.imageUrl} onChange={(e) => setForm({ ...form, imageUrl: e.target.value })} className="field-input min-h-11" />
+      </label>
+      <label className="grid gap-1 text-body-sm text-mist">
+        Fonte da imagem (opcional)
+        <input type="url" pattern="https://.*" value={form.sourceUrl} onChange={(e) => setForm({ ...form, sourceUrl: e.target.value })} className="field-input min-h-11" />
+      </label>
+      <div className="grid gap-1 text-body-sm text-mist">
+        <label htmlFor="skin-card-search">Carta/personagem (opcional)</label>
+        <SearchField
+          id="skin-card-search"
+          value={cardQuery}
+          onChange={(e) => { setCardQuery(e.target.value); setForm({ ...form, cardId: "" }); }}
+          placeholder="Buscar por nome da carta"
+          containerClassName="w-full"
+        />
+        {form.cardId && <p className="text-caption text-ice">Vínculo selecionado: {selectedCard?.name ?? cardQuery}</p>}
+        {cardResults.length > 0 && !form.cardId && (
+          <ul className="max-h-48 overflow-auto border border-hairline bg-void" aria-label="Resultados de cartas">
+            {cardResults.map((card) => <li key={card.id}><button type="button" onClick={() => { setForm({ ...form, cardId: card.id }); setCardQuery(card.name); setCardResults([]); }} className="min-h-11 w-full px-3 text-left hover:bg-panel focus-visible:outline focus-visible:outline-2 focus-visible:outline-ice">{card.name}</button></li>)}
+          </ul>
+        )}
+      </div>
+      <label className="flex min-h-11 items-center gap-3 text-body-sm text-snow">
+        <input type="checkbox" checked={form.active} onChange={(e) => setForm({ ...form, active: e.target.checked })} className="h-5 w-5 accent-ice" />
+        Ativa no catálogo
+      </label>
+      <div className="flex flex-wrap items-center gap-2 md:col-span-2">
+        <button type="submit" disabled={saving || busySkinId !== null} className="btn-primary min-h-11 px-5">{saving ? "Salvando…" : isEditing ? "Salvar alterações" : "Criar skin"}</button>
+        {isEditing && <button type="button" disabled={saving} onClick={resetForm} className="btn-ghost min-h-11 px-4">Cancelar edição</button>}
+      </div>
+    </form>
+  );
 
   return (
     <div className="mx-auto max-w-7xl">
@@ -184,57 +240,29 @@ export default function AdminGachaSkinsPage() {
         Desativar preserva as cópias dos jogadores. Só é possível excluir skins desativadas sem cópias ou pedidos de compra associados.
       </p>
 
-      {error && <p role="alert" className="mt-4 border border-signal/40 bg-signal/10 p-3 text-body-sm text-signal">{error}</p>}
-      {notice && <p role="status" className="mt-4 border border-ice/30 bg-ice/5 p-3 text-body-sm text-ice">{notice}</p>}
+      {error && !editing && <p role="alert" className="mt-4 border border-signal/40 bg-signal/10 p-3 text-body-sm text-signal">{error}</p>}
 
-      <section aria-labelledby="skin-form-title" className="mt-6 border border-hairline bg-panel p-4 sm:p-6">
-        <h2 id="skin-form-title" className="font-display text-title text-snow">{editing ? "Editar skin" : "Adicionar skin"}</h2>
-        <form onSubmit={(event) => void save(event)} className="mt-4 grid gap-4 md:grid-cols-2">
-          <label className="grid gap-1 text-body-sm text-mist">
-            Nome da skin
-            <input required maxLength={120} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="field-input min-h-11" />
-          </label>
-          {editing && <label className="grid gap-1 text-body-sm text-mist" htmlFor="skin-rarity">
-            Raridade
-            <select id="skin-rarity" value={SKIN_RARITIES.some(([value]) => value === form.rarity) ? form.rarity : ""} onChange={(e) => setForm({ ...form, rarity: e.target.value })} className="field-input min-h-11">
-              {!SKIN_RARITIES.some(([value]) => value === form.rarity) && <option value="">Manter valor atual: {form.rarity}</option>}
-              {SKIN_RARITIES.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-            </select>
-          </label>}
-          <label className="grid gap-1 text-body-sm text-mist">
-            URL da imagem (HTTPS)
-            <input required type="url" pattern="https://.*" value={form.imageUrl} onChange={(e) => setForm({ ...form, imageUrl: e.target.value })} className="field-input min-h-11" />
-          </label>
-          <label className="grid gap-1 text-body-sm text-mist">
-            Fonte da imagem (opcional)
-            <input type="url" pattern="https://.*" value={form.sourceUrl} onChange={(e) => setForm({ ...form, sourceUrl: e.target.value })} className="field-input min-h-11" />
-          </label>
-          <div className="grid gap-1 text-body-sm text-mist">
-            <label htmlFor="skin-card-search">Carta/personagem (opcional)</label>
-            <SearchField
-              id="skin-card-search"
-              value={cardQuery}
-              onChange={(e) => { setCardQuery(e.target.value); setForm({ ...form, cardId: "" }); }}
-              placeholder="Buscar por nome da carta"
-              containerClassName="w-full"
-            />
-            {form.cardId && <p className="text-caption text-ice">Vínculo selecionado: {selectedCard?.name ?? cardQuery}</p>}
-            {cardResults.length > 0 && !form.cardId && (
-              <ul className="max-h-48 overflow-auto border border-hairline bg-void" aria-label="Resultados de cartas">
-                {cardResults.map((card) => <li key={card.id}><button type="button" onClick={() => { setForm({ ...form, cardId: card.id }); setCardQuery(card.name); setCardResults([]); }} className="min-h-11 w-full px-3 text-left hover:bg-panel focus-visible:outline focus-visible:outline-2 focus-visible:outline-ice">{card.name}</button></li>)}
-              </ul>
-            )}
-          </div>
-          <label className="flex min-h-11 items-center gap-3 text-body-sm text-snow">
-            <input type="checkbox" checked={form.active} onChange={(e) => setForm({ ...form, active: e.target.checked })} className="h-5 w-5 accent-ice" />
-            Ativa no catálogo
-          </label>
-          <div className="flex flex-wrap items-center gap-2 md:col-span-2">
-            <button type="submit" disabled={saving || busySkinId !== null} className="btn-primary min-h-11 px-5">{saving ? "Salvando…" : editing ? "Salvar alterações" : "Criar skin"}</button>
-            {editing && <button type="button" disabled={busySkinId !== null} onClick={resetForm} className="btn-ghost min-h-11 px-4">Cancelar edição</button>}
-          </div>
-        </form>
+      {!editing && <section aria-labelledby="skin-form-title" className="mt-6 border border-hairline bg-panel p-4 sm:p-6">
+        <h2 id="skin-form-title" className="font-display text-title text-snow">Adicionar skin</h2>
+        {skinForm(false)}
       </section>
+      }
+
+      {editing && <dialog
+        ref={editorRef}
+        onClose={resetForm}
+        aria-labelledby="skin-editor-title"
+        className="m-auto max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-3xl overflow-y-auto border border-hairline bg-panel p-0 text-snow backdrop:bg-void/80"
+      >
+        <section className="p-4 sm:p-6">
+          <div className="flex items-center justify-between gap-3">
+            <h2 id="skin-editor-title" className="font-display text-title text-snow">Editar skin</h2>
+            <button type="button" onClick={resetForm} className="btn-ghost min-h-11 px-4">Fechar</button>
+          </div>
+          {error && <p role="alert" className="mt-4 border border-signal/40 bg-signal/10 p-3 text-body-sm text-signal">{error}</p>}
+          {skinForm(true)}
+        </section>
+      </dialog>}
 
       <section aria-labelledby="skin-list-title" className="mt-8">
         <div className="flex flex-wrap items-end justify-between gap-3">
