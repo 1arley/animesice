@@ -7,8 +7,6 @@ import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
 import { useToast } from "@/components/common/ToastProvider";
 import { SkinReveal } from "@/components/gacha/SkinReveal";
 import { GachaPageSkeleton } from "@/components/gacha/GachaPageSkeleton";
-import { PaginationControls } from "@/components/ui/PaginationControls";
-import { SearchField } from "@/components/ui/SearchField";
 import type { GachaSkin, GachaSkinsResponse } from "@/types";
 
 const PAGE_LIMIT = 48;
@@ -25,46 +23,35 @@ function countdown(target: string | null): string | null {
 export default function GachaSkinsPage() {
   const reduceMotion = usePrefersReducedMotion();
   const [data, setData] = useState<GachaSkinsResponse | null>(null);
-  const [catalog, setCatalog] = useState<GachaSkin[]>([]);
   const [busy, setBusy] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [search, setSearch] = useState("");
   const [revealedSkin, setRevealedSkin] = useState<GachaSkin | null>(null);
   const [error, setError] = useState("");
-  const [tick, setTick] = useState(0);
+  const [, setTick] = useState(0);
   const { toast } = useToast();
 
-  const load = useCallback(
-    async (page: number, term = search) => {
-      setLoading(true);
-      setError("");
-      try {
-        const res = await api.gachaSkins(page, PAGE_LIMIT, term);
-        const owned = res.owned ?? res.skins.filter((s) => s.owned);
-        const meta = res.meta ?? {
-          total: res.skins.length,
-          page: 1,
-          limit: res.skins.length,
-          totalPages: 1,
-        };
-        setData({ ...res, owned, meta });
-        setCatalog(res.skins);
-      } catch (e: unknown) {
-        setError(
-          e instanceof ApiError
-            ? e.message
-            : "Não foi possível carregar skins.",
-        );
-      } finally {
-        setLoading(false);
-      }
-    },
-    [search],
-  );
+  const load = useCallback(async () => {
+    setError("");
+    try {
+      const res = await api.gachaSkins(1, PAGE_LIMIT);
+      const owned = res.owned ?? res.skins.filter((s) => s.owned);
+      const meta = res.meta ?? {
+        total: res.skins.length,
+        page: 1,
+        limit: res.skins.length,
+        totalPages: 1,
+      };
+      setData({ ...res, owned, meta });
+    } catch (e: unknown) {
+      setError(
+        e instanceof ApiError
+          ? e.message
+          : "Não foi possível carregar skins.",
+      );
+    }
+  }, []);
 
   useEffect(() => {
-    const timeout = window.setTimeout(() => void load(1), 300);
-    return () => window.clearTimeout(timeout);
+    void load();
   }, [load]);
   useEffect(() => {
     const id = window.setInterval(() => setTick((v) => v + 1), 30000);
@@ -73,8 +60,6 @@ export default function GachaSkinsPage() {
 
   const remaining = countdown(data?.nextSpinAt ?? null);
   const owned = data?.owned ?? [];
-  const totalPages = data?.meta.totalPages ?? 1;
-  const currentPage = data?.meta.page ?? 1;
 
   async function spin() {
     if (!data?.canSpin || busy) return;
@@ -93,9 +78,6 @@ export default function GachaSkinsPage() {
               owned: [fresh, ...prev.owned.filter((s) => s.id !== fresh.id)],
             }
           : prev,
-      );
-      setCatalog((prev) =>
-        prev.map((s) => (s.id === fresh.id ? { ...s, ...fresh } : s)),
       );
       setRevealedSkin(fresh);
     } catch (e) {
@@ -123,9 +105,6 @@ export default function GachaSkinsPage() {
             }
           : prev,
       );
-      setCatalog((prev) =>
-        prev.map((s) => ({ ...s, equipped: s.id === res.equippedSkinId })),
-      );
       toast(skin ? "Skin equipada." : "Skin removida.", "success");
     } catch (e) {
       setError(
@@ -142,7 +121,7 @@ export default function GachaSkinsPage() {
         <p role="alert" className="mb-4 text-sm text-red-300">
           {error}
         </p>
-        <button type="button" className="btn-ice" onClick={() => void load(1)}>
+        <button type="button" className="btn-ice" onClick={() => void load()}>
           Tentar de novo
         </button>
       </main>
@@ -190,6 +169,12 @@ export default function GachaSkinsPage() {
           <p className="text-sm text-mist">
             O giro é gratuito e volta a ficar disponível após o tempo indicado.
           </p>
+          <Link
+            href="/gacha/enciclopedia?view=skins"
+            className="mt-3 inline-flex min-h-11 items-center text-sm text-ice underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-ice"
+          >
+            Explorar catálogo ({data.meta.total.toLocaleString("pt-BR")})
+          </Link>
         </div>
         <button
           type="button"
@@ -209,22 +194,23 @@ export default function GachaSkinsPage() {
           {error}
         </p>
       )}
-      {owned.length > 0 && (
-        <section className="mb-10">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="font-display text-xl text-ice">
-              Sua coleção ({owned.length})
-            </h2>
-            {owned.some((s) => s.equipped) && (
-              <button
-                type="button"
-                className="btn-ghost text-sm"
-                onClick={() => void equip(null)}
-              >
-                Usar meu avatar
-              </button>
-            )}
-          </div>
+      <section className="mb-10" aria-labelledby="owned-skins-heading">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <h2 id="owned-skins-heading" className="font-display text-xl text-ice">
+            Sua coleção ({owned.length})
+          </h2>
+          {owned.some((s) => s.equipped) && (
+            <button
+              type="button"
+              className="btn-ghost min-h-11 px-3 text-sm"
+              onClick={() => void equip(null)}
+              disabled={busy}
+            >
+              Usar meu avatar
+            </button>
+          )}
+        </div>
+        {owned.length > 0 ? (
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
             {owned.map((skin) => (
               <SkinTile
@@ -235,50 +221,11 @@ export default function GachaSkinsPage() {
               />
             ))}
           </div>
-        </section>
-      )}
-      <section>
-        <div className="mb-4 flex flex-wrap items-end justify-between gap-4">
-          <h2 className="font-display text-xl text-ice">
-            Catálogo ({data.meta.total.toLocaleString("pt-BR")})
-          </h2>
-          <label className="w-full sm:w-72">
-            <span className="sr-only">Buscar skin</span>
-            <SearchField
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              name="skin-search"
-              autoComplete="off"
-              placeholder="Buscar por nome…"
-              containerClassName="w-full"
-            />
-          </label>
-        </div>
-        <div aria-live="polite" aria-busy={loading}>
-          {catalog.length === 0 ? (
-            <p className="border border-hairline bg-panel p-6 text-center text-sm text-mist">
-              Nenhuma skin encontrada. Tente outro nome.
-            </p>
-          ) : (
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-              {catalog.map((skin) => (
-                <SkinTile
-                  key={skin.id}
-                  skin={skin}
-                  busy={busy}
-                  onEquip={() => void equip(skin)}
-                />
-              ))}
-            </div>
-          )}
-        </div>
-        <PaginationControls
-          page={currentPage}
-          totalPages={totalPages}
-          onPageChange={(target) => void load(target)}
-          label="Paginação das skins"
-          busy={loading}
-        />
+        ) : (
+          <p className="border border-dashed border-hairline p-5 text-body-sm text-mist">
+            Você ainda não tem skins. Faça o giro semanal para começar sua coleção.
+          </p>
+        )}
       </section>
       <p className="mt-8 text-xs text-mist">
         <Link href="/gacha" className="text-ice underline">
@@ -319,9 +266,10 @@ function SkinTile({
         {skin.owned ? (
           <button
             type="button"
-            disabled={busy}
+            disabled={busy || skin.equipped}
+            aria-pressed={skin.equipped}
             onClick={onEquip}
-            className="mt-2 text-xs uppercase tracking-wider text-mist hover:text-ice"
+            className="mt-2 inline-flex min-h-11 items-center px-2 text-xs uppercase tracking-wider text-mist hover:text-ice focus-visible:outline focus-visible:outline-2 focus-visible:outline-ice disabled:cursor-default disabled:opacity-70"
           >
             {skin.equipped ? "Equipado" : "Equipar"}
           </button>
