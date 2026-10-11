@@ -6,6 +6,7 @@ import { api, ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { useToast } from "@/components/common/ToastProvider";
 import { PaginationControls } from "@/components/ui/PaginationControls";
+import { SearchField } from "@/components/ui/SearchField";
 import type {
   AdminGachaCard,
   GachaEngagementPilotDashboard,
@@ -717,15 +718,15 @@ export default function AdminGachaPage() {
               <label className="text-caption text-mist" htmlFor="card-anime-search">
                 Buscar anime
               </label>
-              <input
+              <SearchField
                 id="card-anime-search"
-                className="field"
                 autoComplete="off"
                 placeholder="Título, título japonês ou id do MAL"
                 value={animeQuery}
                 onChange={(e) => setAnimeQuery(e.target.value)}
                 aria-describedby="card-anime-status"
                 aria-controls="card-anime-select"
+                containerClassName="w-full"
               />
               <p
                 id="card-anime-status"
@@ -836,12 +837,12 @@ export default function AdminGachaPage() {
             </div>
           </form>
           <div className="mt-4 grid gap-2 sm:grid-cols-[minmax(0,1fr)_10rem_9rem]">
-            <input
-              className="field flex-1"
+            <SearchField
               placeholder="Buscar personagem"
               aria-label="Buscar personagem"
               value={cardSearch}
               onChange={(e) => onCardSearch(e.target.value)}
+              containerClassName="w-full"
             />
             <select
               className="field"
@@ -984,12 +985,12 @@ export default function AdminGachaPage() {
         </div>
         <div className="border border-hairline bg-panel p-4">
           <h2 className="font-display text-display-lg text-snow">Usuário</h2>
-          <input
-            className="field mt-4"
+          <SearchField
             placeholder="Buscar usuário"
             aria-label="Buscar usuário"
             value={search}
             onChange={(e) => onUserSearch(e.target.value)}
+            containerClassName="mt-4 w-full"
           />
           <div className="mt-2 space-y-1">
             {users.map((user) => (

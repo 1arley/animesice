@@ -11,6 +11,7 @@ import { GACHA_TIERS, RARITY } from "@/components/gacha/GachaCard";
 import { WishlistButton } from "@/components/gacha/WishlistButton";
 import { Modal } from "@/components/common/Modal";
 import { PaginationControls } from "@/components/ui/PaginationControls";
+import { SearchField } from "@/components/ui/SearchField";
 import {
   GachaCardGridSkeleton,
   GachaPageSkeleton,
@@ -292,16 +293,15 @@ function Encyclopedia() {
         }}
         className="mt-6 flex flex-wrap gap-3"
       >
-        <input
+        <SearchField
           aria-label="Buscar personagem ou anime"
           name="search"
-          type="search"
           maxLength={100}
           value={typedSearch}
           onChange={(event) => setTypedSearch(event.target.value)}
           list="encyclopedia-suggestions"
           placeholder="Personagem ou anime"
-          className="min-w-0 flex-1 border border-hairline bg-panel p-3 text-snow"
+          containerClassName="min-w-0 flex-1"
         />
         <datalist id="encyclopedia-suggestions">
           {suggestions.map((item) => (

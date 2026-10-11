@@ -8,6 +8,7 @@ import { GachaCard } from "@/components/gacha/GachaCard";
 import { GachaRowsSkeleton } from "@/components/gacha/GachaPageSkeleton";
 import { Modal } from "@/components/common/Modal";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { SearchField } from "@/components/ui/SearchField";
 import { SectionLabel } from "@/components/common/SectionLabel";
 import { useToast } from "@/components/common/ToastProvider";
 import type { GachaPull, GachaTrade, PublicUserProfile } from "@/types";
@@ -787,12 +788,14 @@ setError("Você não tem Cristais disponíveis suficientes para oferecer.");
           >
             <label className="text-body-sm text-mist">
               Nome de usuário
-              <input
+              <SearchField
+                icon={false}
                 value={userName}
                 onChange={(event) => setUserName(event.target.value)}
                 placeholder="Ex.: sakura"
                 autoComplete="off"
-                className="field mt-2 min-h-11 w-full"
+                className="mt-2"
+                containerClassName="w-full"
               />
             </label>
             <button

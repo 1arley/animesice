@@ -8,6 +8,7 @@ import { useToast } from "@/components/common/ToastProvider";
 import { SkinReveal } from "@/components/gacha/SkinReveal";
 import { GachaPageSkeleton } from "@/components/gacha/GachaPageSkeleton";
 import { PaginationControls } from "@/components/ui/PaginationControls";
+import { SearchField } from "@/components/ui/SearchField";
 import type { GachaSkin, GachaSkinsResponse } from "@/types";
 
 const PAGE_LIMIT = 48;
@@ -243,14 +244,13 @@ export default function GachaSkinsPage() {
           </h2>
           <label className="w-full sm:w-72">
             <span className="sr-only">Buscar skin</span>
-            <input
+            <SearchField
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               name="skin-search"
               autoComplete="off"
               placeholder="Buscar por nome…"
-              className="min-h-11 w-full border border-hairline bg-panel px-3 py-2 text-sm text-ice outline-none focus-visible:border-ice focus-visible:ring-2 focus-visible:ring-ice/40"
-              type="search"
+              containerClassName="w-full"
             />
           </label>
         </div>

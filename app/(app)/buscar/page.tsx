@@ -1,5 +1,6 @@
 import { AnimeCard } from "@/components/common/AnimeCard";
 import { Pagination } from "@/components/ui/Pagination";
+import { SearchField } from "@/components/ui/SearchField";
 import { EmptyState } from "@/components/ui/EmptyState";
 import {
   animeFormatLabel,
@@ -186,14 +187,12 @@ export default async function SearchPage({
               <legend className="mb-2 font-mono text-caption uppercase tracking-wider text-mist">
                 Busca
               </legend>
-              <input
-                type="search"
+              <SearchField
                 name="q"
                 defaultValue={q}
                 placeholder="Título..."
                 aria-label="Buscar por título"
                 maxLength={100}
-                className="field"
               />
             </fieldset>
 

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { api, ApiError } from "@/lib/api";
+import { SearchField } from "@/components/ui/SearchField";
 import type { Anime } from "@/types";
 
 export default function AdminImportPage() {
@@ -72,8 +73,8 @@ export default function AdminImportPage() {
             <span className="mb-1.5 block font-sans text-caption uppercase tracking-wider text-mist">
               Termo de busca
             </span>
-            <input
-              className="field"
+            <SearchField
+              icon={false}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="ex: Frieren"

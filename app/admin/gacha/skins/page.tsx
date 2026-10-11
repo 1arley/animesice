@@ -6,6 +6,7 @@ import { useCallback, useEffect, useState } from "react";
 import { api, ApiError } from "@/lib/api";
 import { safeImageSrc } from "@/lib/url";
 import { PaginationControls } from "@/components/ui/PaginationControls";
+import { SearchField } from "@/components/ui/SearchField";
 import type { AdminGachaCard, AdminGachaSkin } from "@/types";
 
 const PAGE_SIZE = 48;
@@ -210,7 +211,13 @@ export default function AdminGachaSkinsPage() {
           </label>
           <div className="grid gap-1 text-body-sm text-mist">
             <label htmlFor="skin-card-search">Carta/personagem (opcional)</label>
-            <input id="skin-card-search" value={cardQuery} onChange={(e) => { setCardQuery(e.target.value); setForm({ ...form, cardId: "" }); }} placeholder="Buscar por nome da carta" className="field-input min-h-11" />
+            <SearchField
+              id="skin-card-search"
+              value={cardQuery}
+              onChange={(e) => { setCardQuery(e.target.value); setForm({ ...form, cardId: "" }); }}
+              placeholder="Buscar por nome da carta"
+              containerClassName="w-full"
+            />
             {form.cardId && <p className="text-caption text-ice">Vínculo selecionado: {selectedCard?.name ?? cardQuery}</p>}
             {cardResults.length > 0 && !form.cardId && (
               <ul className="max-h-48 overflow-auto border border-hairline bg-void" aria-label="Resultados de cartas">
@@ -237,7 +244,13 @@ export default function AdminGachaSkinsPage() {
           </div>
           <div className="flex flex-wrap gap-2">
             <label className="sr-only" htmlFor="skin-search">Buscar skins</label>
-            <input id="skin-search" type="search" value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} placeholder="Buscar por nome" className="field-input min-h-11" />
+            <SearchField
+              id="skin-search"
+              value={search}
+              onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+              placeholder="Buscar por nome"
+              containerClassName="min-w-0 flex-1"
+            />
             <label className="sr-only" htmlFor="skin-status">Estado</label>
             <select id="skin-status" value={filter} onChange={(e) => { setFilter(e.target.value); setPage(1); }} className="field-input min-h-11">
               <option value="all">Todas</option><option value="active">Ativas</option><option value="inactive">Desativadas</option>

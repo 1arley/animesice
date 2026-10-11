@@ -6,6 +6,7 @@ import { useAuth } from "@/lib/auth-context";
 import { api, ApiError } from "@/lib/api";
 import { isPrivileged } from "@/lib/role";
 import { PaginationControls } from "@/components/ui/PaginationControls";
+import { SearchField } from "@/components/ui/SearchField";
 import type { Anime, Paginated } from "@/types";
 
 type AdminAnime = Anime & { _count: { episodes: number } };
@@ -84,7 +85,13 @@ export default function AdminCatalogoPage() {
         <h2 className="shelf-label">
           Animes <span className="shelf-label-data">{total}</span>
         </h2>
-        <input type="search" placeholder="Buscar por título ou slug…" aria-label="Buscar por título ou slug" value={search} onChange={(e) => handleSearchChange(e.target.value)} className="w-full border border-hairline bg-panel px-3 py-2.5 text-body-sm text-snow placeholder:text-mist focus:border-ice focus:outline-none sm:ml-auto sm:max-w-xs" />
+        <SearchField
+          placeholder="Buscar por título ou slug…"
+          aria-label="Buscar por título ou slug"
+          value={search}
+          onChange={(e) => handleSearchChange(e.target.value)}
+          containerClassName="w-full sm:ml-auto sm:max-w-xs"
+        />
       </div>
 
       {error ? (
