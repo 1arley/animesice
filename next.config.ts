@@ -7,6 +7,11 @@ import type { NextConfig } from "next";
  * `script-src https:` + os hosts explicitos, o bloqueio continua para http
  * e para recursos nao-HTTPS; os vetores de XSS mais criticos (object-src,
  * base-uri, frame-ancestors, form-action) permanecem fechados.
+ *
+ * `'unsafe-eval'` existe por causa do /admin/gacha/animacao: a aba "Código"
+ * compila o arquivo da animação colado pelo dev e roda via `new Function`
+ * (src/lib/compile-component.ts). É gated por SUPERADMIN + código salvo só
+ * passa por compilação antes de gravar. Sem isso, o recurso não funciona em prod.
  */
 const isDev = process.env.NODE_ENV !== "production";
 const localConnect =
@@ -16,7 +21,7 @@ const localConnect =
 
 const cspHeader = `
   default-src 'self';
-  script-src 'self' 'unsafe-inline' https: https://al5sm.com https://static.cloudflareinsights.com https://challenges.cloudflare.com https://www.googletagmanager.com https://www.google-analytics.com;
+  script-src 'self' 'unsafe-inline' 'unsafe-eval' https: https://al5sm.com https://static.cloudflareinsights.com https://challenges.cloudflare.com https://www.googletagmanager.com https://www.google-analytics.com;
   style-src 'self' 'unsafe-inline' data: https: https://fonts.googleapis.com;
   img-src 'self' blob: data: https: https://cdn.myanimelist.net https://*.myanimelist.net https://meusanimes.blog https://*.meusanimes.blog https://svuaszdqsgztnetefcex.supabase.co https://*.anilist.co;
   font-src 'self' data: https: https://fonts.gstatic.com;

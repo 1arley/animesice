@@ -11,6 +11,7 @@ import {
   parseRollAnimJson,
   type RollAnimConfig,
 } from "@/components/gacha/RollStage";
+import { CodeStagePreview, type CompileStatus } from "@/components/gacha/CodeStagePreview";
 import type { GachaPull } from "@/types";
 
 /** [raridade, foil, valor] — um sample por tier pra ver cada etapa da animação. */
@@ -23,6 +24,8 @@ const SAMPLES: Array<[string, string, number]> = [
   ["MITICA", "PRISM", 1000],
   ["GALACTICA", "PRISM", 5000],
 ];
+
+const ANIM_FILE = "src/components/gacha/RollStage.tsx";
 
 const SAMPLE_PULLS: GachaPull[] = SAMPLES.map(([rarity, foil, value]) => ({
   id: `preview-${rarity}`,
@@ -195,6 +198,10 @@ export default function AdminGachaAnimacaoPage() {
   const [previewOpen, setPreviewOpen] = useState(false);
   const [jsonText, setJsonText] = useState(() => JSON.stringify(DEFAULT_ROLL_ANIM_CONFIG, null, 2));
   const [jsonError, setJsonError] = useState("");
+  const [tab, setTab] = useState<"config" | "codigo">("config");
+  const [source, setSource] = useState<string | null>(null);
+  const [codeStatus, setCodeStatus] = useState<CompileStatus>({ state: "idle" });
+  const [runId, setRunId] = useState(0);
   /** Evita reformatar a textarea (e roubar o cursor) quando quem mudou a config foi ela. */
   const fromText = useRef(false);
   const { toast } = useToast();
@@ -202,6 +209,16 @@ export default function AdminGachaAnimacaoPage() {
   const canEdit = user?.role === "SUPERADMIN";
 
   const currentPull = useMemo(() => SAMPLE_PULLS[previewIndex], [previewIndex]);
+  const compileLabel =
+    codeStatus.state === "compiling"
+      ? "compilando…"
+      : codeStatus.state === "ok"
+        ? "compila"
+        : codeStatus.state === "error"
+          ? "erro de compilação"
+          : source === null
+            ? "nada carregado"
+            : "";
 
   useEffect(() => {
     async function load() {
@@ -224,6 +241,40 @@ export default function AdminGachaAnimacaoPage() {
   function handleChange(key: string, value: unknown) {
     fromText.current = false;
     setConfig((prev) => ({ ...prev, [key]: value }));
+  }
+
+  async function loadSource() {
+    setLoading(true);
+    try {
+      const response = await fetch("/api/admin/gacha/anim-source");
+      const data = (await response.json()) as { source?: string; message?: string };
+      if (!response.ok || !data.source) throw new Error(data.message ?? "Não consegui ler o arquivo.");
+      setSource(data.source);
+      toast("Arquivo carregado.", "success");
+    } catch (e) {
+      toast(e instanceof Error ? e.message : "Erro ao carregar o arquivo.", "error");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function saveSource() {
+    if (source === null) return;
+    setSaving(true);
+    try {
+      const response = await fetch("/api/admin/gacha/anim-source", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ source }),
+      });
+      const data = (await response.json()) as { message?: string };
+      if (!response.ok) throw new Error(data.message ?? "Não consegui salvar.");
+      toast("Arquivo salvo. Commite e faça deploy pra valer no site.", "success");
+    } catch (e) {
+      toast(e instanceof Error ? e.message : "Erro ao salvar o arquivo.", "error");
+    } finally {
+      setSaving(false);
+    }
   }
 
   // Espelho da config em JSON. Só reformata quando a mudança veio dos campos.
@@ -353,11 +404,32 @@ export default function AdminGachaAnimacaoPage() {
         </p>
       )}
 
+      <div role="tablist" aria-label="Modo de edição" className="mt-6 flex gap-1 border-b border-hairline">
+        {(["config", "codigo"] as const).map((value) => (
+          <button
+            key={value}
+            role="tab"
+            type="button"
+            id={`roll-anim-tab-${value}`}
+            aria-selected={tab === value}
+            aria-controls={`roll-anim-panel-${value}`}
+            onClick={() => setTab(value)}
+            className={`min-h-11 px-4 font-mono text-xs uppercase tracking-widest ${
+              tab === value ? "border-b-2 border-ice text-ice" : "text-mist hover:text-snow"
+            }`}
+          >
+            {value === "config" ? "Configuração" : "Código (arquivo inteiro)"}
+          </button>
+        ))}
+      </div>
+
       {loading ? (
         <div className="skeleton mt-6 h-64" aria-busy="true" />
       ) : (
         <>
-          <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_380px]">
+          {tab === "config" ? (
+            <>
+              <div id="roll-anim-panel-config" role="tabpanel" aria-labelledby="roll-anim-tab-config" className="mt-6 grid gap-6 lg:grid-cols-[1fr_380px]">
             {canEdit && <div className="space-y-6">
               {groups.map((group) => (
                 <section key={group.label} className="border border-hairline bg-panel p-4 rounded-lg">
@@ -478,6 +550,94 @@ export default function AdminGachaAnimacaoPage() {
               preview
               config={config}
             />
+          )}
+            </>
+          ) : (
+            <section
+              id="roll-anim-panel-codigo"
+              role="tabpanel"
+              aria-labelledby="roll-anim-tab-codigo"
+              className="mt-6 grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]"
+            >
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <code className="font-mono text-xs text-mist">{ANIM_FILE}</code>
+                  <span role="status" aria-live="polite" className="font-mono text-xs text-mist">
+                    {compileLabel}
+                  </span>
+                  <div className="ml-auto flex flex-wrap gap-2">
+                    <button type="button" className="btn-ghost" onClick={loadSource} disabled={loading}>
+                      Carregar do arquivo
+                    </button>
+                    <button
+                      type="button"
+                      className="btn-ghost"
+                      disabled={source === null}
+                      onClick={() => {
+                        void navigator.clipboard.writeText(source ?? "");
+                        toast("Arquivo copiado.", "success");
+                      }}
+                    >
+                      Copiar
+                    </button>
+                    <button
+                      type="button"
+                      className="btn-ice"
+                      onClick={() => setRunId((n) => n + 1)}
+                      disabled={codeStatus.state === "error" || source === null}
+                    >
+                      Reproduzir
+                    </button>
+                    {canEdit && (
+                      <button
+                        type="button"
+                        className="btn-ice"
+                        onClick={saveSource}
+                        disabled={saving || source === null}
+                      >
+                        {saving ? "Salvando…" : "Salvar no arquivo"}
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {codeStatus.state === "error" && (
+                  <pre
+                    role="alert"
+                    className="mt-3 max-h-48 overflow-auto whitespace-pre-wrap rounded border border-signal/40 bg-signal/5 p-3 font-mono text-xs text-signal"
+                  >
+                    {codeStatus.message}
+                  </pre>
+                )}
+
+                <label htmlFor="roll-anim-source" className="sr-only">
+                  Fonte do arquivo da animação
+                </label>
+                <textarea
+                  id="roll-anim-source"
+                  value={source ?? ""}
+                  onChange={(event) => setSource(event.target.value)}
+                  spellCheck={false}
+                  placeholder="Cole aqui o arquivo inteiro da animação (ex.: src/components/gacha/RollStage.tsx)."
+                  className="mt-3 h-[60vh] w-full resize-y rounded border border-hairline bg-panel p-3 font-mono text-xs leading-relaxed text-snow focus-visible:outline focus-visible:outline-ice"
+                />
+              </div>
+
+              <div className="min-w-0">
+                <h3 className="font-mono text-xs uppercase tracking-widest text-mist">Prévia</h3>
+                <p className="mt-1 text-xs text-mist">
+                  Roda a carta de exemplo escolhida no topo. O arquivo só entra no site no próximo deploy.
+                </p>
+                {currentPull && (
+                  <CodeStagePreview
+                    source={source ?? ""}
+                    pull={currentPull}
+                    runId={runId}
+                    onStatus={setCodeStatus}
+                  />
+                )}
+              </div>
+            </section>
           )}
         </>
       )}
