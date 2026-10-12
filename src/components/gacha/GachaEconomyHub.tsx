@@ -17,6 +17,7 @@ import { useToast } from "@/components/common/ToastProvider";
 import { GachaTradeHub } from "@/components/gacha/GachaTradeHub";
 import { GachaMarketOfferHub } from "@/components/gacha/GachaMarketOfferHub";
 import { GachaCosmeticShop } from "@/components/gacha/GachaCosmeticShop";
+import { UserProfilePreview } from "@/components/social/UserProfilePreview";
 import {
   CardPreview,
   type GachaCardInspection,
@@ -2120,8 +2121,13 @@ function MarketSection({
                 )}
                 <p className="mt-2 text-caption text-mist">
                   Anunciado por{" "}
-                  {listing.user.name?.trim() ||
-                    `@${listing.user.userName ?? "jogador"}`}
+                  <UserProfilePreview
+                    user={listing.user}
+                    className="text-ice underline decoration-hairline underline-offset-2 hover:text-snow"
+                  >
+                    {listing.user.name?.trim() ||
+                      `@${listing.user.userName ?? "jogador"}`}
+                  </UserProfilePreview>
                 </p>
                 {marketReady && available < listing.price && (
                   <p className="mt-2 text-caption text-mist">

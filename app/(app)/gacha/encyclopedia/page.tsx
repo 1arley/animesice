@@ -12,6 +12,7 @@ import { WishlistButton } from "@/components/gacha/WishlistButton";
 import { Modal } from "@/components/common/Modal";
 import { PaginationControls } from "@/components/ui/PaginationControls";
 import { SearchField } from "@/components/ui/SearchField";
+import { UserProfilePreview } from "@/components/social/UserProfilePreview";
 import {
   GachaCardGridSkeleton,
   GachaPageSkeleton,
@@ -94,21 +95,16 @@ function CardOwners({
           <ul className="divide-y divide-hairline">
             {owners.map((owner) => (
               <li
-                key={owner.userName ?? owner.name}
+                key={owner.id}
                 className="flex min-h-14 items-center justify-between gap-3 py-3"
               >
-                {owner.userName ? (
-                  <Link
-                    href={`/users/${encodeURIComponent(owner.userName)}`}
-                    className="min-h-11 min-w-0 flex-1 content-center break-words text-ice underline"
-                  >
-                    {owner.name?.trim() || `@${owner.userName}`}
-                  </Link>
-                ) : (
-                  <span className="min-w-0 flex-1 break-words text-snow">
-                    {owner.name?.trim() || "Colecionador"}
-                  </span>
-                )}
+                <UserProfilePreview
+                  user={owner}
+                  className="min-h-11 min-w-0 flex-1 content-center break-words text-ice underline"
+                >
+                  {owner.name?.trim() ||
+                    (owner.userName ? `@${owner.userName}` : "Colecionador")}
+                </UserProfilePreview>
                 <span className="shrink-0 text-caption text-mist">
                   {owner.copies} {owner.copies === 1 ? "cópia" : "cópias"}
                 </span>

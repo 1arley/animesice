@@ -12,6 +12,7 @@ import { timeAgo } from "@/lib/time";
 import { safeImageSrc } from "@/lib/url";
 import { blur } from "@/lib/blur";
 import type { PostCommentItem, SocialPost } from "@/types";
+import { UserProfilePreview } from "@/components/social/UserProfilePreview";
 
 /**
  * FeedPost — card de um post do feed: autor, texto, anime referenciado e
@@ -49,7 +50,6 @@ export function FeedPost({
 
   const isMine = !!user && user.id === post.user.id;
   const authorName = post.user.name?.trim() || post.user.userName || "Usuário";
-  const authorHref = `/users/${post.user.userName ?? post.user.id}`;
 
   async function handleLike() {
     if (!user || likeBusy) return;
@@ -148,20 +148,23 @@ export function FeedPost({
     <article className="border border-hairline bg-panel p-4">
       {/* Autor */}
       <header className="flex items-center gap-3">
-        <Link href={authorHref}>
+        <UserProfilePreview
+          user={post.user}
+          className="flex min-w-0 flex-1 items-center gap-3"
+        >
           <Avatar name={authorName} src={post.user.avatar} size={36} />
-        </Link>
-        <div className="min-w-0 flex-1">
-          <Link
-            href={authorHref}
-            className="block truncate font-medium text-snow transition-colors hover:text-ice"
-          >
-            {authorName}
-          </Link>
-          <p className="font-mono text-caption text-mist-soft">
-            @{post.user.userName ?? post.user.id} · {timeAgo(post.createdAt)}
-          </p>
-        </div>
+          <span className="min-w-0">
+            <span className="block truncate font-medium text-snow transition-colors hover:text-ice">
+              {authorName}
+            </span>
+            <span className="block truncate font-mono text-caption text-mist-soft">
+              @{post.user.userName ?? post.user.id}
+            </span>
+          </span>
+        </UserProfilePreview>
+        <span className="shrink-0 font-mono text-caption text-mist-soft">
+          {timeAgo(post.createdAt)}
+        </span>
         {isMine && (
           <button
             type="button"
@@ -301,21 +304,24 @@ export function FeedPost({
           ) : (
             comments.map((c) => (
               <div key={c.id} className="flex items-start gap-2.5">
-                <Link href={`/users/${c.user.userName ?? c.user.id}`}>
+                <UserProfilePreview
+                  user={c.user}
+                  className="inline-flex shrink-0 self-start"
+                >
                   <Avatar
                     name={c.user.name || c.user.userName}
                     src={c.user.avatar}
                     size={24}
                   />
-                </Link>
+                </UserProfilePreview>
                 <div className="min-w-0 flex-1">
                   <p className="text-body-sm">
-                    <Link
-                      href={`/users/${c.user.userName ?? c.user.id}`}
+                    <UserProfilePreview
+                      user={c.user}
                       className="font-medium text-ice transition-colors hover:text-snow"
                     >
                       {c.user.name || c.user.userName || "Usuário"}
-                    </Link>{" "}
+                    </UserProfilePreview>{" "}
                     <span className="text-mist-soft">{c.content}</span>
                   </p>
                   <p className="font-mono text-caption text-mist-soft">

@@ -6,6 +6,7 @@ import { api, type User } from "@/lib/api";
 import { displayName } from "@/lib/displayName";
 import { Avatar } from "@/components/common/Avatar";
 import { PosterTile } from "@/components/profile/PosterTile";
+import { UserProfilePreview } from "@/components/social/UserProfilePreview";
 import type {
   PublicUserProfile,
   CommentItem,
@@ -116,9 +117,13 @@ export function ProfileDashboard({ user }: { user: User }) {
             </div>
           )}
         </div>
-        <Link href={profileUrl} className="btn-ice shrink-0">
+        <UserProfilePreview
+          user={user}
+          ariaLabel="Ver perfil público"
+          className="btn-ice shrink-0"
+        >
           Ver perfil público
-        </Link>
+        </UserProfilePreview>
       </div>
 
       <dl className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-4">

@@ -9,6 +9,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { formatDate } from "@/lib/time";
 import type { CommentItem } from "@/types";
 import { Avatar } from "@/components/common/Avatar";
+import { UserProfilePreview } from "@/components/social/UserProfilePreview";
 
 interface CommentSectionProps {
   animeId?: string;
@@ -273,16 +274,21 @@ function CommentRow({
   return (
     <div className="border-l-2 border-hairline pl-4">
       <div className="flex items-start gap-3">
-        <Avatar
-          name={comment.user.userName || comment.user.name}
-          src={comment.user.avatar}
-          size={32}
-        />
+        <UserProfilePreview user={comment.user} className="inline-flex shrink-0 self-start">
+          <Avatar
+            name={comment.user.userName || comment.user.name}
+            src={comment.user.avatar}
+            size={32}
+          />
+        </UserProfilePreview>
         <div className="flex-1">
           <div className="flex items-center gap-2">
-            <span className="font-sans text-body-sm font-medium text-ice">
+            <UserProfilePreview
+              user={comment.user}
+              className="font-sans text-body-sm font-medium text-ice"
+            >
               {comment.user.userName || comment.user.name || "Anônimo"}
-            </span>
+            </UserProfilePreview>
             <span className="font-mono text-caption text-mist">
               {formatDate(comment.createdAt)}
             </span>
@@ -374,14 +380,19 @@ function CommentRow({
               {replies.map((r) => (
                 <div key={r.id} className="border-l-2 border-hairline pl-3">
                   <div className="flex items-center gap-2">
-                    <Avatar
-                      name={r.user.userName || r.user.name}
-                      src={r.user.avatar}
-                      size={20}
-                    />
-                    <span className="font-sans text-body-sm font-medium text-ice">
+                    <UserProfilePreview user={r.user} className="inline-flex shrink-0">
+                      <Avatar
+                        name={r.user.userName || r.user.name}
+                        src={r.user.avatar}
+                        size={20}
+                      />
+                    </UserProfilePreview>
+                    <UserProfilePreview
+                      user={r.user}
+                      className="font-sans text-body-sm font-medium text-ice"
+                    >
                       {r.user.userName || r.user.name || "Anônimo"}
-                    </span>
+                    </UserProfilePreview>
                     <span className="font-mono text-caption text-mist">
                       {formatDate(r.createdAt)}
                     </span>
