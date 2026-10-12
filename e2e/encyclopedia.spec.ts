@@ -19,7 +19,7 @@ test("paginação, filtros e histórico preservam estado; falha permite tentar n
   });
   await page.goto("/gacha/enciclopedia");
   await expect(page.getByRole("heading", { name: "Carta página 1" })).toBeVisible();
-  await page.getByRole("link", { name: "Próxima" }).click();
+  await page.getByRole("button", { name: "Próxima página" }).click();
   await expect(page.getByRole("heading", { name: "Carta página 2" })).toBeVisible();
   await page.getByLabel("Raridade", { exact: true }).selectOption("RARA");
   await expect(page.getByRole("heading", { name: "Carta página 1" })).toBeVisible();

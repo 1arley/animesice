@@ -43,7 +43,9 @@ test("comprime avatar grande e renova a sessao antes de enviar", async ({
   );
 
   await page.goto("/configuracoes");
-  await page.locator('input[type="file"]').setInputFiles(
+  await page.locator('section').filter({
+    has: page.getByRole('heading', { name: 'Avatar', exact: true }),
+  }).locator('input[type="file"]').setInputFiles(
     path.join(process.cwd(), "public/aeliana/Aeliana.png"),
   );
   await page.getByRole("button", { name: "Salvar nova foto" }).click();
