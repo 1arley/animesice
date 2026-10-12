@@ -27,10 +27,10 @@ test.describe('Buscar - paginação', () => {
 
     // Página 1: 24 cards, contador "página 1 de 3"
     await expect(page.locator('a[href^="/animes/e2e-anime-"]')).toHaveCount(24);
-    await expect(page.getByText('página 1 de 3')).toBeVisible();
+    await expect(page.getByRole('navigation', { name: 'Paginação' })).toContainText('Página 1 de 3');
 
     // Clica em Próxima → deve ir para página 2 mantendo q=naruto
-    await clickCentered(page.locator('a:has-text("Próxima")'));
+    await clickCentered(page.getByRole('link', { name: 'Próxima página' }));
     await page.waitForURL('**/buscar?page=2&q=naruto', { waitUntil: 'commit' });
 
     // Página 2: primeiro aguarda a árvore anterior sair por completo; depois
@@ -38,7 +38,7 @@ test.describe('Buscar - paginação', () => {
     await expect(page.locator('a[href^="/animes/e2e-anime-"]')).toHaveCount(24);
     await expect(page.locator('a[href="/animes/e2e-anime-25"]').first()).toBeVisible();
     await expect(page.locator('a[href="/animes/e2e-anime-1"]')).toHaveCount(0);
-    await expect(page.getByText('página 2 de 3').first()).toBeVisible();
+    await expect(page.getByRole('navigation', { name: 'Paginação' })).toContainText('Página 2 de 3');
 
     // O input de busca preserva o termo
     await expect(page.locator('input[name="q"]').first()).toHaveValue('naruto');
@@ -47,12 +47,12 @@ test.describe('Buscar - paginação', () => {
   test('navega de volta com Anterior sem perder a busca', async ({ page }) => {
     await page.goto('/buscar?q=naruto&page=3');
 
-    await expect(page.getByText('página 3 de 3').first()).toBeVisible();
+    await expect(page.getByRole('navigation', { name: 'Paginação' })).toContainText('Página 3 de 3');
     await expect(page.locator('a[href="/animes/e2e-anime-60"]').first()).toBeVisible();
 
-    await clickCentered(page.locator('a:has-text("Anterior")'));
+    await clickCentered(page.getByRole('link', { name: 'Página anterior' }));
     await page.waitForURL('**/buscar?page=2&q=naruto', { waitUntil: 'commit' });
-    await expect(page.getByText('página 2 de 3').first()).toBeVisible();
+    await expect(page.getByRole('navigation', { name: 'Paginação' })).toContainText('Página 2 de 3');
     await expect(page.locator('a[href="/animes/e2e-anime-25"]').first()).toBeVisible();
   });
 
@@ -62,7 +62,7 @@ test.describe('Buscar - paginação', () => {
 
     // Página 1: resultados + contador + chips de filtros ativos
     await expect(page.locator('a[href^="/animes/e2e-anime-"]')).toHaveCount(24);
-    await expect(page.getByText('página 1 de 3').first()).toBeVisible();
+    await expect(page.getByRole('navigation', { name: 'Paginação' })).toContainText('Página 1 de 3');
     // Chips de filtros ativos (span específico, não a option do select)
     const chips = page.locator('span[class*="border-ice/40"]');
     await expect(chips.filter({ hasText: '"naruto"' })).toBeVisible();
@@ -80,7 +80,7 @@ test.describe('Buscar - paginação', () => {
     await expect(page.locator('select[name="sort"]')).toHaveValue('rating');
 
     // Próxima → página 2 deve manter TODOS os filtros (q, genres CSV, year, status, sort)
-    const next = page.locator('a[href*="/buscar?page=2"]');
+    const next = page.getByRole('link', { name: 'Próxima página' });
     await expect(next).toBeVisible();
     await clickCentered(next);
     await page.waitForURL('**/buscar?page=2&**', { waitUntil: 'commit' });
@@ -95,7 +95,7 @@ test.describe('Buscar - paginação', () => {
     expect(url.searchParams.get('sort')).toBe('rating');
 
     // Resultados da página 2 (segunda metade), contador atualizado
-    await expect(page.getByText('página 2 de 3').first()).toBeVisible();
+    await expect(page.getByRole('navigation', { name: 'Paginação' })).toContainText('Página 2 de 3');
     await expect(page.locator('a[href="/animes/e2e-anime-25"]').first()).toBeVisible();
     await expect(page.locator('a[href^="/animes/e2e-anime-"]')).toHaveCount(24);
 

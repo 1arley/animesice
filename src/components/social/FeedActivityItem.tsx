@@ -9,7 +9,7 @@ import { timeAgo } from "@/lib/time";
 import { useAuth } from "@/lib/auth-context";
 import { api } from "@/lib/api";
 import { Stars } from "@/components/profile/Stars";
-import { Avatar } from "@/components/common/Avatar";
+import { UserProfilePreview } from "@/components/social/UserProfilePreview";
 import type { PublicActivityEvent, SocialUser } from "@/types";
 
 /**
@@ -25,7 +25,6 @@ export function FeedActivityItem({
   user: SocialUser;
 }) {
   const authorName = user.name?.trim() || user.userName || "Usuário";
-  const authorHref = `/users/${user.userName ?? user.id}`;
 
   const cover =
     event.type === "comment"
@@ -54,9 +53,9 @@ export function FeedActivityItem({
 
       <div className="min-w-0 flex-1">
         <p className="text-body-sm leading-snug text-mist">
-          <Link href={authorHref} className="font-medium text-snow transition-colors hover:text-ice">
+          <UserProfilePreview user={user} className="font-medium text-snow transition-colors hover:text-ice">
             {authorName}
-          </Link>{" "}
+          </UserProfilePreview>{" "}
           <EventVerb event={event} />{" "}
           {animeSlug ? (
             <Link href={`/animes/${animeSlug}`} className="font-medium text-ice transition-colors hover:text-snow">

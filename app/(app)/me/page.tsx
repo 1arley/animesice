@@ -2,10 +2,10 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { Header } from "@/components/common/Header";
 import { Footer } from "@/components/common/Footer";
 import { Avatar } from "@/components/common/Avatar";
+import { UserProfilePreview } from "@/components/social/UserProfilePreview";
 import Image from "next/image";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
@@ -15,7 +15,6 @@ import { safeImageSrc } from "@/lib/url";
 import type { WatchHistoryItem } from "@/types";
 
 export default function MyProfilePage() {
-  const router = useRouter();
   const { user, loading } = useAuth();
   const [history, setHistory] = useState<WatchHistoryItem[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
@@ -61,13 +60,13 @@ export default function MyProfilePage() {
 
             <div className="mt-6 flex gap-3">
               <Link href="/settings" className="btn-ice">Editar perfil</Link>
-              <button
-                type="button"
+              <UserProfilePreview
+                user={user}
+                ariaLabel="Ver como público"
                 className="btn-ghost"
-                onClick={() => router.push(`/users/${user.userName ?? user.id}`)}
               >
                 Ver como público
-              </button>
+              </UserProfilePreview>
             </div>
           </section>
 

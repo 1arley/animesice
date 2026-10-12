@@ -168,6 +168,7 @@ export function ProfileHero({
             src={coverImage}
             alt=""
             fill
+            unoptimized
             priority
             sizes="100vw"
             placeholder="blur"

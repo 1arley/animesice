@@ -25,27 +25,27 @@ test.describe('Lançamentos - paginação', () => {
 
     // Página 1: 24 cards + contador "1 / 3" (formato do componente Pagination)
     await expect(page.locator('a[href^="/animes/e2e-anime-"]')).toHaveCount(24);
-    await expect(page.getByText('1 / 3').first()).toBeVisible();
+    await expect(page.getByRole('navigation', { name: 'Paginação' })).toContainText('Página 1 de 3');
 
     // Clica em Próxima → página 2 com os cards da segunda metade
-    await clickCentered(page.locator('a:has-text("Próxima")'));
+    await clickCentered(page.getByRole('link', { name: 'Próxima página' }));
     await page.waitForURL('**/lancamentos?page=2', { waitUntil: 'commit' });
 
     await expect(page.locator('a[href="/animes/e2e-anime-25"]').first()).toBeVisible();
     await expect(page.locator('a[href="/animes/e2e-anime-1"]')).toHaveCount(0);
-    await expect(page.getByText('2 / 3').first()).toBeVisible();
+    await expect(page.getByRole('navigation', { name: 'Paginação' })).toContainText('Página 2 de 3');
     await expect(page.locator('a[href^="/animes/e2e-anime-"]')).toHaveCount(24);
   });
 
   test('navega de volta com Anterior sem perder resultados', async ({ page }) => {
     await page.goto('/lancamentos?page=3');
 
-    await expect(page.getByText('3 / 3').first()).toBeVisible();
+    await expect(page.getByRole('navigation', { name: 'Paginação' })).toContainText('Página 3 de 3');
     await expect(page.locator('a[href="/animes/e2e-anime-60"]').first()).toBeVisible();
 
-    await clickCentered(page.locator('a:has-text("Anterior")'));
+    await clickCentered(page.getByRole('link', { name: 'Página anterior' }));
     await page.waitForURL('**/lancamentos?page=2', { waitUntil: 'commit' });
-    await expect(page.getByText('2 / 3').first()).toBeVisible();
+    await expect(page.getByRole('navigation', { name: 'Paginação' })).toContainText('Página 2 de 3');
     await expect(page.locator('a[href="/animes/e2e-anime-25"]').first()).toBeVisible();
   });
 });
