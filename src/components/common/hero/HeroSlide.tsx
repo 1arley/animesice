@@ -108,11 +108,10 @@ export function HeroSlide({ anime, label, priority, isMobile }: HeroSlideProps) 
           isMobile={isMobile}
         />
 
-        {/* z-2: Character (sharp foreground poster) */}
+        {/* z-2: Character (sharp foreground) */}
         <HeroCharacter
           src={art ?? ""}
           priority={priority}
-          scrollY={parallax.scrollY}
           charX={parallax.charX}
           charY={parallax.charY}
           isMobile={isMobile}

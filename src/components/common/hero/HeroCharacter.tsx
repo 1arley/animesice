@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useTransform, type MotionValue } from "motion/react";
+import { type MotionValue } from "motion/react";
 import * as m from "motion/react-m";
 import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
 import { blur } from "@/lib/blur";
@@ -9,7 +9,6 @@ import { blur } from "@/lib/blur";
 interface HeroCharacterProps {
   src: string;
   priority?: boolean;
-  scrollY: MotionValue<number>;
   charX: MotionValue<number>;
   charY: MotionValue<number>;
   isMobile: boolean;
@@ -18,30 +17,23 @@ interface HeroCharacterProps {
 export function HeroCharacter({
   src,
   priority = false,
-  scrollY,
   charX,
   charY,
   isMobile,
 }: HeroCharacterProps) {
   const reduceMotion = usePrefersReducedMotion();
-  const scale = "scale(1.08)";
-  const scrollShift = useTransform(scrollY, [0, 400], [0, -30]);
-
-  const translateY = useTransform(
-    [charY, scrollShift] as MotionValue<number>[],
-    ([cy, sy]: number[]) => `${cy + sy}px`,
-  );
-
   return (
     <m.div
       className="absolute inset-0 overflow-hidden"
       style={{
         x: reduceMotion || isMobile ? undefined : charX,
-        // Parallax de scroll desligado no toque: no scroll nativo do mobile
-        // o spring descreveria y a cada frame do gesture (custoso em Android
-        // médio) para um efeito de poucos px. Desktop mantém.
-        y: reduceMotion || isMobile ? undefined : translateY,
-        scale: reduceMotion ? 1 : 1.15,
+        y: reduceMotion || isMobile ? undefined : charY,
+        // Over-scan mínimo: só o parallax do ponteiro vive nesta camada
+        // (x ±10px, y ±5px). O de scroll ficou só no HeroEnvironment — antes o
+        // over-scan de 1.242x (1.15 x 1.08) existia para cobrir os -30px do
+        // scroll e ampliava a arte 1.7x: banner do AniList é 1900x400, não há
+        // pixel para esse upscale. 1.05 cobre os 10px de x com folga.
+        scale: reduceMotion || isMobile ? 1 : 1.05,
       }}
     >
       <Image
@@ -50,12 +42,11 @@ export function HeroCharacter({
         fill
         priority={priority}
         fetchPriority={priority ? "high" : undefined}
-        sizes="100vw"
+        sizes="(min-width: 1400px) 1340px, 100vw"
         quality={80}
         placeholder="blur"
         blurDataURL={blur.landscape}
         className="object-cover"
-        style={{ transform: scale }}
       />
     </m.div>
   );
