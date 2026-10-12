@@ -1,0 +1,9 @@
+export const GACHA_RARITY_COLORS = {
+  COMUM: "#38E8DA",
+  INCOMUM: "#34D399",
+  RARA: "#38BDF8",
+  EPICA: "#A78BFA",
+  LENDARIA: "#FCD34D",
+  MITICA: "#FB7185",
+  GALACTICA: "#C084FC",
+} as const;

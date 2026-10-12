@@ -4,9 +4,9 @@ import type { ComponentType } from "react";
 import * as React from "react";
 import * as ReactJSXRuntime from "react/jsx-runtime";
 import * as ReactJSXDevRuntime from "react/jsx-dev-runtime";
-import * as NextScriptModule from "next/script";
 import * as ReducedMotionModule from "@/lib/use-prefers-reduced-motion";
 import * as GsapModule from "@/lib/gsap";
+import * as GachaRarityColorsModule from "@/lib/gacha-rarity-colors";
 import * as GachaCardModule from "@/components/gacha/GachaCard";
 import * as CountUpModule from "@/components/core/CountUp";
 import * as RollAnimConfigModule from "@/lib/roll-anim-config";
@@ -31,9 +31,9 @@ const MODULES: ModuleMap = {
   react: React,
   "react/jsx-runtime": ReactJSXRuntime,
   "react/jsx-dev-runtime": ReactJSXDevRuntime,
-  "next/script": NextScriptModule,
   "@/lib/use-prefers-reduced-motion": ReducedMotionModule,
   "@/lib/gsap": GsapModule,
+  "@/lib/gacha-rarity-colors": GachaRarityColorsModule,
   "./GachaCard": GachaCardModule,
   "@/components/gacha/GachaCard": GachaCardModule,
   "@/components/core/CountUp": CountUpModule,
