@@ -2,9 +2,10 @@ import type { Locator, Page } from "@playwright/test";
 
 /**
  * Helpers compartilhados dos specs e2e — rede de anúncios, mocks genéricos
- * do backend e sessão simulada. Escopam tudo ao backend mockado (porta 3001),
+ * do backend e sessão simulada. Escopam tudo ao backend mockado,
  * nunca à navegação do Next (3000).
  */
+const mockBackendPort = process.env.MOCK_BACKEND_PORT || "3001";
 
 // Redes de anúncio bloqueadas para iframes não interceptarem cliques
 // ("<div></div> intercepts pointer events") e tornarem o teste flaky.
@@ -76,7 +77,9 @@ export async function loginAs(page: Page) {
   await page.context().addCookies([
     { name: "role", value: "USER", url: "http://localhost:3000" },
   ]);
-  await page.route(/\/\/localhost:3001\/(?:api\/)?user\/me$/, async (route) => {
+  await page.route(
+    new RegExp(`//localhost:${mockBackendPort}/(?:api/)?user/me$`),
+    async (route) => {
     await route.fulfill({
       status: 200,
       contentType: "application/json",
@@ -93,7 +96,8 @@ export async function loginAs(page: Page) {
         updatedAt: new Date().toISOString(),
       }),
     });
-  });
+    },
+  );
 }
 
 /** Usuário simulado retornado por /user/me (consistente com loginAs). */
