@@ -58,7 +58,11 @@ export function HomeHero({ animes }: { animes: Anime[] }) {
       onBlur={() => setPaused(false)}
     >
       <div className="relative sm:border sm:border-hairline bg-panel overflow-hidden">
-        <div className="relative aspect-[4/3] sm:aspect-[21/9] lg:aspect-[2.4/1]">
+        {/* Proporção casada com a arte: o banner do AniList é 1900x400 (4.75:1).
+            Numa caixa 2.4/1 o `object-cover` amplia ~1.4x na vertical e o
+            resultado fica mole. Cada degrau abaixo de 2.8/1 mantém o upscale
+            perto de 1.0 na largura máxima da prateleira (1340px). */}
+        <div className="relative aspect-[4/3] sm:aspect-[21/9] md:aspect-[2.8/1] lg:aspect-[3.2/1]">
           <AnimatePresence mode="wait" initial={false}>
             <HeroSlide
               key={current.id}
