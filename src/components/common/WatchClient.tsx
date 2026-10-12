@@ -244,7 +244,11 @@ export function WatchClient({
           <EpisodePlayerShell
             posterUrl={
               episode.thumbnailUrl
-                ? safeImageSrc(episode.thumbnailUrl)
+                ? safeImageSrc(
+                    episode.thumbnailUrl,
+                    episode.anime.slug,
+                    episode.number,
+                  )
                 : safeImageSrc(episode.anime.coverImage, episode.anime.slug)
             }
             title={episode.anime.title}

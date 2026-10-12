@@ -7,6 +7,13 @@ export function isValidRemoteUrl(raw: string | null | undefined): raw is string 
   if (!raw) return false;
   let val = raw.trim();
   if (!val) return false;
+  if (val.startsWith("/")) {
+    try {
+      return new URL(val, "https://animesice.local").origin === "https://animesice.local";
+    } catch {
+      return false;
+    }
+  }
   if (/^javascript:/i.test(val) || /^data:/i.test(val) || /^file:/i.test(val)) {
     return false;
   }
@@ -22,6 +29,7 @@ export function isValidRemoteUrl(raw: string | null | undefined): raw is string 
 export function safeImageSrc(
   raw: string | null | undefined,
   animeSlug?: string,
+  episodeNumber?: number,
 ): string | undefined {
   if (!isValidRemoteUrl(raw)) return undefined;
   const url = raw.trim();
@@ -31,13 +39,21 @@ export function safeImageSrc(
     /^[a-z0-9]+(?:-[a-z0-9]+)*$/i.test(animeSlug) &&
     isMeusanimesCover(url)
   ) {
-    return `/api/anime-cover/${encodeURIComponent(animeSlug)}?source=${encodeURIComponent(url)}`;
+    const params = new URLSearchParams({ source: url });
+    if (Number.isSafeInteger(episodeNumber) && (episodeNumber ?? 0) > 0) {
+      params.set("episode", String(episodeNumber));
+    }
+    return `/api/anime-cover/${encodeURIComponent(animeSlug)}?${params}`;
   }
 
   return url;
 }
 
 function isMeusanimesCover(raw: string): boolean {
+  // Capa local (`/aeliana/...`) passa por isValidRemoteUrl mas não é URL
+  // absoluta — `new URL(raw)` sem base lança ERR_INVALID_URL e derruba a
+  // render. Caminho relativo nunca é capa do blog.
+  if (raw.startsWith("/")) return false;
   const url = new URL(raw);
   const isBlogHost =
     url.hostname === "meusanimes.blog" ||
@@ -62,8 +78,9 @@ function isMeusanimesCover(raw: string): boolean {
 export function upgradeImageUrl(
   raw: string | null | undefined,
   animeSlug?: string,
+  episodeNumber?: number,
 ): string | undefined {
-  const safeUrl = safeImageSrc(raw, animeSlug);
+  const safeUrl = safeImageSrc(raw, animeSlug, episodeNumber);
   if (!safeUrl) return undefined;
   if (safeUrl.startsWith("/")) return safeUrl;
   const url = safeUrl;

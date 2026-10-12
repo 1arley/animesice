@@ -226,7 +226,7 @@ function NativeVideoPlayer({
   const [retryAttempt, setRetryAttempt] = useState(0);
 
   const safeSrc = safeImageSrc(src) ?? src;
-  const safePoster = safeImageSrc(posterUrl, animeSlug);
+  const safePoster = safeImageSrc(posterUrl, animeSlug, episodeNumber);
   const isM3u8 = safeSrc.toLowerCase().includes(".m3u8");
 
   const onPlaybackErrorRef = useRef(onPlaybackError);
