@@ -14,9 +14,10 @@ import type { NextConfig } from "next";
  * passa por compilação antes de gravar. Sem isso, o recurso não funciona em prod.
  */
 const isDev = process.env.NODE_ENV !== "production";
+const localApiPort = process.env.MOCK_BACKEND_PORT || "3001";
 const localConnect =
   isDev || process.env.INCLUDE_LOCAL_API === "1"
-    ? " http://localhost:3001"
+    ? ` http://localhost:${localApiPort}`
     : "";
 
 const cspHeader = `
