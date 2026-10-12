@@ -6,6 +6,7 @@ import { Wordmark } from "@/components/common/Wordmark";
 import { AuthButtons } from "@/components/common/AuthButtons";
 import { NotificationBell } from "@/components/common/NotificationBell";
 import { SupportLink } from "@/components/common/SupportLink";
+import { DiscordIcon, DISCORD_INVITE_URL } from "@/components/common/DiscordIcon";
 import { SearchField } from "@/components/ui/SearchField";
 
 /**
@@ -46,7 +47,7 @@ export function Header() {
 
   return (
     <header className="relative z-50 border-b border-hairline bg-ink">
-      <div className="mx-auto flex max-w-shelf items-center justify-between gap-4 px-4 py-3">
+      <div className="mx-auto flex max-w-shelf items-center justify-between gap-1 px-4 py-3 sm:gap-4">
         <Wordmark className="text-xl" />
 
         {/* Desktop search */}
@@ -81,6 +82,17 @@ export function Header() {
               <path d="M14 14l4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
             </svg>
           </button>
+          <a
+            href={DISCORD_INVITE_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Entrar no Discord AnimeSice (abre em uma nova aba)"
+            title="Entrar no Discord AnimeSice (abre em uma nova aba)"
+            className="inline-flex h-11 min-w-11 items-center justify-center gap-2 rounded-sm px-1.5 font-mono text-body-sm text-mist transition-colors duration-200 hover:text-ice focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ice"
+          >
+            <DiscordIcon size={18} />
+            <span className="hidden md:inline" translate="no">Discord</span>
+          </a>
           {/* LivePix: só desktop no header — no mobile fica no footer */}
           <div className="hidden sm:block">
             <SupportLink variant="header" />

@@ -7,6 +7,7 @@ import { useAuth } from "@/lib/auth-context";
 import { isPrivileged } from "@/lib/role";
 import { displayName } from "@/lib/displayName";
 import { Avatar } from "@/components/common/Avatar";
+import { DiscordIcon, DISCORD_INVITE_URL } from "@/components/common/DiscordIcon";
 
 export interface NavLink {
   href: string;
@@ -108,6 +109,12 @@ export function SiteNav() {
     {
       title: "Comunidade",
       links: [
+        {
+          href: DISCORD_INVITE_URL,
+          title: "Discord",
+          target: "_blank",
+          icon: "discord",
+        },
         { href: "/comunidade/feed", title: "Feed", icon: "feed" },
         { href: "/gacha", title: "Gacha", icon: "gacha" },
         { href: "/blog", title: "Blog", icon: "feed" },
@@ -279,9 +286,12 @@ export function SiteNav() {
                           : undefined
                       }
                       role="menuitem"
-                      className="block border-l-2 border-transparent px-4 py-2 font-mono text-body-sm text-mist transition-[border-color,background-color,color,transform] duration-200 hover:border-ice hover:bg-slate hover:text-ice hover:translate-x-1"
+                      className="flex min-h-11 items-center border-l-2 border-transparent px-4 py-2 font-mono text-body-sm text-mist transition-[border-color,background-color,color,transform] duration-200 hover:border-ice hover:bg-slate hover:text-ice hover:translate-x-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-ice"
                     >
                       {link.title}
+                      {link.target === "_blank" && (
+                        <span className="sr-only"> (abre em uma nova aba)</span>
+                      )}
                     </a>
                   ))}
                 </div>
@@ -393,21 +403,40 @@ export function SiteNav() {
                         link.href === "/"
                           ? pathname === "/"
                           : pathname.startsWith(link.href.split("?")[0]);
+                      const className = `flex flex-col items-center gap-1.5 rounded-md border p-3 transition-[border-color,background-color,color] duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ice ${
+                        isActive
+                          ? "border-ice/40 bg-ice/5 text-ice"
+                          : "border-hairline text-mist hover:border-ice/30 hover:text-ice hover:bg-ice/5"
+                      }`;
+                      const content = (
+                        <>
+                          {link.icon === "discord" ? (
+                            <DiscordIcon />
+                          ) : (
+                            <NavIcon d={ICONS[link.icon] || ""} />
+                          )}
+                          <span className="font-mono text-caption uppercase tracking-wider text-center leading-tight">
+                            {link.title}
+                            {link.target === "_blank" && (
+                              <span className="sr-only"> (abre em uma nova aba)</span>
+                            )}
+                          </span>
+                        </>
+                      );
                       return (
                         <Link
                           key={link.href + link.title}
                           href={link.href}
+                          target={link.target}
+                          rel={
+                            link.target === "_blank"
+                              ? "noopener noreferrer"
+                              : undefined
+                          }
                           onClick={handleClose}
-                          className={`flex flex-col items-center gap-1.5 rounded-md border p-3 transition-[border-color,background-color,color] duration-200 ${
-                            isActive
-                              ? "border-ice/40 bg-ice/5 text-ice"
-                              : "border-hairline text-mist hover:border-ice/30 hover:text-ice hover:bg-ice/5"
-                          }`}
+                          className={className}
                         >
-                          <NavIcon d={ICONS[link.icon] || ""} />
-                          <span className="font-mono text-caption uppercase tracking-wider text-center leading-tight">
-                            {link.title}
-                          </span>
+                          {content}
                         </Link>
                       );
                     })}

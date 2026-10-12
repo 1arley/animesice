@@ -5,6 +5,7 @@ import { useAuth } from "@/lib/auth-context";
 import { isPrivileged } from "@/lib/role";
 import { Wordmark } from "@/components/common/Wordmark";
 import { SupportLink } from "@/components/common/SupportLink";
+import { DISCORD_INVITE_URL } from "@/components/common/DiscordIcon";
 
 interface FooterLink { href: string; title: string; external?: boolean; }
 
@@ -34,10 +35,13 @@ export function Footer() {
         { href: "/register", title: "Registrar" },
       ];
   const referencia: FooterLink[] = REFERENCIA_LINKS;
+  const comunidade: FooterLink[] = [
+    { href: DISCORD_INVITE_URL, title: "Entrar no Discord", external: true },
+  ];
 
   return (
     <footer className="mt-12 border-t border-hairline bg-ink">
-      <div className="mx-auto grid max-w-shelf gap-8 px-4 py-10 sm:grid-cols-2 md:grid-cols-4">
+      <div className="mx-auto grid max-w-shelf gap-8 px-4 py-10 sm:grid-cols-2 md:grid-cols-5">
         <div className="sm:col-span-2 md:col-span-1">
           <Wordmark className="text-lg" />
           <p className="mt-3 max-w-xs text-caption text-mist">
@@ -48,6 +52,7 @@ export function Footer() {
         </div>
 
         <FooterCol title="Navegar" links={navigate} />
+        <FooterCol title="Comunidade" links={comunidade} />
         <FooterCol title="Conta" links={conta} />
         <FooterCol title="Referência" links={referencia} />
       </div>
@@ -80,9 +85,12 @@ function FooterCol({ title, links }: { title: string; links: FooterLink[] }) {
               href={link.href}
               target={link.external ? "_blank" : undefined}
               rel={link.external ? "noopener noreferrer" : undefined}
-              className="text-body-sm text-mist transition-colors hover:text-ice"
+              className="inline-flex min-h-11 items-center text-body-sm text-mist transition-colors hover:text-ice focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ice"
             >
               {link.title}
+              {link.external && (
+                <span className="sr-only"> (abre em uma nova aba)</span>
+              )}
             </Link>
           </li>
         ))}
