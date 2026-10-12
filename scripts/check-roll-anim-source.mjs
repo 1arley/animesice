@@ -8,10 +8,12 @@ import { compileComponent, pickExport } from "../src/lib/compile-component.ts";
 const FILE = "src/components/gacha/RollStage.tsx";
 const source = await readFile(FILE, "utf8");
 
-// Shim mínimo: o arquivo real importa gsap, GachaCard, CountUp e o config.
+// Shim mínimo: o arquivo real importa scripts, reduced-motion, GachaCard e config.
 const modules = {
   react: { useEffect: () => {}, useRef: () => ({ current: null }), useState: () => [null, () => {}] },
   "react/jsx-runtime": { jsx: () => null, jsxs: () => null, Fragment: () => null },
+  "next/script": { default: () => null },
+  "@/lib/use-prefers-reduced-motion": { usePrefersReducedMotion: () => false },
   "@/lib/gsap": { gsap: {}, useGSAP: () => {}, ScrollTrigger: {} },
   "./GachaCard": { GachaCard: () => null, GACHA_TIERS: [], GALAXY_TEXT: "", RARITY_TEXT: {} },
   "@/components/core/CountUp": { CountUp: () => null },
