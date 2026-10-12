@@ -1,8 +1,9 @@
 import { API_URL } from "@/lib/api-server";
 
-export const revalidate = 60 * 60 * 24 * 7;
+// Segment config precisa de literal — Next aborta o build com expressão.
+export const revalidate = 604800;
 
-const CACHE_SECONDS = 60 * 60 * 24 * 7;
+const CACHE_SECONDS = revalidate;
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
 const MAL_USER_AGENT =
   "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";
