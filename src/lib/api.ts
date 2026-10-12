@@ -1790,7 +1790,8 @@ export const api = {
 
   gachaSpins: () => request<GachaSpinPreview[]>(`/gacha/spins`),
 
-  gachaSpin: () => request<GachaSpinPreview>(`/gacha/spin`, { method: "POST" }),
+  gachaSpin: (signal?: AbortSignal) =>
+    request<GachaSpinPreview>(`/gacha/spin`, { method: "POST", signal }),
 
   gachaSkins: (page = 1, limit = 48, search = "") =>
     request<GachaSkinsResponse>(

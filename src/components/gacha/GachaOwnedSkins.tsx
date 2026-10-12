@@ -156,7 +156,7 @@ export function GachaOwnedSkins() {
                   : "Avatar padrão ativo"}
           </p>
         </div>
-        <UserProfilePreview
+<UserProfilePreview
           user={user}
           ariaLabel="Ver perfil público"
           className="btn-ghost min-h-11 px-3"
