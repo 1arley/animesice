@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import dynamic from "next/dynamic";
 import { api, ApiError, type StreamSource } from "@/lib/api";
+import { safeImageSrc } from "@/lib/url";
 import { resolveAsyncSource } from "@/lib/resolve-async-source";
 import type { Episode, Anime } from "@/types";
 import { CommentSection } from "@/components/common/CommentSection";
@@ -242,7 +243,9 @@ export function WatchClient({
         ) : loadingSource ? (
           <EpisodePlayerShell
             posterUrl={
-              episode.thumbnailUrl ?? episode.anime.coverImage ?? undefined
+              episode.thumbnailUrl
+                ? safeImageSrc(episode.thumbnailUrl)
+                : safeImageSrc(episode.anime.coverImage, episode.anime.slug)
             }
             title={episode.anime.title}
           />

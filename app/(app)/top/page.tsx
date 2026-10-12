@@ -29,7 +29,7 @@ export default async function TopPage({
   const animes = await serverFetchJson<Anime[]>(`/anime/top?limit=${limit}`, { cache: "force-cache", next: { revalidate: 300, tags: ["top"] } }) ?? [];
 
   const [first, ...rest] = animes;
-  const firstCover = first ? safeImageSrc(first.coverImage) : null;
+  const firstCover = first ? safeImageSrc(first.coverImage, first.slug) : null;
 
   return (
     <div className="mx-auto max-w-shelf px-4 py-6">

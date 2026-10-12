@@ -92,7 +92,9 @@ function ActivityRow({
   userName: string;
 }) {
   const cover =
-    event.type === "comment" ? null : safeImageSrc(event.anime.coverImage);
+    event.type === "comment"
+      ? null
+      : safeImageSrc(event.anime.coverImage, event.anime.slug);
   const animeTitle =
     event.type === "comment"
       ? (event.anime?.title ?? "um anime")

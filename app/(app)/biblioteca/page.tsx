@@ -184,7 +184,7 @@ export default function LibraryPage() {
 }
 
 function HistoryRow({ item }: { item: WatchHistoryItem }) {
-  const cover = safeImageSrc(item.anime.coverImage);
+  const cover = safeImageSrc(item.anime.coverImage, item.anime.slug);
   return (
     <Link
       href={`/animes/${item.anime.slug}/${item.episode.number}`}

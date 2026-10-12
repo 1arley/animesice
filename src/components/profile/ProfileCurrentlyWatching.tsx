@@ -32,7 +32,7 @@ export function ProfileCurrentlyWatching({
       <SectionLabel level={2}>Agora assistindo</SectionLabel>
       <div className="space-y-3">
         {items.slice(0, 3).map((item) => {
-          const cover = safeImageSrc(item.anime.coverImage);
+          const cover = safeImageSrc(item.anime.coverImage, item.anime.slug);
           const total = item.anime.episodeCount;
           const pct =
             total && total > 0
