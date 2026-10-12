@@ -39,6 +39,74 @@
     min-height: 100vh;
   }
 
+  .roll-stage-dialog [data-flip] {
+    transform-style: preserve-3d;
+  }
+
+  .roll-stage-dialog [data-card-front],
+  .roll-stage-dialog [data-card-back] {
+    backface-visibility: hidden;
+  }
+
+  .roll-stage-dialog [data-card-back] {
+    transform: rotateY(180deg);
+  }
+
+  .roll-stage-dialog[data-revealed="true"] [data-flip] {
+    transform: rotateY(180deg);
+  }
+
+  .roll-stage-dialog[data-revealed="true"] [data-stage] {
+    opacity: 1;
+  }
+
+  .roll-stage-dialog[data-revealed="true"] [data-badge],
+  .roll-stage-dialog[data-revealed="true"] [data-name-letter] {
+    opacity: 1;
+  }
+
+  .roll-stage-dialog[data-reduced="true"] [data-flip] {
+    transform: none !important;
+  }
+
+  .roll-stage-dialog[data-reduced="true"] [data-card-front],
+  .roll-stage-dialog[data-reduced="true"] [data-card-back] {
+    opacity: 0;
+    transform: none !important;
+    transition: opacity 220ms ease, transform 220ms ease;
+  }
+
+  .roll-stage-dialog[data-reduced="true"] [data-card-front] {
+    opacity: 1;
+  }
+
+  .roll-stage-dialog[data-reduced="true"][data-revealed="true"] [data-card-front] {
+    opacity: 0;
+    transform: scale(0.97) !important;
+  }
+
+  .roll-stage-dialog[data-reduced="true"][data-revealed="true"] [data-card-back] {
+    opacity: 1;
+    transform: scale(1) !important;
+  }
+
+  .roll-stage-dialog[data-reduced="true"] .roll-card-tilt {
+    transform: none !important;
+    transition: none;
+  }
+
+  .roll-card-tilt {
+    transform: rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg));
+    transform-style: preserve-3d;
+    transition: transform 180ms ease-out;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .roll-card-tilt {
+      transition: none;
+    }
+  }
+
   /* Scroll suave Lenis — classes recomendadas (nativo, sem scroll-jacking) */
   html.lenis,
   html.lenis body {

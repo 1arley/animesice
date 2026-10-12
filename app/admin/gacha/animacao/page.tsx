@@ -38,7 +38,7 @@ const SAMPLE_PULLS: GachaPull[] = SAMPLES.map(([rarity, foil, value]) => ({
   card: {
     id: `preview-${rarity}`,
     name: `Carta ${rarity}`,
-    image: `https://picsum.photos/seed/${rarity.toLowerCase()}/400/560`,
+    image: "/aeliana/Aeliana.png",
     imageHidden: false,
     rarity,
     favourites: 0,

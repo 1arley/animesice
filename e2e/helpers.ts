@@ -6,6 +6,8 @@ import type { Locator, Page } from "@playwright/test";
  * nunca à navegação do Next (3000).
  */
 const mockBackendPort = process.env.MOCK_BACKEND_PORT || "3001";
+const appPort = process.env.E2E_APP_PORT || "3000";
+const appOrigin = new URL(process.env.PLAYWRIGHT_TEST_BASE_URL || `http://localhost:${appPort}`).origin;
 
 // Redes de anúncio bloqueadas para iframes não interceptarem cliques
 // ("<div></div> intercepts pointer events") e tornarem o teste flaky.
@@ -75,7 +77,7 @@ export async function clickCentered(locator: Locator) {
  */
 export async function loginAs(page: Page) {
   await page.context().addCookies([
-    { name: "role", value: "USER", url: "http://localhost:3000" },
+    { name: "role", value: "USER", url: appOrigin },
   ]);
   await page.route(
     new RegExp(`//localhost:${mockBackendPort}/(?:api/)?user/me$`),
