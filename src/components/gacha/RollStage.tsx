@@ -316,6 +316,7 @@ export function RollStage({ pull, onClose, preview = false, config }: RollStageP
       paused: true,
       onUpdate: () => drawParticles(tl.time()),
     });
+    tl.timeScale(1.5);
     timeline.current = tl;
     particleMode.current = "gather";
     if (particles.current.length === 0) {
