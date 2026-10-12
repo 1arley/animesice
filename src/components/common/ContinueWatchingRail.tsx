@@ -93,7 +93,11 @@ export function ContinueWatchingRail() {
             const progressPercent = item.duration
               ? Math.min((item.progress / item.duration) * 100, 100)
               : 0;
-            const thumb = safeImageSrc(item.episode.thumbnailUrl);
+            const thumb = safeImageSrc(
+              item.episode.thumbnailUrl,
+              item.anime.slug,
+              item.episode.number,
+            );
             return (
               <SpotlightCard
                 key={item.episodeId}

@@ -30,7 +30,7 @@ export default function GachaColecaoPage() {
               Skins de perfil
             </h2>
             <p className="mt-1 text-body-sm text-mist">
-              Escolha o retrato que aparece como seu avatar.
+              Escolha o retrato que aparece no avatar do seu perfil público.
             </p>
           </div>
           <Link

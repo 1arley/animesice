@@ -43,6 +43,11 @@ const nextConfig: NextConfig = {
   outputFileTracingRoot: process.cwd(),
   images: {
     unoptimized: false,
+    localPatterns: [
+      { pathname: "/**", search: "" },
+      // The route validates dynamic source/episode values against the API record.
+      { pathname: "/api/anime-cover/**" },
+    ],
     remotePatterns: [
       { protocol: "https", hostname: "cdn.myanimelist.net" },
       { protocol: "https", hostname: "**.myanimelist.net" },
@@ -124,6 +129,17 @@ const nextConfig: NextConfig = {
         permanent: true,
       },
     ];
+  },
+  async rewrites() {
+    if (process.env.LOCAL_API_PROXY !== "1") return [];
+    return {
+      afterFiles: [
+        {
+          source: "/api/:path*",
+          destination: "http://api:3000/api/:path*",
+        },
+      ],
+    };
   },
   async headers() {
     return [

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { Avatar } from "@/components/common/Avatar";
 import { useToast } from "@/components/common/ToastProvider";
 import { GachaCardGridSkeleton } from "@/components/gacha/GachaPageSkeleton";
 import { useAuth } from "@/lib/auth-context";
@@ -118,6 +119,8 @@ export function GachaOwnedSkins() {
     return <GachaCardGridSkeleton label="Carregando suas skins" />;
   }
 
+  const equippedSkin = skins.find((skin) => skin.equipped);
+
   return (
     <>
       {error && (
@@ -133,6 +136,32 @@ export function GachaOwnedSkins() {
           </button>
         </p>
       )}
+      <div className="mb-5 flex flex-wrap items-center gap-4 border border-hairline bg-panel p-4">
+        <Avatar
+          name={user.name || user.userName || "Usuário"}
+          src={equippedSkin?.imageUrl ?? user.avatar}
+          size={56}
+          className="border border-ice"
+        />
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-semibold text-ice">Avatar do perfil público</p>
+          <p aria-live="polite" className="text-body-sm text-mist">
+            {busy
+              ? "Salvando seleção…"
+              : equippedSkin
+                ? `Skin ativa: ${equippedSkin.name}`
+                : user.avatar
+                  ? "Sua foto está ativa"
+                  : "Avatar padrão ativo"}
+          </p>
+        </div>
+        <Link
+          href={`/users/${encodeURIComponent(user.userName ?? user.id)}`}
+          className="btn-ghost min-h-11 px-3"
+        >
+          Ver perfil público
+        </Link>
+      </div>
       {skins.length > 0 ? (
         <>
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
@@ -174,8 +203,9 @@ export function GachaOwnedSkins() {
                     type="button"
                     disabled={busy || skin.equipped}
                     aria-pressed={skin.equipped}
+                    aria-label={skin.equipped ? `${skin.name} já está equipada` : `Equipar ${skin.name}`}
                     onClick={() => void equip(skin.id)}
-                    className="mt-2 inline-flex min-h-11 items-center px-2 text-xs uppercase tracking-wider text-mist hover:text-ice focus-visible:outline focus-visible:outline-2 focus-visible:outline-ice disabled:cursor-default disabled:opacity-70"
+                    className="btn-ghost mt-2 min-h-11 w-full px-3 text-sm uppercase tracking-wider disabled:cursor-default disabled:opacity-70"
                   >
                     {skin.equipped ? "Equipado" : "Equipar"}
                   </button>
