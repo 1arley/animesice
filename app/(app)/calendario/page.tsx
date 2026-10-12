@@ -119,7 +119,7 @@ export default async function CalendarioPage({
 
 /** Miniatura 2:3 do calendário (next/image, lazy, dimensões fixas — zero CLS). */
 function PosterThumb({ anime }: { anime: Anime }) {
-  const cover = safeImageSrc(anime.coverImage);
+  const cover = safeImageSrc(anime.coverImage, anime.slug);
   return cover ? (
     <div className="h-12 w-8 shrink-0 overflow-hidden bg-hairline">
       <Image

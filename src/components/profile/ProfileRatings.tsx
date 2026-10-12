@@ -36,7 +36,7 @@ export function ProfileRatings({
       </SectionLabel>
       <div className="space-y-2">
         {items.map((r) => {
-          const cover = safeImageSrc(r.anime.coverImage);
+          const cover = safeImageSrc(r.anime.coverImage, r.anime.slug);
           return (
             <Link
               key={r.anime.id}

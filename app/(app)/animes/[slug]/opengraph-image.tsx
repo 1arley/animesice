@@ -2,6 +2,8 @@ import { ImageResponse } from "next/og";
 import { serverFetchJson } from "@/lib/api-server";
 import type { Anime } from "@/types";
 import Image from "next/image";
+import { safeImageSrc } from "@/lib/url";
+import { SITE_URL } from "@/lib/site";
 
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
@@ -43,12 +45,10 @@ export default async function OpengraphImage({
     );
   }
 
-  const art =
-    anime.bannerImage && anime.bannerImage.startsWith("http")
-      ? anime.bannerImage
-      : anime.coverImage && anime.coverImage.startsWith("http")
-        ? anime.coverImage
-        : undefined;
+  const imageSrc =
+    safeImageSrc(anime.bannerImage, slug) ??
+    safeImageSrc(anime.coverImage, slug);
+  const art = imageSrc ? new URL(imageSrc, SITE_URL).toString() : undefined;
 
   const title =
     anime.title.length > 60 ? anime.title.slice(0, 57) + "…" : anime.title;

@@ -27,7 +27,10 @@ export function FeedActivityItem({
   const authorName = user.name?.trim() || user.userName || "Usuário";
   const authorHref = `/users/${user.userName ?? user.id}`;
 
-  const cover = event.type === "comment" ? null : safeImageSrc(event.anime.coverImage);
+  const cover =
+    event.type === "comment"
+      ? null
+      : safeImageSrc(event.anime.coverImage, event.anime.slug);
   const animeTitle =
     event.type === "comment"
       ? (event.anime?.title ?? "um anime")

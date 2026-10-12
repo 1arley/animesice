@@ -18,9 +18,35 @@ export function isValidRemoteUrl(raw: string | null | undefined): raw is string 
   }
 }
 
-/** Normaliza URL de imagem: devolve a string só se for http(s) válida. */
-export function safeImageSrc(raw: string | null | undefined): string | undefined {
-  return isValidRemoteUrl(raw) ? (raw as string) : undefined;
+/** Normaliza URLs de imagem e aponta capas do blog para o resolver do MAL. */
+export function safeImageSrc(
+  raw: string | null | undefined,
+  animeSlug?: string,
+): string | undefined {
+  if (!isValidRemoteUrl(raw)) return undefined;
+  const url = raw.trim();
+
+  if (
+    animeSlug &&
+    /^[a-z0-9]+(?:-[a-z0-9]+)*$/i.test(animeSlug) &&
+    isMeusanimesCover(url)
+  ) {
+    return `/api/anime-cover/${encodeURIComponent(animeSlug)}`;
+  }
+
+  return url;
+}
+
+function isMeusanimesCover(raw: string): boolean {
+  const url = new URL(raw);
+  const isBlogHost =
+    url.hostname === "meusanimes.blog" ||
+    url.hostname.endsWith(".meusanimes.blog");
+  return (
+    url.protocol === "https:" &&
+    isBlogHost &&
+    url.pathname.startsWith("/wp-content/uploads/")
+  );
 }
 
 /**
@@ -29,15 +55,18 @@ export function safeImageSrc(raw: string | null | undefined): string | undefined
  *   (banner do AniList não tem variação de tamanho — é só o arquivo).
  * - MyAnimeList: versão `l` (grande, ~600px) quando ainda é a miniatura padrão
  *   (~225px); se já é `l`, não há nível maior confiável — mantém.
- * - WordPress (meusanimes.blog etc.): remove o sufixo `-<W>x<H>` gerado pelo
- *   resize — a URL base aponta pro original de maior resolução.
+ * - Capas do WordPress associadas a um anime: usa o resolver local do MAL.
+ *   Sem o slug do anime, remove o sufixo `-<W>x<H>` do resize.
  * Devolve undefined para URLs inválidas e a própria URL quando não há upgrade.
  */
 export function upgradeImageUrl(
   raw: string | null | undefined,
+  animeSlug?: string,
 ): string | undefined {
-  if (!isValidRemoteUrl(raw)) return undefined;
-  const url = raw.trim();
+  const safeUrl = safeImageSrc(raw, animeSlug);
+  if (!safeUrl) return undefined;
+  if (safeUrl.startsWith("/")) return safeUrl;
+  const url = safeUrl;
 
   // --- AniList cover ---
   const anilist = url.match(

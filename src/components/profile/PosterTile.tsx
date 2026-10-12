@@ -27,7 +27,7 @@ export function PosterTile({
   statusLabel,
   priority = false,
 }: PosterTileProps) {
-  const cover = safeImageSrc(coverImage);
+  const cover = safeImageSrc(coverImage, slug);
   const pct =
     progress != null && progress > 0
       ? Math.min(100, Math.round(progress))

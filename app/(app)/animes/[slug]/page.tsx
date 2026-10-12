@@ -54,7 +54,9 @@ export async function generateMetadata({
     statusText,
   ].filter(Boolean);
   const description = metaParts.join(" · ").slice(0, 160);
-  const ogImage = upgradeImageUrl(anime.bannerImage) ?? upgradeImageUrl(anime.coverImage);
+  const ogImage =
+    upgradeImageUrl(anime.bannerImage, anime.slug) ??
+    upgradeImageUrl(anime.coverImage, anime.slug);
 
   return {
     title: anime.title,
@@ -90,9 +92,10 @@ export default async function AnimeDetailPage({
   // upgradeImageUrl: sobe a resolução quando a fonte oferece (MAL l / AniList
   // extraLarge); cover vira fallback do banner p/ nunca ficar sem arte.
   const banner =
-    upgradeImageUrl(anime.bannerImage) ?? upgradeImageUrl(anime.coverImage);
-  const cover = safeImageSrc(anime.coverImage);
-  const desktopCover = upgradeImageUrl(anime.coverImage);
+    upgradeImageUrl(anime.bannerImage, anime.slug) ??
+    upgradeImageUrl(anime.coverImage, anime.slug);
+  const cover = safeImageSrc(anime.coverImage, anime.slug);
+  const desktopCover = upgradeImageUrl(anime.coverImage, anime.slug);
 
   return (
     <article className="mx-auto max-w-shelf px-4 py-6">
@@ -514,7 +517,7 @@ export default async function AnimeDetailPage({
             ...(anime.editorialSynopsis || anime.synopsis ? { description: (anime.editorialSynopsis || anime.synopsis)!.slice(0, 500) } : {}),
             ...(anime.year ? { startDate: String(anime.year) } : {}),
             ...(cover ? { image: cover } : {}),
-            ...(anime.bannerImage ? { thumbnailUrl: upgradeImageUrl(anime.bannerImage) } : {}),
+            ...(anime.bannerImage ? { thumbnailUrl: upgradeImageUrl(anime.bannerImage, anime.slug) } : {}),
             ...(anime.genres?.length ? { genre: anime.genres.map((g) => g.name) } : {}),
             ...(anime.studios?.length ? { productionCompany: anime.studios.map((s) => ({ "@type": "Organization", name: s })) } : {}),
             ...(anime.rating ? { aggregateRating: { "@type": "AggregateRating", ratingValue: anime.rating, bestRating: 10, ratingCount: 1, reviewCount: 1 } } : {}),

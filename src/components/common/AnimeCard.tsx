@@ -38,8 +38,8 @@ export function AnimeCard({ anime, priority = false, spotlight = true, variant =
   const age = anime.ageRating;
   const dub = anime.audio === "DUBLADO";
   const onAir = isOnAir(anime.status);
-  const cover = safeImageSrc(anime.coverImage);
-  const desktopCover = upgradeImageUrl(anime.coverImage);
+  const cover = safeImageSrc(anime.coverImage, anime.slug);
+  const desktopCover = upgradeImageUrl(anime.coverImage, anime.slug);
 
   const card = (
     <Link

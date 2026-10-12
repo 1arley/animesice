@@ -69,7 +69,9 @@ export function HeroSlide({ anime, label, priority, isMobile }: HeroSlideProps) 
   const containerRef = useRef<HTMLElement>(null);
   const parallax = useHeroParallax(containerRef);
 
-  const art = upgradeImageUrl(anime.bannerImage) ?? upgradeImageUrl(anime.coverImage);
+  const art =
+    upgradeImageUrl(anime.bannerImage, anime.slug) ??
+    upgradeImageUrl(anime.coverImage, anime.slug);
 
   // O slide inicial (priority) é o LCP: pintar imediatamente, sem a animação
   // de "enter" (opacity 0 + blur) que atrasaria o LCP no mobile lento. Os

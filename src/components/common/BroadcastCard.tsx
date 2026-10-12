@@ -7,11 +7,11 @@ import { AdaptiveImage } from "@/components/common/AdaptiveImage";
 /** Card largo para escolhas editoriais. É um recorte de programação, não
  * outro poster na mesma grade. */
 export function BroadcastCard({ anime, priority = false }: { anime: Anime; priority?: boolean }) {
-  const safeBanner = safeImageSrc(anime.bannerImage);
-  const art = safeBanner ?? safeImageSrc(anime.coverImage);
+  const safeBanner = safeImageSrc(anime.bannerImage, anime.slug);
+  const art = safeBanner ?? safeImageSrc(anime.coverImage, anime.slug);
   const desktopArt = safeBanner
-    ? upgradeImageUrl(safeBanner)
-    : upgradeImageUrl(anime.coverImage);
+    ? upgradeImageUrl(anime.bannerImage, anime.slug)
+    : upgradeImageUrl(anime.coverImage, anime.slug);
 
   return (
     <Link
