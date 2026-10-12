@@ -125,6 +125,17 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  async rewrites() {
+    if (process.env.LOCAL_API_PROXY !== "1") return [];
+    return {
+      afterFiles: [
+        {
+          source: "/api/:path*",
+          destination: "http://api:3000/api/:path*",
+        },
+      ],
+    };
+  },
   async headers() {
     return [
       {

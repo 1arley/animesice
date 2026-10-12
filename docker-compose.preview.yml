@@ -1,0 +1,127 @@
+name: animesice-gacha-preview
+
+x-database-url: &database-url postgresql://preview:preview-local-only@db:5432/animesice_preview?schema=public
+x-backend: &backend
+  image: animesice-preview-api:local
+  build:
+    context: ../animesice-back
+    dockerfile: Dockerfile
+    target: build
+
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: animesice_preview
+      POSTGRES_USER: preview
+      POSTGRES_PASSWORD: preview-local-only
+    volumes:
+      - preview_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U preview -d animesice_preview"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  migrate:
+    <<: *backend
+    command: ["npx", "prisma", "migrate", "deploy"]
+    environment:
+      DATABASE_URL: *database-url
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+
+  seed:
+    <<: *backend
+    command: ["node", "/app/seed-preview.mjs"]
+    environment:
+      DATABASE_URL: *database-url
+      SEED_ANIME_COUNT: "12"
+    volumes:
+      - ./scripts/seed-preview.mjs:/app/seed-preview.mjs:ro
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    restart: "no"
+
+  api:
+    <<: *backend
+    command: ["npm", "run", "start:prod"]
+    environment:
+      DATABASE_URL: *database-url
+      NODE_ENV: development
+      PORT: "3000"
+      JWT_ACCESS_SECRET: animesice-preview-access-secret-do-not-use-in-prod
+      JWT_ACCESS_EXPIRES_IN: 15m
+      JWT_REFRESH_SECRET: animesice-preview-refresh-secret-do-not-use-in-prod
+      JWT_REFRESH_EXPIRES_IN: 30d
+      JWT_COOKIE_SECURE: "false"
+      JWT_COOKIE_SAMESITE: lax
+      TURNSTILE_ENABLED: "false"
+      CORS_ORIGIN: http://localhost:3000
+      CORS_CREDENTIALS: "true"
+      FRONTEND_URL: http://localhost:3000
+    ports:
+      - "127.0.0.1:3001:3000"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://localhost:3000/api').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.preview
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:3000/api
+      NEXT_PUBLIC_SITE_URL: http://localhost:3000
+      NEXT_PUBLIC_TURNSTILE_SITEKEY: 1x00000000000000000000AA
+      NEXT_PUBLIC_ENABLE_MONETAG: "0"
+      LOCAL_API_PROXY: "1"
+    volumes:
+      - ./app:/app/app
+      - ./src:/app/src
+      - ./public:/app/public
+      - ./next.config.ts:/app/next.config.ts
+      - ./proxy.ts:/app/proxy.ts
+      - ./tsconfig.json:/app/tsconfig.json
+      - ./postcss.config.mjs:/app/postcss.config.mjs
+      - preview_next:/app/.next
+    ports:
+      - "127.0.0.1:3000:3000"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://localhost:3000/entrar').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+    depends_on:
+      api:
+        condition: service_healthy
+      seed:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+volumes:
+  preview_pgdata:
+  preview_next:
