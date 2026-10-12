@@ -291,7 +291,7 @@ function GachaPageContent() {
     setStagePreview(true);
     setStageOpen(true);
     try {
-      const previewSpin = await api.gachaSpin();
+      const previewSpin = await api.gachaSpin(AbortSignal.timeout(15_000));
       setSpins((prev) => [...prev, previewSpin]);
       setSelectedSpinId(previewSpin.id);
       setSpinResult(previewSpin);
@@ -299,7 +299,11 @@ function GachaPageContent() {
     } catch (err) {
       setStageOpen(false);
       setSpinResult(null);
-      setError(err instanceof ApiError ? err.message : "Erro ao girar.");
+      setError(
+        err instanceof Error && err.name === "TimeoutError"
+          ? "A resposta demorou mais de 15 segundos. Recarregue a página para conferir se o preview foi criado antes de tentar novamente."
+          : err instanceof ApiError ? err.message : "Erro ao girar.",
+      );
     } finally {
       setSpinning(false);
     }
