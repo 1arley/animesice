@@ -219,6 +219,7 @@ export function ProfileCoverSettings() {
                 src={user.profileCover}
                 alt="Capa atual do perfil"
                 fill
+                unoptimized
                 sizes="700px"
                 className="object-cover"
               />
