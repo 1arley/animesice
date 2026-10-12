@@ -28,17 +28,17 @@ export function UserProfilePreview({
   className = "",
   ariaLabel,
 }: {
-  user: UserIdentity;
+  user?: UserIdentity | null;
   children: ReactNode;
   className?: string;
   ariaLabel?: string;
 }) {
-  const identifier = user.userName?.trim() || user.id?.trim();
+  const identifier = user?.userName?.trim() || user?.id?.trim();
   if (!identifier) return <>{children}</>;
 
   return (
     <UserProfilePreviewLink
-      user={user}
+      user={user ?? {}}
       identifier={identifier}
       className={className}
       ariaLabel={ariaLabel}
