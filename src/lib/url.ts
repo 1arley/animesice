@@ -18,7 +18,7 @@ export function isValidRemoteUrl(raw: string | null | undefined): raw is string 
   }
 }
 
-/** Normaliza URLs de imagem e aponta capas do blog para o resolver do MAL. */
+/** Normaliza URLs de imagem e prepara o proxy com fallback para capas do blog. */
 export function safeImageSrc(
   raw: string | null | undefined,
   animeSlug?: string,
@@ -31,7 +31,7 @@ export function safeImageSrc(
     /^[a-z0-9]+(?:-[a-z0-9]+)*$/i.test(animeSlug) &&
     isMeusanimesCover(url)
   ) {
-    return `/api/anime-cover/${encodeURIComponent(animeSlug)}`;
+    return `/api/anime-cover/${encodeURIComponent(animeSlug)}?source=${encodeURIComponent(url)}`;
   }
 
   return url;

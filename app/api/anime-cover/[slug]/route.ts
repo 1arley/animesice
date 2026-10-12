@@ -18,6 +18,8 @@ const MAL_FORMAT: Record<string, string> = {
 
 type AnimeLookup = {
   title?: string;
+  coverImage?: string | null;
+  bannerImage?: string | null;
   malId?: number | null;
   format?: string | null;
   year?: number | null;
@@ -28,6 +30,8 @@ type MalSearchItem = {
   name?: string;
   payload?: { media_type?: string; start_year?: number };
 };
+
+type FetchedImage = { body: ArrayBuffer; contentType: string };
 
 function failed(status: number) {
   return new Response(null, {
@@ -147,8 +151,73 @@ function extractMalCover(html: string) {
   }
 }
 
+function isBlogCoverUrl(url: URL) {
+  const isBlogHost =
+    url.hostname === "meusanimes.blog" ||
+    url.hostname.endsWith(".meusanimes.blog");
+  return (
+    url.protocol === "https:" &&
+    !url.username &&
+    !url.password &&
+    !url.port &&
+    isBlogHost &&
+    url.pathname.startsWith("/wp-content/uploads/") &&
+    /\.(?:jpe?g|png|webp|avif|gif)$/i.test(url.pathname)
+  );
+}
+
+async function fetchImage(
+  url: URL,
+  isAllowedUrl: (url: URL) => boolean,
+): Promise<FetchedImage | null> {
+  try {
+    const response = await fetch(url, {
+      headers: { "user-agent": MAL_USER_AGENT, accept: "image/*" },
+      redirect: "manual",
+      next: { revalidate: CACHE_SECONDS },
+      signal: AbortSignal.timeout(10_000),
+    });
+    const contentType = response.headers
+      .get("content-type")
+      ?.split(";")[0]
+      .trim()
+      .toLowerCase();
+    const contentLength = Number(response.headers.get("content-length"));
+
+    if (
+      !response.ok ||
+      !isAllowedUrl(new URL(response.url)) ||
+      !["image/jpeg", "image/png", "image/webp", "image/avif", "image/gif"].includes(
+        contentType ?? "",
+      ) ||
+      (contentLength > 0 && contentLength > MAX_IMAGE_BYTES)
+    ) {
+      return null;
+    }
+
+    const body = await response.arrayBuffer();
+    return body.byteLength > 0 && body.byteLength <= MAX_IMAGE_BYTES
+      ? { body, contentType: contentType as string }
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+function imageResponse(image: FetchedImage) {
+  return new Response(image.body, {
+    headers: {
+      "Content-Type": image.contentType,
+      "Content-Length": String(image.body.byteLength),
+      "Cache-Control":
+        "public, max-age=86400, s-maxage=604800, stale-while-revalidate=86400",
+      "X-Content-Type-Options": "nosniff",
+    },
+  });
+}
+
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ slug: string }> },
 ) {
   const { slug } = await params;
@@ -164,6 +233,26 @@ export async function GET(
     }
 
     const anime = (await animeResponse.json()) as AnimeLookup;
+    const requestUrl = new URL(request.url);
+    if (requestUrl.searchParams.has("source")) {
+      const source = requestUrl.searchParams.get("source") ?? "";
+      let blogUrl: URL;
+      try {
+        blogUrl = new URL(source);
+      } catch {
+        return failed(400);
+      }
+      if (
+        !isBlogCoverUrl(blogUrl) ||
+        (source !== anime.coverImage && source !== anime.bannerImage)
+      ) {
+        return failed(400);
+      }
+
+      const blogImage = await fetchImage(blogUrl, isBlogCoverUrl);
+      if (blogImage) return imageResponse(blogImage);
+    }
+
     const malId = await findMalId(anime);
     if (!malId) return failed(404);
 
@@ -177,44 +266,14 @@ export async function GET(
     const coverUrl = extractMalCover(await malPage.text());
     if (!coverUrl) return failed(502);
 
-    const imageResponse = await fetch(coverUrl, {
-      headers: { "user-agent": MAL_USER_AGENT, accept: "image/*" },
-      next: { revalidate: CACHE_SECONDS },
-      signal: AbortSignal.timeout(10_000),
-    });
-    const finalUrl = new URL(imageResponse.url);
-    const contentType = imageResponse.headers
-      .get("content-type")
-      ?.split(";")[0]
-      .trim()
-      .toLowerCase();
-    const contentLength = Number(imageResponse.headers.get("content-length"));
-
-    if (
-      !imageResponse.ok ||
-      finalUrl.hostname !== "cdn.myanimelist.net" ||
-      !["image/jpeg", "image/png", "image/webp"].includes(
-        contentType ?? "",
-      ) ||
-      (contentLength > 0 && contentLength > MAX_IMAGE_BYTES)
-    ) {
-      return failed(502);
-    }
-
-    const image = await imageResponse.arrayBuffer();
-    if (image.byteLength === 0 || image.byteLength > MAX_IMAGE_BYTES) {
-      return failed(502);
-    }
-
-    return new Response(image, {
-      headers: {
-        "Content-Type": contentType as string,
-        "Content-Length": String(image.byteLength),
-        "Cache-Control":
-          "public, max-age=86400, s-maxage=604800, stale-while-revalidate=86400",
-        "X-Content-Type-Options": "nosniff",
-      },
-    });
+    const malImage = await fetchImage(
+      coverUrl,
+      (url) =>
+        url.protocol === "https:" &&
+        url.hostname === "cdn.myanimelist.net" &&
+        url.pathname.startsWith("/images/anime/"),
+    );
+    return malImage ? imageResponse(malImage) : failed(502);
   } catch {
     return failed(502);
   }
