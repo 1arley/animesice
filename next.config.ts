@@ -43,6 +43,11 @@ const nextConfig: NextConfig = {
   outputFileTracingRoot: process.cwd(),
   images: {
     unoptimized: false,
+    localPatterns: [
+      { pathname: "/**", search: "" },
+      // The route validates dynamic source/episode values against the API record.
+      { pathname: "/api/anime-cover/**" },
+    ],
     remotePatterns: [
       { protocol: "https", hostname: "cdn.myanimelist.net" },
       { protocol: "https", hostname: "**.myanimelist.net" },
