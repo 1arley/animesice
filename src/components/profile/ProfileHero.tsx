@@ -224,7 +224,7 @@ export function ProfileHero({
           <div className="rounded-full ring-4 ring-ink">
             <Avatar
               name={displayName}
-              src={profile.avatar}
+              src={profile.equippedGachaSkin?.imageUrl ?? profile.avatar}
               size={104}
               className="border border-hairline"
             />
