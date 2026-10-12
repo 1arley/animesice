@@ -249,6 +249,7 @@ export interface PublicUserProfile {
   name: string | null;
   userName: string | null;
   avatar: string | null;
+  equippedGachaSkin?: { imageUrl: string } | null;
   profileCover: string | null;
   bio: string | null;
   myAnimeList: string | null;
