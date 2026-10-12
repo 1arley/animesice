@@ -6,7 +6,7 @@ import type { Episode, Anime } from "@/types";
 
 import { WatchClient } from "@/components/common/WatchClient";
 import { SITE_URL } from "@/lib/site";
-import { escapeJsonLd } from "@/lib/url";
+import { escapeJsonLd, safeImageSrc } from "@/lib/url";
 
 /**
  * Converte formatos comuns de duração para ISO 8601 (PT{minutos}M).
@@ -71,6 +71,7 @@ export async function generateMetadata({
   const title = `${ep.anime.title} — Episódio ${ep.number}`;
   const audioText = ep.anime.audio === "DUBLADO" ? "dublado" : "legendado";
   const description = `Assistir ${ep.anime.title} episódio ${ep.number} ${audioText} online em HD no AnimesIce. ${ep.anime.synopsis?.slice(0, 80) ?? ""}`;
+  const thumbnailUrl = safeImageSrc(ep.thumbnailUrl, slug, ep.number);
 
   return {
     title,
@@ -80,13 +81,13 @@ export async function generateMetadata({
       title,
       description: description.slice(0, 160),
       type: "video.episode",
-      ...(ep.thumbnailUrl ? { images: [{ url: ep.thumbnailUrl }] } : {}),
+      ...(thumbnailUrl ? { images: [{ url: thumbnailUrl }] } : {}),
     },
     twitter: {
       card: "summary_large_image",
       title,
       description: description.slice(0, 160),
-      ...(ep.thumbnailUrl ? { images: [ep.thumbnailUrl] } : {}),
+      ...(thumbnailUrl ? { images: [thumbnailUrl] } : {}),
     },
   };
 }
@@ -108,6 +109,12 @@ export default async function WatchPage({
         serverStreamSourceAsync(slug, number).catch(() => null),
       ]);
   if (!episode) notFound();
+  const thumbnailUrl = safeImageSrc(
+    episode.thumbnailUrl,
+    slug,
+    episode.number,
+  );
+  const animeCover = safeImageSrc(episode.anime.coverImage, slug);
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -119,11 +126,11 @@ export default async function WatchPage({
       "@type": "TVSeries",
       name: episode.anime.title,
       url: `${SITE_URL}/animes/${slug}`,
-      ...(episode.anime.coverImage ? { image: episode.anime.coverImage } : {}),
+      ...(animeCover ? { image: animeCover } : {}),
       ...(episode.anime.genres?.length ? { genre: episode.anime.genres.map((g) => g.name) } : {}),
       ...(episode.anime.studios?.length ? { productionCompany: episode.anime.studios.map((s) => ({ "@type": "Organization", name: s })) } : {}),
     },
-    ...(episode.thumbnailUrl ? { thumbnailUrl: episode.thumbnailUrl } : {}),
+    ...(thumbnailUrl ? { thumbnailUrl } : {}),
     ...(episode.anime.synopsis ? { description: episode.anime.synopsis.slice(0, 200) } : {}),
   };
 
@@ -137,7 +144,7 @@ export default async function WatchPage({
     description: `Assistir ${episode.anime.title} episódio ${episode.number} ${
       episode.anime.audio === "DUBLADO" ? "dublado" : "legendado"
     } online em HD no AnimesIce.`,
-    ...(episode.thumbnailUrl ? { thumbnailUrl: episode.thumbnailUrl } : {}),
+    ...(thumbnailUrl ? { thumbnailUrl } : {}),
     uploadDate: episode.dateModified ?? episode.createdAt,
     duration: toIso8601Duration(episode.duration),
     embedUrl: `${SITE_URL}/animes/${slug}/${number}`,
@@ -151,7 +158,7 @@ export default async function WatchPage({
       "@type": "TVSeries",
       name: episode.anime.title,
       url: `${SITE_URL}/animes/${slug}`,
-      ...(episode.anime.coverImage ? { image: episode.anime.coverImage } : {}),
+      ...(animeCover ? { image: animeCover } : {}),
       ...(episode.anime.genres?.length
         ? { genre: episode.anime.genres.map((g) => g.name) }
         : {}),

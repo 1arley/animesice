@@ -18,8 +18,16 @@ export interface EpisodeCardProps {
 export function EpisodeCard({ episode, priority = false }: EpisodeCardProps) {
   const { anime } = episode;
   const href = `/animes/${anime.slug}/${episode.number}`;
-  const thumb = safeImageSrc(episode.thumbnailUrl);
-  const desktopThumb = upgradeImageUrl(episode.thumbnailUrl);
+  const thumb = safeImageSrc(
+    episode.thumbnailUrl,
+    anime.slug,
+    episode.number,
+  );
+  const desktopThumb = upgradeImageUrl(
+    episode.thumbnailUrl,
+    anime.slug,
+    episode.number,
+  );
 
   return (
     <SpotlightCard className="h-full">

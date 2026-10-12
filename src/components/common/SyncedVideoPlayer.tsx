@@ -285,7 +285,7 @@ function NativeSyncedPlayer({
   const [guestFullscreen, setGuestFullscreen] = useState(false);
 
   const safeSrc = safeImageSrc(src) ?? src;
-  const safePoster = safeImageSrc(posterUrl, animeSlug);
+  const safePoster = safeImageSrc(posterUrl, animeSlug, episodeNumber);
   const isM3u8 = safeSrc.toLowerCase().includes(".m3u8");
 
   const sendSync = useCallback(

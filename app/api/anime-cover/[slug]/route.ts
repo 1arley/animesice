@@ -242,12 +242,28 @@ export async function GET(
       } catch {
         return failed(400);
       }
-      if (
-        !isBlogCoverUrl(blogUrl) ||
-        (source !== anime.coverImage && source !== anime.bannerImage)
-      ) {
+      if (!isBlogCoverUrl(blogUrl)) {
         return failed(400);
       }
+
+      let isKnownImage =
+        source === anime.coverImage || source === anime.bannerImage;
+      const episodeNumber = requestUrl.searchParams.get("episode");
+      if (!isKnownImage && episodeNumber !== null) {
+        if (!/^[1-9]\d*$/.test(episodeNumber)) return failed(400);
+        const episodeResponse = await fetch(
+          `${API_URL}/episode/${encodeURIComponent(slug)}/${episodeNumber}`,
+          { next: { revalidate: CACHE_SECONDS } },
+        );
+        if (!episodeResponse.ok) {
+          return failed(episodeResponse.status === 404 ? 404 : 502);
+        }
+        const episode = (await episodeResponse.json()) as {
+          thumbnailUrl?: string | null;
+        };
+        isKnownImage = source === episode.thumbnailUrl;
+      }
+      if (!isKnownImage) return failed(400);
 
       const blogImage = await fetchImage(blogUrl, isBlogCoverUrl);
       if (blogImage) return imageResponse(blogImage);
