@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Avatar } from "@/components/common/Avatar";
 import { useToast } from "@/components/common/ToastProvider";
 import { GachaCardGridSkeleton } from "@/components/gacha/GachaPageSkeleton";
+import { UserProfilePreview } from "@/components/social/UserProfilePreview";
 import { useAuth } from "@/lib/auth-context";
 import { api, ApiError } from "@/lib/api";
 import type { GachaSkin } from "@/types";
@@ -155,12 +156,13 @@ export function GachaOwnedSkins() {
                   : "Avatar padrão ativo"}
           </p>
         </div>
-        <Link
-          href={`/users/${encodeURIComponent(user.userName ?? user.id)}`}
+        <UserProfilePreview
+          user={user}
+          ariaLabel="Ver perfil público"
           className="btn-ghost min-h-11 px-3"
         >
           Ver perfil público
-        </Link>
+        </UserProfilePreview>
       </div>
       {skins.length > 0 ? (
         <>

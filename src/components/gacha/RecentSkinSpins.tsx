@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Avatar } from "@/components/common/Avatar";
+import { UserProfilePreview } from "@/components/social/UserProfilePreview";
 import { api, ApiError, safeImageSrc } from "@/lib/api";
 import type { GachaSkinSpinActivity } from "@/types";
 
@@ -116,14 +117,14 @@ export function RecentSkinSpins() {
               )}
             </div>
             <div className="min-w-0 flex-1">
-              <div className="flex min-w-0 items-center gap-2">
+              <UserProfilePreview user={spin.user} className="flex min-w-0 items-center gap-2">
                 <Avatar
                   name={playerName}
                   src={safeImageSrc(spin.user.avatar)}
                   size={28}
                 />
-                <p className="truncate text-sm text-snow">{playerName}</p>
-              </div>
+                <span className="truncate text-sm text-snow">{playerName}</span>
+              </UserProfilePreview>
               <p className="mt-2 truncate text-body-sm text-ice">
                 {spin.skin.name}
               </p>

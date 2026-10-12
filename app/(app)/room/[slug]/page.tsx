@@ -8,6 +8,7 @@ import { useAuth } from "@/lib/auth-context";
 import type { Episode, Anime } from "@/types";
 import { SyncedVideoPlayer } from "@/components/common/SyncedVideoPlayer";
 import { EpisodeLoadingState } from "@/components/common/EpisodeLoadingState";
+import { UserProfilePreview } from "@/components/social/UserProfilePreview";
 import { io, Socket } from "socket.io-client";
 
 interface Participant {
@@ -443,17 +444,27 @@ export default function RoomPage({
                   key={p.userId}
                   className="inline-flex items-center gap-1 rounded bg-hairline/30 px-1.5 py-0.5 text-caption"
                 >
-                  {p.avatar && (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={p.avatar}
-                      alt=""
-                      className="h-4 w-4 rounded-full"
-                    />
-                  )}
-                  <span className={p.isHost ? "text-ice font-medium" : "text-mist"}>
+                  <UserProfilePreview
+                    user={{
+                      id: p.userId,
+                      userName: p.userName,
+                      name: p.name,
+                      avatar: p.avatar,
+                    }}
+                    className={`inline-flex min-h-8 items-center gap-1 ${
+                      p.isHost ? "text-ice font-medium" : "text-mist"
+                    }`}
+                  >
+                    {p.avatar && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={p.avatar}
+                        alt=""
+                        className="h-4 w-4 rounded-full"
+                      />
+                    )}
                     {p.userName ?? p.name ?? "Anônimo"}
-                  </span>
+                  </UserProfilePreview>
                   {p.isHost && <span className="text-ice">★</span>}
                 </span>
               ))}
@@ -473,9 +484,12 @@ export default function RoomPage({
               )}
               {messages.map((msg) => (
                 <div key={msg.id} className="text-body-sm">
-                  <span className="font-sans font-medium text-ice">
-                    {msg.user.userName ?? msg.user.name ?? "Anônimo"}:
-                  </span>{" "}
+                  <UserProfilePreview
+                    user={msg.user}
+                    className="font-sans font-medium text-ice"
+                  >
+                    {msg.user.userName ?? msg.user.name ?? "Anônimo"}
+                  </UserProfilePreview>:{" "}
                   <span className="text-mist">{msg.content}</span>
                 </div>
               ))}

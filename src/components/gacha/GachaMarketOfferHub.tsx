@@ -5,6 +5,7 @@ import { api, ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { useToast } from "@/components/common/ToastProvider";
 import { GachaRowsSkeleton } from "@/components/gacha/GachaPageSkeleton";
+import { UserProfilePreview } from "@/components/social/UserProfilePreview";
 import { EmptyState } from "@/components/ui/EmptyState";
 import type { GachaMarketOffer } from "@/types";
 
@@ -30,9 +31,8 @@ function OfferCard({
   onCancel: () => void;
 }) {
   const item = offer.listing?.item;
-  const name = incoming
-    ? personName(offer.offeredUser)
-    : personName(offer.requestedUser);
+  const counterparty = incoming ? offer.offeredUser : offer.requestedUser;
+  const name = personName(counterparty);
   const amounts = [
     offer.crystals > 0
       ? `${offer.crystals.toLocaleString("pt-BR")} Cristais`
@@ -47,7 +47,27 @@ function OfferCard({
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-caption text-mist">
-            {incoming ? `${name} propõe` : `Você propôs para ${name}`}
+            {incoming ? (
+              <>
+                <UserProfilePreview
+                  user={counterparty}
+                  className="text-ice underline decoration-hairline underline-offset-2 hover:text-snow"
+                >
+                  {name}
+                </UserProfilePreview>{" "}
+                propõe
+              </>
+            ) : (
+              <>
+                Você propôs para{" "}
+                <UserProfilePreview
+                  user={counterparty}
+                  className="text-ice underline decoration-hairline underline-offset-2 hover:text-snow"
+                >
+                  {name}
+                </UserProfilePreview>
+              </>
+            )}
           </p>
           <h3 className="mt-1 break-words font-display text-lg text-snow">
             {item ? item.name : "Anúncio encerrado"}

@@ -10,6 +10,7 @@ import { Modal } from "@/components/common/Modal";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { SearchField } from "@/components/ui/SearchField";
 import { SectionLabel } from "@/components/common/SectionLabel";
+import { UserProfilePreview } from "@/components/social/UserProfilePreview";
 import { useToast } from "@/components/common/ToastProvider";
 import type { GachaPull, GachaTrade, PublicUserProfile } from "@/types";
 
@@ -86,7 +87,12 @@ function MiniPair({
           <div key={p.id} className="w-28 shrink-0">
             <GachaCard pull={p} linkAnime={false} />
             <p className="mt-1 truncate text-caption text-mist">
-              {p.user?.name?.trim() || p.user?.userName || "o outro"}{" "}
+              <UserProfilePreview
+                user={p.user}
+                className="text-ice underline decoration-hairline underline-offset-2 hover:text-snow"
+              >
+                {p.user?.name?.trim() || p.user?.userName || "o outro"}
+              </UserProfilePreview>{" "}
               {theirsLabel}
             </p>
             <button
@@ -127,13 +133,13 @@ function TradeRow({
 }) {
   const incoming = trade.requestedUserId === myId;
   const expired = new Date(trade.expiresAt).getTime() <= now;
-  const counterparty = incoming
-    ? trade.offeredUserCard.user?.name?.trim() ||
-      trade.offeredUserCard.user?.userName ||
-      "outro usuário"
-    : trade.requestedUserCard.user?.name?.trim() ||
-      trade.requestedUserCard.user?.userName ||
-      "outro usuário";
+  const counterpartyUser = incoming
+    ? trade.offeredUserCard.user
+    : trade.requestedUserCard.user;
+  const counterparty =
+    counterpartyUser?.name?.trim() ||
+    counterpartyUser?.userName ||
+    "outro usuário";
   const busy = busyId?.startsWith(`${trade.id}:`) ?? false;
   const acceptActive = busyId === `${trade.id}:accept`;
   const declineActive = busyId === `${trade.id}:decline`;
@@ -144,9 +150,12 @@ function TradeRow({
         {incoming ? (
           <>
             <p className="text-body-sm text-snow">
-              {trade.offeredUserCard.user?.name?.trim() ||
-                trade.offeredUserCard.user?.userName ||
-                "Outro usuário"}{" "}
+              <UserProfilePreview
+                user={counterpartyUser}
+                className="text-ice underline decoration-hairline underline-offset-2 hover:text-snow"
+              >
+                {counterparty}
+              </UserProfilePreview>{" "}
               quer trocar {trade.offeredUserCards?.length ?? 1} carta
               {(trade.offeredUserCards?.length ?? 1) > 1 ? "s" : ""} pela(s)
               sua(s):
@@ -172,9 +181,12 @@ function TradeRow({
             <p className="text-body-sm text-snow">
               Você quer trocar {trade.offeredUserCards?.length ?? 1} carta
               {(trade.offeredUserCards?.length ?? 1) > 1 ? "s" : ""} pela(s) de{" "}
-              {trade.requestedUserCard.user?.name?.trim() ||
-                trade.requestedUserCard.user?.userName ||
-                "outro usuário"}
+              <UserProfilePreview
+                user={counterpartyUser}
+                className="text-ice underline decoration-hairline underline-offset-2 hover:text-snow"
+              >
+                {counterparty}
+              </UserProfilePreview>
               :
             </p>
             <div className="mt-3">
@@ -808,7 +820,13 @@ setError("Você não tem Cristais disponíveis suficientes para oferecer.");
           </form>
           {target && (
             <p role="status" className="mt-3 text-body-sm text-ice">
-              Coleção de {target.name?.trim() || target.userName || "jogador"} ·{" "}
+              Coleção de{" "}
+              <UserProfilePreview
+                user={target}
+                className="underline decoration-hairline underline-offset-2 hover:text-snow"
+              >
+                {target.name?.trim() || target.userName || "jogador"}
+              </UserProfilePreview> ·{" "}
               {targetCards.length} cartas disponíveis
             </p>
           )}

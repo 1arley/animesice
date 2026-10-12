@@ -1,11 +1,11 @@
 "use client";
 
-import Link from "next/link";
 import { Avatar } from "@/components/common/Avatar";
 import { FollowButton } from "@/components/social/FollowButton";
 import { SpotlightCard } from "@/components/core/SpotlightCard";
 import { formatDate } from "@/lib/time";
 import type { UserSearchResult } from "@/types";
+import { UserProfilePreview } from "@/components/social/UserProfilePreview";
 
 /**
  * UserCard — cartão compacto do diretório de usuários: avatar, nome,
@@ -13,14 +13,11 @@ import type { UserSearchResult } from "@/types";
  */
 export function UserCard({ user }: { user: UserSearchResult }) {
   const name = user.name?.trim() || user.userName || "Usuário";
-  const href = `/usuarios/${user.userName ?? user.id}`;
-
   return (
     <SpotlightCard className="flex h-full flex-col border border-hairline bg-panel p-4">
-      <Link
-        href={href}
+      <UserProfilePreview
+        user={user}
         className="group flex items-center gap-3"
-        aria-label={`Perfil de ${name}`}
       >
         <Avatar name={name} src={user.avatar} size={48} />
         <div className="min-w-0">
@@ -31,7 +28,7 @@ export function UserCard({ user }: { user: UserSearchResult }) {
             @{user.userName ?? user.id}
           </p>
         </div>
-      </Link>
+      </UserProfilePreview>
 
       {user.bio && (
         <p className="mt-2 line-clamp-2 text-body-sm text-mist">{user.bio}</p>

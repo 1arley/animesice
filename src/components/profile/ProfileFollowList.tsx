@@ -1,12 +1,12 @@
 "use client";
 
-import Link from "next/link";
 import { Avatar } from "@/components/common/Avatar";
 import { FollowButton } from "@/components/social/FollowButton";
 import { formatDate } from "@/lib/time";
 import { SectionLabel } from "@/components/common/SectionLabel";
 import { EmptyState } from "@/components/ui/EmptyState";
 import type { UserSearchResult } from "@/types";
+import { UserProfilePreview } from "@/components/social/UserProfilePreview";
 
 /**
  * ProfileFollowList — quem segue / quem o perfil segue, em linhas
@@ -74,11 +74,9 @@ export function ProfileFollowList({
 
 function FollowRow({ user }: { user: UserSearchResult }) {
   const name = user.name?.trim() || user.userName || "Usuário";
-  const href = `/users/${user.userName ?? user.id}`;
-
   return (
     <li className="flex items-center gap-3 py-3">
-      <Link href={href} className="group flex min-w-0 flex-1 items-center gap-3">
+      <UserProfilePreview user={user} className="group flex min-w-0 flex-1 items-center gap-3">
         <Avatar name={name} src={user.avatar} size={44} />
         <div className="min-w-0">
           <p className="truncate font-display text-body font-semibold text-snow transition-colors group-hover:text-ice">
@@ -93,7 +91,7 @@ function FollowRow({ user }: { user: UserSearchResult }) {
             </p>
           )}
         </div>
-      </Link>
+      </UserProfilePreview>
 
       <div className="flex shrink-0 flex-col items-end gap-0.5">
         <FollowButton

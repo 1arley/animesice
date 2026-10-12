@@ -19,6 +19,7 @@ import { cosmeticTypeOf } from "@/lib/cosmetic-svg";
 import { api, ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { safeImageSrc } from "@/lib/url";
+import { UserProfilePreview } from "@/components/social/UserProfilePreview";
 import type { GachaPull, GachaShopItem } from "@/types";
 
 export type GachaCardInspection = {
@@ -413,7 +414,14 @@ function OwnedCardPreview({
                       <div className="col-span-2">
                         <dt className="text-mist-soft">Quem tirou</dt>
                         <dd className="truncate text-snow">
-                          {originalOwnerName}
+                          {pull.originalUser ? (
+                            <UserProfilePreview
+                              user={pull.originalUser}
+                              className="text-snow underline decoration-hairline underline-offset-2 hover:text-ice"
+                            >
+                              {originalOwnerName}
+                            </UserProfilePreview>
+                          ) : originalOwnerName}
                         </dd>
                       </div>
                       <div className="col-span-2">
@@ -518,18 +526,12 @@ function OwnedCardPreview({
             <p className="font-mono text-caption uppercase tracking-wide text-mist-soft">
               Dono
             </p>
-            {pull.user?.userName ? (
-              <Link
-                href={`/users/${pull.user.userName}`}
-                className="mt-1 block truncate text-body-sm font-medium text-snow hover:text-ice"
-              >
-                {ownerName}
-              </Link>
-            ) : (
-              <p className="mt-1 truncate text-body-sm font-medium text-snow">
-                {ownerName}
-              </p>
-            )}
+            <UserProfilePreview
+              user={pull.user}
+              className="mt-1 block truncate text-body-sm font-medium text-snow hover:text-ice"
+            >
+              {ownerName}
+            </UserProfilePreview>
           </div>
           {canReroll && (
             <section className="mt-4 border border-hairline bg-ink p-3">

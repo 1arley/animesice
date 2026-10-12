@@ -21,6 +21,7 @@ import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import { useToast } from "@/components/common/ToastProvider";
 import { SectionLabel } from "@/components/common/SectionLabel";
 import { Avatar } from "@/components/common/Avatar";
+import { UserProfilePreview } from "@/components/social/UserProfilePreview";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { CardPreview } from "@/components/gacha/CardPreview";
 import type {
@@ -841,12 +842,12 @@ function GachaPageContent() {
                 <Link href={`/gacha?card=${pull.id}`}>
                   <GachaCard pull={pull} linkAnime={false} />
                 </Link>
-                <Link
-                  href={`/usuarios/${pull.user.userName ?? pull.user.id}`}
+                <UserProfilePreview
+                  user={pull.user}
                   className="mt-1 block truncate font-mono text-caption text-mist-soft hover:text-ice"
                 >
                   @{pull.user.userName ?? "usuário"}
-                </Link>
+                </UserProfilePreview>
               </div>
             ))}
           </div>
@@ -942,17 +943,17 @@ function GachaPageContent() {
                   <span className="w-6 shrink-0 font-mono text-caption text-mist">
                     {i + 1}
                   </span>
-                  <Avatar
-                    name={entry.user.name || entry.user.userName}
-                    src={entry.user.avatar}
-                    size={28}
-                  />
-                  <Link
-                    href={`/usuarios/${entry.user.userName ?? entry.user.id}`}
+                  <UserProfilePreview
+                    user={entry.user}
                     className="min-w-0 flex-1 truncate text-body-sm text-snow hover:text-ice"
                   >
+                    <Avatar
+                      name={entry.user.name || entry.user.userName}
+                      src={entry.user.avatar}
+                      size={28}
+                    />
                     {entry.user.name || entry.user.userName || "Usuário"}
-                  </Link>
+                  </UserProfilePreview>
                   <span className="shrink-0 font-mono text-caption text-mist-soft">
                     {entry.totalValue} pts
                   </span>

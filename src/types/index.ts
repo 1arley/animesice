@@ -993,6 +993,7 @@ export interface GachaEncyclopediaCard {
 }
 
 export interface GachaEncyclopediaOwner {
+  id: string;
   name: string | null;
   userName: string | null;
   copies: number;
