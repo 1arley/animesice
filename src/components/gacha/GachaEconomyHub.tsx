@@ -2055,6 +2055,10 @@ function MarketSection({
         <ul className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {visibleListings.map((listing) => {
             const own = listing.userId === myId;
+            const seller = listing.user ?? {
+              name: null,
+              userName: null,
+            };
             return (
               <li
                 key={listing.id}
@@ -2122,11 +2126,11 @@ function MarketSection({
                 <p className="mt-2 text-caption text-mist">
                   Anunciado por{" "}
                   <UserProfilePreview
-                    user={listing.user}
+                    user={seller}
                     className="text-ice underline decoration-hairline underline-offset-2 hover:text-snow"
                   >
-                    {listing.user.name?.trim() ||
-                      `@${listing.user.userName ?? "jogador"}`}
+                    {seller.name?.trim() ||
+                      `@${seller.userName ?? "jogador"}`}
                   </UserProfilePreview>
                 </p>
                 {marketReady && available < listing.price && (
