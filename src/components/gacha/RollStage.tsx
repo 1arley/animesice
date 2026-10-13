@@ -1113,7 +1113,6 @@ export function RollStage({ pull, onClose, preview = false, config }: RollStageP
     if (label) {
       tl.fromTo(label, { letterSpacing: "0.02em" }, { letterSpacing: "0.16em", duration: 0.6, repeat: 2, yoyo: true, ease: "sine.inOut" }, 0.2);
     }
-    if (spins.length) tl.to(spins, { timeScale: 2.6, duration: Math.max(0.5, invocationEnd - 0.15), ease: "power2.in" }, 0.15);
     if (beat) {
       const pulse = beat;
       tl.call(() => { pulse.play(); }, [], 0.15);
