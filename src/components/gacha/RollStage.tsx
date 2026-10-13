@@ -1022,7 +1022,7 @@ export function RollStage({ pull, onClose, preview = false, config }: RollStageP
       /* Revelação */
       resultTl.call(() => setPhaseAt("reveal"), [], revealAt);
       if (flip) {
-        resultTl.to(flip, { rotationY: 180, duration: flipDur, ease: "back.out(1.5)" }, revealAt);
+        resultTl.to(flip, { rotationY: 180, duration: flipDur, ease: "power2.inOut" }, revealAt);
         resultTl
           .to(flip, { scale: 1.1, duration: flipDur * 0.4, ease: "power2.out" }, revealAt)
           .to(flip, { scale: 1, duration: flipDur * 0.6, ease: "power2.inOut" }, revealAt + flipDur * 0.4);
@@ -1064,7 +1064,7 @@ export function RollStage({ pull, onClose, preview = false, config }: RollStageP
       resultTl.call(() => {
         sfxRef.current.chime(resultIndex / Math.max(1, GACHA_TIERS.length - 1));
       }, [], revealAt + flipDur * 0.45);
-      resultTl.call(() => setRevealed(true), [], revealAt + flipDur * 0.8);
+      resultTl.call(() => setRevealed(true), [], revealAt + flipDur);
 
       const continueAt = revealAt + flipDur + gap;
       const effectsEnd = Math.max(
@@ -1322,24 +1322,32 @@ export function RollStage({ pull, onClose, preview = false, config }: RollStageP
             >
               {displayPull && (
                 <div data-card-tilt className="roll-card-tilt relative h-full w-full">
-                  <GachaCard pull={displayPull} preview={preview} showInfo={false} />
-                  {holoStrength > 0 && (
-                    <div
-                      data-holo
-                      aria-hidden="true"
-                      className="pointer-events-none absolute inset-0"
-                      style={{
-                        backgroundImage: holoImage,
-                        opacity: revealed ? holoStrength : 0,
-                        transition: "opacity 700ms ease-out",
-                      }}
-                    />
-                  )}
-                  {showSweep && (
-                    <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
-                      <div data-sweep className="h-full w-full" style={{ opacity: 0, backgroundImage: sweepImage, mixBlendMode: "color-dodge" }} />
-                    </div>
-                  )}
+                  <div aria-hidden="true" className="pointer-events-none absolute inset-0">
+                    <GachaCard pull={displayPull} preview={preview} showInfo={false} side="back" />
+                  </div>
+                  <div
+                    className="absolute inset-0"
+                    style={{ opacity: revealed ? 1 : 0, transition: flat ? "none" : "opacity 160ms ease-out" }}
+                  >
+                    <GachaCard pull={displayPull} preview={preview} showInfo={false} />
+                    {holoStrength > 0 && (
+                      <div
+                        data-holo
+                        aria-hidden="true"
+                        className="pointer-events-none absolute inset-0"
+                        style={{
+                          backgroundImage: holoImage,
+                          opacity: revealed ? holoStrength : 0,
+                          transition: "opacity 700ms ease-out",
+                        }}
+                      />
+                    )}
+                    {showSweep && (
+                      <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
+                        <div data-sweep className="h-full w-full" style={{ opacity: 0, backgroundImage: sweepImage, mixBlendMode: "color-dodge" }} />
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
