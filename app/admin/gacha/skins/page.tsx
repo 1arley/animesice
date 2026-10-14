@@ -6,6 +6,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { api, ApiError } from "@/lib/api";
 import { safeImageSrc } from "@/lib/url";
 import { useToast } from "@/components/common/ToastProvider";
+import { GachaAdminTabs } from "@/components/admin/GachaAdminTabs";
 import { PaginationControls } from "@/components/ui/PaginationControls";
 import { SearchField } from "@/components/ui/SearchField";
 import type { AdminGachaCard, AdminGachaSkin } from "@/types";
@@ -233,7 +234,7 @@ export default function AdminGachaSkinsPage() {
           <p className="font-mono text-caption uppercase tracking-[0.18em] text-ice">Gacha / catálogo</p>
           <h1 className="mt-1 font-display text-display-xl text-snow">Skins de personagens</h1>
         </div>
-        <Link href="/admin/gacha" className="btn-ghost min-h-11 px-4 py-2">Voltar ao gacha</Link>
+        <GachaAdminTabs current="/admin/gacha/skins" />
       </header>
       <p className="mt-2 max-w-2xl text-body-sm text-mist">
         Cadastre artes alternativas, vincule-as a uma carta e controle quais aparecem no catálogo.

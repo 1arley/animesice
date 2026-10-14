@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { api, ApiError } from "@/lib/api";
 import { useToast } from "@/components/common/ToastProvider";
+import { GachaAdminTabs } from "@/components/admin/GachaAdminTabs";
 
 type Code = {
   id: string;
@@ -125,9 +126,12 @@ export default function AdminCrystalCodesPage() {
 
   return (
     <main className="mx-auto max-w-shelf px-4 py-8">
-      <h1 className="font-display text-display-lg text-snow">
-        Códigos de Crystals
-      </h1>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="font-display text-display-lg text-snow">
+          Códigos de Crystals
+        </h1>
+        <GachaAdminTabs current="/admin/gacha/codigos" />
+      </div>
       <p className="mt-1 text-mist">
         Crie recompensas promocionais para usuários.
       </p>

@@ -1751,10 +1751,10 @@ export const api = {
         group: string;
       }>
     >("/gacha/admin/config"),
-  adminUpdateGachaConfig: (key: string, value: unknown) =>
+  adminUpdateGachaConfig: (key: string, value: unknown, reason?: string) =>
     request(`/gacha/admin/config/${encodeURIComponent(key)}`, {
       method: "PATCH",
-      body: JSON.stringify({ value }),
+      body: JSON.stringify({ value, ...(reason ? { reason } : {}) }),
     }),
 
   gachaListings: (
