@@ -1327,7 +1327,7 @@ export function RollStage({ pull, onClose, preview = false, config }: RollStageP
               {displayPull && (
                 <div data-card-tilt className="roll-card-tilt relative h-full w-full">
                   <div aria-hidden="true" className="pointer-events-none absolute inset-0">
-                    <GachaCard pull={displayPull} preview={preview} showInfo={false} side="back" />
+                    <GachaCard pull={displayPull} preview={preview} showInfo={false} side="back" cardBack={null} />
                   </div>
                   <div
                     data-card-art

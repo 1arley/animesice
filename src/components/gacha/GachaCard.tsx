@@ -190,7 +190,7 @@ export const GachaCard = memo(function GachaCard({ pull, preview = false, linkAn
   const isGalaxy = card.rarity === "GALACTICA";
   const foilText = FOIL_TEXT[pull.foil];
   const cosmetics = pull.user?.gachaCosmetics ?? [];
-  const backKey = cardBack === undefined ? pull.user?.gachaCardBack : cardBack;
+  const backKey = cardBack === undefined ? pull.user?.gachaCardBack : cardBack === null ? null : cardBack;
   const loadout = pull.user?.gachaLoadout;
   const frameSlot = loadout?.FRAME ?? null;
   const frameKey =
@@ -224,16 +224,8 @@ export const GachaCard = memo(function GachaCard({ pull, preview = false, linkAn
             aria-label="Verso personalizado da carta"
           >
             {backKey ? (
-              // Mesmo `object-cover` e mesma escala da arte da frente: os dois
-              // lados desenham no slot 3/4 e nao ha overscan entre eles, entao
-              // o verso nao "pula" no giro. Fora do 3/4 o cover recorta em vez
-              // de esticar; o gradiente do container so aparece se a capa nao
-              // cobrir o canvas inteiro.
-              <CosmeticSvg
-                cosmeticKey={backKey}
-                className="absolute inset-0 h-full w-full object-cover"
-              />
-            ) : (
+              <CosmeticSvg cosmeticKey={backKey} className="absolute inset-0 h-full w-full object-cover" />
+            ) : backKey === null ? null : (
               <>
                 <div className="absolute inset-3 border border-ice/40" aria-hidden="true" />
                 <div className="relative flex h-full w-full items-center justify-center border border-white/10 bg-ink/30">
