@@ -8,6 +8,7 @@ import { GACHA_RARITY_COLORS } from "@/lib/gacha-rarity-colors";
 import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
 import type { GachaPull } from "@/types";
 import { DEFAULT_ROLL_ANIM_CONFIG, type RollAnimConfig } from "@/lib/roll-anim-config";
+import { orderedTeaseSequence, randomTeaseSequence } from "@/lib/roll-tease";
 
 export { DEFAULT_ROLL_ANIM_CONFIG, parseRollAnimJson } from "@/lib/roll-anim-config";
 export type { ParsedRollJson, RollAnimConfig } from "@/lib/roll-anim-config";
@@ -185,22 +186,6 @@ function teaseStops(total: number): number[] {
     step *= 1.28;
   }
   return stops;
-}
-
-function teaseSequence(count: number, final: RollRarity): RollRarity[] {
-  const order = [...GACHA_TIERS] as RollRarity[];
-  const sequence: RollRarity[] = [];
-  for (let i = 0; i < count; i += 1) {
-    let index = (i * 2 + 1) % order.length;
-    let tier = order[index]!;
-    const previous = sequence[i - 1];
-    if (tier === previous || (i === count - 1 && tier === final)) {
-      index = (index + 1) % order.length;
-      tier = order[index]!;
-    }
-    sequence.push(tier);
-  }
-  return sequence;
 }
 
 /* Geometria do círculo de invocação (viewBox 400x520, centro 200,260) */
@@ -728,7 +713,11 @@ export function RollStage({ pull, onClose, preview = false, config }: RollStageP
     const stopAtImpact: Killable[] = [];
     const isMobile = window.matchMedia("(max-width: 480px)").matches;
     const startCopy = readCopyState(latestPull.current);
-    const baseEnd = Math.max(1.1, cfg.revealAt);
+    // ponytail: o brilho de raridade só entra depois que o giro central acaba de fato.
+    // O max espelha a duração real do tween do cristal (Math.max(0.75, ...)), senão
+    // crystalSpinDuration curto deixa a troca de cor atropelar o giro de novo.
+    const spinEnd = cfg.crystalSpinAt + Math.max(0.75, cfg.crystalSpinDuration);
+    const baseEnd = Math.max(1.1, cfg.revealAt, spinEnd + 0.15);
     const invocationEnd = startCopy === "duplicate" ? Math.min(1.1, baseEnd) : baseEnd;
     const setPhaseAt = (value: RollPhase) => markPhase(value);
     const t0 = performance.now();
@@ -922,7 +911,9 @@ export function RollStage({ pull, onClose, preview = false, config }: RollStageP
         showTier(resultRarity, 0, 0.15, 0.9);
       } else {
         const stops = teaseStops(lock);
-        const sequence = teaseSequence(stops.length, resultRarity);
+        const sequence = cfg.teaseMode === "ordered"
+          ? orderedTeaseSequence(stops.length, GACHA_TIERS, resultRarity)
+          : randomTeaseSequence(stops.length, GACHA_TIERS, cfg.maxDrop);
         stops.forEach((at, index) => {
           showTier(sequence[index]!, at, 0.16, 0.8);
           resultTl.call(() => sfxRef.current.tick(index), [], at);
@@ -960,7 +951,7 @@ export function RollStage({ pull, onClose, preview = false, config }: RollStageP
         loops.push(godSpin);
         resultTl.call(() => { placeFx(); godSpin.play(); }, [], teaseDur);
         resultTl.fromTo(godrays, { opacity: 0 }, { opacity: 0.9, duration: 0.6, ease: "power2.out" }, teaseDur);
-        resultTl.to(godrays, { opacity: 0, duration: 0.9, ease: "power1.inOut" }, revealAt + flipDur * 0.35);
+        resultTl.to(godrays, { opacity: 0, duration: 0.4, ease: "power1.inOut" }, revealAt);
       }
 
       /* Impacto */
@@ -993,7 +984,7 @@ export function RollStage({ pull, onClose, preview = false, config }: RollStageP
       if (tint && epicUp) {
         resultTl
           .to(tint, { opacity: 1, duration: 0.1, ease: "power1.out" }, impactAt)
-          .to(tint, { opacity: 0.35, duration: 0.8, ease: "power1.out" }, impactAt + 0.1);
+          .to(tint, { opacity: 0.35, duration: 0.4, ease: "power1.out" }, impactAt + 0.1);
       }
       rings.forEach((ring, index) => {
         if (index >= waves) return;
@@ -1084,7 +1075,7 @@ export function RollStage({ pull, onClose, preview = false, config }: RollStageP
         continueAt,
         impactAt + Math.max(0.45, cfg.particleDuration) + 0.1,
         impactAt + (waves - 1) * cfg.ringStagger + ringDur + 0.05,
-        revealAt + flipDur * 0.35 + 0.9,
+        revealAt + 0.4,
       );
       resultTl.call(() => {
         setCanContinue(true);
