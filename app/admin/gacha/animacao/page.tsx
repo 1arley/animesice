@@ -195,6 +195,40 @@ function ObjectField({
   );
 }
 
+function SelectField({
+  label,
+  fieldKey,
+  value,
+  options,
+  onChange,
+}: {
+  label: string;
+  fieldKey: string;
+  value: string;
+  options: { value: string; label: string }[];
+  onChange: (key: string, value: unknown) => void;
+}) {
+  return (
+    <div className="flex flex-col gap-1">
+      <label htmlFor={fieldKey} className="text-body-sm text-snow">
+        {label} <span className="font-mono text-xs text-mist">({fieldKey})</span>
+      </label>
+      <select
+        id={fieldKey}
+        value={value}
+        onChange={(e) => onChange(fieldKey, e.target.value)}
+        className="field font-mono text-sm"
+      >
+        {options.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
 export default function AdminGachaAnimacaoPage() {
   const [config, setConfig] = useState<RollAnimConfig>(DEFAULT_ROLL_ANIM_CONFIG);
   const [loading, setLoading] = useState(true);
@@ -368,6 +402,16 @@ export default function AdminGachaAnimacaoPage() {
         label: "Revelação & Circuitos",
         keys: [
           { key: "revealAt", label: "Ponto de revelação (aguarda pull)", step: 0.01, min: 0.5, max: 5 },
+          {
+            key: "teaseMode",
+            label: "Sequência de brilho",
+            type: "select" as const,
+            options: [
+              { value: "random", label: "Aleatória" },
+              { value: "ordered", label: "Antiga, ordenada (desce)" },
+            ],
+          },
+          { key: "maxDrop", label: "Queda máx. de tiers (só no aleatório)", step: 1, min: 0, max: 6 },
           { key: "crystalOutDuration", label: "Saída do cristal", step: 0.01, min: 0.05, max: 1 },
           { key: "ringSlots", label: "Slots de anéis (máx)", step: 1, min: 0, max: 6 },
           { key: "ringDuration", label: "Duração anéis", step: 0.01, min: 0.1, max: 2 },
@@ -499,6 +543,18 @@ export default function AdminGachaAnimacaoPage() {
                             value={val as Array<string>}
                             onChange={handleChange}
                             itemType="text"
+                          />
+                        );
+                      }
+                      if (field.type === "select") {
+                        return (
+                          <SelectField
+                            key={field.key}
+                            label={field.label}
+                            fieldKey={field.key}
+                            value={val as string}
+                            options={field.options ?? []}
+                            onChange={handleChange}
                           />
                         );
                       }

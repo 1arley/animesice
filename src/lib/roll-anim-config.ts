@@ -1,3 +1,5 @@
+export const TEASE_MODES = ["random", "ordered"] as const;
+
 export type RollAnimConfig = {
   enterDuration: number;
   crystalSpinAt: number;
@@ -6,6 +8,10 @@ export type RollAnimConfig = {
   glowDuration: number;
   skipAt: number;
   revealAt: number;
+  /** "random" sorteia a cor; "ordered" usa a sequência antiga, determinística. */
+  teaseMode: (typeof TEASE_MODES)[number];
+  /** Quantos tiers o brilho pode cair entre dois flashes (só no modo random). */
+  maxDrop: number;
   crystalOutDuration: number;
   ringSlots: number;
   ringDuration: number;
@@ -28,6 +34,8 @@ export const DEFAULT_ROLL_ANIM_CONFIG: RollAnimConfig = {
   glowDuration: 1.3,
   skipAt: 0.6,
   revealAt: 1.2,
+  teaseMode: "random",
+  maxDrop: 2,
   crystalOutDuration: 0.25,
   ringSlots: 3,
   ringDuration: 0.55,
@@ -101,6 +109,10 @@ export function parseRollAnimJson(text: string): ParsedRollJson {
       ? Array.isArray(value) && value.every((v) => typeof v === "string")
       : sample !== null && typeof sample === "object"
         ? !!value && typeof value === "object" && !Array.isArray(value)
+        : typeof sample === "string"
+        // shortcut: única chave de texto da config é teaseMode; ao adicionar outra,
+        // inclua na lista de opções aqui e no select do admin.
+        ? (TEASE_MODES as readonly string[]).includes(value)
         : typeof value === "number" && Number.isFinite(value);
     if (!valid) return { ok: false, error: `Tipo inválido em "${key}".` };
     out[key] = value;

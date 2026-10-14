@@ -18,6 +18,7 @@ const modules = {
   "./GachaCard": { GachaCard: () => null, GACHA_TIERS: [], GALAXY_TEXT: "", RARITY_TEXT: {} },
   "@/components/core/CountUp": { CountUp: () => null },
   "@/lib/roll-anim-config": { DEFAULT_ROLL_ANIM_CONFIG: {}, parseRollAnimJson: () => ({ ok: true }) },
+  "@/lib/roll-tease": { randomTeaseSequence: () => [], orderedTeaseSequence: () => [] },
 };
 
 const exports = await compileComponent(source, modules, "RollStage.tsx");
