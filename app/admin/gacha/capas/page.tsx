@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { api, ApiError } from "@/lib/api";
+import { GachaAdminTabs } from "@/components/admin/GachaAdminTabs";
 import {
   ART_PLATE,
   TYPE_VIEWBOX,
@@ -220,7 +221,10 @@ export default function AdminCapasPage() {
   }
   return (
     <div className="mx-auto max-w-6xl">
-      <h1 className="font-display text-display-xl text-snow">Cosméticos</h1>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="font-display text-display-xl text-snow">Cosméticos</h1>
+        <GachaAdminTabs current="/admin/gacha/capas" />
+      </div>
       {error && (
         <p role="alert" className="mt-3 text-signal">
           {error}

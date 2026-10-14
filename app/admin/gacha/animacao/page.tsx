@@ -12,6 +12,12 @@ import {
   type RollAnimConfig,
 } from "@/components/gacha/RollStage";
 import { CodeStagePreview, type CompileStatus } from "@/components/gacha/CodeStagePreview";
+import {
+  ReasonField,
+  SensitiveWriteDialog,
+  useSensitiveWrite,
+} from "@/components/admin/SensitiveWrite";
+import { GachaAdminTabs } from "@/components/admin/GachaAdminTabs";
 import type { GachaPull } from "@/types";
 
 /** [raridade, foil, valor] — um sample por tier pra ver cada etapa da animação. */
@@ -207,6 +213,9 @@ export default function AdminGachaAnimacaoPage() {
   const { toast } = useToast();
   const { user } = useAuth();
   const canEdit = user?.role === "SUPERADMIN";
+  const { motivo, setMotivo, confirming, setConfirming, motivoError } =
+    useSensitiveWrite();
+  const animBefore = useRef(JSON.stringify(DEFAULT_ROLL_ANIM_CONFIG));
 
   const currentPull = useMemo(() => SAMPLE_PULLS[previewIndex], [previewIndex]);
   const compileLabel =
@@ -303,17 +312,30 @@ export default function AdminGachaAnimacaoPage() {
     setConfig((prev) => ({ ...prev, ...parsed.value }));
   }
 
-  async function handleSave() {
+  async function commitConfig() {
+    animBefore.current = JSON.stringify(config);
     setError("");
     setSaving(true);
     try {
-      await api.adminUpdateGachaConfig("anim_roll", config);
+      await api.adminUpdateGachaConfig("anim_roll", config, motivo.trim());
+      setConfirming(false);
+      setMotivo("");
       toast("Configuração de animação salva.", "success");
     } catch (e) {
       setError(e instanceof ApiError ? e.message : "Erro ao salvar.");
     } finally {
       setSaving(false);
     }
+  }
+
+  /** A animação vale na hora para todo mundo: motivo antes de gravar. */
+  function handleSave() {
+    setError("");
+    if (motivoError) {
+      setError(motivoError);
+      return;
+    }
+    setConfirming(true);
   }
 
   async function handleReset() {
@@ -371,32 +393,52 @@ export default function AdminGachaAnimacaoPage() {
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="flex flex-wrap items-start justify-between gap-3">
         <h1 className="font-display text-display-xl text-snow">
           Animação do Roll (Giro)
         </h1>
         {canEdit && (
-          <div className="flex gap-2">
-            <button type="button" onClick={handleReset} className="btn-ghost px-3 py-2">
-              Restaurar padrão
-            </button>
-            <button
-              type="button"
-              onClick={handleSave}
-              disabled={saving}
-              className="btn-ice px-4 py-2"
-            >
-              {saving ? "Salvando…" : "Salvar configuração"}
-            </button>
+          <div className="flex flex-col items-end gap-2">
+            <div className="flex gap-2">
+              <button type="button" onClick={handleReset} className="btn-ghost px-3 py-2">
+                Restaurar padrão
+              </button>
+              <button
+                type="button"
+                onClick={handleSave}
+                disabled={saving}
+                className="btn-ice px-4 py-2"
+              >
+                {saving ? "Salvando…" : "Salvar configuração"}
+              </button>
+            </div>
+            <div className="w-full sm:w-80">
+              <ReasonField id="anim-motivo" value={motivo} onChange={setMotivo} />
+            </div>
           </div>
-        )}
+          )}
+      </div>
+
+      <div className="mt-4">
+        <GachaAdminTabs current="/admin/gacha/animacao" />
       </div>
 
       <p className="mt-2 text-body-sm text-mist">
         {canEdit
-          ? "Altera timings, contadores e cores da animação de giro. Aplica imediatamente sem deploy."
+          ? "Altera timings, contadores e cores da animação de giro. Aplica imediatamente sem deploy — grava por isso com motivo e confirmação."
           : "Prévia da animação atual. Apenas SUPERADMIN pode alterar a configuração."}
       </p>
+
+      <SensitiveWriteDialog
+        open={confirming}
+        busy={saving}
+        title="Alterar animação do roll?"
+        entryKey="anim_roll"
+        before={animBefore.current}
+        after={JSON.stringify(config).slice(0, 120)}
+        onCancel={() => setConfirming(false)}
+        onConfirm={() => void commitConfig()}
+      />
 
       {error && (
         <p role="alert" className="mt-3 text-signal">

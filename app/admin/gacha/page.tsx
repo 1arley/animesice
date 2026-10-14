@@ -1,12 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import Link from "next/link";
 import { api, ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { useToast } from "@/components/common/ToastProvider";
 import { PaginationControls } from "@/components/ui/PaginationControls";
 import { SearchField } from "@/components/ui/SearchField";
+import { GachaAdminTabs } from "@/components/admin/GachaAdminTabs";
 import type {
   AdminGachaCard,
   GachaEngagementPilotDashboard,
@@ -510,23 +510,7 @@ export default function AdminGachaPage() {
     <div>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="font-display text-display-xl text-snow">Gacha</h1>
-        <div className="flex gap-2">
-          <Link href="/admin/gacha/config" className="admin-tab">
-            Configuração
-          </Link>
-          <Link href="/admin/gacha/codigos" className="admin-tab">
-            Códigos
-          </Link>
-          <Link href="/admin/gacha/animacao" className="admin-tab">
-            Animação
-          </Link>
-          <Link href="/admin/gacha/capas" className="admin-tab">
-            Editar capas
-          </Link>
-          <Link href="/admin/gacha/skins" className="admin-tab">
-            Skins
-          </Link>
-        </div>
+        <GachaAdminTabs current="/admin/gacha" />
       </div>
       {error && (
         <div
