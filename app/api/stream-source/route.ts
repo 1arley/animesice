@@ -1,8 +1,9 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { API_URL, serverStreamSourceAsync } from "@/lib/api-server";
+import { serverStreamSourceAsync } from "@/lib/api-server";
 
 const ANIME_SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
-const RESOLVED_CACHE_CONTROL = "public, s-maxage=300, stale-while-revalidate=300";
+const RESOLVED_CACHE_CONTROL =
+  "public, s-maxage=300, stale-while-revalidate=300";
 const NO_STORE = "no-store";
 
 export async function GET(request: NextRequest) {
@@ -23,30 +24,11 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  let result: Awaited<ReturnType<typeof serverStreamSourceAsync>> = null;
-  if (refresh) {
-    const response = await fetch(
-        `${API_URL}/stream/source?anime=${encodeURIComponent(animeSlug)}&episode=${episodeNumber}&refresh=1`,
-        {
-          headers: { cookie: request.headers.get("cookie") ?? "" },
-          cache: "no-store",
-        },
-      ).catch(() => null);
-    if (response) {
-      const data = await response.json().catch(() => null);
-      if (!response.ok) {
-        return NextResponse.json(
-          data ?? { message: "Não foi possível atualizar a fonte do vídeo." },
-          { status: response.status, headers: { "Cache-Control": NO_STORE } },
-        );
-      }
-      result = data as typeof result;
-    }
-  } else {
-    result = await serverStreamSourceAsync(animeSlug, episodeNumber).catch(
-      () => null,
-    );
-  }
+  const result = await serverStreamSourceAsync(
+    animeSlug,
+    episodeNumber,
+    refresh,
+  ).catch(() => null);
   if (!result) {
     return NextResponse.json(
       { message: "Não foi possível obter o vídeo deste episódio." },
@@ -58,7 +40,7 @@ export async function GET(request: NextRequest) {
   return NextResponse.json(result, {
     status: resolved ? 200 : 202,
     headers: {
-      "Cache-Control": resolved ? RESOLVED_CACHE_CONTROL : NO_STORE,
+      "Cache-Control": !refresh && resolved ? RESOLVED_CACHE_CONTROL : NO_STORE,
     },
   });
 }

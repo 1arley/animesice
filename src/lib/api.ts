@@ -475,9 +475,10 @@ export const api = {
   episodeStreamSourceAsync: async (
     animeSlug: string,
     episodeNumber: number,
+    refresh = false,
   ) => {
     const response = await fetch(
-      `/api/stream-source?anime=${encodeURIComponent(animeSlug)}&episode=${episodeNumber}`,
+      `/api/stream-source?anime=${encodeURIComponent(animeSlug)}&episode=${episodeNumber}${refresh ? "&refresh=1" : ""}`,
       { credentials: "include" },
     );
     const data = await response.json().catch(() => null);
@@ -496,12 +497,14 @@ export const api = {
     animeSlug: string,
     episodeNumber: number,
     jobId: string,
+    signal?: AbortSignal,
   ) =>
     request<
       | StreamSource
       | { jobId: string; status: string; message?: string; error?: string }
     >(
       `/stream/source?anime=${encodeURIComponent(animeSlug)}&episode=${episodeNumber}&jobId=${encodeURIComponent(jobId)}`,
+      { signal },
     ),
 
   /**
