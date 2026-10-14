@@ -1,7 +1,6 @@
 import { ImageResponse } from "next/og";
 import { serverFetchJson } from "@/lib/api-server";
 import type { Anime } from "@/types";
-import Image from "next/image";
 import { safeImageSrc } from "@/lib/url";
 import { SITE_URL } from "@/lib/site";
 
@@ -78,7 +77,7 @@ export default async function OpengraphImage({
       >
         {/* Background art com overlay */}
         {art && (
-          <Image
+          <img
             src={art}
             alt=""
             width={size.width}
