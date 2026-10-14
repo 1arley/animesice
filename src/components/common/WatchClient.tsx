@@ -43,33 +43,6 @@ export function WatchClient({
   const resumeAt = useRef(0);
   const asyncAbortRef = useRef<AbortController | null>(null);
 
-  const loadSource = useCallback(
-    async (refresh = false) => {
-      const id = ++loadSourceId.current;
-      setLoadingSource(true);
-      setSourceError(null);
-      setSource(null);
-      try {
-        const res = await api.streamSource(slug, number, refresh);
-        if (id === loadSourceId.current) {
-          setSource(res);
-          api._sourceCache.set(slug, number, res);
-        }
-      } catch (e) {
-        if (id === loadSourceId.current) {
-          setSourceError(
-            e instanceof ApiError
-              ? e.message
-              : "Não foi possível obter o vídeo deste episódio.",
-          );
-        }
-      } finally {
-        if (id === loadSourceId.current) setLoadingSource(false);
-      }
-    },
-    [slug, number],
-  );
-
   /**
    * Tenta extração assíncrona com SSE (primário) e fallback para polling.
    *
@@ -78,102 +51,101 @@ export function WatchClient({
    * 2. sessionStorage cache — hit = instantâneo
    * 3. SSE + polling via resolveAsyncSource (src compartilhado com RoomPage)
    */
-  const loadSourceAsync = useCallback(async () => {
-    const id = ++loadSourceId.current;
-    asyncAbortRef.current?.abort();
-    const ac = new AbortController();
-    asyncAbortRef.current = ac;
-    setLoadingSource(true);
-    setSourceError(null);
-    setSource(null);
+  const loadSourceAsync = useCallback(
+    async (forceRefresh = false) => {
+      const id = ++loadSourceId.current;
+      asyncAbortRef.current?.abort();
+      const ac = new AbortController();
+      asyncAbortRef.current = ac;
+      setLoadingSource(true);
+      setSourceError(null);
+      setSource(null);
 
-    // 1. Source vindo de SSR pre-fetch — renderiza imediatamente
-    if (
-      initialSourceProp &&
-      "src" in initialSourceProp &&
-      id === loadSourceId.current
-    ) {
-      setSource(initialSourceProp as StreamSource);
-      api._sourceCache.set(slug, number, initialSourceProp as StreamSource);
-      setLoadingSource(false);
-      return;
-    }
-
-    try {
-      // 2. Check client-side cache (sessionStorage, 5m TTL)
-      const cached = api._sourceCache.get(slug, number);
-      if (cached && id === loadSourceId.current) {
-        setSource(cached);
+      // 1. Source vindo de SSR pre-fetch — renderiza imediatamente
+      if (
+        !forceRefresh &&
+        initialSourceProp &&
+        "src" in initialSourceProp &&
+        id === loadSourceId.current
+      ) {
+        setSource(initialSourceProp as StreamSource);
+        api._sourceCache.set(slug, number, initialSourceProp as StreamSource);
         setLoadingSource(false);
         return;
       }
 
-      // Preserve a job started by the SSR fallback. Re-requesting the
-      // endpoint here can enqueue a duplicate extraction when the backend
-      // has not yet deduplicated the original job.
-      const res =
-        initialSourceProp && "jobId" in initialSourceProp
-          ? initialSourceProp
-          : await api.episodeStreamSourceAsync(slug, number);
-      if (id !== loadSourceId.current) return;
+      try {
+        // 2. Check client-side cache (sessionStorage, 5m TTL)
+        const cached = forceRefresh ? null : api._sourceCache.get(slug, number);
+        if (cached && id === loadSourceId.current) {
+          setSource(cached);
+          setLoadingSource(false);
+          return;
+        }
 
-      // Source direto (vídeo já existia no cache)
-      if ("src" in res) {
-        setSource(res as StreamSource);
-        api._sourceCache.set(slug, number, res as StreamSource);
-        setLoadingSource(false);
-        return;
-      }
-
-      // jobId = extração assíncrona em andamento
-      if ("jobId" in res) {
-        const jobId = (res as { jobId: string }).jobId;
-        const result = await resolveAsyncSource(slug, number, jobId, ac.signal);
-
+        // Preserve a job started by the SSR fallback. Re-requesting the
+        // endpoint here can enqueue a duplicate extraction when the backend
+        // has not yet deduplicated the original job.
+        const res =
+          !forceRefresh && initialSourceProp && "jobId" in initialSourceProp
+            ? initialSourceProp
+            : await api.episodeStreamSourceAsync(slug, number, forceRefresh);
         if (id !== loadSourceId.current) return;
 
-        if (result.type === "source") {
-          setSource(result.source);
-          api._sourceCache.set(slug, number, result.source);
-        } else if (result.type === "failed") {
-          setSourceError(result.error);
-        } else {
-          setSourceError(
-            "A extração demorou mais que o esperado. Tente novamente.",
+        // Source direto (vídeo já existia no cache)
+        if ("src" in res) {
+          setSource(res as StreamSource);
+          api._sourceCache.set(slug, number, res as StreamSource);
+          setLoadingSource(false);
+          return;
+        }
+
+        // jobId = extração assíncrona em andamento
+        if ("jobId" in res) {
+          const jobId = (res as { jobId: string }).jobId;
+          const result = await resolveAsyncSource(
+            slug,
+            number,
+            jobId,
+            ac.signal,
+            forceRefresh,
           );
+
+          if (id !== loadSourceId.current) return;
+
+          if (result.type === "source") {
+            setSource(result.source);
+            api._sourceCache.set(slug, number, result.source);
+          } else if (result.type === "failed") {
+            setSourceError(result.error);
+          } else {
+            setSourceError(
+              "A extração demorou mais que o esperado. Tente novamente.",
+            );
+          }
         }
+      } catch (e) {
+        if (id !== loadSourceId.current) return;
+        setSourceError(
+          e instanceof ApiError
+            ? e.message
+            : "Não foi possível obter o vídeo deste episódio.",
+        );
+      } finally {
+        if (id === loadSourceId.current) setLoadingSource(false);
       }
-    } catch (e) {
-      if (id !== loadSourceId.current) return;
-      // Fallback: tenta o modo síncrono normal
-      try {
-        const res = await api.streamSource(slug, number);
-        if (id === loadSourceId.current) {
-          setSource(res);
-          api._sourceCache.set(slug, number, res);
-        }
-      } catch {
-        if (id === loadSourceId.current) {
-          setSourceError(
-            e instanceof ApiError
-              ? e.message
-              : "Não foi possível obter o vídeo deste episódio.",
-          );
-        }
-      }
-    } finally {
-      if (id === loadSourceId.current) setLoadingSource(false);
-    }
-  }, [slug, number, initialSourceProp]);
+    },
+    [slug, number, initialSourceProp],
+  );
 
   const recoverPlayback = useCallback(
     (currentTime: number) => {
       if (recoveryAttempts.current >= 1 || loadingSource) return;
       recoveryAttempts.current += 1;
       resumeAt.current = currentTime;
-      void loadSource(true);
+      void loadSourceAsync(true);
     },
-    [loadSource, loadingSource],
+    [loadSourceAsync, loadingSource],
   );
 
   useEffect(() => {
@@ -235,7 +207,7 @@ export function WatchClient({
             <button
               type="button"
               className="rounded-md border border-ice/40 px-4 py-2 font-mono text-caption text-ice transition-colors hover:bg-ice/10"
-              onClick={() => void loadSourceAsync()}
+              onClick={() => void loadSourceAsync(true)}
             >
               Tentar novamente
             </button>

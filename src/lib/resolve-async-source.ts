@@ -1,6 +1,8 @@
 import { api, type StreamSource } from "@/lib/api";
 
-const MAX_POLL_ATTEMPTS = 8;
+const MAX_POLL_ATTEMPTS = 20;
+const POLL_DEADLINE_MS = 90_000;
+const POLL_REQUEST_TIMEOUT_MS = 10_000;
 const SSE_FAST_TIMEOUT_MS = 2_000;
 const POLL_INTERVAL_BASE = 300;
 const POLL_BACKOFF = 1.25;
@@ -24,6 +26,7 @@ export async function resolveAsyncSource(
   episodeNumber: number,
   jobId: string,
   signal?: AbortSignal,
+  skipSSE = false,
 ): Promise<AsyncSourceResult> {
   if (signal?.aborted) return { type: "exhausted" };
 
@@ -38,6 +41,10 @@ export async function resolveAsyncSource(
     | { type: "failed" }
     | { type: "timeout" }
   >((resolve) => {
+    if (skipSSE) {
+      resolve({ type: "timeout" });
+      return;
+    }
     cleanup.sse = api.streamSourceSSE(slug, episodeNumber, {
       onSource: (source) => {
         if (sseResolved || signal?.aborted) return;
@@ -92,7 +99,12 @@ export async function resolveAsyncSource(
   }
 
   // --- Polling fallback with exponential backoff ---
-  for (let attempt = 0; attempt < MAX_POLL_ATTEMPTS; attempt++) {
+  const deadline = Date.now() + POLL_DEADLINE_MS;
+  for (
+    let attempt = 0;
+    attempt < MAX_POLL_ATTEMPTS && Date.now() < deadline;
+    attempt++
+  ) {
     if (signal?.aborted) {
       cleanup.sse?.();
       return { type: "exhausted" };
@@ -101,6 +113,7 @@ export async function resolveAsyncSource(
     const delay = Math.min(
       POLL_INTERVAL_BASE * Math.pow(POLL_BACKOFF, attempt),
       POLL_MAX_INTERVAL,
+      deadline - Date.now(),
     );
     await new Promise<void>((r) => {
       const timer = setTimeout(r, delay);
@@ -120,7 +133,20 @@ export async function resolveAsyncSource(
     }
 
     try {
-      const poll = await api.pollExtractionJob(slug, episodeNumber, jobId);
+      const remaining = deadline - Date.now();
+      if (remaining <= 0) break;
+      const timeoutSignal = AbortSignal.timeout(
+        Math.min(POLL_REQUEST_TIMEOUT_MS, remaining),
+      );
+      const requestSignal = signal
+        ? AbortSignal.any([signal, timeoutSignal])
+        : timeoutSignal;
+      const poll = await api.pollExtractionJob(
+        slug,
+        episodeNumber,
+        jobId,
+        requestSignal,
+      );
 
       if ("src" in poll) {
         cleanup.sse?.();
@@ -138,11 +164,27 @@ export async function resolveAsyncSource(
         }
         if (st.status === "completed") {
           cleanup.sse?.();
-          const source = await api.streamSource(slug, episodeNumber);
-          return { type: "source", source };
+          return {
+            type: "failed",
+            error: "A extração terminou sem encontrar uma fonte de vídeo.",
+          };
         }
       }
-    } catch {
+    } catch (error) {
+      if (
+        error instanceof Error &&
+        "statusCode" in error &&
+        typeof error.statusCode === "number" &&
+        error.statusCode >= 400 &&
+        error.statusCode < 500 &&
+        error.statusCode !== 429
+      ) {
+        cleanup.sse?.();
+        return {
+          type: "failed",
+          error: error.message || "Não foi possível consultar a extração.",
+        };
+      }
       // Network error — continue polling
     }
   }
