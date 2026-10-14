@@ -178,7 +178,22 @@ test.describe("Gacha", () => {
       // resposta chega. O botão nesse estado é "Fechar" — não dá pular a
       // animação antes do resultado, então não há o que apertar aqui.
       await expect(dialog).toHaveAttribute("data-phase", "waiting");
+      const revealDetails = dialog.evaluate(el => new Promise<string[]>((resolve) => {
+        const observer = new MutationObserver(() => {
+          const art = el.querySelector<HTMLElement>("[data-card-art]");
+          if (art?.dataset.artReady !== "true") return;
+          observer.disconnect();
+          resolve([
+            getComputedStyle(art).opacity,
+            getComputedStyle(el.querySelector<HTMLElement>("[data-badge]")!).opacity,
+            getComputedStyle(el.querySelector<HTMLElement>("[data-name-letter]")!).opacity,
+          ]);
+        });
+        observer.observe(el, { subtree: true, attributes: true, attributeFilter: ["data-art-ready"] });
+      }));
       release();
+      expect(await revealDetails).toEqual(["1", "0", "0"]);
+      await page.screenshot({ path: test.info().outputPath(`gacha-${rarity.toLowerCase()}-flip-midpoint.png`) });
       await expect(
         dialog.getByRole("button", { name: "Continuar" }),
       ).toBeVisible();
