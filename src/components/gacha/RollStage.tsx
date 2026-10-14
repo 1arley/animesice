@@ -570,7 +570,7 @@ export function RollStage({ pull, onClose, preview = false, config }: RollStageP
       const all = (selector: string) => Array.from(root.querySelectorAll<HTMLElement | SVGElement>(selector));
       const one = (selector: string) => root.querySelector<HTMLElement | SVGElement>(selector);
       const hide = ["[data-tier-aura]", "[data-ring]", "[data-radial-rays]", "[data-godrays]", "[data-rarity-title]", "[data-flash]", "[data-orbit-svg]"];
-      const show = ["[data-badge]", "[data-name-letter]", "[data-rarity-label]", "[data-copy-tag]"];
+      const show = ["[data-card-art]", "[data-badge]", "[data-name-letter]", "[data-rarity-label]", "[data-copy-tag]"];
       const tintFinal = finalIndex >= IDX_EPIC ? 0.35 : 0.16;
       const flip = one("[data-flip]");
       gsap.set(one("[data-stage]"), { scale: 1, opacity: 1, x: 0, y: 0, color: finalAccent });
@@ -766,7 +766,7 @@ export function RollStage({ pull, onClose, preview = false, config }: RollStageP
       }
       cleared = false;
       const rect = rootRect;
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const dpr = Math.min(window.devicePixelRatio || 1, isMobile ? 1 : 2);
       const width = Math.max(1, Math.round(rect.width));
       const height = Math.max(1, Math.round(rect.height));
       if (canvas.width !== Math.round(width * dpr) || canvas.height !== Math.round(height * dpr)) {
@@ -884,6 +884,9 @@ export function RollStage({ pull, onClose, preview = false, config }: RollStageP
       const impactDur = compact ? 0.18 : Math.min(0.32, Math.max(0.2, cfg.crystalOutDuration));
       const revealAt = impactAt + impactDur;
       const flipDur = Math.min(1, Math.max(compact ? 0.35 : 0.4, cfg.flipDuration));
+      const cardRevealedAt = revealAt + flipDur;
+      const cardArtReadyAt = cardRevealedAt + 0.16;
+      const cardDetailsAt = cardArtReadyAt + 0.24;
       const gap = Math.max(0.18, cfg.effectsGap);
       const lock = Math.max(0.3, teaseDur - 0.35);
       const ringDur = Math.max(0.4, cfg.ringDuration);
@@ -899,6 +902,7 @@ export function RollStage({ pull, onClose, preview = false, config }: RollStageP
       const badge = one<HTMLElement>("[data-badge]");
       const rarityLabel = one<HTMLElement>("[data-rarity-label]");
       const copyTag = one<HTMLElement>("[data-copy-tag]");
+      const cardArt = one<HTMLElement>("[data-card-art]");
       const sweep = one<HTMLElement>("[data-sweep]");
       const colorTargets = [stage, tint].filter((el): el is HTMLElement => !!el);
       const resultTl = gsap.timeline();
@@ -1027,21 +1031,22 @@ export function RollStage({ pull, onClose, preview = false, config }: RollStageP
           .to(flip, { scale: 1.1, duration: flipDur * 0.4, ease: "power2.out" }, revealAt)
           .to(flip, { scale: 1, duration: flipDur * 0.6, ease: "power2.inOut" }, revealAt + flipDur * 0.4);
       }
+      if (cardArt) resultTl.fromTo(cardArt, { opacity: 0 }, { opacity: 1, duration: 0.16, ease: "power1.out" }, cardRevealedAt);
       if (sweep) {
         const sweepDur = Math.max(0.5, cfg.sweepDuration);
-        const sweepAt = revealAt + flipDur * 0.4;
+        const sweepAt = cardArtReadyAt;
         resultTl.set(sweep, { opacity: 1, xPercent: -150 }, sweepAt);
         resultTl.to(sweep, { xPercent: 150, duration: sweepDur, ease: "power1.inOut" }, sweepAt);
         resultTl.set(sweep, { opacity: 0 }, sweepAt + sweepDur);
       }
-      if (badge) resultTl.fromTo(badge, { opacity: 0 }, { opacity: 1, duration: 0.2, ease: "power1.out" }, revealAt + flipDur * 0.45);
+      if (badge) resultTl.fromTo(badge, { opacity: 0 }, { opacity: 1, duration: 0.2, ease: "power1.out" }, cardDetailsAt);
       if (rarityLabel) {
         resultTl.fromTo(rarityLabel, { scale: 2, opacity: 0 }, {
           scale: 1,
           opacity: 1,
           duration: Math.max(0.3, cfg.badgeDuration),
           ease: "back.out(2.4)",
-        }, revealAt + flipDur * 0.5);
+        }, cardDetailsAt);
       }
       if (letters.length) {
         resultTl.fromTo(letters, { opacity: 0, y: 14 }, {
@@ -1050,7 +1055,7 @@ export function RollStage({ pull, onClose, preview = false, config }: RollStageP
           duration: 0.28,
           stagger: Math.min(0.03, 0.55 / letters.length),
           ease: "power2.out",
-        }, revealAt + flipDur * 0.55);
+        }, cardDetailsAt + 0.08);
       }
       if (copyTag) {
         resultTl.fromTo(copyTag, { scale: 0.4, opacity: 0, y: -6 }, {
@@ -1059,14 +1064,22 @@ export function RollStage({ pull, onClose, preview = false, config }: RollStageP
           y: 0,
           duration: 0.45,
           ease: "back.out(2.6)",
-        }, revealAt + flipDur * 0.85);
+        }, cardDetailsAt + 0.26);
       }
       resultTl.call(() => {
         sfxRef.current.chime(resultIndex / Math.max(1, GACHA_TIERS.length - 1));
-      }, [], revealAt + flipDur * 0.45);
-      resultTl.call(() => setRevealed(true), [], revealAt + flipDur);
+      }, [], cardRevealedAt);
+      resultTl.call(() => setRevealed(true), [], cardArtReadyAt);
 
-      const continueAt = revealAt + flipDur + gap;
+      const letterStagger = letters.length
+        ? Math.min(0.03, 0.55 / letters.length) * (letters.length - 1)
+        : 0;
+      const detailsEndAt = Math.max(
+        cardDetailsAt + Math.max(0.3, cfg.badgeDuration),
+        cardDetailsAt + 0.08 + 0.28 + letterStagger,
+        copyTag ? cardDetailsAt + 0.26 + 0.45 : cardRevealedAt,
+      );
+      const continueAt = Math.max(cardRevealedAt + gap, detailsEndAt);
       const effectsEnd = Math.max(
         continueAt,
         impactAt + Math.max(0.45, cfg.particleDuration) + 0.1,
@@ -1326,8 +1339,10 @@ export function RollStage({ pull, onClose, preview = false, config }: RollStageP
                     <GachaCard pull={displayPull} preview={preview} showInfo={false} side="back" />
                   </div>
                   <div
+                    data-card-art
+                    data-art-ready={revealed ? "true" : undefined}
                     className="absolute inset-0"
-                    style={{ opacity: revealed ? 1 : 0, transition: flat ? "none" : "opacity 160ms ease-out" }}
+                    style={{ opacity: flat ? (revealed ? 1 : 0) : 0, transition: "none" }}
                   >
                     <GachaCard pull={displayPull} preview={preview} showInfo={false} />
                     {holoStrength > 0 && (
