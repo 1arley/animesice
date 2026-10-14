@@ -16,7 +16,7 @@ export function Avatar({ name, src, size = 32, className = "" }: AvatarProps) {
       {src ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
-          src={src}
+          src={src ? `${src}${src.includes("?") ? "&" : "?"}v=${encodeURIComponent(src)}` : undefined}
           alt=""
           aria-hidden="true"
           width={size}
