@@ -110,7 +110,56 @@ export function upgradeImageUrl(
     return url.replace(wpMarker, '.$3');
   }
 
+  // --- Pinterest: sobe resolução de miniaturas (236x, 474x, 564x) para 736x ---
+  const pinMarker = /^https:\/\/([a-z0-9-]+\.)?pinimg\.com\/(236x|474x|564x)\//i;
+  if (pinMarker.test(url)) {
+    return url.replace(/\/(236x|474x|564x)\//i, "/736x/");
+  }
+
   return url;
+}
+
+/**
+ * Verifica se a URL de imagem pertence a um dos domínios configurados em
+ * `remotePatterns` no `next.config.ts`, permitindo otimização via `/_next/image`.
+ * Se retornar false, a imagem deve ser renderizada com `unoptimized` para evitar
+ * erro HTTP 400 ("url parameter is not allowed").
+ */
+export function isOptimizableImageUrl(raw: string | null | undefined): boolean {
+  if (!raw) return true;
+  const val = raw.trim();
+  if (!val || val.startsWith("/")) return true;
+  try {
+    const parsed = new URL(val);
+    const host = parsed.hostname.toLowerCase();
+    return (
+      host === "cdn.myanimelist.net" ||
+      host.endsWith(".myanimelist.net") ||
+      host === "meusanimes.blog" ||
+      host.endsWith(".meusanimes.blog") ||
+      host.endsWith(".anilist.co") ||
+      host === "svuaszdqsgztnetefcex.supabase.co" ||
+      host === "i.pinimg.com" ||
+      host.endsWith(".pinimg.com") ||
+      host === "pinterest.com" ||
+      host.endsWith(".pinterest.com") ||
+      host === "m.media-amazon.com" ||
+      host.endsWith(".media-amazon.com") ||
+      host === "images-na.ssl-images-amazon.com" ||
+      host.endsWith(".ssl-images-amazon.com") ||
+      host === "fliptru.com.br" ||
+      host.endsWith(".fliptru.com.br") ||
+      host === "i.imgur.com" ||
+      host.endsWith(".imgur.com") ||
+      host === "cdn.discordapp.com" ||
+      host === "media.discordapp.net" ||
+      host === "uploads.mangadex.org" ||
+      host.endsWith(".mangadex.org") ||
+      host.endsWith(".googleusercontent.com")
+    );
+  } catch {
+    return false;
+  }
 }
 
 /**

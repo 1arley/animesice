@@ -5,6 +5,7 @@ import { type MotionValue } from "motion/react";
 import * as m from "motion/react-m";
 import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
 import { blur } from "@/lib/blur";
+import { isOptimizableImageUrl } from "@/lib/url";
 
 interface HeroCharacterProps {
   src: string;
@@ -41,6 +42,7 @@ export function HeroCharacter({
         alt=""
         fill
         priority={priority}
+        unoptimized={!isOptimizableImageUrl(src)}
         fetchPriority={priority ? "high" : undefined}
         sizes="(min-width: 1400px) 1340px, 100vw"
         quality={80}
