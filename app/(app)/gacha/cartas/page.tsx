@@ -344,7 +344,10 @@ export default function GachaCollectionPage() {
           </h1>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Link href="/gacha/enciclopedia" className="btn-ice px-4 py-2">
+          <Link href="/gacha/trade-up" className="btn-ice px-4 py-2">
+            Trade-up
+          </Link>
+          <Link href="/gacha/enciclopedia" className="btn-ghost px-4 py-2">
             Explorar enciclopédia
           </Link>
           <Link href="/gacha/colecao" className="btn-ghost px-4 py-2">

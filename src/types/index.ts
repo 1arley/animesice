@@ -932,6 +932,44 @@ export interface GachaOwnedSkinCopy {
   status: "ACTIVE" | "ESCROW" | "SOLD" | "REMOVED";
 }
 
+export interface GachaTradeUpCardResult {
+  id: string;
+  cardId: string;
+  condition: number;
+  conditionLabel?: string;
+  foil: string;
+  edition: number;
+  value: number;
+  card: {
+    id: string;
+    name: string;
+    rarity: string;
+    animeId: string | null;
+    editionCounter: number;
+    image?: string | null;
+  };
+}
+
+export interface GachaTradeUpCardsResponse {
+  type: "CARD";
+  consumedIds: string[];
+  result: GachaTradeUpCardResult;
+}
+
+export interface GachaTradeUpSkinResult {
+  id: string;
+  skinId: string;
+  name: string;
+  imageUrl: string;
+  rarity: string;
+}
+
+export interface GachaTradeUpSkinsResponse {
+  type: "SKIN";
+  consumedIds: string[];
+  result: GachaTradeUpSkinResult;
+}
+
 /** Preview de giro — sorteio sem ownership (sem edition, sem dono). */
 export interface GachaSpinPreview {
   id: string;

@@ -11,6 +11,7 @@
     "check:roll-anim-source": "node scripts/check-roll-anim-source.mjs",
     "check:roll-tease": "node scripts/check-roll-tease.mjs",
     "check:roll-tier-motifs": "node scripts/check-roll-tier-motifs.mjs",
+    "check:trade-up": "node --experimental-strip-types scripts/check-trade-up-logic.mjs",
     "render:gacha": "node scripts/remotion/render-gacha.mjs",
     "predev": "npm run check:gacha-foils && npm run check:roll-anim-config && npm run check:roll-anim-source && npm run check:roll-tease && npm run check:roll-tier-motifs",
     "start": "next start",

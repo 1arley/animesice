@@ -26,6 +26,7 @@ const items = {
   encyclopedia: { href: "/gacha/enciclopedia", label: "Enciclopédia" },
   wishlist: { href: "/gacha/wishlist", label: "Wishlist" },
   cosmetics: { href: "/gacha/colecao", label: "Skins e cosméticos" },
+  tradeUp: { href: "/gacha/trade-up", label: "Trade-up" },
   market: { href: "/gacha/mercado", label: "Mercado", icon: "market" },
   nightMarket: {
     href: NIGHT_MARKET_HREF,
@@ -39,7 +40,7 @@ const groups = [
   { label: "Jogar", items: [items.spin, items.skins] },
   {
     label: "Colecionar",
-    items: [items.cards, items.encyclopedia, items.wishlist, items.cosmetics],
+    items: [items.cards, items.tradeUp, items.encyclopedia, items.wishlist, items.cosmetics],
   },
   {
     label: "Economia",

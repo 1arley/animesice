@@ -76,6 +76,8 @@ import type {
   GachaMarketHistory,
   GachaEconomyOdds,
   GachaOwnedSkinCopy,
+  GachaTradeUpCardsResponse,
+  GachaTradeUpSkinsResponse,
   GachaTrade,
   UserSearchResult,
   FeedbackStatus,
@@ -1637,6 +1639,16 @@ export const api = {
   gachaEconomyOdds: () => request<GachaEconomyOdds>("/gacha/economy/odds"),
   gachaEconomyOwnedSkins: () =>
     request<GachaOwnedSkinCopy[]>("/gacha/economy/skins/mine"),
+  gachaEconomyTradeUpCards: (copyIds: string[]) =>
+    request<GachaTradeUpCardsResponse>("/gacha/economy/trade-up/cards", {
+      method: "POST",
+      body: JSON.stringify({ copyIds }),
+    }),
+  gachaEconomyTradeUpSkins: (copyIds: string[]) =>
+    request<GachaTradeUpSkinsResponse>("/gacha/economy/trade-up/skins", {
+      method: "POST",
+      body: JSON.stringify({ copyIds }),
+    }),
   crystalCheckout: (packageId: string, idempotencyKey: string) =>
     request<{ id: string; checkoutUrl: string | null }>(
       "/billing/crystals/checkout",
