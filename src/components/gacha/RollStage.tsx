@@ -1314,7 +1314,7 @@ export function RollStage({ pull, onClose, preview = false, config }: RollStageP
               data-card-front
               aria-hidden="true"
               className="absolute inset-0 flex items-center justify-center overflow-hidden border border-ice/50 bg-panel shadow-[0_0_40px_rgba(56,232,218,0.18)]"
-              style={{ backfaceVisibility: "hidden", display: flat && revealed ? "none" : undefined }}
+              style={{ backfaceVisibility: "hidden" }}
             >
               <div data-crystal className="relative h-28 w-28 rotate-45 border border-ice/80 bg-gradient-to-tr from-transparent via-ice/30 to-ice/5 shadow-glow-ice">
                 <span className="absolute inset-3 border border-ice/40" />
@@ -1334,7 +1334,6 @@ export function RollStage({ pull, onClose, preview = false, config }: RollStageP
               style={{
                 backfaceVisibility: flat ? "visible" : "hidden",
                 transform: flat ? "none" : "rotateY(180deg)",
-                visibility: flat && !revealed ? "hidden" : undefined,
               }}
             >
               {displayPull && (
