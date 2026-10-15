@@ -116,7 +116,6 @@ export function parseRollAnimJson(text: string): ParsedRollJson {
     if (!Object.hasOwn(DEFAULT_ROLL_ANIM_CONFIG, key)) {
       return { ok: false, error: `Chave desconhecida: ${key}` };
     }
-    const sample = DEFAULT_ROLL_ANIM_CONFIG[key as keyof RollAnimConfig];
     const valid = key === "particleGalaxy"
       ? Array.isArray(value) && value.length > 0 && value.length <= 8 && value.every((v) => typeof v === "string" && /^#[\da-fA-F]{6}$/.test(v))
       : key === "particleReach"
@@ -124,20 +123,14 @@ export function parseRollAnimJson(text: string): ParsedRollJson {
           && Object.keys(value).length === 2
           && Object.values(value).every((v) => typeof v === "number" && Number.isFinite(v) && v > 0 && v <= 600)
           && "x" in value && "y" in value
-      : Array.isArray(sample)
-      ? Array.isArray(value) && value.every((v) => typeof v === "string")
-      : sample !== null && typeof sample === "object"
-        ? !!value && typeof value === "object" && !Array.isArray(value)
-        : typeof sample === "string"
-        // shortcut: única chave de texto da config é teaseMode; ao adicionar outra,
-        // inclua na lista de opções aqui e no select do admin.
-        ? (TEASE_MODES as readonly string[]).includes(value)
+      : key === "teaseMode"
+        ? typeof value === "string" && (TEASE_MODES as readonly string[]).includes(value)
         : typeof value === "number" && Number.isFinite(value)
           && key in LIMITS
           && value >= LIMITS[key as keyof typeof LIMITS][0]
           && value <= LIMITS[key as keyof typeof LIMITS][1]
           && (!(key === "ringSlots" || key === "particleSlots" || key === "maxDrop") || Number.isInteger(value));
-    if (!valid) return { ok: false, error: `Tipo inválido em "${key}".` };
+    if (!valid) return { ok: false, error: `Valor inválido em "${key}".` };
     out[key] = value;
   }
   return { ok: true, value: out as Partial<RollAnimConfig> };
@@ -146,9 +139,11 @@ export function parseRollAnimJson(text: string): ParsedRollJson {
 /** Config persistida pode conter chaves antigas; dados inválidos caem no padrão seguro. */
 export function readRollAnimConfig(value: unknown): RollAnimConfig {
   if (!value || typeof value !== "object" || Array.isArray(value)) return DEFAULT_ROLL_ANIM_CONFIG;
-  const known = Object.fromEntries(
-    Object.entries(value).filter(([key]) => Object.hasOwn(DEFAULT_ROLL_ANIM_CONFIG, key)),
-  );
-  const parsed = parseRollAnimJson(JSON.stringify(known));
-  return parsed.ok ? { ...DEFAULT_ROLL_ANIM_CONFIG, ...parsed.value } : DEFAULT_ROLL_ANIM_CONFIG;
+  const config = { ...DEFAULT_ROLL_ANIM_CONFIG };
+  for (const [key, field] of Object.entries(value)) {
+    if (!Object.hasOwn(config, key)) continue;
+    const parsed = parseRollAnimJson(JSON.stringify({ [key]: field }));
+    if (parsed.ok) Object.assign(config, parsed.value);
+  }
+  return config;
 }

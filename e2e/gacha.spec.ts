@@ -88,6 +88,45 @@ test.describe("Gacha", () => {
     await expect(page.getByRole("button", { name: "Pegar carta" })).toBeEnabled();
   });
 
+  test("configuração tardia não reinicia uma invocação em espera", async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: "no-preference" });
+    await blockAds(page);
+    await mockGeneric(page);
+    await loginAs(page);
+    let releaseConfig!: () => void;
+    let releaseSpin!: () => void;
+    const configPending = new Promise<void>(resolve => { releaseConfig = resolve; });
+    const spinPending = new Promise<void>(resolve => { releaseSpin = resolve; });
+    await page.route("**/gacha/anim-config", async route => {
+      await configPending;
+      await route.fulfill({ json: { flipDuration: 0.8 } });
+    });
+    await page.route("**/gacha/spin", async route => {
+      const response = await route.fetch();
+      await spinPending;
+      await route.fulfill({ response });
+    });
+    try {
+      await page.goto("/gacha");
+      await page.getByRole("button", { name: /^Girar/ }).click();
+      const dialog = page.getByRole("dialog", { name: "Invocação" });
+      await expect(dialog).toHaveAttribute("data-phase", "waiting");
+      const phases = dialog.evaluate(el => new Promise<string[]>(resolve => {
+        const seen: string[] = [];
+        const observer = new MutationObserver(() => seen.push(el.getAttribute("data-phase") ?? ""));
+        observer.observe(el, { attributes: true, attributeFilter: ["data-phase"] });
+        setTimeout(() => { observer.disconnect(); resolve(seen); }, 900);
+      }));
+      await page.waitForTimeout(50);
+      releaseConfig();
+      expect(await phases).toEqual([]);
+      await expect(dialog).toHaveAttribute("data-phase", "waiting");
+    } finally {
+      releaseConfig();
+      releaseSpin();
+    }
+  });
+
   test("movimento reduzido não baixa vídeo nem monta canvas", async ({ page }) => {
     await page.emulateMedia({ reducedMotion: "reduce" });
     await blockAds(page);
@@ -218,6 +257,7 @@ test.describe("Gacha", () => {
       release();
       if (rarity === "LENDARIA") {
         await expect(dialog.locator("[data-godrays]")).toHaveCSS("opacity", /0\.[1-9]/);
+        await page.screenshot({ path: test.info().outputPath("gacha-lendaria-rays.png") });
       }
       expect(await revealDetails).toEqual(["1", "0", "0"]);
       await page.screenshot({ path: test.info().outputPath(`gacha-${rarity.toLowerCase()}-flip-midpoint.png`) });
