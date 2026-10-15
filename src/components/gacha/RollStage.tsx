@@ -1231,7 +1231,7 @@ export function RollStage({ pull, onClose, preview = false, config }: RollStageP
       )}
 
       <div data-shake-frame className="relative z-10 flex min-h-full flex-col items-center justify-center gap-4 py-4 sm:gap-5">
-        <p className="font-mono text-caption uppercase tracking-[0.24em] text-ice/90">
+        <p className="max-w-[calc(100%-7rem)] text-center font-mono text-caption uppercase tracking-[0.24em] text-ice/90 sm:max-w-none">
           ANIMESICE <span aria-hidden="true">/</span> SINAL DE INVOCAÇÃO
         </p>
         <h2 id="roll-title" className="sr-only">Invocação</h2>
