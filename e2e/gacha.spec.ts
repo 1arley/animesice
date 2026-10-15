@@ -64,6 +64,30 @@ test.describe("Gacha", () => {
     release();
   });
 
+  test("giro confirmado permanece selecionado se a atualização falhar", async ({ page }) => {
+    await blockAds(page);
+    await mockGeneric(page);
+    await loginAs(page);
+    let spun = false;
+    await page.route("**/gacha/spins", route => spun
+      ? route.fulfill({ status: 503, json: { message: "Indisponível" } })
+      : route.fulfill({ json: [] }));
+    await page.route("**/gacha/spin", async route => {
+      const response = await route.fetch();
+      spun = true;
+      await route.fulfill({ response });
+    });
+    await page.goto("/gacha");
+    const failedRefresh = page.waitForResponse(response => response.url().endsWith("/gacha/spins") && response.status() === 503);
+    await page.getByRole("button", { name: /^Girar/ }).click();
+    await failedRefresh;
+    const dialog = page.getByRole("dialog", { name: "Invocação" });
+    await dialog.getByRole("button", { name: "Continuar" }).click();
+    await expect(page.getByText("Previews desta hora (1/5)")).toBeVisible();
+    await expect(page.getByText(/Selecionada: Waifu E2E/)).toBeVisible();
+    await expect(page.getByRole("button", { name: "Pegar carta" })).toBeEnabled();
+  });
+
   test("movimento reduzido não baixa vídeo nem monta canvas", async ({ page }) => {
     await page.emulateMedia({ reducedMotion: "reduce" });
     await blockAds(page);
@@ -192,6 +216,9 @@ test.describe("Gacha", () => {
         observer.observe(el, { subtree: true, attributes: true, attributeFilter: ["data-art-ready"] });
       }));
       release();
+      if (rarity === "LENDARIA") {
+        await expect(dialog.locator("[data-godrays]")).toHaveCSS("opacity", /0\.[1-9]/);
+      }
       expect(await revealDetails).toEqual(["1", "0", "0"]);
       await page.screenshot({ path: test.info().outputPath(`gacha-${rarity.toLowerCase()}-flip-midpoint.png`) });
       await expect(

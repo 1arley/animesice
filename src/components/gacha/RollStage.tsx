@@ -434,10 +434,8 @@ interface RollStageProps {
 }
 
 export function RollStage({ pull, onClose, preview = false, config }: RollStageProps) {
-  const cfg = { ...DEFAULT_ROLL_ANIM_CONFIG, ...config };
-  const cfgRef = useRef(cfg);
-  cfgRef.current = cfg;
-  const cfgKey = JSON.stringify(cfg);
+  const cfgRef = useRef({ ...DEFAULT_ROLL_ANIM_CONFIG, ...config });
+  const cfg = cfgRef.current;
   const dialog = useRef<HTMLDialogElement>(null);
   const timeline = useRef<RollTimeline | null>(null);
   const activeLoops = useRef<Killable[]>([]);
@@ -838,9 +836,6 @@ export function RollStage({ pull, onClose, preview = false, config }: RollStageP
     }
     activeLoops.current = loops;
 
-    const godrays = one<HTMLElement>("[data-godrays]");
-    if (godrays) gsap.set(godrays, { xPercent: -50, yPercent: -50, opacity: 0 });
-
     const placeFx = () => {
       if (!stage) return;
       const rect = root.getBoundingClientRect();
@@ -854,6 +849,7 @@ export function RollStage({ pull, onClose, preview = false, config }: RollStageP
         const uy = (cy - (rect.height - 100 * k) / 2) / k;
         raysPos.setAttribute("transform", `translate(${ux.toFixed(2)} ${uy.toFixed(2)})`);
       }
+      const godrays = one<HTMLElement>("[data-godrays]");
       if (godrays) gsap.set(godrays, { left: cx, top: cy });
     };
 
@@ -887,6 +883,8 @@ export function RollStage({ pull, onClose, preview = false, config }: RollStageP
       const flash = one<HTMLElement>("[data-flash]");
       const title = one<HTMLElement>("[data-rarity-title]");
       const rays = one<SVGGElement>("[data-radial-rays]");
+      const godrays = one<HTMLElement>("[data-godrays]");
+      if (godrays) gsap.set(godrays, { xPercent: -50, yPercent: -50, opacity: 0 });
       const letters = all<HTMLElement>("[data-name-letter]");
       const badge = one<HTMLElement>("[data-badge]");
       const rarityLabel = one<HTMLElement>("[data-rarity-label]");
@@ -1158,7 +1156,7 @@ export function RollStage({ pull, onClose, preview = false, config }: RollStageP
       appendReveal.current = () => {};
       root.removeAttribute("data-animating");
     };
-  }, [motionPreferenceReady, reduceMotion, showFinal, cfgKey]);
+  }, [motionPreferenceReady, reduceMotion, showFinal]);
 
   const nameLetters = displayPull?.card.name.split("") ?? [];
   const showTitle = rarityIndex >= IDX_LEGENDARY && !!displayPull && !flat;
