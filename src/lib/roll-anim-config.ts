@@ -1,4 +1,4 @@
-export const TEASE_MODES = ["random", "ordered"] as const;
+export const TEASE_MODES = ["random", "ordered", "climb"] as const;
 
 export type RollAnimConfig = {
   enterDuration: number;
@@ -8,7 +8,7 @@ export type RollAnimConfig = {
   glowDuration: number;
   skipAt: number;
   revealAt: number;
-  /** "random" sorteia a cor; "ordered" usa a sequência antiga, determinística. */
+  /** "random" sorteia a cor; "ordered" usa a sequência antiga, determinística; "climb" sobe um degrau por parada até a real. */
   teaseMode: (typeof TEASE_MODES)[number];
   /** Quantos tiers o brilho pode cair entre dois flashes (só no modo random). */
   maxDrop: number;

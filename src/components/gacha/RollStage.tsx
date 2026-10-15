@@ -8,7 +8,7 @@ import { GACHA_RARITY_COLORS } from "@/lib/gacha-rarity-colors";
 import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
 import type { GachaPull } from "@/types";
 import { DEFAULT_ROLL_ANIM_CONFIG, type RollAnimConfig } from "@/lib/roll-anim-config";
-import { orderedTeaseSequence, randomTeaseSequence } from "@/lib/roll-tease";
+import { climbTeaseSequence, orderedTeaseSequence, randomTeaseSequence } from "@/lib/roll-tease";
 
 export { DEFAULT_ROLL_ANIM_CONFIG, parseRollAnimJson } from "@/lib/roll-anim-config";
 export type { ParsedRollJson, RollAnimConfig } from "@/lib/roll-anim-config";
@@ -896,7 +896,7 @@ export function RollStage({ pull, onClose, preview = false, config }: RollStageP
       const colorTargets = [stage, tint].filter((el): el is HTMLElement => !!el);
       const resultTl = gsap.timeline();
 
-      /* Tensão: aura troca de cor (cross-fade), desacelera e trava na cor real */
+      /* Tensão: aura troca de cor (cross-fade) e trava na cor real no fim da janela */
       if (auras.length) resultTl.set(auras, { opacity: 0, transformOrigin: "50% 50%" }, 0);
       let current: SVGGElement | null = null;
       const showTier = (tier: RollRarity, at: number, fade: number, peak: number) => {
@@ -909,6 +909,18 @@ export function RollStage({ pull, onClose, preview = false, config }: RollStageP
       };
       if (compact) {
         showTier(resultRarity, 0, 0.15, 0.9);
+      } else if (cfg.teaseMode === "climb") {
+        // A escada tem um degrau por raridade, então as paradas saem dela — não do
+        // teaseStops(), que é calibrado para o giro de Tier fixo.
+        const climb = climbTeaseSequence(lock, GACHA_TIERS, resultRarity);
+        const lastStep = climb.length - 1;
+        climb.forEach((stop, index) => {
+          // A intensidade acompanha o degrau: o topo entra no pico e fica travado
+          // até o impacto (lock = teaseDur - 0.35).
+          const peak = 0.7 + 0.3 * (index / Math.max(1, lastStep));
+          showTier(stop.tier, stop.at, index === lastStep ? 0.24 : 0.16, peak);
+          resultTl.call(() => sfxRef.current.tick(index), [], stop.at);
+        });
       } else {
         const stops = teaseStops(lock);
         const sequence = cfg.teaseMode === "ordered"
@@ -918,6 +930,7 @@ export function RollStage({ pull, onClose, preview = false, config }: RollStageP
           showTier(sequence[index]!, at, 0.16, 0.8);
           resultTl.call(() => sfxRef.current.tick(index), [], at);
         });
+        // O sorteio não garante a cor real: a trava no fim da janela é o que entrega.
         showTier(resultRarity, lock, 0.2, 1);
       }
 
