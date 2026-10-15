@@ -6,8 +6,8 @@ import Link from "next/link";
 import { api, ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { useToast } from "@/components/common/ToastProvider";
-import { Modal } from "@/components/common/Modal";
 import { ConfirmDialog } from "@/components/common/ConfirmDialog";
+import { GachaTradeUpForgeStage } from "./GachaTradeUpForgeStage";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { PaginationControls } from "@/components/ui/PaginationControls";
 import { GachaCardGridSkeleton } from "@/components/gacha/GachaPageSkeleton";
@@ -75,9 +75,12 @@ export function GachaTradeUp() {
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
 
-  // --- Resultado ---
+  // --- Resultado e Forja Extravagante ---
   const [cardResult, setCardResult] = useState<GachaTradeUpCardResult | null>(null);
   const [skinResult, setSkinResult] = useState<GachaTradeUpSkinResult | null>(null);
+  const [forgeActive, setForgeActive] = useState(false);
+  const [forgingCards, setForgingCards] = useState<GachaPull[]>([]);
+  const [forgingSkins, setForgingSkins] = useState<GachaOwnedSkinCopy[]>([]);
 
   // ID acessível para mensagens de status
   const statusMessageId = useId();
@@ -314,32 +317,55 @@ export function GachaTradeUp() {
     setConfirmOpen(true);
   };
 
+  const handleCloseForge = useCallback(() => {
+    setForgeActive(false);
+    setCardResult(null);
+    setSkinResult(null);
+    setSubmitError("");
+  }, []);
+
+  const handleResetForge = useCallback(() => {
+    setForgeActive(false);
+    setCardResult(null);
+    setSkinResult(null);
+    setSubmitError("");
+    setSelectedCards([]);
+    setSelectedSkins([]);
+  }, []);
+
   const handleExecuteTradeUp = async () => {
     if (submitting) return;
     setSubmitting(true);
     setSubmitError("");
 
+    const cardsSnapshot = [...selectedCards];
+    const skinsSnapshot = [...selectedSkins];
+    setForgingCards(cardsSnapshot);
+    setForgingSkins(skinsSnapshot);
+    setCardResult(null);
+    setSkinResult(null);
+    setConfirmOpen(false);
+    setForgeActive(true);
+
     try {
       if (mode === "cards") {
-        const copyIds = selectedCards.map((c) => c.id);
+        const copyIds = cardsSnapshot.map((c) => c.id);
         const res = await api.gachaEconomyTradeUpCards(copyIds);
 
         // Sucesso: limpar seleção e guardar resultado
         setSelectedCards([]);
         setCardResult(res.result);
-        setConfirmOpen(false);
         toast("Trade-up de cartas realizado com sucesso!", "success");
 
         // Atualizar inventário pelo mecanismo existente
         await fetchCards();
       } else {
-        const copyIds = selectedSkins.map((s) => s.id);
+        const copyIds = skinsSnapshot.map((s) => s.id);
         const res = await api.gachaEconomyTradeUpSkins(copyIds);
 
         // Sucesso: limpar seleção e guardar resultado
         setSelectedSkins([]);
         setSkinResult(res.result);
-        setConfirmOpen(false);
         toast("Trade-up de skins realizado com sucesso!", "success");
 
         // Atualizar inventário pelo mecanismo existente
@@ -352,7 +378,6 @@ export function GachaTradeUp() {
         mode === "cards" ? "CARD" : "SKIN",
       );
       setSubmitError(friendlyMessage);
-      setConfirmOpen(false);
       toast(friendlyMessage, "error");
     } finally {
       setSubmitting(false);
@@ -372,37 +397,6 @@ export function GachaTradeUp() {
     return skinsInventory.filter((s) => s.rarity === skinsRarityFilter);
   }, [skinsInventory, skinsRarityFilter]);
 
-  // Monta objeto Pull sintético para exibir o resultado da carta com GachaCard
-  const synthesizedResultPull = useMemo<GachaPull | null>(() => {
-    if (!cardResult || !user) return null;
-    const authorUser: SocialUser = {
-      id: user.id,
-      name: user.name,
-      userName: user.userName,
-      avatar: user.avatar,
-    };
-    return {
-      id: cardResult.id,
-      condition: cardResult.condition,
-      conditionLabel: cardResult.conditionLabel ?? gachaConditionLabel(cardResult.condition),
-      foil: cardResult.foil,
-      edition: cardResult.edition,
-      value: cardResult.value,
-      obtainedAt: new Date().toISOString(),
-      user: authorUser,
-      card: {
-        id: cardResult.card.id,
-        name: cardResult.card.name,
-        rarity: cardResult.card.rarity,
-        image: cardResult.card.image ?? null,
-        imageHidden: false,
-        favourites: 0,
-        animeId: cardResult.card.animeId,
-        animeTitle: null,
-        anime: null,
-      },
-    };
-  }, [cardResult, user]);
 
   // -------------------------------------------------------------
   // Render: Carregando Auth / Desconectado
@@ -1323,139 +1317,21 @@ export function GachaTradeUp() {
       </ConfirmDialog>
 
       {/* ========================================================= */}
-      {/* MODAL DE RESULTADO: CARTA FORJADA                        */}
+      {/* PALCO DE FORJAMENTO EXTRAVAGANTE (TRADE-UP FORGE STAGE)   */}
       {/* ========================================================= */}
-      <Modal
-        open={cardResult !== null}
-        onClose={() => setCardResult(null)}
-        title="Trade-up Concluído com Sucesso!"
-      >
-        {cardResult && (
-          <div className="flex flex-col items-center p-3 text-center sm:p-5">
-            <span
-              className={`inline-block border px-3 py-1 font-mono text-caption font-bold uppercase tracking-wider ${
-                RARITY[cardResult.card.rarity]?.text ?? "text-snow"
-              } ${RARITY[cardResult.card.rarity]?.border ?? "border-hairline"} mb-3`}
-            >
-              {cardResult.card.rarity}
-            </span>
-
-            {/* Visual da Carta Forjada */}
-            <div className="my-2 w-52 max-w-full">
-              {synthesizedResultPull && (
-                <GachaCard
-                  pull={synthesizedResultPull}
-                  preview={false}
-                  linkAnime={false}
-                  showInfo={false}
-                />
-              )}
-            </div>
-
-            <h3 className="mt-3 font-display text-body-lg text-snow">
-              {cardResult.card.name}
-            </h3>
-
-            {/* Atributos do Resultado */}
-            <div className="mt-3 flex flex-wrap justify-center gap-2 font-mono text-caption">
-              <span className="border border-hairline bg-panel px-2.5 py-1 text-mist">
-                Condição: {cardResult.conditionLabel ?? gachaConditionLabel(cardResult.condition)}
-              </span>
-              <span className="border border-hairline bg-panel px-2.5 py-1 text-mist">
-                Foil: {cardResult.foil}
-              </span>
-              <span className="border border-hairline bg-panel px-2.5 py-1 text-mist">
-                Edição #{cardResult.edition}
-              </span>
-              <span className="border border-hairline bg-panel px-2.5 py-1 text-ice">
-                {cardResult.value.toLocaleString("pt-BR")} crystals
-              </span>
-            </div>
-
-            <p className="mt-4 text-caption text-mist">
-              A nova carta foi adicionada com sucesso ao seu inventário ativo.
-            </p>
-
-            <div className="mt-6 flex flex-wrap justify-center gap-3">
-              <button
-                type="button"
-                onClick={() => setCardResult(null)}
-                className="btn-ice min-h-11 px-5 text-caption font-bold"
-              >
-                Fazer outro Trade-up
-              </button>
-              <Link
-                href="/gacha/cartas"
-                className="btn-ghost inline-flex min-h-11 items-center px-5 text-caption text-snow"
-              >
-                Ver na Coleção
-              </Link>
-            </div>
-          </div>
-        )}
-      </Modal>
-
-      {/* ========================================================= */}
-      {/* MODAL DE RESULTADO: SKIN RECICLADA                      */}
-      {/* ========================================================= */}
-      <Modal
-        open={skinResult !== null}
-        onClose={() => setSkinResult(null)}
-        title="Trade-up de Skin Concluído!"
-      >
-        {skinResult && (
-          <div className="flex flex-col items-center p-3 text-center sm:p-5">
-            <span
-              className={`inline-block border px-3 py-1 font-mono text-caption font-bold uppercase tracking-wider ${
-                RARITY[skinResult.rarity]?.text ?? "text-snow"
-              } ${RARITY[skinResult.rarity]?.border ?? "border-hairline"} mb-3`}
-            >
-              {skinResult.rarity}
-            </span>
-
-            {/* Imagem da Skin Forjada */}
-            <div className="relative my-3 aspect-square w-48 overflow-hidden rounded border border-hairline bg-ink/70">
-              {safeImageSrc(skinResult.imageUrl) ? (
-                <Image
-                  src={safeImageSrc(skinResult.imageUrl)!}
-                  alt={skinResult.name}
-                  fill
-                  sizes="192px"
-                  className="object-cover"
-                />
-              ) : (
-                <div className="flex h-full w-full items-center justify-center text-caption text-mist">
-                  sem arte
-                </div>
-              )}
-            </div>
-
-            <h3 className="mt-3 font-display text-body-lg text-snow">
-              {skinResult.name}
-            </h3>
-
-            <p className="mt-4 text-caption text-mist">
-              A nova skin foi adicionada ao seu acervo e já pode ser equipada.
-            </p>
-
-            <div className="mt-6 flex flex-wrap justify-center gap-3">
-              <button
-                type="button"
-                onClick={() => setSkinResult(null)}
-                className="btn-ice min-h-11 px-5 text-caption font-bold"
-              >
-                Fazer outro Trade-up
-              </button>
-              <Link
-                href="/gacha/colecao"
-                className="btn-ghost inline-flex min-h-11 items-center px-5 text-caption text-snow"
-              >
-                Ver Meus Cosméticos
-              </Link>
-            </div>
-          </div>
-        )}
-      </Modal>
+      {forgeActive && (
+        <GachaTradeUpForgeStage
+          mode={mode}
+          sourceCards={forgingCards}
+          sourceSkins={forgingSkins}
+          cardResult={cardResult}
+          skinResult={skinResult}
+          error={submitError}
+          currentUser={user}
+          onClose={handleCloseForge}
+          onReset={handleResetForge}
+        />
+      )}
     </div>
   );
 }
