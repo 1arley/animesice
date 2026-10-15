@@ -409,6 +409,7 @@ export default function AdminGachaAnimacaoPage() {
             options: [
               { value: "random", label: "Aleatória" },
               { value: "ordered", label: "Antiga, ordenada (desce)" },
+              { value: "climb", label: "Ascendente (sobe até a real)" },
             ],
           },
           { key: "maxDrop", label: "Queda máx. de tiers (só no aleatório)", step: 1, min: 0, max: 6 },

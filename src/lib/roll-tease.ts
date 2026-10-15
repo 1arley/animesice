@@ -7,6 +7,7 @@
  * tinha sido.
  * `orderedTeaseSequence` é a versão antiga, determinística e fora do fluxo. Fica como
  * registro histórico; para voltar atrás é só chamar ela no lugar da outra.
+ * `climbTeaseSequence` é a terceira: escada ascendente que termina na raridade real.
  */
 
 /** Queda máxima de tiers entre dois flashes seguidos. */
@@ -45,4 +46,33 @@ export function orderedTeaseSequence<T>(count: number, tiers: readonly T[], fina
     sequence.push(tier);
   }
   return sequence;
+}
+
+/** Peso geométrico entre degraus: o primeiro é curto e o topo longo antes do impacto. */
+const CLIMB_RATIO = 1.34;
+
+/**
+ * Escada da tensão: abre em COMUM e sobe UM degrau por parada até cravar na raridade
+ * real, sem descer nunca. É o oposto do sorteio — o jogador lê a subida como
+ * aproximação e o topo é a própria carta.
+ *
+ * Devolve tier junto do instante porque aqui o número de paradas é o degrau da
+ * raridade (não um `count` solto) e o topo precisa encostar no fim da janela:
+ * os intervalos usam peso geométrico, então o primeiro degrau é imediato e os
+ * seguintes desaceleram, deixando o topo mais tempo na tela antes do impacto.
+ */
+export function climbTeaseSequence<T>(
+  total: number,
+  tiers: readonly T[],
+  final: T,
+): Array<{ at: number; tier: T }> {
+  const ladder = tiers.slice(0, Math.max(0, tiers.indexOf(final)) + 1);
+  const gaps = Array.from({ length: Math.max(0, ladder.length - 1) }, (_, i) => CLIMB_RATIO ** i);
+  const span = gaps.reduce((a, b) => a + b, 0);
+  let acc = 0;
+  return ladder.map((tier, i) => {
+    const at = span === 0 ? 0 : (acc / span) * total;
+    acc += gaps[i] ?? 0;
+    return { at, tier };
+  });
 }
