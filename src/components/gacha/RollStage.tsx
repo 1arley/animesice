@@ -710,13 +710,11 @@ export function RollStage({ pull, onClose, preview = false, config }: RollStageP
     const loops: Killable[] = [];
     const stopAtImpact: Killable[] = [];
     const isMobile = window.matchMedia("(max-width: 480px)").matches;
-    const startCopy = readCopyState(latestPull.current);
     // ponytail: o brilho de raridade só entra depois que o giro central acaba de fato.
     // O max espelha a duração real do tween do cristal (Math.max(0.75, ...)), senão
     // crystalSpinDuration curto deixa a troca de cor atropelar o giro de novo.
     const spinEnd = cfg.crystalSpinAt + Math.max(0.75, cfg.crystalSpinDuration);
-    const baseEnd = Math.max(1.1, cfg.revealAt, spinEnd + 0.15);
-    const invocationEnd = startCopy === "duplicate" ? Math.min(1.1, baseEnd) : baseEnd;
+    const invocationEnd = Math.max(1.1, cfg.revealAt, spinEnd);
     const setPhaseAt = (value: RollPhase) => markPhase(value);
     const t0 = performance.now();
     const clock = () => (performance.now() - t0) / 1000;
@@ -1033,7 +1031,7 @@ export function RollStage({ pull, onClose, preview = false, config }: RollStageP
           .to(flip, { scale: 1.1, duration: flipDur * 0.4, ease: "power2.out" }, revealAt)
           .to(flip, { scale: 1, duration: flipDur * 0.6, ease: "power2.inOut" }, revealAt + flipDur * 0.4);
       }
-      if (cardArt) resultTl.fromTo(cardArt, { opacity: 0 }, { opacity: 1, duration: 0.16, ease: "power1.out" }, cardRevealedAt);
+      if (cardArt) resultTl.fromTo(cardArt, { opacity: 0 }, { opacity: 1, duration: 0.16, ease: "power1.out" }, cardRevealedAt - 0.16);
       if (sweep) {
         const sweepDur = Math.max(0.5, cfg.sweepDuration);
         const sweepAt = cardArtReadyAt;
@@ -1336,9 +1334,6 @@ export function RollStage({ pull, onClose, preview = false, config }: RollStageP
             >
               {displayPull && (
                 <div data-card-tilt className="roll-card-tilt relative h-full w-full">
-                  <div aria-hidden="true" className="pointer-events-none absolute inset-0">
-                    <GachaCard pull={displayPull} preview={preview} showInfo={false} side="back" cardBack={null} />
-                  </div>
                   <div
                     data-card-art
                     data-art-ready={revealed ? "true" : undefined}
