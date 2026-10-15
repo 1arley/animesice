@@ -88,4 +88,34 @@ test.describe("Homepage & Shelf Navigation", () => {
     const monetagScript = page.locator("script#monetag-loader");
     await expect(monetagScript).toHaveCount(0);
   });
+
+  test("header is sticky and retracts on scroll down and reappears on scroll up", async ({ page }) => {
+    await page.goto("/");
+
+    const header = page.locator("header");
+    await expect(header).toBeVisible();
+    await expect(header).toHaveClass(/sticky/);
+    await expect(header).toHaveClass(/translate-y-0/);
+
+    // Scroll down past threshold
+    await page.evaluate(() => {
+      window.scrollTo(0, 400);
+      window.dispatchEvent(new Event("scroll"));
+    });
+    await expect(header).toHaveClass(/-translate-y-full/);
+
+    // Scroll up
+    await page.evaluate(() => {
+      window.scrollTo(0, 250);
+      window.dispatchEvent(new Event("scroll"));
+    });
+    await expect(header).toHaveClass(/translate-y-0/);
+
+    // Near top of page always visible
+    await page.evaluate(() => {
+      window.scrollTo(0, 20);
+      window.dispatchEvent(new Event("scroll"));
+    });
+    await expect(header).toHaveClass(/translate-y-0/);
+  });
 });
