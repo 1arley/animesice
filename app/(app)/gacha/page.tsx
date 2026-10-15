@@ -285,13 +285,13 @@ function GachaPageContent() {
     setSpinning(true);
     setSpinResult(null);
     setClaimResult(null);
-    setStagePreview(true);
-    setStageOpen(true);
     try {
       const previewSpin = await api.gachaSpin(AbortSignal.timeout(15_000));
       setSpins((prev) => [...prev, previewSpin]);
       setSelectedSpinId(previewSpin.id);
       setSpinResult(previewSpin);
+      setStagePreview(true);
+      setStageOpen(true);
       setStatus((prev) => prev && prev.spinsLeft != null
         ? { ...prev, spinsLeft: Math.max(0, prev.spinsLeft - 1), canSpin: prev.spinsLeft > 1 }
         : prev);
