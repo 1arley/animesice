@@ -11,6 +11,7 @@ import {
   parseRollAnimJson,
   type RollAnimConfig,
 } from "@/components/gacha/RollStage";
+import { readRollAnimConfig } from "@/lib/roll-anim-config";
 import { CodeStagePreview, type CompileStatus } from "@/components/gacha/CodeStagePreview";
 import {
   ReasonField,
@@ -269,9 +270,7 @@ export default function AdminGachaAnimacaoPage() {
       try {
         const entries = await api.adminGachaConfig();
         const animEntry = entries.find((e) => e.key === "anim_roll");
-        if (animEntry && typeof animEntry.value === "object" && animEntry.value !== null) {
-          setConfig({ ...DEFAULT_ROLL_ANIM_CONFIG, ...(animEntry.value as Partial<RollAnimConfig>) });
-        }
+        if (animEntry) setConfig(readRollAnimConfig(animEntry.value));
       } catch (e) {
         setError(e instanceof ApiError ? e.message : "Erro ao carregar.");
       } finally {
@@ -347,6 +346,12 @@ export default function AdminGachaAnimacaoPage() {
   }
 
   async function commitConfig() {
+    const parsed = parseRollAnimJson(JSON.stringify(config));
+    if (!parsed.ok) {
+      setError(parsed.error);
+      setConfirming(false);
+      return;
+    }
     animBefore.current = JSON.stringify(config);
     setError("");
     setSaving(true);
@@ -365,6 +370,11 @@ export default function AdminGachaAnimacaoPage() {
   /** A animação vale na hora para todo mundo: motivo antes de gravar. */
   function handleSave() {
     setError("");
+    const parsed = parseRollAnimJson(JSON.stringify(config));
+    if (!parsed.ok) {
+      setError(parsed.error);
+      return;
+    }
     if (motivoError) {
       setError(motivoError);
       return;
@@ -378,6 +388,11 @@ export default function AdminGachaAnimacaoPage() {
   }
 
   function openPreview() {
+    const parsed = parseRollAnimJson(JSON.stringify(config));
+    if (!parsed.ok) {
+      setError(parsed.error);
+      return;
+    }
     setPreviewOpen(true);
   }
 
@@ -393,9 +408,6 @@ export default function AdminGachaAnimacaoPage() {
           { key: "enterDuration", label: "Duração entrada carta", step: 0.01, min: 0, max: 2 },
           { key: "crystalSpinAt", label: "Início giro cristal", step: 0.01, min: 0, max: 3 },
           { key: "crystalSpinDuration", label: "Duração giro cristal", step: 0.01, min: 0.1, max: 3 },
-          { key: "glowAt", label: "Início brilho", step: 0.01, min: 0, max: 3 },
-          { key: "glowDuration", label: "Duração brilho", step: 0.01, min: 0.1, max: 3 },
-          { key: "skipAt", label: "Botão pular aparece em", step: 0.01, min: 0, max: 3 },
         ],
       },
       {
@@ -414,10 +426,10 @@ export default function AdminGachaAnimacaoPage() {
           },
           { key: "maxDrop", label: "Queda máx. de tiers (só no aleatório)", step: 1, min: 0, max: 6 },
           { key: "crystalOutDuration", label: "Saída do cristal", step: 0.01, min: 0.05, max: 1 },
-          { key: "ringSlots", label: "Slots de anéis (máx)", step: 1, min: 0, max: 6 },
+          { key: "ringSlots", label: "Slots de anéis (máx)", step: 1, min: 1, max: 3 },
           { key: "ringDuration", label: "Duração anéis", step: 0.01, min: 0.1, max: 2 },
           { key: "ringStagger", label: "Stagger anéis", step: 0.01, min: 0, max: 0.5 },
-          { key: "particleSlots", label: "Slots de partículas", step: 1, min: 0, max: 48 },
+          { key: "particleSlots", label: "Slots de partículas", step: 1, min: 1, max: 48 },
           { key: "particleDuration", label: "Duração partículas", step: 0.01, min: 0.1, max: 2 },
           { key: "particleReach", label: "Alcance partículas {x, y}", type: "object" as const },
           { key: "particleGalaxy", label: "Cores galácticas (hex)", type: "array" as const },

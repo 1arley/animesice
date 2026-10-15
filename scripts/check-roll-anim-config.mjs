@@ -2,7 +2,7 @@
 // colado direto do código (TS), e rejeita entrada ruim em vez de aplicar meio config.
 // Roda em predev: node scripts/check-roll-anim-config.mjs
 import assert from "node:assert/strict";
-import { parseRollAnimJson } from "../src/lib/roll-anim-config.ts";
+import { DEFAULT_ROLL_ANIM_CONFIG, parseRollAnimJson, readRollAnimConfig } from "../src/lib/roll-anim-config.ts";
 
 // Bloco como o dev copia do RollStage: comentário, `as const`, vírgula final.
 const TS_BLOCK = `
@@ -50,6 +50,13 @@ for (const bad of [
   '{ "flipDuration": "0.8" }',
   '{ "particleGalaxy": "#fff" }',
   '{ "particleReach": 180 }',
+  '{ "particleReach": { "x": 180 } }',
+  '{ "particleReach": { "x": -1, "y": 230 } }',
+  '{ "particleGalaxy": [] }',
+  '{ "particleGalaxy": ["red"] }',
+  '{ "particleSlots": 1.5 }',
+  '{ "flipDuration": -1 }',
+  '{ "glowAt": 1 }',
   '[1, 2]',
   "sem objeto aqui",
 ]) {
@@ -57,5 +64,8 @@ for (const bad of [
   assert.equal(result.ok, false, `devia rejeitar: ${bad}`);
   assert.ok(result.error.length > 0, `falta motivo do erro: ${bad}`);
 }
+
+assert.equal(readRollAnimConfig({ glowAt: 2, flipDuration: 0.8 }).flipDuration, 0.8);
+assert.deepEqual(readRollAnimConfig({ particleReach: { x: 1 } }), DEFAULT_ROLL_ANIM_CONFIG);
 
 console.log("check-roll-anim-config: ok");

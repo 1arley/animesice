@@ -1,12 +1,13 @@
 "use client";
 
-import { Suspense, useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { api, ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { RollStage, type RollAnimConfig } from "@/components/gacha/RollStage";
 import { SpinPreviewCard } from "@/components/gacha/SpinPreviewCard";
+import { readRollAnimConfig } from "@/lib/roll-anim-config";
 import { isValidRemoteUrl } from "@/lib/url";
 import {
   GachaCard,
@@ -147,6 +148,7 @@ function GachaPageContent() {
   // motivo vale para raridade e pity: saem de GachaConfig, o que o admin edita.
   const [odds, setOdds] = useState<GachaEconomyOdds | null>(null);
   const [rollAnimation, setRollAnimation] = useState<Partial<RollAnimConfig>>();
+  const refreshSerial = useRef(0);
 
   // Endpoint público: a linha de odds aparece para visitante anônimo também.
   useEffect(() => {
@@ -169,7 +171,7 @@ function GachaPageContent() {
     api
       .gachaRollAnimation()
       .then((config) => {
-        if (!cancelled) setRollAnimation(config);
+        if (!cancelled) setRollAnimation(readRollAnimConfig(config));
       })
       .catch(() => {
         if (!cancelled) setRollAnimation(undefined);
@@ -212,20 +214,17 @@ function GachaPageContent() {
 
   useEffect(() => {
     let cancelled = false;
+    const serial = ++refreshSerial.current;
     (async () => {
       try {
-        const [s, r, k] = await Promise.all([
+        const [s, r, k, sp, economy] = await Promise.all([
           user ? api.gachaStatus().catch(() => null) : null,
           api.gachaRecent(12).catch(() => []),
           api.gachaRanking(10).catch(() => []),
+          user ? api.gachaSpins().catch(() => []) : [],
+          user ? api.gachaEconomyInventory().catch(() => null) : null,
         ]);
-        const [sp, economy] = user
-          ? await Promise.all([
-              api.gachaSpins().catch(() => []),
-              api.gachaEconomyInventory().catch(() => null),
-            ])
-          : [[], null];
-        if (cancelled) return;
+        if (cancelled || serial !== refreshSerial.current) return;
         setStatus(s);
         setStatusError(!!user && s === null);
         setRecent(r);
@@ -239,6 +238,7 @@ function GachaPageContent() {
     })();
     return () => {
       cancelled = true;
+      refreshSerial.current += 1;
     };
   }, [user]);
 
@@ -265,21 +265,18 @@ function GachaPageContent() {
   }, [user, status]);
 
   async function refresh() {
-    try {
-      const [s, r] = await Promise.all([
+    const serial = ++refreshSerial.current;
+    const [s, r, sp, economy] = await Promise.all([
         api.gachaStatus().catch(() => null),
-        api.gachaRecent(12).catch(() => []),
-      ]);
-      const [sp, economy] = await Promise.all([
-        api.gachaSpins().catch(() => []),
+        api.gachaRecent(12).catch(() => null),
+        api.gachaSpins().catch(() => null),
         api.gachaEconomyInventory().catch(() => null),
-      ]);
-      setStatus(s);
-      setStatusError(s === null);
-      setRecent(r);
-      setSpins(sp);
-      setSpinResets(economy?.spinResets ?? 0);
-    } catch {}
+    ]);
+    if (serial !== refreshSerial.current) return;
+    if (s) setStatus(s);
+    if (r) setRecent(r);
+    if (sp) setSpins(sp);
+    if (economy) setSpinResets(economy.spinResets);
   }
 
   async function handleSpin() {
@@ -295,7 +292,10 @@ function GachaPageContent() {
       setSpins((prev) => [...prev, previewSpin]);
       setSelectedSpinId(previewSpin.id);
       setSpinResult(previewSpin);
-      await refresh().catch(() => undefined);
+      setStatus((prev) => prev && prev.spinsLeft != null
+        ? { ...prev, spinsLeft: Math.max(0, prev.spinsLeft - 1), canSpin: prev.spinsLeft > 1 }
+        : prev);
+      void refresh();
     } catch (err) {
       setStageOpen(false);
       setSpinResult(null);
@@ -337,7 +337,11 @@ function GachaPageContent() {
       setResult(pull);
       setStagePreview(false);
       setStageOpen(true);
-      await refresh();
+      setSpins((prev) => prev.map((spin) => spin.id === selectedSpin.id
+        ? { ...spin, claimedAt: new Date().toISOString() }
+        : spin));
+      setStatus((prev) => prev ? { ...prev, canClaim: false } : prev);
+      void refresh();
     } catch (err) {
       const message =
         err instanceof ApiError ? err.message : "Erro ao guardar.";

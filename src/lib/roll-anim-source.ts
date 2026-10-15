@@ -46,7 +46,7 @@ const MODULES: ModuleMap = {
 /** Compila a fonte colada e devolve o componente `RollStage` pronto pra render. */
 export async function compileRollStage(source: string): Promise<RollStageComponent> {
   const exports = await compileComponent(source, MODULES, "RollStage.tsx");
-  const component = pickExport(exports, "RollStage");
+  const component = exports.RollStage ?? exports.default ?? pickExport(exports, "RollStage");
   if (typeof component !== "function") {
     throw new Error('O export "RollStage" precisa ser um componente React.');
   }
