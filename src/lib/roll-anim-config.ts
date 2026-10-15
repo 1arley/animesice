@@ -28,7 +28,7 @@ export const DEFAULT_ROLL_ANIM_CONFIG: RollAnimConfig = {
   crystalSpinAt: 0.2,
   crystalSpinDuration: 0.9,
   revealAt: 1.2,
-  teaseMode: "random",
+  teaseMode: "climb",
   maxDrop: 2,
   crystalOutDuration: 0.25,
   ringSlots: 3,
