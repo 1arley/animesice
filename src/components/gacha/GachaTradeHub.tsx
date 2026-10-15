@@ -129,7 +129,7 @@ function TradeRow({
   busyId: string | null;
   now: number;
   onPreview: (pull: GachaPull) => void;
-  onCounter: () => void;
+  onCounter?: () => void;
 }) {
   const incoming = trade.requestedUserId === myId;
   const expired = new Date(trade.expiresAt).getTime() <= now;
@@ -240,7 +240,7 @@ function TradeRow({
                 onClick={onCounter}
                 className="btn-ghost min-h-11 px-5 disabled:opacity-50"
               >
-                {busyId === `${trade.id}:counter` ? "…" : "Contra-propor"}
+                Contra-propor
               </button>
               <button
                 type="button"
@@ -317,6 +317,8 @@ export function GachaTradeHub() {
   const [error, setError] = useState("");
   const [busyId, setBusyId] = useState<string | null>(null);
   const [composing, setComposing] = useState(false);
+  const [counteringTrade, setCounteringTrade] =
+    useState<GachaTrade | null>(null);
   const [preview, setPreview] = useState<GachaPull | null>(null);
   const [now, setNow] = useState(() => Date.now());
   const { toast } = useToast();
@@ -472,14 +474,7 @@ export function GachaTradeHub() {
                         "Proposta cancelada.",
                       )
                     }
-                    onCounter={() =>
-                      void act(
-                        `${t.id}:counter`,
-                        // Sem corpo: devolve as cartas e Cristais do outro lado.
-                        () => api.gachaTradeCounter(t.id, {}),
-                        "Contra-proposta enviada.",
-                      )
-                    }
+                    onCounter={() => setCounteringTrade(t)}
                   />
                 ))}
               </ul>
@@ -524,14 +519,6 @@ export function GachaTradeHub() {
                         "Proposta cancelada.",
                       )
                     }
-                    onCounter={() =>
-                      void act(
-                        `${t.id}:counter`,
-                        // Sem corpo: devolve as cartas e Cristais do outro lado.
-                        () => api.gachaTradeCounter(t.id, {}),
-                        "Contra-proposta enviada.",
-                      )
-                    }
                   />
                 ))}
               </ul>
@@ -571,14 +558,6 @@ export function GachaTradeHub() {
                         "Proposta cancelada.",
                       )
                     }
-                    onCounter={() =>
-                      void act(
-                        `${t.id}:counter`,
-                        // Sem corpo: devolve as cartas e Cristais do outro lado.
-                        () => api.gachaTradeCounter(t.id, {}),
-                        "Contra-proposta enviada.",
-                      )
-                    }
                   />
                 ))}
               </ul>
@@ -587,12 +566,17 @@ export function GachaTradeHub() {
         </>
       )}
 
-      {composing && (
+      {(composing || counteringTrade) && (
         <ProposalComposer
           myId={user.id}
-          onClose={() => setComposing(false)}
+          counterTrade={counteringTrade}
+          onClose={() => {
+            setComposing(false);
+            setCounteringTrade(null);
+          }}
           onCreated={async () => {
             setComposing(false);
+            setCounteringTrade(null);
             await load();
           }}
         />
@@ -608,24 +592,85 @@ function ProposalComposer({
   myId,
   onClose,
   onCreated,
+  counterTrade = null,
 }: {
   myId: string;
   onClose: () => void;
   onCreated: () => Promise<void>;
+  counterTrade?: GachaTrade | null;
 }) {
-  const [userName, setUserName] = useState("");
-  const [target, setTarget] = useState<PublicUserProfile | null>(null);
-  const [targetCards, setTargetCards] = useState<GachaPull[]>([]);
-  const [targetCardIds, setTargetCardIds] = useState<string[]>([]);
-  const [myCards, setMyCards] = useState<GachaPull[]>([]);
-  const [myCardIds, setMyCardIds] = useState<string[]>([]);
-  const [loadingTarget, setLoadingTarget] = useState(false);
+  const counterpartyUser = counterTrade
+    ? (counterTrade.offeredUserCard?.user ?? {
+        id: counterTrade.offeredUserId,
+        name: null,
+        userName: null,
+        avatar: null,
+      })
+    : null;
+  const counterpartyName =
+    counterpartyUser?.name?.trim() ||
+    counterpartyUser?.userName ||
+    "outro jogador";
+
+  const initialTargetCards = counterTrade
+    ? (counterTrade.offeredUserCards?.length
+        ? counterTrade.offeredUserCards
+        : [counterTrade.offeredUserCard])
+    : [];
+  const initialMyCards = counterTrade
+    ? (counterTrade.requestedUserCards?.length
+        ? counterTrade.requestedUserCards
+        : [counterTrade.requestedUserCard])
+    : [];
+
+  const [userName, setUserName] = useState(
+    () => counterpartyUser?.userName ?? "",
+  );
+  const [target, setTarget] = useState<PublicUserProfile | null>(() => {
+    if (!counterTrade) return null;
+    const u = counterTrade.offeredUserCard?.user;
+    return {
+      id: counterTrade.offeredUserId,
+      name: u?.name ?? null,
+      userName: u?.userName ?? null,
+      avatar: u?.avatar ?? null,
+      profileCover: null,
+      bio: null,
+      myAnimeList: null,
+      createdAt: "",
+      _count: {
+        comments: 0,
+        ratings: 0,
+        favorites: 0,
+        watchHistories: 0,
+        followers: 0,
+        following: 0,
+      },
+    };
+  });
+  const [targetCards, setTargetCards] = useState<GachaPull[]>(initialTargetCards);
+  const [targetCardIds, setTargetCardIds] = useState<string[]>(() =>
+    initialTargetCards.map((c) => c.id),
+  );
+  const [myCards, setMyCards] = useState<GachaPull[]>(initialMyCards);
+  const [myCardIds, setMyCardIds] = useState<string[]>(() =>
+    initialMyCards.map((c) => c.id),
+  );
+  const [loadingTarget, setLoadingTarget] = useState(Boolean(counterTrade));
   const [loadingMine, setLoadingMine] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [preview, setPreview] = useState<GachaPull | null>(null);
-  const [crystalsOffered, setCrystalsOffered] = useState("0");
-  const [crystalsRequested, setCrystalsRequested] = useState("0");
+  const [crystalsOffered, setCrystalsOffered] = useState(() =>
+    counterTrade && counterTrade.crystalsRequested > 0
+      ? String(counterTrade.crystalsRequested)
+      : "0",
+  );
+  const [crystalsRequested, setCrystalsRequested] = useState(() =>
+    counterTrade && counterTrade.crystalsOffered > 0
+      ? String(counterTrade.crystalsOffered)
+      : "0",
+  );
   const [available, setAvailable] = useState<number | null>(null);
   const { toast } = useToast();
 
@@ -634,14 +679,26 @@ function ProposalComposer({
     api
       .gachaCollection(myId, 1, 100)
       .then((collection) => {
-        if (current) setMyCards(collection.data);
+        if (!current) return;
+        setMyCards((prev) => {
+          const list = [...prev];
+          for (const card of collection.data) {
+            if (!list.some((existing) => existing.id === card.id)) {
+              list.push(card);
+            }
+          }
+          return list;
+        });
       })
       .catch(() => {
-        if (current) setError("Não foi possível carregar sua coleção.");
+        if (current && !counterTrade) {
+          setError("Não foi possível carregar sua coleção.");
+        }
       })
       .finally(() => {
         if (current) setLoadingMine(false);
       });
+
     api
       .gachaEconomyInventory()
       .then((wallet) => {
@@ -651,10 +708,56 @@ function ProposalComposer({
         // Sem saldo conhecido: o campo de Cristais simplesmente não limita.
         if (current) setAvailable(null);
       });
+
     return () => {
       current = false;
     };
-  }, [myId]);
+  }, [myId, counterTrade]);
+
+  useEffect(() => {
+    if (!counterTrade) return;
+    let current = true;
+    setLoadingTarget(true);
+
+    if (counterpartyUser?.userName) {
+      api
+        .getPublicProfile(counterpartyUser.userName)
+        .then((profile) => {
+          if (current) setTarget(profile);
+        })
+        .catch(() => undefined);
+    }
+
+    api
+      .gachaCollection(counterTrade.offeredUserId, 1, 100)
+      .then((collection) => {
+        if (!current) return;
+        setTargetCards((prev) => {
+          const list = [...prev];
+          for (const card of collection.data) {
+            if (!list.some((existing) => existing.id === card.id)) {
+              list.push(card);
+            }
+          }
+          return list;
+        });
+      })
+      .catch(() => {
+        // Se a coleção for privada, mantém as cartas já oferecidas na proposta original
+      })
+      .finally(() => {
+        if (current) setLoadingTarget(false);
+      });
+
+    return () => {
+      current = false;
+    };
+  }, [counterTrade, counterpartyUser?.userName]);
+
+  const maxAvailable =
+    available !== null
+      ? available + (counterTrade ? (counterTrade.crystalsRequested ?? 0) : 0)
+      : null;
 
   const parseCrystals = (raw: string) => {
     const value = Number.parseInt(raw, 10);
@@ -711,26 +814,36 @@ function ProposalComposer({
       return;
     }
     const targetCard = targetCards.find((c) => c.id === targetCardIds[0]);
-    if (targetCard && targetCard.user.id === myId) {
+    if (targetCard && targetCard.user?.id === myId) {
       setError("Você já tem a carta que está pedindo.");
       return;
     }
     const offered = parseCrystals(crystalsOffered);
     const requested = parseCrystals(crystalsRequested);
-    if (available !== null && offered > available) {
-setError("Você não tem Cristais disponíveis suficientes para oferecer.");
+    if (maxAvailable !== null && offered > maxAvailable) {
+      setError("Você não tem Cristais disponíveis suficientes para oferecer.");
       return;
     }
     setBusy(true);
     setError("");
     try {
-      await api.gachaTradeCreate({
-        offeredUserCardIds: myCardIds,
-        requestedUserCardIds: targetCardIds,
-        crystalsOffered: offered,
-        crystalsRequested: requested,
-      });
-      toast("Proposta enviada.", "success");
+      if (counterTrade) {
+        await api.gachaTradeCounter(counterTrade.id, {
+          offeredUserCardIds: myCardIds,
+          requestedUserCardIds: targetCardIds,
+          crystalsOffered: offered,
+          crystalsRequested: requested,
+        });
+        toast("Contraproposta enviada.", "success");
+      } else {
+        await api.gachaTradeCreate({
+          offeredUserCardIds: myCardIds,
+          requestedUserCardIds: targetCardIds,
+          crystalsOffered: offered,
+          crystalsRequested: requested,
+        });
+        toast("Proposta enviada.", "success");
+      }
       await onCreated();
     } catch (e) {
       const message =
@@ -746,7 +859,11 @@ setError("Você não tem Cristais disponíveis suficientes para oferecer.");
       <Modal
         open
         size="wide"
-        title="Nova proposta de troca"
+        title={
+          counterTrade
+            ? `Contraproposta de troca · Rodada ${counterTrade.round + 1}`
+            : "Nova proposta de troca"
+        }
         onClose={onClose}
         footer={
           <>
@@ -771,76 +888,117 @@ setError("Você não tem Cristais disponíveis suficientes para oferecer.");
               }
               className="btn-ice min-h-11 px-4 disabled:opacity-50"
             >
-              {busy ? "Enviando…" : "Enviar proposta"}
+              {busy
+                ? "Enviando…"
+                : counterTrade
+                  ? "Enviar contraproposta"
+                  : "Enviar proposta"}
             </button>
           </>
         }
       >
         <p className="text-body-sm text-mist">
-          Primeiro escolha a pessoa e as cartas que quer receber. Depois
-          selecione as cartas da sua coleção que vai oferecer.
+          {counterTrade
+            ? `Ajuste as cartas e Cristais para contra-propor a troca para ${counterpartyName}. Ao enviar, a proposta anterior será cancelada e substituída por esta nova rodada.`
+            : "Primeiro escolha a pessoa e as cartas que quer receber. Depois selecione as cartas da sua coleção que vai oferecer."}
         </p>
 
-        <section
-          aria-labelledby="trade-target-title"
-          className="mt-5 border border-hairline p-4"
-        >
-          <h3
-            id="trade-target-title"
-            className="font-display text-lg text-snow"
+        {counterTrade ? (
+          <section
+            aria-labelledby="trade-target-title"
+            className="mt-5 border border-hairline bg-panel/50 p-4"
           >
-            1. Quem você quer chamar?
-          </h3>
-          <form
-            className="mt-3 grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end"
-            onSubmit={(event) => {
-              event.preventDefault();
-              void search();
-            }}
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="font-mono text-caption text-mist">
+                  Contraproposta para
+                </p>
+                <div className="mt-1 flex items-center gap-2">
+                  <UserProfilePreview
+                    user={target ?? counterpartyUser}
+                    className="text-ice underline decoration-hairline underline-offset-2 hover:text-snow font-medium"
+                  >
+                    {counterpartyName}
+                  </UserProfilePreview>
+                  <span className="font-mono text-caption text-mist">
+                    · rodada {counterTrade.round + 1}
+                  </span>
+                </div>
+              </div>
+              <span className="font-mono text-caption text-mist border border-hairline px-2.5 py-1">
+                {targetCards.length} carta
+                {targetCards.length === 1 ? "" : "s"} disponível
+                {targetCards.length === 1 ? "" : "is"}
+              </span>
+            </div>
+          </section>
+        ) : (
+          <section
+            aria-labelledby="trade-target-title"
+            className="mt-5 border border-hairline p-4"
           >
-            <label className="text-body-sm text-mist">
-              Nome de usuário
-              <SearchField
-                icon={false}
-                value={userName}
-                onChange={(event) => setUserName(event.target.value)}
-                placeholder="Ex.: sakura"
-                autoComplete="off"
-                className="mt-2"
-                containerClassName="w-full"
-              />
-            </label>
-            <button
-              type="submit"
-              disabled={loadingTarget || !userName.trim()}
-              className="btn-ghost min-h-11 px-4 disabled:opacity-50"
+            <h3
+              id="trade-target-title"
+              className="font-display text-lg text-snow"
             >
-              {loadingTarget ? "Buscando…" : "Buscar coleção"}
-            </button>
-          </form>
-          {target && (
-            <p role="status" className="mt-3 text-body-sm text-ice">
-              Coleção de{" "}
-              <UserProfilePreview
-                user={target}
-                className="underline decoration-hairline underline-offset-2 hover:text-snow"
+              1. Quem você quer chamar?
+            </h3>
+            <form
+              className="mt-3 grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end"
+              onSubmit={(event) => {
+                event.preventDefault();
+                void search();
+              }}
+            >
+              <label className="text-body-sm text-mist">
+                Nome de usuário
+                <SearchField
+                  icon={false}
+                  value={userName}
+                  onChange={(event) => setUserName(event.target.value)}
+                  placeholder="Ex.: sakura"
+                  autoComplete="off"
+                  className="mt-2"
+                  containerClassName="w-full"
+                />
+              </label>
+              <button
+                type="submit"
+                disabled={loadingTarget || !userName.trim()}
+                className="btn-ghost min-h-11 px-4 disabled:opacity-50"
               >
-                {target.name?.trim() || target.userName || "jogador"}
-              </UserProfilePreview> ·{" "}
-              {targetCards.length} cartas disponíveis
-            </p>
-          )}
-        </section>
+                {loadingTarget ? "Buscando…" : "Buscar coleção"}
+              </button>
+            </form>
+            {target && (
+              <p role="status" className="mt-3 text-body-sm text-ice">
+                Coleção de{" "}
+                <UserProfilePreview
+                  user={target}
+                  className="underline decoration-hairline underline-offset-2 hover:text-snow"
+                >
+                  {target.name?.trim() || target.userName || "jogador"}
+                </UserProfilePreview> ·{" "}
+                {targetCards.length} cartas disponíveis
+              </p>
+            )}
+          </section>
+        )}
 
         {target && (
           <div className="mt-4 grid gap-4 lg:grid-cols-2">
             <CardChoiceList
               title={`2. Cartas que você quer (${targetCardIds.length}/5)`}
-              description="Escolha até cinco cartas da outra coleção."
+              description={
+                counterTrade
+                  ? `Escolha até cinco cartas da coleção de ${counterpartyName}.`
+                  : "Escolha até cinco cartas da outra coleção."
+              }
               cards={targetCards}
               selectedIds={targetCardIds}
               onToggle={(id) => toggleCard(id, setTargetCardIds)}
               onPreview={setPreview}
+              loading={loadingTarget}
               emptyText="Essa pessoa ainda não tem cartas disponíveis para troca."
             />
             <CardChoiceList
@@ -862,7 +1020,7 @@ setError("Você não tem Cristais disponíveis suficientes para oferecer.");
             <input
               type="number"
               min={0}
-              max={available ?? undefined}
+              max={maxAvailable ?? undefined}
               step={1}
               inputMode="numeric"
               autoComplete="off"
@@ -887,21 +1045,22 @@ setError("Você não tem Cristais disponíveis suficientes para oferecer.");
           </label>
         </div>
         <p role="status" className="mt-4 text-body-sm text-mist">
-          {available !== null && (
+          {maxAvailable !== null && (
             <span className="block mb-2">
-              Disponíveis: {available.toLocaleString("pt-BR")} Cristais.
+              Disponíveis para esta troca: {maxAvailable.toLocaleString("pt-BR")}{" "}
+              Cristais.
             </span>
           )}
-          Sua proposta: {myCardIds.length} carta
-          {myCardIds.length === 1 ? "" : "s"} oferecida
+          {counterTrade ? "Sua contraproposta" : "Sua proposta"}:{" "}
+          {myCardIds.length} carta{myCardIds.length === 1 ? "" : "s"} oferecida
           {myCardIds.length === 1 ? "" : "s"} · {targetCardIds.length} carta
           {targetCardIds.length === 1 ? "" : "s"} solicitada
           {targetCardIds.length === 1 ? "" : "s"}
           {parseCrystals(crystalsOffered) > 0
-            ? ` · ${parseCrystals(crystalsOffered).toLocaleString("pt-BR")} Crystals enviados`
+            ? ` · ${parseCrystals(crystalsOffered).toLocaleString("pt-BR")} Cristais oferecidos`
             : ""}
           {parseCrystals(crystalsRequested) > 0
-            ? ` · ${parseCrystals(crystalsRequested).toLocaleString("pt-BR")} Crystals pedidos`
+            ? ` · ${parseCrystals(crystalsRequested).toLocaleString("pt-BR")} Cristais pedidos`
             : ""}
         </p>
         {parseCrystals(crystalsOffered) > 0 && (
@@ -924,7 +1083,7 @@ setError("Você não tem Cristais disponíveis suficientes para oferecer.");
         )}
 
         <p className="mt-4 text-caption text-mist">
-Os Crystals oferecidos ficam reservados assim que a proposta é
+          Os Cristais oferecidos ficam reservados assim que a proposta é
           enviada. Eles só serão transferidos se a troca for aceita; cancelar,
           recusar ou expirar libera a reserva.
         </p>
@@ -955,10 +1114,30 @@ function CardChoiceList({
   loading?: boolean;
   emptyText: string;
 }) {
+  const [filter, setFilter] = useState("");
+  const normFilter = filter.trim().toLowerCase();
+  const visibleCards = normFilter
+    ? cards.filter(
+        (c) =>
+          c.card.name.toLowerCase().includes(normFilter) ||
+          c.card.animeTitle?.toLowerCase().includes(normFilter) ||
+          c.card.rarity.toLowerCase().includes(normFilter),
+      )
+    : cards;
+
   return (
     <section aria-label={title} className="min-w-0 border border-hairline p-4">
       <h3 className="font-display text-lg text-snow">{title}</h3>
       <p className="mt-1 text-caption text-mist">{description}</p>
+      {cards.length > 5 && (
+        <input
+          type="search"
+          value={filter}
+          onChange={(e) => setFilter(e.target.value)}
+          placeholder="Filtrar por nome ou anime…"
+          className="field mt-3 min-h-9 w-full text-caption"
+        />
+      )}
       {loading ? (
         <GachaRowsSkeleton
           count={4}
@@ -967,9 +1146,13 @@ function CardChoiceList({
         />
       ) : cards.length === 0 ? (
         <p className="mt-3 text-body-sm text-mist">{emptyText}</p>
+      ) : visibleCards.length === 0 ? (
+        <p className="mt-3 text-body-sm text-mist">
+          Nenhuma carta corresponde ao filtro &ldquo;{filter}&rdquo;.
+        </p>
       ) : (
         <ul className="mt-3 max-h-72 space-y-2 overflow-y-auto pr-1">
-          {cards.map((card) => {
+          {visibleCards.map((card) => {
             const selected = selectedIds.includes(card.id);
             const disabled = !selected && selectedIds.length >= 5;
             return (
