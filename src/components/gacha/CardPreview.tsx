@@ -18,7 +18,7 @@ import { CosmeticSvg } from "@/components/gacha/CosmeticSvg";
 import { cosmeticTypeOf } from "@/lib/cosmetic-svg";
 import { api, ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
-import { safeImageSrc } from "@/lib/url";
+import { safeImageSrc, isOptimizableImageUrl } from "@/lib/url";
 import { UserProfilePreview } from "@/components/social/UserProfilePreview";
 import type { GachaPull, GachaShopItem } from "@/types";
 
@@ -106,6 +106,7 @@ function CardInspectionPreview({
           {src ? (
             <Image
               src={src}
+              unoptimized={!isOptimizableImageUrl(src)}
               alt={inspection.card.name}
               fill
               sizes="(max-width: 640px) 80vw, 260px"

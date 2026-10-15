@@ -2,6 +2,7 @@
 
 import Image, { type ImageProps } from "next/image";
 import { useState } from "react";
+import { isOptimizableImageUrl } from "@/lib/url";
 
 type AdaptiveImageProps = Omit<ImageProps, "src" | "onError"> & {
   /** URL pequena e já conhecida; também é o fallback em caso de erro. */
@@ -35,6 +36,11 @@ export function AdaptiveImage({
   const hasDesktopCandidate = Boolean(
     desktopSrc && desktopSrc !== src && !desktopFailed,
   );
+  const isCandidateOptimizable = isOptimizableImageUrl(desktopSrc);
+  const isSrcOptimizable = isOptimizableImageUrl(src);
+  const shouldBeUnoptimized =
+    imageProps.unoptimized ??
+    (!isSrcOptimizable || (hasDesktopCandidate ? !isCandidateOptimizable : false));
 
   const handleError: ImageProps["onError"] = (event) => {
     if (hasDesktopCandidate) {
@@ -52,6 +58,7 @@ export function AdaptiveImage({
         src={hasDesktopCandidate ? (desktopSrc as string) : src}
         alt={alt}
         priority={priority}
+        unoptimized={shouldBeUnoptimized}
         onError={handleError}
       />
     );
@@ -69,6 +76,7 @@ export function AdaptiveImage({
       <Image
         {...imageProps}
         priority={false}
+        unoptimized={shouldBeUnoptimized}
         loading={priority ? "eager" : imageProps.loading}
         fetchPriority={priority ? "high" : imageProps.fetchPriority}
         key={desktopFailed ? "fallback" : "preferred"}

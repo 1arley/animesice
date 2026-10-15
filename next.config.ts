@@ -24,7 +24,7 @@ const cspHeader = `
   default-src 'self';
   script-src 'self' 'unsafe-inline' 'unsafe-eval' https: https://al5sm.com https://static.cloudflareinsights.com https://challenges.cloudflare.com https://www.googletagmanager.com https://www.google-analytics.com;
   style-src 'self' 'unsafe-inline' data: https: https://fonts.googleapis.com;
-  img-src 'self' blob: data: https: https://cdn.myanimelist.net https://*.myanimelist.net https://meusanimes.blog https://*.meusanimes.blog https://svuaszdqsgztnetefcex.supabase.co https://*.anilist.co;
+  img-src 'self' blob: data: https: https://cdn.myanimelist.net https://*.myanimelist.net https://meusanimes.blog https://*.meusanimes.blog https://svuaszdqsgztnetefcex.supabase.co https://*.anilist.co https://*.pinimg.com https://*.media-amazon.com https://*.ssl-images-amazon.com https://*.fliptru.com.br https://*.imgur.com;
   font-src 'self' data: https: https://fonts.gstatic.com;
   media-src 'self' blob: data: https://api.animesice.app https://api.dev.animesice.app https://cdn-sv01.maximaimg.online https://*.maximaimg.online${localConnect};
   connect-src 'self' https: https://api.animesice.app wss://api.animesice.app https://al5sm.com https://static.cloudflareinsights.com https://challenges.cloudflare.com https://www.google-analytics.com https://www.googletagmanager.com${localConnect};
@@ -56,6 +56,30 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "**.meusanimes.blog" },
       { protocol: "https", hostname: "**.anilist.co" },
       { protocol: "https", hostname: "svuaszdqsgztnetefcex.supabase.co" },
+      // Pinterest
+      { protocol: "https", hostname: "i.pinimg.com" },
+      { protocol: "https", hostname: "**.pinimg.com" },
+      { protocol: "https", hostname: "pinterest.com" },
+      { protocol: "https", hostname: "**.pinterest.com" },
+      // Amazon / Media Amazon (obras e capas externas)
+      { protocol: "https", hostname: "m.media-amazon.com" },
+      { protocol: "https", hostname: "**.media-amazon.com" },
+      { protocol: "https", hostname: "images-na.ssl-images-amazon.com" },
+      { protocol: "https", hostname: "**.ssl-images-amazon.com" },
+      // Fliptru e leitores de mangá/quadrinhos
+      { protocol: "https", hostname: "fliptru.com.br" },
+      { protocol: "https", hostname: "**.fliptru.com.br" },
+      // Imgur
+      { protocol: "https", hostname: "i.imgur.com" },
+      { protocol: "https", hostname: "**.imgur.com" },
+      // Discord CDN
+      { protocol: "https", hostname: "cdn.discordapp.com" },
+      { protocol: "https", hostname: "media.discordapp.net" },
+      // MangaDex
+      { protocol: "https", hostname: "uploads.mangadex.org" },
+      { protocol: "https", hostname: "**.mangadex.org" },
+      // Google / Drive
+      { protocol: "https", hostname: "**.googleusercontent.com" },
     ],
     formats: ["image/avif", "image/webp"],
     // Permite os valores de `quality` usados pelos componentes.

@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useTransform, type MotionValue } from "motion/react";
 import * as m from "motion/react-m";
 import { blur } from "@/lib/blur";
+import { isOptimizableImageUrl } from "@/lib/url";
 
 interface HeroEnvironmentProps {
   src?: string;
@@ -52,12 +53,14 @@ export function HeroEnvironment({
         y: isMobile ? undefined : translateY,
         filter: blurAmount,
         opacity,
+        willChange: "transform",
       }}
     >
       <Image
         src={src}
         alt=""
         fill
+        unoptimized={!isOptimizableImageUrl(src)}
         sizes="100vw"
         quality={60}
         placeholder="blur"

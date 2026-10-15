@@ -3,7 +3,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { cache } from "react";
 import type { Anime } from "@/types";
-import { safeImageSrc, upgradeImageUrl, escapeJsonLd } from "@/lib/url";
+import { safeImageSrc, upgradeImageUrl, escapeJsonLd, isOptimizableImageUrl } from "@/lib/url";
 import { AdaptiveImage } from "@/components/common/AdaptiveImage";
 import { blur } from "@/lib/blur";
 import { serverFetchJson } from "@/lib/api-server";
@@ -114,6 +114,7 @@ export default async function AnimeDetailPage({
         <div className="relative mb-6 overflow-hidden" style={{ aspectRatio: "21 / 9", maxHeight: "320px" }}>
           <Image
             src={banner}
+            unoptimized={!isOptimizableImageUrl(banner)}
             alt=""
             fill
             sizes="100vw"

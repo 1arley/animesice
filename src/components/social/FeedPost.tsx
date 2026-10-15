@@ -9,7 +9,7 @@ import { Avatar } from "@/components/common/Avatar";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { GachaCard } from "@/components/gacha/GachaCard";
 import { timeAgo } from "@/lib/time";
-import { safeImageSrc } from "@/lib/url";
+import { safeImageSrc, isOptimizableImageUrl } from "@/lib/url";
 import { blur } from "@/lib/blur";
 import type { PostCommentItem, SocialPost } from "@/types";
 import { UserProfilePreview } from "@/components/social/UserProfilePreview";
@@ -222,6 +222,7 @@ export function FeedPost({
             <div className="card-scan relative h-14 w-10 shrink-0 overflow-hidden bg-hairline">
               <Image
                 src={safeImageSrc(post.anime.coverImage, post.anime.slug) ?? ""}
+                unoptimized={!isOptimizableImageUrl(post.anime.coverImage)}
                 alt={post.anime.title}
                 fill
                 sizes="40px"

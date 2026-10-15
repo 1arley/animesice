@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { safeImageSrc } from "@/lib/url";
+import { safeImageSrc, isOptimizableImageUrl } from "@/lib/url";
 import { blur } from "@/lib/blur";
 
 export interface PosterTileProps {
@@ -43,6 +43,7 @@ export function PosterTile({
         {cover ? (
           <Image
             src={cover}
+            unoptimized={!isOptimizableImageUrl(cover)}
             alt={title}
             fill
             sizes="(max-width: 480px) 33vw, (max-width: 768px) 25vw, (max-width: 1024px) 20vw, 14vw"

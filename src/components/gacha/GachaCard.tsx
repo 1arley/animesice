@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { memo, type CSSProperties } from "react";
-import { safeImageSrc } from "@/lib/url";
+import { safeImageSrc, isOptimizableImageUrl } from "@/lib/url";
 import { blur } from "@/lib/blur";
 import { CosmeticSvg } from "@/components/gacha/CosmeticSvg";
 import { cosmeticTypeOf } from "@/lib/cosmetic-svg";
@@ -259,6 +259,7 @@ export const GachaCard = memo(function GachaCard({ pull, preview = false, linkAn
           {art ? (
             <Image
               src={art}
+              unoptimized={!isOptimizableImageUrl(art)}
               alt={card.name}
               fill
               sizes="(max-width: 480px) 50vw, (max-width: 1024px) 25vw, 16vw"
