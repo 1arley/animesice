@@ -67,5 +67,6 @@ for (const bad of [
 
 assert.equal(readRollAnimConfig({ glowAt: 2, flipDuration: 0.8 }).flipDuration, 0.8);
 assert.deepEqual(readRollAnimConfig({ particleReach: { x: 1 } }), DEFAULT_ROLL_ANIM_CONFIG);
+assert.equal(readRollAnimConfig({ particleReach: { x: 1 }, flipDuration: 0.8 }).flipDuration, 0.8);
 
 console.log("check-roll-anim-config: ok");
