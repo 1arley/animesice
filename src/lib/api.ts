@@ -39,6 +39,7 @@ import type {
   GachaPull,
   GachaCardInfo,
   AdminGachaCard,
+  AdminGachaCardSet,
   AdminGachaSkin,
   GachaStatus,
   GachaPointsPage,
@@ -1416,6 +1417,57 @@ export const api = {
     request<AdminGachaCard>(`/gacha/admin/cards/${id}/archive`, {
       method: "POST",
     }),
+  adminDeleteGachaCard: (id: string, reason?: string) =>
+    request<{ success: boolean; id: string }>(`/gacha/admin/cards/${id}`, {
+      method: "DELETE",
+      body: reason ? JSON.stringify({ reason }) : undefined,
+    }),
+  adminBulkDeleteGachaCards: (cardIds: string[], reason?: string) =>
+    request<{ deletedCount: number }>(`/gacha/admin/cards/bulk-delete`, {
+      method: "POST",
+      body: JSON.stringify({ cardIds, reason }),
+    }),
+  adminBulkStatusGachaCards: (
+    cardIds: string[],
+    status: string,
+    reason?: string,
+  ) =>
+    request<{ updatedCount: number }>(`/gacha/admin/cards/bulk-status`, {
+      method: "POST",
+      body: JSON.stringify({ cardIds, status, reason }),
+    }),
+  adminBulkCreateGachaCards: (
+    cards: Array<{
+      name: string;
+      image: string;
+      imageHidden?: boolean;
+      rarity: string;
+      animeId: string;
+      variantName?: string;
+    }>,
+  ) =>
+    request<{ createdCount: number; cards: AdminGachaCard[] }>(
+      `/gacha/admin/cards/bulk-create`,
+      {
+        method: "POST",
+        body: JSON.stringify({ cards }),
+      },
+    ),
+  adminBulkUpdateGachaCards: (
+    cardIds: string[],
+    updates: {
+      animeId?: string;
+      rarity?: string;
+      imageHidden?: boolean;
+      reason?: string;
+    },
+  ) =>
+    request<{ updatedCount: number }>(`/gacha/admin/cards/bulk-update`, {
+      method: "POST",
+      body: JSON.stringify({ cardIds, ...updates }),
+    }),
+  adminListGachaCardSets: () =>
+    request<AdminGachaCardSet[]>(`/gacha/admin/sets`),
   adminListUserCards: (userId: string, page = 1, limit = 50) =>
     request<Paginated<GachaPull>>(
       `/gacha/admin/users/${userId}/cards?page=${page}&limit=${limit}`,

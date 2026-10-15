@@ -564,6 +564,22 @@ export interface AdminGachaCard {
   variantName: string | null;
   variantType: string;
   anime?: PostAnime | null;
+  _count?: { owners: number };
+}
+
+export interface AdminGachaCardSet {
+  id: string;
+  title: string;
+  slug: string;
+  coverImage: string | null;
+  year?: number | null;
+  malId?: number | null;
+  totalCards: number;
+  activeCards: number;
+  draftCards: number;
+  archivedCards: number;
+  totalOwners: number;
+  rarityCounts: Record<string, number>;
 }
 
 export interface AdminGachaSkin {
