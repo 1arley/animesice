@@ -16,7 +16,11 @@ export function Avatar({ name, src, size = 32, className = "" }: AvatarProps) {
       {src ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
-          src={src ? `${src}${src.includes("?") ? "&" : "?"}v=${encodeURIComponent(src)}` : undefined}
+          // Sem cache-buster aqui: a API já versiona a URL no upload
+          // (`?v=<timestamp>` em user.controller). Anexar query quebrava a
+          // prévia local `blob:` — qualquer query aponta para outro blob
+          // (ERR_FILE_NOT_FOUND) — e duplicava o `v` nas URLs http(s).
+          src={src}
           alt=""
           aria-hidden="true"
           width={size}
