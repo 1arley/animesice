@@ -156,11 +156,39 @@ export default function AdminEditAnimePage({ params }: { params: Promise<{ slug:
           <label className="block">
             <span className="mb-1.5 block font-sans text-caption uppercase tracking-wider text-mist">Capa (URL)</span>
             <input className="field" value={coverImage} onChange={(e) => setCoverImage(e.target.value)} placeholder="https://.../cover.jpg" />
+            {coverImage && (
+              <div className="mt-2 flex items-center gap-3 border border-hairline bg-panel/40 p-2">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={coverImage}
+                  alt="Prévia da capa"
+                  className="h-20 w-14 border border-hairline object-cover"
+                  onError={(e) => {
+                    e.currentTarget.style.display = "none";
+                  }}
+                />
+                <span className="text-caption text-mist">Prévia da capa</span>
+              </div>
+            )}
           </label>
 
           <label className="block">
             <span className="mb-1.5 block font-sans text-caption uppercase tracking-wider text-mist">Banner (URL)</span>
             <input className="field" value={bannerImage} onChange={(e) => setBannerImage(e.target.value)} placeholder="https://.../banner.jpg" />
+            {bannerImage && (
+              <div className="mt-2 flex items-center gap-3 border border-hairline bg-panel/40 p-2">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={bannerImage}
+                  alt="Prévia do banner"
+                  className="h-14 w-28 border border-hairline object-cover"
+                  onError={(e) => {
+                    e.currentTarget.style.display = "none";
+                  }}
+                />
+                <span className="text-caption text-mist">Prévia do banner</span>
+              </div>
+            )}
           </label>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
