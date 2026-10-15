@@ -8,7 +8,7 @@ import { GACHA_RARITY_COLORS } from "@/lib/gacha-rarity-colors";
 import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
 import type { GachaPull } from "@/types";
 import { DEFAULT_ROLL_ANIM_CONFIG, type RollAnimConfig } from "@/lib/roll-anim-config";
-import { climbTeaseSequence, orderedTeaseSequence, randomTeaseSequence } from "@/lib/roll-tease";
+import { climbTeaseSequence, fakeDropTeaseSequence, orderedTeaseSequence, randomTeaseSequence } from "@/lib/roll-tease";
 
 export { DEFAULT_ROLL_ANIM_CONFIG, parseRollAnimJson } from "@/lib/roll-anim-config";
 export type { ParsedRollJson, RollAnimConfig } from "@/lib/roll-anim-config";
@@ -99,6 +99,7 @@ const RARITY_ALIASES: Record<string, RollRarity> = {
 };
 const IDX_EPIC = GACHA_TIERS.indexOf("EPICA");
 const IDX_LEGENDARY = GACHA_TIERS.indexOf("LENDARIA");
+const IDX_MYTHIC = GACHA_TIERS.indexOf("MITICA");
 const IDX_RARE = GACHA_TIERS.indexOf("RARA");
 const RAINBOW_GRADIENT =
   "linear-gradient(115deg, #ff4d8d 0%, #ffb347 16%, #fff275 30%, #5cffb0 46%, #4dd8ff 62%, #9a7bff 78%, #ff4d8d 100%)";
@@ -239,6 +240,10 @@ type RollSfx = {
   tick: (step: number) => void;
   impact: (power: number) => void;
   chime: (power: number) => void;
+  /** Som exclusivo para carta duplicada: "clunk" abafado, sem o brilho do chime normal. */
+  dupe: () => void;
+  /** Chime especial para Galáctica: harmônico extra agudo com eco. */
+  galacticChime: () => void;
   silence: () => void;
 };
 
@@ -392,6 +397,30 @@ function useRollAudio() {
           });
           tone(ctx, out, { f0: base * 4, at: 0.05, dur: 1.1 + p * 0.6, vol: 0.05 });
         }),
+      dupe: () =>
+        run((ctx, out) => {
+          // "Clunk" abafado: tom baixo curto + ruído lowpass — sensação de algo
+          // pesado batendo no fundo, sem o brilho do chime normal.
+          tone(ctx, out, { type: "triangle", f0: 180, f1: 90, dur: 0.22, vol: 0.28 });
+          noise(ctx, out, { type: "lowpass", f0: 600, f1: 120, dur: 0.28, vol: 0.18, attack: 0.05 });
+        }),
+      galacticChime: () =>
+        run((ctx, out) => {
+          // Harmônico base igual ao chime de poder máximo, mais:
+          // – nota de eco que chega 0.18s depois, levemente desafinada (+7 cents).
+          // – brilho altíssimo (2200 Hz) curto no topo.
+          const base = 523.25;
+          const ratios = [1, 1.25, 1.5, 2, 2.5];
+          ratios.forEach((ratio, index) => {
+            tone(ctx, out, { type: "triangle", f0: base * ratio, at: index * 0.07, dur: 1.7, vol: 0.22 });
+          });
+          // Eco levemente desafinado (+7 cents ≈ × 1.00404).
+          ratios.slice(0, 3).forEach((ratio, index) => {
+            tone(ctx, out, { type: "triangle", f0: base * ratio * 1.00404, at: 0.18 + index * 0.07, dur: 1.3, vol: 0.10 });
+          });
+          // Brilho etéreo no topo.
+          tone(ctx, out, { f0: 2200, f1: 3200, at: 0.04, dur: 0.55, vol: 0.04 });
+        }),
       silence: () => {
         active.current.forEach((node) => {
           try { node.stop(); } catch { /* já parou */ }
@@ -484,7 +513,9 @@ export function RollStage({ pull, onClose, preview = false, config }: RollStageP
     ? 0
     : hasFoil
       ? Math.min(0.75, Math.max(0.24, TIER_HOLO[rarity]) * 1.3)
-      : TIER_HOLO[rarity] * 0.55;
+      : rarityIndex >= IDX_LEGENDARY
+        ? TIER_HOLO[rarity] * 1.0   // sem foil Lendária+: força total (era 0.55×)
+        : TIER_HOLO[rarity] * 0.55;
   const holoImage =
     rarityIndex >= IDX_LEGENDARY
       ? RAINBOW_GRADIENT
@@ -552,7 +583,7 @@ export function RollStage({ pull, onClose, preview = false, config }: RollStageP
       root.removeAttribute("data-animating");
       const all = (selector: string) => Array.from(root.querySelectorAll<HTMLElement | SVGElement>(selector));
       const one = (selector: string) => root.querySelector<HTMLElement | SVGElement>(selector);
-      const hide = ["[data-tier-aura]", "[data-ring]", "[data-radial-rays]", "[data-godrays]", "[data-rarity-title]", "[data-flash]", "[data-orbit-svg]"];
+      const hide = ["[data-tier-aura]", "[data-ring]", "[data-radial-rays]", "[data-godrays]", "[data-godrays-reverse]", "[data-rarity-title]", "[data-flash]", "[data-orbit-svg]", "[data-crystal-frag]"];
       const show = ["[data-card-art]", "[data-badge]", "[data-name-letter]", "[data-rarity-label]", "[data-copy-tag]"];
       const tintFinal = finalIndex >= IDX_EPIC ? 0.35 : 0.16;
       const flip = one("[data-flip]");
@@ -607,6 +638,15 @@ export function RollStage({ pull, onClose, preview = false, config }: RollStageP
       setCanContinue(true);
       markPhase("showcase");
       sfxRef.current.chime(GACHA_TIERS.indexOf(rarityOf(displayPull)) / Math.max(1, GACHA_TIERS.length - 1));
+      // Glow e tint visíveis mesmo sem animação.
+      const root = dialog.current;
+      if (root) {
+        const glow = root.querySelector<HTMLElement>("[data-glow]");
+        const tint = root.querySelector<HTMLElement>("[data-tint]");
+        const rIdx = GACHA_TIERS.indexOf(rarityOf(displayPull));
+        if (glow) gsap.set(glow, { opacity: rIdx >= IDX_LEGENDARY ? 0.45 : rIdx >= IDX_EPIC ? 0.28 : 0.18 });
+        if (tint) gsap.set(tint, { opacity: rIdx >= IDX_EPIC ? 0.22 : 0, color: RARITY_COLORS[rarityOf(displayPull)] });
+      }
       return;
     }
     appendReveal.current(displayPull);
@@ -634,6 +674,32 @@ export function RollStage({ pull, onClose, preview = false, config }: RollStageP
       sway.kill();
     };
   }, [revealed, flat, applyTilt]);
+
+  /* Vitrine: sweep periódico para Lendária+ a cada ~4s */
+  useEffect(() => {
+    if (!revealed || flat || rarityIndex < IDX_LEGENDARY) return;
+    const root = dialog.current;
+    if (!root) return;
+    const sweep = root.querySelector<HTMLElement>("[data-sweep]");
+    if (!sweep) return;
+    const sweepDur = 0.65;
+    let handle: ReturnType<typeof setTimeout>;
+    const fire = () => {
+      gsap.set(sweep, { opacity: 1, xPercent: -150 });
+      gsap.to(sweep, {
+        xPercent: 150,
+        duration: sweepDur,
+        ease: "power1.inOut",
+        onComplete: () => { gsap.set(sweep, { opacity: 0 }); },
+      });
+      handle = setTimeout(fire, 3800 + Math.random() * 900);
+    };
+    handle = setTimeout(fire, 1200);
+    return () => {
+      clearTimeout(handle);
+      gsap.set(sweep, { opacity: 0 });
+    };
+  }, [revealed, flat, rarityIndex]);
 
   /* Vitrine: giroscópio no mobile (iOS pede permissão no primeiro toque na carta) */
   useEffect(() => {
@@ -917,6 +983,27 @@ export function RollStage({ pull, onClose, preview = false, config }: RollStageP
           showTier(stop.tier, stop.at, index === lastStep ? 0.24 : 0.16, peak);
           resultTl.call(() => sfxRef.current.tick(index), [], stop.at);
         });
+      } else if (cfg.teaseMode === "fake-drop") {
+        const fakeSeq = fakeDropTeaseSequence(lock, GACHA_TIERS, resultRarity, cfg.fakeDropFreeze);
+        const lastStep = fakeSeq.length - 1;
+        fakeSeq.forEach((stop, index) => {
+          const isFreezeStep = stop.freeze === true;
+          const peak = isFreezeStep ? 1.0 : 0.7 + 0.3 * (index / Math.max(1, lastStep));
+          showTier(stop.tier, stop.at, isFreezeStep ? 0.12 : 0.16, peak);
+          resultTl.call(() => sfxRef.current.tick(index), [], stop.at);
+          // No congelamento do tier-isca: tremor extra no stage para enfatizar o falso clímax.
+          if (isFreezeStep && stage) {
+            const shakeAmp = Math.max(TIER_SHAKE[resultRarity], 6);
+            [1, -0.8, 0.6, -0.4, 0.2, 0].forEach((mult, si) => {
+              resultTl.to(frame ?? stage, {
+                x: mult * shakeAmp,
+                y: -mult * shakeAmp * 0.6,
+                duration: 0.04,
+                ease: "none",
+              }, stop.at + si * 0.04);
+            });
+          }
+        });
       } else {
         const stops = teaseStops(lock);
         const sequence = cfg.teaseMode === "ordered"
@@ -963,6 +1050,21 @@ export function RollStage({ pull, onClose, preview = false, config }: RollStageP
         resultTl.to(godrays, { opacity: 0, duration: 0.4, ease: "power1.inOut" }, revealAt);
       }
 
+      /* God rays reverso exclusivo para Mítica */
+      const mythicGodrays = resultIndex === IDX_MYTHIC ? one<HTMLElement>("[data-godrays-reverse]") : null;
+      if (mythicGodrays) {
+        const reverseColor = RARITY_COLORS.MITICA;
+        gsap.set(mythicGodrays, { xPercent: -50, yPercent: -50, opacity: 0 });
+        const godReverseSpin = gsap.to(mythicGodrays, { rotation: -360, duration: 18, repeat: -1, ease: "none", paused: true });
+        loops.push(godReverseSpin);
+        resultTl.call(() => { placeFx(); godReverseSpin.play(); }, [], teaseDur + 0.18);
+        resultTl.fromTo(mythicGodrays, { opacity: 0 }, { opacity: 0.55, duration: 0.5, ease: "power2.out" }, teaseDur + 0.18);
+        resultTl.to(mythicGodrays, { opacity: 0, duration: 0.35, ease: "power1.inOut" }, revealAt);
+        // Reposicionar junto com o principal.
+        resultTl.call(() => { gsap.set(mythicGodrays, { left: `${(parseFloat(godrays?.style.left ?? "50%"))}px`, top: `${(parseFloat(godrays?.style.top ?? "50%"))}px` }); }, [], teaseDur + 0.18);
+        void reverseColor; // referência usada no JSX abaixo
+      }
+
       /* Impacto */
       resultTl.call(() => {
         waiting.current = false;
@@ -984,6 +1086,33 @@ export function RollStage({ pull, onClose, preview = false, config }: RollStageP
       if (stage && epicUp) resultTl.to(stage, { scale: 1, duration: impactDur + 0.1, ease: "power3.out" }, impactAt);
       if (auras.length) resultTl.to(auras, { opacity: 0, scale: 1.5, duration: 0.4, ease: "power2.out" }, impactAt + 0.05);
       if (crystal) resultTl.to(crystal, { scale: 1.9, opacity: 0, duration: impactDur, ease: "power2.out" }, impactAt);
+      // Mítica: fragmentos do cristal explodem em direções opostas.
+      if (resultIndex === IDX_MYTHIC && !compact) {
+        const frags = all<HTMLElement>("[data-crystal-frag]");
+        if (frags.length) {
+          // Torna os fragmentos visíveis junto com o cristal principal saindo.
+          resultTl.set(frags, { opacity: 1, x: 0, y: 0, scale: 1, rotation: 0 }, impactAt);
+          const angles = [0, 72, 144, 216, 288];
+          frags.forEach((frag, fi) => {
+            const ang = ((angles[fi % angles.length] ?? 0) * Math.PI) / 180;
+            const dist = 55 + (fi % 3) * 22;
+            resultTl.fromTo(
+              frag,
+              { x: 0, y: 0, opacity: 1, scale: 1, rotation: 0 },
+              {
+                x: Math.cos(ang) * dist,
+                y: Math.sin(ang) * dist,
+                opacity: 0,
+                scale: 0.3,
+                rotation: (fi % 2 === 0 ? 1 : -1) * (120 + fi * 30),
+                duration: 0.55 + fi * 0.04,
+                ease: "power2.out",
+              },
+              impactAt,
+            );
+          });
+        }
+      }
       if (flash) {
         const peak = compact ? 0.25 : TIER_FLASH[resultRarity];
         resultTl
@@ -1058,16 +1187,38 @@ export function RollStage({ pull, onClose, preview = false, config }: RollStageP
         }, cardDetailsAt + 0.08);
       }
       if (copyTag) {
-        resultTl.fromTo(copyTag, { scale: 0.4, opacity: 0, y: -6 }, {
-          scale: 1,
-          opacity: 1,
-          y: 0,
-          duration: 0.45,
-          ease: "back.out(2.6)",
-        }, cardDetailsAt + 0.26);
+        if (compact) {
+          // Duplicata: o texto "risca" de cima para baixo com um blur — diferente do pop normal.
+          resultTl.fromTo(copyTag, { y: -22, opacity: 0, filter: "blur(6px)" }, {
+            y: 0,
+            opacity: 1,
+            filter: "blur(0px)",
+            duration: 0.38,
+            ease: "power3.out",
+          }, cardDetailsAt + 0.26);
+          // Pequeno tremor lateral depois que aparece, comunicando "não é nova".
+          resultTl.to(copyTag, { x: -3, duration: 0.05, ease: "none" }, cardDetailsAt + 0.26 + 0.38);
+          resultTl.to(copyTag, { x: 3, duration: 0.05, ease: "none" }, cardDetailsAt + 0.26 + 0.43);
+          resultTl.to(copyTag, { x: -2, duration: 0.04, ease: "none" }, cardDetailsAt + 0.26 + 0.48);
+          resultTl.to(copyTag, { x: 0, duration: 0.04, ease: "none" }, cardDetailsAt + 0.26 + 0.52);
+        } else {
+          resultTl.fromTo(copyTag, { scale: 0.4, opacity: 0, y: -6 }, {
+            scale: 1,
+            opacity: 1,
+            y: 0,
+            duration: 0.45,
+            ease: "back.out(2.6)",
+          }, cardDetailsAt + 0.26);
+        }
       }
       resultTl.call(() => {
-        sfxRef.current.chime(resultIndex / Math.max(1, GACHA_TIERS.length - 1));
+        if (compact) {
+          sfxRef.current.dupe();
+        } else if (resultRarity === "GALACTICA") {
+          sfxRef.current.galacticChime();
+        } else {
+          sfxRef.current.chime(resultIndex / Math.max(1, GACHA_TIERS.length - 1));
+        }
       }, [], cardRevealedAt);
       resultTl.call(() => setRevealed(true), [], cardArtReadyAt);
 
@@ -1160,6 +1311,9 @@ export function RollStage({ pull, onClose, preview = false, config }: RollStageP
   const showTitle = rarityIndex >= IDX_LEGENDARY && !!displayPull && !flat;
   const showEpicRays = rarityIndex >= IDX_EPIC && motionPreferenceReady && !reduceMotion && !effectsDone;
   const fxLive = motionPreferenceReady && !reduceMotion && !effectsDone;
+  const showMythicReverseRays = rarityIndex === IDX_MYTHIC && fxLive;
+  const showGalacticStars = rarityIndex >= GACHA_TIERS.indexOf("GALACTICA") && fxLive;
+  const showCrystalFragments = rarityIndex === IDX_MYTHIC && fxLive;
 
   return (
     <dialog
@@ -1209,6 +1363,66 @@ export function RollStage({ pull, onClose, preview = false, config }: RollStageP
             backgroundImage: `repeating-conic-gradient(from 0deg, ${accent}59 0deg 3deg, transparent 3deg 12deg)`,
             maskImage: "radial-gradient(closest-side, #000 0%, rgba(0,0,0,0.7) 40%, transparent 100%)",
             WebkitMaskImage: "radial-gradient(closest-side, #000 0%, rgba(0,0,0,0.7) 40%, transparent 100%)",
+          }}
+        />
+      )}
+      {showMythicReverseRays && (
+        <div
+          data-godrays-reverse
+          aria-hidden="true"
+          className="pointer-events-none fixed z-[1]"
+          style={{
+            left: "50%",
+            top: "50%",
+            width: "140vmax",
+            height: "140vmax",
+            opacity: 0,
+            mixBlendMode: "screen",
+            // Raios mais espaçados que o principal, ângulo diferente para contrastar.
+            backgroundImage: `repeating-conic-gradient(from 0deg, ${RARITY_COLORS.MITICA}40 0deg 2deg, transparent 2deg 18deg)`,
+            maskImage: "radial-gradient(closest-side, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.3) 35%, transparent 100%)",
+            WebkitMaskImage: "radial-gradient(closest-side, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.3) 35%, transparent 100%)",
+          }}
+        />
+      )}
+      {showGalacticStars && (
+        <canvas
+          data-starfield
+          aria-hidden="true"
+          className="pointer-events-none fixed inset-0 z-[1] h-full w-full"
+          style={{ opacity: 0.65 }}
+          ref={(el) => {
+            if (!el) return;
+            // Pintura única de estrelas: pontos aleatórios distribuídos pelo canvas.
+            // Usa seed determinística do pull.id para não piscarem entre renders.
+            const dpr = Math.min(window.devicePixelRatio || 1, 2);
+            el.width = Math.round(window.innerWidth * dpr);
+            el.height = Math.round(window.innerHeight * dpr);
+            const ctx = el.getContext("2d");
+            if (!ctx) return;
+            ctx.scale(dpr, dpr);
+            const seed = displayPull?.id ?? "galaxy";
+            let h = 2166136261;
+            for (let ci = 0; ci < seed.length; ci++) h = Math.imul(h ^ seed.charCodeAt(ci), 16777619);
+            const count = 180;
+            const w = window.innerWidth;
+            const ht = window.innerHeight;
+            for (let i = 0; i < count; i++) {
+              h = Math.imul(h ^ (h >>> 13), 1274126177);
+              const u = (h >>> 0) / 4294967295;
+              h = Math.imul(h ^ (h >>> 13), 1274126177);
+              const v = (h >>> 0) / 4294967295;
+              h = Math.imul(h ^ (h >>> 13), 1274126177);
+              const s = 0.5 + (h >>> 0) / 4294967295 * 2;
+              const palette = ["#C084FC", "#F472B6", "#38BDF8", "#FFFFFF"];
+              const color = palette[i % palette.length]!;
+              ctx.globalAlpha = 0.3 + ((h >>> 0) / 4294967295) * 0.65;
+              ctx.fillStyle = color;
+              ctx.beginPath();
+              ctx.arc(u * w, v * ht, s, 0, Math.PI * 2);
+              ctx.fill();
+            }
+            ctx.globalAlpha = 1;
           }}
         />
       )}
@@ -1316,6 +1530,21 @@ export function RollStage({ pull, onClose, preview = false, config }: RollStageP
                 <span className="absolute inset-3 border border-ice/40" />
                 <span className="absolute inset-7 border border-ice/25" />
               </div>
+              {showCrystalFragments && (
+                // 5 fragmentos do cristal — escondidos até o impacto de Mítica,
+                // quando explodem em direções radiais pela timeline.
+                <div aria-hidden="true" className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                  {[0, 72, 144, 216, 288].map((deg, fi) => (
+                    <div
+                      key={fi}
+                      data-crystal-frag
+                      className="absolute h-4 w-4 rotate-45 border border-rose-400/80 bg-gradient-to-tr from-transparent via-rose-400/40 to-rose-300/10"
+                      style={{ opacity: 0 }}
+                      aria-hidden="true"
+                    />
+                  ))}
+                </div>
+              )}
               <svg aria-hidden="true" viewBox="0 0 100 100" className="pointer-events-none absolute inset-0 h-full w-full opacity-25">
                 <path d="M50 0v100M0 50h100M15 15l70 70M85 15 15 85" stroke="currentColor" strokeWidth=".45" />
                 <circle cx="50" cy="50" r="34" fill="none" stroke="currentColor" strokeWidth=".7" strokeDasharray="2 4" />

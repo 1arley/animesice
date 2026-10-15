@@ -1,14 +1,25 @@
-export const TEASE_MODES = ["random", "ordered", "climb"] as const;
+export const TEASE_MODES = ["random", "ordered", "climb", "fake-drop"] as const;
 
 export type RollAnimConfig = {
   enterDuration: number;
   crystalSpinAt: number;
   crystalSpinDuration: number;
   revealAt: number;
-  /** "random" sorteia a cor; "ordered" usa a sequência antiga, determinística; "climb" sobe um degrau por parada até a real. */
+  /**
+   * "random"    sorteia a cor; pode piscar qualquer tier.
+   * "ordered"   sequência antiga, determinística.
+   * "climb"     sobe um degrau por parada até a real.
+   * "fake-drop" sobe até um tier-isca acima do real, congela brevemente,
+   *             depois revela a cor verdadeira — dupla tensão.
+   */
   teaseMode: (typeof TEASE_MODES)[number];
   /** Quantos tiers o brilho pode cair entre dois flashes (só no modo random). */
   maxDrop: number;
+  /**
+   * Fração da janela de tease que o tier-isca fica congelado na tela (fake-drop).
+   * Ex: 0.28 = 28% da duração do tease é o falso clímax. Clamp interno: 0–0.45.
+   */
+  fakeDropFreeze: number;
   crystalOutDuration: number;
   ringSlots: number;
   ringDuration: number;
@@ -30,6 +41,7 @@ export const DEFAULT_ROLL_ANIM_CONFIG: RollAnimConfig = {
   revealAt: 1.2,
   teaseMode: "climb",
   maxDrop: 2,
+  fakeDropFreeze: 0.28,
   crystalOutDuration: 0.25,
   ringSlots: 3,
   ringDuration: 0.55,
@@ -50,6 +62,7 @@ const LIMITS = {
   crystalSpinDuration: [0.1, 3],
   revealAt: [0.5, 5],
   maxDrop: [0, 6],
+  fakeDropFreeze: [0, 0.45],
   crystalOutDuration: [0.05, 1],
   ringSlots: [1, 3],
   ringDuration: [0.1, 2],

@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { api, ApiError } from "@/lib/api";
-import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
 import { SkinReveal } from "@/components/gacha/SkinReveal";
 import { RecentSkinSpins } from "@/components/gacha/RecentSkinSpins";
 import { GachaPageSkeleton } from "@/components/gacha/GachaPageSkeleton";
@@ -21,7 +20,6 @@ function countdown(target: string | null): string | null {
 }
 
 export default function GachaSkinsPage() {
-  const reduceMotion = usePrefersReducedMotion();
   const [data, setData] = useState<GachaSkinsResponse | null>(null);
   const [busy, setBusy] = useState(false);
   const [revealedSkin, setRevealedSkin] = useState<GachaSkin | null>(null);
@@ -105,7 +103,6 @@ export default function GachaSkinsPage() {
       {revealedSkin && (
         <SkinReveal
           skin={revealedSkin}
-          reduceMotion={reduceMotion}
           onClose={() => setRevealedSkin(null)}
         />
       )}
