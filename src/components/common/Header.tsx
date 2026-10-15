@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, type FormEvent } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, useRef, type FormEvent } from "react";
+import { useRouter, usePathname } from "next/navigation";
 import { Wordmark } from "@/components/common/Wordmark";
 import { AuthButtons } from "@/components/common/AuthButtons";
 import { NotificationBell } from "@/components/common/NotificationBell";
@@ -11,12 +11,93 @@ import { SearchField } from "@/components/ui/SearchField";
 
 /**
  * Cabeçalho da prateleira: wordmark à esquerda, busca ao centro,
- * auth à direita.
+ * auth à direita. Retrátil ao rolar a página: fixa no topo da tela,
+ * recolhe ao rolar para baixo e reaparece ao rolar para cima.
  */
 export function Header() {
   const router = useRouter();
+  const pathname = usePathname();
   const [q, setQ] = useState("");
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
+  const [isVisible, setIsVisible] = useState(true);
+  const [isScrolled, setIsScrolled] = useState(false);
+  const lastScrollY = useRef(0);
+  const headerRef = useRef<HTMLElement | null>(null);
+
+  // Garante que o header esteja visível ao trocar de rota
+  useEffect(() => {
+    setIsVisible(true);
+    setIsScrolled(false);
+    lastScrollY.current = 0;
+  }, [pathname]);
+
+  // Controle de scroll retrátil
+  useEffect(() => {
+    lastScrollY.current = typeof window !== "undefined" ? Math.max(0, window.scrollY) : 0;
+
+    let rafId: number | null = null;
+
+    function handleScroll() {
+      if (rafId !== null) return;
+
+      rafId = window.requestAnimationFrame(() => {
+        rafId = null;
+
+        const currentScrollY = window.scrollY;
+        const maxScrollY = Math.max(
+          0,
+          document.documentElement.scrollHeight - window.innerHeight,
+        );
+
+        // Limita o valor entre 0 e maxScrollY para evitar falsos positivos
+        // pelo efeito de elástico (rubber-banding) no iOS Safari.
+        const clampedScrollY = Math.min(
+          Math.max(0, currentScrollY),
+          maxScrollY > 0 ? maxScrollY : currentScrollY,
+        );
+
+        setIsScrolled(clampedScrollY > 10);
+
+        // Se a busca mobile estiver aberta ou o foco estiver dentro do header,
+        // ele deve permanecer visível para acessibilidade.
+        const hasFocus = headerRef.current?.contains(document.activeElement);
+        if (mobileSearchOpen || hasFocus) {
+          setIsVisible(true);
+          lastScrollY.current = clampedScrollY;
+          return;
+        }
+
+        // Próximo ao topo da página, sempre mantém o header visível
+        if (clampedScrollY <= 60) {
+          setIsVisible(true);
+          lastScrollY.current = clampedScrollY;
+          return;
+        }
+
+        const delta = clampedScrollY - lastScrollY.current;
+
+        // Tolerância de 8px para evitar oscilações em micro-scrolls
+        if (Math.abs(delta) >= 8) {
+          if (delta > 0) {
+            // Rolando para baixo: recolhe
+            setIsVisible(false);
+          } else {
+            // Rolando para cima: exibe
+            setIsVisible(true);
+          }
+          lastScrollY.current = clampedScrollY;
+        }
+      });
+    }
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      if (rafId !== null) {
+        window.cancelAnimationFrame(rafId);
+      }
+    };
+  }, [mobileSearchOpen]);
 
   // Close mobile search drawer on Escape key
   useEffect(() => {
@@ -46,7 +127,13 @@ export function Header() {
   }
 
   return (
-    <header className="relative z-50 border-b border-hairline bg-ink">
+    <header
+      ref={headerRef}
+      onFocus={() => setIsVisible(true)}
+      className={`sticky top-0 z-50 w-full border-b border-hairline bg-ink/95 backdrop-blur transition-transform duration-300 ease-out will-change-transform motion-reduce:transition-none ${
+        isVisible ? "translate-y-0" : "-translate-y-full"
+      } ${isScrolled ? "shadow-md shadow-black/40" : ""}`}
+    >
       <div className="mx-auto flex max-w-shelf items-center justify-between gap-1 px-4 py-3 sm:gap-4">
         <Wordmark className="text-xl" />
 
