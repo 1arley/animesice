@@ -213,7 +213,7 @@ test.describe("Gacha", () => {
 
     if (["COMUM", "EPICA", "LENDARIA"].includes(rarity)) {
     test(`reveal animado ${rarity}: API lenta pausa a timeline até o resultado`, async ({
-      page,
+      page, isMobile,
     }) => {
       await page.emulateMedia({ reducedMotion: "no-preference" });
       await blockAds(page);
@@ -258,6 +258,11 @@ test.describe("Gacha", () => {
       if (rarity === "LENDARIA") {
         await expect(dialog.locator("[data-godrays]")).toHaveCSS("opacity", /0\.[1-9]/);
         await page.screenshot({ path: test.info().outputPath("gacha-lendaria-rays.png") });
+        if (isMobile) {
+          const label = await dialog.getByText("SINAL DE INVOCAÇÃO").boundingBox();
+          const sound = await dialog.getByRole("button", { name: "Ativar som" }).boundingBox();
+          expect(label!.x + label!.width).toBeLessThanOrEqual(sound!.x);
+        }
       }
       expect(await revealDetails).toEqual(["1", "0", "0"]);
       await page.screenshot({ path: test.info().outputPath(`gacha-${rarity.toLowerCase()}-flip-midpoint.png`) });
