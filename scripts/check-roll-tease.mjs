@@ -41,7 +41,7 @@ assert.notEqual(ordered.at(-1), "COMUM");
 
 // O flag escolhe qual das três roda, e nada fora das opções entra: config meio
 // aplicada quebraria a prévia.
-assert.equal(DEFAULT_ROLL_ANIM_CONFIG.teaseMode, "random");
+assert.equal(DEFAULT_ROLL_ANIM_CONFIG.teaseMode, "climb");
 assert.equal(DEFAULT_ROLL_ANIM_CONFIG.maxDrop, MAX_DROP);
 for (const mode of ["random", "ordered", "climb"]) {
   const parsed = parseRollAnimJson(JSON.stringify({ teaseMode: mode }));
