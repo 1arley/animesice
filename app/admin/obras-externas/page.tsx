@@ -75,6 +75,13 @@ export default function ExternalWorksPage() {
         </label>
         <label className="block text-body-sm text-mist">Imagem manual (fallback)
           <input type="url" value={coverImage} onChange={(event) => setCoverImage(event.target.value)} className="admin-input mt-1 w-full" />
+          {coverImage && (
+            <div className="mt-2 flex items-center gap-3 border border-hairline bg-panel/40 p-2">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={coverImage} alt="Prévia da capa" className="h-16 w-12 border border-hairline object-cover" onError={(e) => { e.currentTarget.style.display = "none"; }} />
+              <span className="text-caption text-mist">Prévia da imagem manual</span>
+            </div>
+          )}
         </label>
         <button className="admin-button" type="submit">Criar referência</button>
         {message && <p className="text-body-sm text-ice">{message}</p>}
@@ -88,6 +95,13 @@ export default function ExternalWorksPage() {
           </label>
           <label className="block text-body-sm text-mist">Imagem HTTPS
             <input required type="url" value={characterImage} onChange={(event) => setCharacterImage(event.target.value)} className="admin-input mt-1 w-full" />
+            {characterImage && (
+              <div className="mt-2 flex items-center gap-3 border border-hairline bg-panel/40 p-2">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={characterImage} alt="Prévia do personagem" className="h-16 w-12 border border-hairline object-cover" onError={(e) => { e.currentTarget.style.display = "none"; }} />
+                <span className="text-caption text-mist">Prévia do personagem</span>
+              </div>
+            )}
           </label>
           <label className="block text-body-sm text-mist">Raridade
             <select value={rarity} onChange={(event) => setRarity(event.target.value)} className="admin-input mt-1 w-full">
