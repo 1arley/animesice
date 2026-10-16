@@ -964,6 +964,7 @@ export interface GachaTradeUpCardResult {
     animeId: string | null;
     editionCounter: number;
     image?: string | null;
+    imageHidden?: boolean;
   };
 }
 

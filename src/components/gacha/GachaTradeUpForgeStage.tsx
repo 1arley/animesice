@@ -241,7 +241,7 @@ export function GachaTradeUpForgeStage({
         name: cardResult.card.name,
         rarity: cardResult.card.rarity,
         image: cardResult.card.image ?? null,
-        imageHidden: false,
+        imageHidden: cardResult.card.imageHidden ?? false,
         favourites: 0,
         animeId: cardResult.card.animeId,
         animeTitle: null,
