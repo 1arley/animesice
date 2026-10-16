@@ -128,6 +128,8 @@ export default function AdminGachaPage() {
   });
   const [userPage, setUserPage] = useState(1);
   const [userCardsVersion, setUserCardsVersion] = useState(0);
+  const [grantSearch, setGrantSearch] = useState("");
+  const [grantCards, setGrantCards] = useState<AdminGachaCard[]>([]);
   const [search, setSearch] = useState("");
   const [selectedUser, setSelectedUser] = useState("");
 
@@ -155,6 +157,7 @@ export default function AdminGachaPage() {
   const cardsRequest = useRef(0);
   const animeSearchRequest = useRef(0);
   const userSearchRequest = useRef(0);
+  const grantSearchRequest = useRef(0);
 
   const isSuperAdmin = user?.role === "SUPERADMIN";
 
@@ -747,6 +750,27 @@ export default function AdminGachaPage() {
     };
   }, [selectedUser, userPage, userCardsVersion]);
 
+  useEffect(() => {
+    const query = grantSearch.trim();
+    const requestId = ++grantSearchRequest.current;
+    if (query.length < 2) {
+      setGrantCards([]);
+      return;
+    }
+    setGrantCards([]);
+    const timer = setTimeout(() => {
+      void api.adminListGachaCards(1, 20, query, undefined, undefined, "ACTIVE")
+        .then((res) => {
+          if (requestId === grantSearchRequest.current) setGrantCards(res.data);
+        })
+        .catch((e) => {
+          if (requestId === grantSearchRequest.current)
+            setError(e instanceof ApiError ? e.message : "Erro ao buscar cartas.");
+        });
+    }, SEARCH_DEBOUNCE_MS);
+    return () => clearTimeout(timer);
+  }, [grantSearch]);
+
   async function removeCard(id: string) {
     if (!window.confirm("Excluir carta do usuário?")) return;
     try {
@@ -770,6 +794,8 @@ export default function AdminGachaPage() {
 
   async function grantCard(cardId: string) {
     if (!selectedUser) return;
+    const card = grantCards.find((item) => item.id === cardId);
+    if (!card || !window.confirm(`Conceder “${card.name}” a este usuário?`)) return;
     try {
       await api.adminGrantUserCard(selectedUser, cardId);
       setUserCardsVersion((v) => v + 1);
@@ -1733,6 +1759,41 @@ export default function AdminGachaPage() {
               </button>
             ))}
           </div>
+
+          {selectedUser && (
+            <div className="border-t border-hairline pt-4 space-y-3">
+              <h3 className="font-display text-snow">Conceder carta</h3>
+              <SearchField
+                placeholder="Buscar carta ativa por nome…"
+                aria-label="Buscar carta para conceder"
+                value={grantSearch}
+                onChange={(e) => setGrantSearch(e.target.value)}
+                containerClassName="w-full max-w-xl"
+              />
+              {grantSearch.trim().length < 2 ? (
+                <p className="text-caption text-mist">Digite pelo menos 2 caracteres.</p>
+              ) : grantCards.length ? (
+                <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                  {grantCards.map((card) => (
+                    <li key={card.id} className="flex items-center justify-between gap-3 border border-hairline p-3">
+                      <span className="min-w-0 truncate text-body-sm text-snow">
+                        {card.name} <span className="text-mist">· {card.rarity}</span>
+                      </span>
+                      <button
+                        type="button"
+                        className="admin-tab min-h-11 shrink-0 text-caption text-ice border-ice/30"
+                        onClick={() => void grantCard(card.id)}
+                      >
+                        Conceder
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-caption text-mist">Nenhuma carta ativa encontrada.</p>
+              )}
+            </div>
+          )}
 
           {selectedUser && (
             <div className="mt-6 border-t border-hairline pt-4 space-y-4">
