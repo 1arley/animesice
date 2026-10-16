@@ -19,6 +19,7 @@ const modules = {
   "@/components/core/CountUp": { CountUp: () => null },
   "@/lib/roll-anim-config": { DEFAULT_ROLL_ANIM_CONFIG: {}, parseRollAnimJson: () => ({ ok: true }) },
   "@/lib/roll-tease": { randomTeaseSequence: () => [], orderedTeaseSequence: () => [], climbTeaseSequence: () => [] },
+  "@/lib/use-roll-audio": { useRollAudio: () => ({ sfx: {}, enabled: true, toggle: () => {} }) },
 };
 
 const exports = await compileComponent(source, modules, "RollStage.tsx");
