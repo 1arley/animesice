@@ -942,7 +942,7 @@ export function RollStage({ pull, onClose, preview = false, config }: RollStageP
           .to(flip, { scale: 1.1, duration: flipDur * 0.4, ease: "power2.out" }, revealAt)
           .to(flip, { scale: 1, duration: flipDur * 0.6, ease: "power2.inOut" }, revealAt + flipDur * 0.4);
       }
-      if (cardArt) resultTl.fromTo(cardArt, { opacity: 0 }, { opacity: 1, duration: 0.16, ease: "power1.out" }, cardRevealedAt - 0.16);
+      if (cardArt) resultTl.set(cardArt, { opacity: 1 }, cardRevealedAt);
       if (sweep) {
         const sweepDur = Math.max(0.5, cfg.sweepDuration);
         const sweepAt = cardArtReadyAt;
