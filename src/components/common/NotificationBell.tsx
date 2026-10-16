@@ -118,7 +118,11 @@ export function NotificationBell() {
               notifications.map((n) => (
                 <Link
                   key={n.id}
-                  href={n.linkUrl ?? "#"}
+                  href={
+                    n.type === "NEW_FOLLOW" && n.actorId
+                      ? `/users/${n.actorId}`
+                      : n.linkUrl ?? "#"
+                  }
                   className={`block border-b border-hairline px-3 py-2 transition-colors hover:bg-hairline/50 ${
                     !n.read ? "bg-ice/5" : ""
                   }`}

@@ -195,6 +195,7 @@ export interface NotificationItem {
   title: string;
   body: string | null;
   linkUrl: string | null;
+  actorId?: string | null;
   read: boolean;
   createdAt: string;
 }

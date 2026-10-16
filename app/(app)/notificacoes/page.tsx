@@ -48,7 +48,7 @@ export default function NotificationsPage() {
       {notifications.length === 0 ? <p className="text-body-sm text-mist">Sem notificações.</p> : (
         <div className="space-y-2">
           {notifications.map((n) => (
-            <a key={n.id} href={n.linkUrl ?? "#"} onClick={() => !n.read && markRead(n.id)} className={`block border border-hairline p-4 hover:border-ice ${n.read ? "bg-panel" : "border-ice/50 bg-ice/5"}`}>
+            <a key={n.id} href={n.type === "NEW_FOLLOW" && n.actorId ? `/users/${n.actorId}` : (n.linkUrl ?? "#")} onClick={() => !n.read && markRead(n.id)} className={`block border border-hairline p-4 hover:border-ice ${n.read ? "bg-panel" : "border-ice/50 bg-ice/5"}`}>
               <p className="font-sans text-body font-medium text-ice">{n.title}</p>
               {n.body && <p className="mt-1 text-body-sm text-mist">{n.body}</p>}
               <p className="mt-2 font-mono text-caption text-mist">{formatDateTime(n.createdAt)}</p>
