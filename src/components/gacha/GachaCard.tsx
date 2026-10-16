@@ -219,7 +219,7 @@ export const GachaCard = memo(function GachaCard({ pull, preview = false, linkAn
       <div className={`overflow-hidden ${isGalaxy || hasAurora ? "bg-panel" : ""}`}>
         {side === "back" ? (
           <div
-            className={`relative flex aspect-[3/4] items-center justify-center overflow-hidden bg-[radial-gradient(circle_at_30%_20%,rgba(56,232,218,.3),transparent_35%),linear-gradient(145deg,#101d30,#080c12_55%,#172f48)]`}
+            className={`relative flex aspect-[3/4] items-center justify-center overflow-hidden bg-[radial-gradient(circle_at_center,rgba(56,232,218,.3),transparent_35%),linear-gradient(145deg,#101d30,#080c12_55%,#172f48)]`}
             role="img"
             aria-label="Verso personalizado da carta"
           >
