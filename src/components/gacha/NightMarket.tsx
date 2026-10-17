@@ -4,14 +4,14 @@ import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Modal } from "@/components/common/Modal";
-import { RARITY } from "@/components/gacha/GachaCard";
+import { GachaCard, RARITY } from "@/components/gacha/GachaCard";
 import { useToast } from "@/components/common/ToastProvider";
 import { api, ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
 import { safeImageSrc } from "@/lib/url";
 import { GachaOfferGridSkeleton } from "@/components/gacha/GachaPageSkeleton";
-import type { GachaEconomyOffer } from "@/types";
+import type { GachaEconomyOffer, GachaPull } from "@/types";
 
 const SKIN_RARITY: Record<string, string> = {
   COMMON: "COMUM",
@@ -50,6 +50,45 @@ function rarityLabel(rarity: string) {
 
 function offerKind(offer: GachaEconomyOffer) {
   return offer.itemType === "CARD" ? "Carta" : "Skin";
+}
+
+function offerPull(offer: GachaEconomyOffer): GachaPull | null {
+  if (offer.itemType !== "CARD" || !offer.card) return null;
+  const cardRarity = offer.card.rarity ?? "COMUM";
+  return {
+    id: offer.id,
+    condition: 1,
+    conditionLabel: "MINT",
+    foil: "NORMAL",
+    edition: 1,
+    value: offer.price,
+    obtainedAt: new Date().toISOString(),
+    user: {
+      id: "night-market",
+      name: "Mercado Noturno",
+      userName: "mercado-noturno",
+      avatar: null,
+    },
+    card: {
+      id: offer.card.id,
+      name: offer.card.name,
+      image: offer.card.image ?? null,
+      imageHidden: Boolean(offer.card.imageHidden),
+      rarity: cardRarity,
+      favourites: 0,
+      animeId: null,
+      animeTitle: offer.card.animeTitle ?? null,
+      anime: offer.card.animeTitle
+        ? {
+            id: "",
+            title: offer.card.animeTitle,
+            slug: "",
+            coverImage: null,
+            malId: null,
+          }
+        : null,
+    },
+  };
 }
 
 export function NightMarket() {
@@ -310,36 +349,7 @@ export function NightMarket() {
             label="Carregando ofertas do Mercado Noturno"
             className="mt-6 gap-5"
           />
-        ) : authLoading ? null : !user ? (
-          <div className="mt-6 border border-hairline bg-panel p-6">
-            <p className="text-body text-snow">Entre para ver sua seleção pessoal.</p>
-            <Link href="/login" className="btn-ice mt-4 inline-flex min-h-11 items-center px-4">
-              Entrar
-            </Link>
-          </div>
-        ) : offers.length === 0 && error ? (
-          <div className="mt-6 border border-hairline bg-panel p-6">
-            <p className="text-body-sm text-mist">Não foi possível carregar as ofertas.</p>
-            <button
-              type="button"
-              onClick={() => void loadOffers()}
-              className="btn-ghost mt-3 min-h-11 px-4"
-            >
-              Tentar novamente
-            </button>
-          </div>
-        ) : offers.length === 0 ? (
-          <div className="mt-6 border border-hairline bg-panel p-6">
-            <h3 className="font-display text-xl text-snow">A noite ainda não começou</h3>
-            <p className="mt-2 max-w-xl text-body-sm text-mist">
-              O Mercado Noturno abre aos sábados e domingos, com novas cartas e
-              skins a cada fim de semana.
-            </p>
-            <Link href="/gacha/mercado" className="mt-4 inline-flex min-h-11 items-center text-body-sm text-ice hover:underline">
-              Voltar ao mercado
-            </Link>
-          </div>
-        ) : (
+        ) : offers.length > 0 ? (
           <>
             <p className="mt-5 text-caption text-mist" aria-live="polite">
               {offers.length} {offers.length === 1 ? "oferta disponível" : "ofertas disponíveis"}
@@ -353,6 +363,7 @@ export function NightMarket() {
                 const image = offerImage(offer);
                 const kind = offerKind(offer);
                 const isAnimating = animatingOffers.has(offer.id);
+                const pull = offerPull(offer);
                 return (
                   <li key={offer.id} className="night-offer-card">
                     <div
@@ -419,42 +430,84 @@ export function NightMarket() {
                         aria-live="polite"
                         inert={!isRevealed}
                         tabIndex={-1}
-                        className={`night-offer-card__face night-offer-card__front border bg-panel p-4 ${rarityStyle.border} ${rarityStyle.glow ?? ""}`}
+                        className="night-offer-card__face night-offer-card__front"
                       >
-                        <div className="relative flex h-[42%] min-h-32 items-center justify-center overflow-hidden border border-hairline bg-ink-deep">
-                          {image ? (
-                            <Image
-                              src={image}
-                              alt={name}
-                              fill
-                              sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                              className="object-contain p-3"
-                              unoptimized
+                        <div className="night-offer-card__preview relative h-full w-full">
+                          {pull ? (
+                            <GachaCard
+                              pull={pull}
+                              linkAnime={false}
+                              preview
+                              showInfo={false}
                             />
                           ) : (
-                            <span className="font-display text-5xl text-ice/70" aria-hidden="true">
-                              {kind === "Carta" ? "✧" : "◇"}
-                            </span>
+                            <div
+                              className={`relative h-full w-full overflow-hidden border bg-panel ${rarityStyle.border} ${rarityStyle.glow ?? ""}`}
+                            >
+                              {image ? (
+                                <Image
+                                  src={image}
+                                  alt={name}
+                                  fill
+                                  sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                                  className="object-cover"
+                                  unoptimized
+                                />
+                              ) : (
+                                <div className="flex h-full w-full items-center justify-center bg-ink-deep">
+                                  <span
+                                    className="font-display text-5xl text-ice/70"
+                                    aria-hidden="true"
+                                  >
+                                    ◇
+                                  </span>
+                                </div>
+                              )}
+                              <span
+                                className={`absolute left-1.5 top-1.5 z-20 bg-ink/85 px-1.5 py-0.5 font-mono text-caption font-medium backdrop-blur-sm ${rarityStyle.text}`}
+                              >
+                                {kind} · {rarityLabel(rarity)}
+                              </span>
+                            </div>
                           )}
                         </div>
-                        <div className="flex min-h-0 flex-1 flex-col pt-3">
-                          <p className={`text-caption ${rarityStyle.text}`}>
-                            {kind} · {rarityLabel(rarity)} · −{offer.discount}%
-                          </p>
-                          <h3 className="mt-1 line-clamp-2 break-words font-display text-xl text-snow">
-                            {name}
-                          </h3>
-                          <p className="mt-2 text-caption text-mist">
-                            Oferta pessoal do Mercado Noturno.
-                          </p>
-                          <div className="mt-auto pt-3">
-                            <p className="font-display text-lg tabular-nums text-ice">
-                              {offer.price.toLocaleString("pt-BR")} cristais
-                            </p>
-                            {offer.purchasedAt ? (
-                              <p className="mt-2 min-h-11 content-center text-center text-body-sm text-mist">
-                                Comprada nesta edição
+
+                        {/* Base overlay with price, discount, and action button */}
+                        <div className="pointer-events-auto absolute inset-x-0 bottom-0 z-30 flex flex-col justify-end bg-gradient-to-t from-ink via-ink/95 to-transparent px-3.5 pb-3.5 pt-12">
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className="bg-ice px-1.5 py-0.5 font-mono text-caption font-bold text-ink">
+                                −{offer.discount}%
+                              </span>
+                              <span className="font-display text-base tabular-nums text-snow">
+                                {offer.price.toLocaleString("pt-BR")} cristais
+                              </span>
+                            </div>
+                            <h3
+                              className="mt-1 line-clamp-1 break-words font-display text-base text-snow sm:text-lg"
+                              title={name}
+                            >
+                              {name}
+                            </h3>
+                            {offer.card?.animeTitle ? (
+                              <p
+                                className="line-clamp-1 text-caption text-mist"
+                                title={offer.card.animeTitle}
+                              >
+                                {offer.card.animeTitle}
                               </p>
+                            ) : (
+                              <p className="text-caption text-mist">
+                                {kind} · {rarityLabel(rarity)}
+                              </p>
+                            )}
+                          </div>
+
+                          <div className="mt-2.5">
+                            {offer.purchasedAt ? (
+                              <div className="flex min-h-11 items-center justify-center border border-hairline bg-panel/85 text-center text-body-sm font-medium text-mist">
+                                Comprada nesta edição
+                              </div>
                             ) : (
                               <button
                                 type="button"
@@ -463,7 +516,7 @@ export function NightMarket() {
                                   setPurchaseError("");
                                   setPurchaseOffer(offer);
                                 }}
-                                className="btn-ice mt-2 min-h-11 w-full px-3"
+                                className="btn-ice min-h-11 w-full px-3 text-body-sm font-semibold"
                               >
                                 Comprar oferta
                               </button>
@@ -493,6 +546,35 @@ export function NightMarket() {
               })}
             </ul>
           </>
+        ) : authLoading ? null : !user ? (
+          <div className="mt-6 border border-hairline bg-panel p-6">
+            <p className="text-body text-snow">Entre para ver sua seleção pessoal.</p>
+            <Link href="/login" className="btn-ice mt-4 inline-flex min-h-11 items-center px-4">
+              Entrar
+            </Link>
+          </div>
+        ) : error ? (
+          <div className="mt-6 border border-hairline bg-panel p-6">
+            <p className="text-body-sm text-mist">Não foi possível carregar as ofertas.</p>
+            <button
+              type="button"
+              onClick={() => void loadOffers()}
+              className="btn-ghost mt-3 min-h-11 px-4"
+            >
+              Tentar novamente
+            </button>
+          </div>
+        ) : (
+          <div className="mt-6 border border-hairline bg-panel p-6">
+            <h3 className="font-display text-xl text-snow">A noite ainda não começou</h3>
+            <p className="mt-2 max-w-xl text-body-sm text-mist">
+              O Mercado Noturno abre aos sábados e domingos, com novas cartas e
+              skins a cada fim de semana.
+            </p>
+            <Link href="/gacha/mercado" className="mt-4 inline-flex min-h-11 items-center text-body-sm text-ice hover:underline">
+              Voltar ao mercado
+            </Link>
+          </div>
         )}
       </section>
 
