@@ -1123,7 +1123,7 @@ export function RollStage({ pull, onClose, preview = false, config }: RollStageP
         aria-hidden="true"
         className="pointer-events-none fixed inset-0 z-0 opacity-0"
         style={{
-          color: flat ? accent : NEUTRAL_COLOR,
+          color: flat && revealed ? accent : NEUTRAL_COLOR,
           backgroundColor: "currentColor",
           maskImage: "radial-gradient(circle at 50% 45%, #000 0%, transparent 65%)",
           WebkitMaskImage: "radial-gradient(circle at 50% 45%, #000 0%, transparent 65%)",
@@ -1255,7 +1255,7 @@ export function RollStage({ pull, onClose, preview = false, config }: RollStageP
         <div
           data-stage
           className="relative z-10 aspect-[3/4] w-[min(70vw,420px)] max-w-full"
-          style={{ perspective: 1000, color: flat ? accent : NEUTRAL_COLOR }}
+          style={{ perspective: 1000, color: flat && revealed ? accent : NEUTRAL_COLOR }}
           onPointerMove={(event) => {
             if (flat || !revealed) return;
             const rect = event.currentTarget.getBoundingClientRect();
@@ -1297,9 +1297,48 @@ export function RollStage({ pull, onClose, preview = false, config }: RollStageP
             </svg>
           )}
 
+          {fxLive && (
+            <svg data-fx-svg aria-hidden="true" viewBox="0 0 400 520" className="pointer-events-none absolute inset-[-10%] z-0 h-[120%] w-[120%] overflow-visible">
+              <defs>
+                <filter id={`${filterId}-glow-fx`} x="-60%" y="-60%" width="220%" height="220%">
+                  <feGaussianBlur stdDeviation="5" result="blur" />
+                  <feColorMatrix in="blur" type="matrix" values="1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 0 1.8 0" result="colored" />
+                  <feMerge><feMergeNode in="colored" /><feMergeNode in="SourceGraphic" /></feMerge>
+                </filter>
+                {GACHA_TIERS.map((tier) => (
+                  <radialGradient key={tier} id={`${filterId}-aura-${tier}`}>
+                    <stop offset="0%" stopColor={RARITY_COLORS[tier]} stopOpacity="0.6" />
+                    <stop offset="55%" stopColor={RARITY_COLORS[tier]} stopOpacity="0.22" />
+                    <stop offset="100%" stopColor={RARITY_COLORS[tier]} stopOpacity="0" />
+                  </radialGradient>
+                ))}
+              </defs>
+              {GACHA_TIERS.map((tier) => (
+                <g key={tier} data-tier-aura={tier} style={{ opacity: 0 }}>
+                  <circle cx={CX} cy={CY} r="190" fill={`url(#${filterId}-aura-${tier})`} />
+                  <circle cx={CX} cy={CY} r="100" fill="none" stroke={RARITY_COLORS[tier]} strokeWidth="6" filter={`url(#${filterId}-glow-fx)`} />
+                  <circle cx={CX} cy={CY} r="132" fill="none" stroke={RARITY_COLORS[tier]} strokeWidth="1.4" strokeDasharray="3 7" />
+                </g>
+              ))}
+              {Array.from({ length: Math.max(1, Math.min(3, cfg.ringSlots)) }, (_, index) => (
+                <circle
+                  key={index}
+                  data-ring
+                  cx={CX}
+                  cy={CY}
+                  r="96"
+                  fill="none"
+                  stroke={accent}
+                  strokeWidth={index === 0 ? 2.4 : 1.4}
+                  style={{ opacity: 0 }}
+                />
+              ))}
+            </svg>
+          )}
+
           <div
             data-flip
-            className="relative aspect-[3/4]"
+            className="relative z-10 aspect-[3/4]"
             style={{ transformStyle: flat ? "flat" : "preserve-3d", transform: flat ? "none" : undefined }}
           >
             <div
@@ -1327,7 +1366,7 @@ export function RollStage({ pull, onClose, preview = false, config }: RollStageP
                   ))}
                 </div>
               )}
-              <svg aria-hidden="true" viewBox="0 0 100 100" className="pointer-events-none absolute inset-0 h-full w-full opacity-25">
+              <svg aria-hidden="true" viewBox="0 0 100 100" className="pointer-events-none absolute inset-0 h-full w-full text-ice opacity-25">
                 <path d="M50 0v100M0 50h100M15 15l70 70M85 15 15 85" stroke="currentColor" strokeWidth=".45" />
                 <circle cx="50" cy="50" r="34" fill="none" stroke="currentColor" strokeWidth=".7" strokeDasharray="2 4" />
               </svg>
@@ -1374,45 +1413,6 @@ export function RollStage({ pull, onClose, preview = false, config }: RollStageP
               )}
             </div>
           </div>
-
-          {fxLive && (
-            <svg data-fx-svg aria-hidden="true" viewBox="0 0 400 520" className="pointer-events-none absolute inset-[-10%] z-[5] h-[120%] w-[120%] overflow-visible">
-              <defs>
-                <filter id={`${filterId}-glow-fx`} x="-60%" y="-60%" width="220%" height="220%">
-                  <feGaussianBlur stdDeviation="5" result="blur" />
-                  <feColorMatrix in="blur" type="matrix" values="1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 0 1.8 0" result="colored" />
-                  <feMerge><feMergeNode in="colored" /><feMergeNode in="SourceGraphic" /></feMerge>
-                </filter>
-                {GACHA_TIERS.map((tier) => (
-                  <radialGradient key={tier} id={`${filterId}-aura-${tier}`}>
-                    <stop offset="0%" stopColor={RARITY_COLORS[tier]} stopOpacity="0.6" />
-                    <stop offset="55%" stopColor={RARITY_COLORS[tier]} stopOpacity="0.22" />
-                    <stop offset="100%" stopColor={RARITY_COLORS[tier]} stopOpacity="0" />
-                  </radialGradient>
-                ))}
-              </defs>
-              {GACHA_TIERS.map((tier) => (
-                <g key={tier} data-tier-aura={tier} style={{ opacity: 0 }}>
-                  <circle cx={CX} cy={CY} r="190" fill={`url(#${filterId}-aura-${tier})`} />
-                  <circle cx={CX} cy={CY} r="100" fill="none" stroke={RARITY_COLORS[tier]} strokeWidth="6" filter={`url(#${filterId}-glow-fx)`} />
-                  <circle cx={CX} cy={CY} r="132" fill="none" stroke={RARITY_COLORS[tier]} strokeWidth="1.4" strokeDasharray="3 7" />
-                </g>
-              ))}
-              {Array.from({ length: Math.max(1, Math.min(3, cfg.ringSlots)) }, (_, index) => (
-                <circle
-                  key={index}
-                  data-ring
-                  cx={CX}
-                  cy={CY}
-                  r="96"
-                  fill="none"
-                  stroke={accent}
-                  strokeWidth={index === 0 ? 2.4 : 1.4}
-                  style={{ opacity: 0 }}
-                />
-              ))}
-            </svg>
-          )}
         </div>
 
         <div
