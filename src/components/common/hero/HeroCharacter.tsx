@@ -9,6 +9,7 @@ import { isOptimizableImageUrl } from "@/lib/url";
 
 interface HeroCharacterProps {
   src: string;
+  isBanner: boolean;
   priority?: boolean;
   charX: MotionValue<number>;
   charY: MotionValue<number>;
@@ -17,6 +18,7 @@ interface HeroCharacterProps {
 
 export function HeroCharacter({
   src,
+  isBanner,
   priority = false,
   charX,
   charY,
@@ -44,7 +46,10 @@ export function HeroCharacter({
         priority={priority}
         unoptimized={!isOptimizableImageUrl(src)}
         fetchPriority={priority ? "high" : undefined}
-        sizes="(min-width: 1400px) 1340px, 100vw"
+        // AniList banners are 1900×400; account for object-cover cropping.
+        sizes={isBanner
+          ? "(max-width: 639px) 356vw, (max-width: 767px) 204vw, (max-width: 1023px) 170vw, (max-width: 1399px) 148vw, 1989px"
+          : "(min-width: 1400px) 1340px, 100vw"}
         quality={80}
         placeholder="blur"
         blurDataURL={blur.landscape}
