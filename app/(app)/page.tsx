@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import type { Metadata } from "next";
+import { AdSlot } from "@/components/ads/AdSlot";
 import { DeferredPersonalizedRails } from "@/components/common/DeferredPersonalizedRails";
 import { HomeBackdrop } from "@/components/common/crystal/HomeBackdrop";
 import { IceBeamDivider } from "@/components/common/crystal/IceBeamDivider";
@@ -39,6 +40,9 @@ export default function HomePage() {
     <div className="mx-auto max-w-shelf px-4 py-4">
       <DeferredPersonalizedRails />
       <Suspense fallback={<SectionFallback />}><CatalogSections /></Suspense>
+      {/* Publicidade entre blocos de conteúdo — nunca no topo, para não
+          empurrar o catálogo para fora da primeira dobra. */}
+      <AdSlot className="mb-8" />
       <Suspense fallback={<SectionFallback />}><LatestSection /></Suspense>
       <Suspense fallback={<SectionFallback />}><TrendingSection /></Suspense>
       <Suspense fallback={<SectionFallback />}><RecentSection /></Suspense>

@@ -11,8 +11,8 @@ const appOrigin = new URL(process.env.PLAYWRIGHT_TEST_BASE_URL || `http://localh
 
 // Redes de anúncio bloqueadas para iframes não interceptarem cliques
 // ("<div></div> intercepts pointer events") e tornarem o teste flaky.
-// Monetag (n6wxm) e demais redes são abortadas; sem AdSense/AdBlockNotice
-// não há mais sonda de rede a responder.
+// AdSense (pagead2/googlesyndication) e Monetag (n6wxm) são abortados; sem
+// AdBlockNotice não há sonda de rede a responder.
 const AD_PATTERNS = [
   "**/pagead2.googlesyndication.com/**",
   "**/*.doubleclick.net/**",

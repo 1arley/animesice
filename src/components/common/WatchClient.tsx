@@ -10,6 +10,7 @@ import { resolveAsyncSource } from "@/lib/resolve-async-source";
 import type { Episode, Anime } from "@/types";
 import { CommentSection } from "@/components/common/CommentSection";
 import { CreateRoomButton } from "@/components/common/CreateRoomButton";
+import { AdSlot } from "@/components/ads/AdSlot";
 
 const VideoPlayer = dynamic(
   () => import("@/components/common/VideoPlayer").then((m) => m.VideoPlayer),
@@ -242,6 +243,8 @@ export function WatchClient({
           </p>
         )}
       </div>
+
+      <AdSlot className="mt-4" />
 
       <CreateRoomButton animeSlug={slug} episodeNumber={episode.number} />
 
