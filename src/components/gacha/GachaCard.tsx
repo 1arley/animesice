@@ -85,7 +85,7 @@ export const FOIL_TEXT: Record<string, string> = {
   HOLO: "text-ice",
   GOLD: "text-amber-300",
   INK: "text-zinc-200",
-  PRISM: "text-violet-200",
+  PRISM: "text-fuchsia-200 drop-shadow-[0_0_6px_rgba(217,70,239,0.7)]",
 };
 
 // Filtro da arte por foil. NORMAL e HOLO ficam de fora: NORMAL e a arte crua,
@@ -126,10 +126,23 @@ export function FoilArt({ foil }: { foil: string }) {
         aria-hidden
         className={`${overlay} pointer-events-none absolute inset-0`}
       />
-      <div
-        aria-hidden
-        className={`pointer-events-none absolute inset-y-[-25%] left-0 w-1/3 bg-gradient-to-r from-transparent ${FOIL_SHEEN[foil]} to-transparent mix-blend-screen motion-safe:animate-[foil-shine_5s_ease-in-out_infinite]`}
-      />
+      {foil === "PRISM" ? (
+        <>
+          <div
+            aria-hidden
+            className="prism-sheen pointer-events-none absolute inset-y-[-30%] left-0 w-1/2 mix-blend-screen motion-safe:animate-[foil-shine_4.5s_cubic-bezier(0.4,0,0.2,1)_infinite]"
+          />
+          <div
+            aria-hidden
+            className="prism-sheen-secondary pointer-events-none absolute inset-y-[-30%] left-0 w-1/3 mix-blend-color-dodge motion-safe:animate-[prism-cross-shine_6s_ease-in-out_infinite]"
+          />
+        </>
+      ) : (
+        <div
+          aria-hidden
+          className={`pointer-events-none absolute inset-y-[-25%] left-0 w-1/3 bg-gradient-to-r from-transparent ${FOIL_SHEEN[foil]} to-transparent mix-blend-screen motion-safe:animate-[foil-shine_5s_ease-in-out_infinite]`}
+        />
+      )}
     </>
   );
 }
