@@ -797,6 +797,7 @@ export interface GachaEconomyInventory {
   reserved: number;
   available: number;
   dailyClaimedToday: boolean;
+  watchEarnedToday: number;
 }
 
 export interface GachaEconomyListingItem {

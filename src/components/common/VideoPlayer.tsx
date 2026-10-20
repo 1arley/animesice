@@ -224,6 +224,13 @@ function NativeVideoPlayer({
   const { user } = useAuth();
   const [fatalError, setFatalError] = useState(false);
   const [retryAttempt, setRetryAttempt] = useState(0);
+  const [watchToast, setWatchToast] = useState(0);
+
+  useEffect(() => {
+    if (!watchToast) return;
+    const timer = setTimeout(() => setWatchToast(0), 4000);
+    return () => clearTimeout(timer);
+  }, [watchToast]);
 
   const safeSrc = safeImageSrc(src) ?? src;
   const safePoster = safeImageSrc(posterUrl, animeSlug, episodeNumber);
@@ -359,16 +366,25 @@ function NativeVideoPlayer({
     ) {
       if (!user) return;
       try {
-        await fetch(`${API_URL}/watch-history/${animeSlug}/${episodeNumber}`, {
-          method: "POST",
-          credentials: "include",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            progress: Math.floor(progress),
-            duration: Math.floor(duration),
-            completed,
-          }),
-        });
+        const res = await fetch(
+          `${API_URL}/watch-history/${animeSlug}/${episodeNumber}`,
+          {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              progress: Math.floor(progress),
+              duration: Math.floor(duration),
+              completed,
+            }),
+          },
+        );
+        if (res.ok) {
+          const data = (await res.json().catch(() => null)) as {
+            watchCredited?: number;
+          } | null;
+          if (data?.watchCredited) setWatchToast(data.watchCredited);
+        }
       } catch {
         // silent
       }
@@ -445,19 +461,30 @@ function NativeVideoPlayer({
   }
 
   return (
-    <video
-      ref={videoRef}
-      controls
-      playsInline
-      preload="metadata"
-      poster={safePoster}
-      aria-label={
-        animeTitle && episodeNumber != null
-          ? `${animeTitle} — Episódio ${episodeNumber}`
-          : "Player de vídeo"
-      }
-      className="video-frame"
-    />
+    <div className="relative">
+      <video
+        ref={videoRef}
+        controls
+        playsInline
+        preload="metadata"
+        poster={safePoster}
+        aria-label={
+          animeTitle && episodeNumber != null
+            ? `${animeTitle} — Episódio ${episodeNumber}`
+            : "Player de vídeo"
+        }
+        className="video-frame"
+      />
+      {watchToast > 0 && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="pointer-events-none absolute right-3 bottom-3 rounded-full border border-hairline bg-panel/90 px-3 py-1.5 text-body-sm text-snow shadow-lg"
+        >
+          +{watchToast} Cristais por assistir
+        </div>
+      )}
+    </div>
   );
 }
 
