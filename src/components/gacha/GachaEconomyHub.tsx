@@ -971,6 +971,11 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
                   <p className="mt-1 text-body-sm text-mist">
                     7 resgates em 10 dias liberam Caixa Rara + chave.
                   </p>
+                  <p className="mt-1 text-body-sm text-mist">
+                    Assistindo episódios hoje:{" "}
+                    {(inventory?.watchEarnedToday ?? 0).toLocaleString("pt-BR")}{" "}
+                    Cristais
+                  </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <button
