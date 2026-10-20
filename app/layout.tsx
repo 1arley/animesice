@@ -4,6 +4,7 @@ import "./globals.css";
 import { AuthProvider } from "@/lib/auth-context";
 import { ToastProvider } from "@/components/common/ToastProvider";
 import { SITE_URL } from "@/lib/site";
+import { ADSENSE_CLIENT } from "@/lib/adsense";
 import { escapeJsonLd } from "@/lib/url";
 import { CrystalSplash } from "@/components/animesice/CrystalSplash";
 import { chunkRecoveryScript } from "@/lib/chunk-recovery-script";
@@ -80,6 +81,10 @@ export const metadata: Metadata = {
     shortcut: "/icons/favicon.ico",
   },
   manifest: "/icons/site.webmanifest",
+  other: {
+    // Identifica o publisher para o AdSense (verificacao do site / Auto Ads).
+    "google-adsense-account": ADSENSE_CLIENT,
+  },
 };
 
 export const viewport: Viewport = {

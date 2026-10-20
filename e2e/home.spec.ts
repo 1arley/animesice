@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { blockAds } from "./helpers";
 
 test.describe("Homepage & Shelf Navigation", () => {
   test("restores an httpOnly session after navigation and reload", async ({
@@ -87,6 +88,21 @@ test.describe("Homepage & Shelf Navigation", () => {
 
     const monetagScript = page.locator("script#monetag-loader");
     await expect(monetagScript).toHaveCount(0);
+  });
+
+  test("renders the AdSense slot and injects the loader on demand", async ({
+    page,
+  }) => {
+    await blockAds(page);
+    await page.goto("/");
+
+    // NEXT_PUBLIC_ADSENSE_SLOT=0000000001 no build do e2e (playwright.config).
+    const slot = page.locator("ins.adsbygoogle[data-ad-slot='0000000001']");
+    await expect(slot).toHaveCount(1);
+
+    // O loader só entra quando o slot se aproxima da viewport.
+    await slot.scrollIntoViewIfNeeded();
+    await expect(page.locator("script[data-adsense-loader]")).toHaveCount(1);
   });
 
   test("header is sticky and retracts on scroll down and reappears on scroll up", async ({ page }) => {

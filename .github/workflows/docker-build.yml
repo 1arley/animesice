@@ -33,5 +33,6 @@ jobs:
             NEXT_PUBLIC_API_URL=https://api.animesice.app/api
             NEXT_PUBLIC_SITE_URL=https://animesice.app
             NEXT_PUBLIC_ENABLE_MONETAG=${{ secrets.NEXT_PUBLIC_ENABLE_MONETAG || '' }}
+            NEXT_PUBLIC_ADSENSE_SLOT=${{ secrets.NEXT_PUBLIC_ADSENSE_SLOT || '' }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
