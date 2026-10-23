@@ -38,8 +38,8 @@ const TEASE_DURATION: Record<RollRarity, number> = {
   RARA: 0.9,
   EPICA: 1.15,
   LENDARIA: 1.5,
-  MITICA: 1.8,
-  GALACTICA: 1.8,
+  MITICA: 2.0,
+  GALACTICA: 2.35,
 };
 const TIER_PARTICLES: Record<RollRarity, number> = {
   COMUM: 20,
@@ -47,8 +47,8 @@ const TIER_PARTICLES: Record<RollRarity, number> = {
   RARA: 52,
   EPICA: 80,
   LENDARIA: 120,
-  MITICA: 150,
-  GALACTICA: 180,
+  MITICA: 165,
+  GALACTICA: 220,
 };
 const TIER_FLASH: Record<RollRarity, number> = {
   COMUM: 0.45,
@@ -66,8 +66,8 @@ const TIER_TREMBLE: Record<RollRarity, number> = {
   RARA: 1,
   EPICA: 2,
   LENDARIA: 3,
-  MITICA: 3,
-  GALACTICA: 3,
+  MITICA: 4,
+  GALACTICA: 5,
 };
 const TIER_SHAKE: Record<RollRarity, number> = {
   COMUM: 0,
@@ -75,8 +75,26 @@ const TIER_SHAKE: Record<RollRarity, number> = {
   RARA: 3,
   EPICA: 5,
   LENDARIA: 8,
-  MITICA: 8,
-  GALACTICA: 8,
+  MITICA: 11,
+  GALACTICA: 14,
+};
+const TIER_HANG: Record<RollRarity, number> = {
+  COMUM: 0,
+  INCOMUM: 0,
+  RARA: 0,
+  EPICA: 0,
+  LENDARIA: 0.18,
+  MITICA: 0.28,
+  GALACTICA: 0.42,
+};
+const TIER_SHAKE_BURSTS: Record<RollRarity, number[]> = {
+  COMUM: [],
+  INCOMUM: [],
+  RARA: [],
+  EPICA: [],
+  LENDARIA: [],
+  MITICA: [0.36, -0.24],
+  GALACTICA: [0.44, -0.3, 0.17],
 };
 const TIER_HOLO: Record<RollRarity, number> = {
   COMUM: 0,
@@ -84,9 +102,12 @@ const TIER_HOLO: Record<RollRarity, number> = {
   RARA: 0.22,
   EPICA: 0.42,
   LENDARIA: 0.55,
-  MITICA: 0.55,
-  GALACTICA: 0.6,
+  MITICA: 0.64,
+  GALACTICA: 0.75,
 };
+// Easing Helpers para overshoots e curvas de transição
+const backIn = (overshoot: number) => (t: number) => t * t * ((overshoot + 1) * t - overshoot);
+const backOut = (overshoot: number) => (t: number) => 1 - backIn(overshoot)(1 - t);
 const RARITY_ALIASES: Record<string, RollRarity> = {
   COMMON: "COMUM",
   UNCOMMON: "INCOMUM",
@@ -107,15 +128,31 @@ const ROLL_CSS = `
 .roll-stage-dialog[data-animating="true"] [data-stage],
 .roll-stage-dialog[data-animating="true"] [data-flip],
 .roll-stage-dialog[data-animating="true"] [data-glow],
-.roll-stage-dialog[data-animating="true"] [data-godrays] { will-change: transform, opacity; }
+.roll-stage-dialog[data-animating="true"] [data-godrays],
+.roll-stage-dialog[data-animating="true"] [data-godrays-reverse],
+.roll-stage-dialog[data-animating="true"] [data-shake-frame] {
+  will-change: transform, opacity;
+  transform: translateZ(0);
+}
 .roll-stage-dialog .roll-card-tilt {
   transform: rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg));
-  transition: transform 140ms ease-out;
+  will-change: transform;
+}
+.roll-stage-dialog [data-flip] {
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  transform-style: preserve-3d;
+}
+.roll-stage-dialog [data-card-front],
+.roll-stage-dialog [data-card-back] {
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
 }
 .roll-stage-dialog [data-holo] {
   background-size: 260% 260%;
   background-position: var(--holo-x, 50%) var(--holo-y, 50%);
   mix-blend-mode: color-dodge;
+  will-change: opacity;
 }
 `;
 
@@ -168,7 +205,54 @@ function createParticles(count: number, seed: string) {
 function particleCountFor(rarity: RollRarity, slots: number, mobile: boolean) {
   const base = DEFAULT_ROLL_ANIM_CONFIG.particleSlots;
   const scale = base > 0 ? slots / base : 1;
-  return Math.max(12, Math.min(mobile ? 120 : 180, Math.round(TIER_PARTICLES[rarity] * scale)));
+  const maxCap = mobile ? 48 : 180;
+  return Math.max(12, Math.min(maxCap, Math.round(TIER_PARTICLES[rarity] * (mobile ? 0.45 : scale))));
+}
+
+function GalacticStarfield({ seed }: { seed: string }) {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+
+  useEffect(() => {
+    const el = canvasRef.current;
+    if (!el) return;
+    const isMobile = window.matchMedia("(max-width: 640px), (pointer: coarse)").matches;
+    const dpr = isMobile ? 1 : Math.min(window.devicePixelRatio || 1, 1.5);
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+    el.width = Math.round(width * dpr);
+    el.height = Math.round(height * dpr);
+    const ctx = el.getContext("2d");
+    if (!ctx) return;
+    ctx.scale(dpr, dpr);
+    let h = 2166136261;
+    for (let ci = 0; ci < seed.length; ci++) h = Math.imul(h ^ seed.charCodeAt(ci), 16777619);
+    const count = isMobile ? 70 : 180;
+    const palette = ["#C084FC", "#F472B6", "#38BDF8", "#FFFFFF"];
+    for (let i = 0; i < count; i++) {
+      h = Math.imul(h ^ (h >>> 13), 1274126177);
+      const u = (h >>> 0) / 4294967295;
+      h = Math.imul(h ^ (h >>> 13), 1274126177);
+      const v = (h >>> 0) / 4294967295;
+      h = Math.imul(h ^ (h >>> 13), 1274126177);
+      const s = 0.5 + ((h >>> 0) / 4294967295) * (isMobile ? 1.5 : 2);
+      const color = palette[i % palette.length]!;
+      ctx.globalAlpha = 0.3 + ((h >>> 0) / 4294967295) * 0.65;
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.arc(u * width, v * height, s, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  }, [seed]);
+
+  return (
+    <canvas
+      ref={canvasRef}
+      data-starfield
+      aria-hidden="true"
+      className="pointer-events-none fixed inset-0 z-[1] h-full w-full opacity-65"
+    />
+  );
 }
 
 function clamp01(value: number) {
@@ -405,7 +489,7 @@ export function RollStage({ pull, onClose, preview = false, config }: RollStageP
 
   useEffect(() => {
     if (!displayPull) return;
-    const mobile = window.matchMedia("(max-width: 480px)").matches;
+    const mobile = window.matchMedia("(max-width: 640px), (pointer: coarse)").matches;
     particles.current = createParticles(
       particleCountFor(rarityOf(displayPull), cfgRef.current.particleSlots, mobile),
       displayPull.id,
@@ -557,7 +641,7 @@ export function RollStage({ pull, onClose, preview = false, config }: RollStageP
     const runeOrbit = one<SVGElement>("[data-rune-orbit]");
     const loops: Killable[] = [];
     const stopAtImpact: Killable[] = [];
-    const isMobile = window.matchMedia("(max-width: 480px)").matches;
+    const isMobile = window.matchMedia("(max-width: 640px), (pointer: coarse)").matches;
     // ponytail: o brilho de raridade só entra depois que o giro central acaba de fato.
     // O max espelha a duração real do tween do cristal (Math.max(0.75, ...)), senão
     // crystalSpinDuration curto deixa a troca de cor atropelar o giro de novo.
@@ -599,7 +683,7 @@ export function RollStage({ pull, onClose, preview = false, config }: RollStageP
       }
       cleared = false;
       const rect = rootRect;
-      const dpr = Math.min(window.devicePixelRatio || 1, isMobile ? 1 : 2);
+      const dpr = isMobile ? 1 : Math.min(window.devicePixelRatio || 1, 1.5);
       const width = Math.max(1, Math.round(rect.width));
       const height = Math.max(1, Math.round(rect.height));
       if (canvas.width !== Math.round(width * dpr) || canvas.height !== Math.round(height * dpr)) {
@@ -614,9 +698,10 @@ export function RollStage({ pull, onClose, preview = false, config }: RollStageP
       const list = particles.current;
       const now = clock();
       if (mode === "gather") {
-        const visible = Math.min(list.length, isMobile ? 60 : 90);
+        const visible = Math.min(list.length, isMobile ? 36 : 90);
         const color = teaseColor.current;
-        for (let i = 0; i < visible; i += 1) {
+        context.fillStyle = "#F1F5F9";
+        for (let i = 1; i < visible; i += 3) {
           const particle = list[i]!;
           const progress = clamp01(now / invocationEnd - particle.delay);
           const eased = progress * progress;
@@ -626,30 +711,48 @@ export function RollStage({ pull, onClose, preview = false, config }: RollStageP
             : orbitMin + Math.sin(now * 3 + i) * 3;
           const angle = particle.angle + now * (0.6 + (i % 5) * 0.2) + progress * 1.4;
           context.globalAlpha = 0.25 + 0.55 * eased;
-          context.fillStyle = i % 3 === 1 ? "#F1F5F9" : color;
+          context.fillRect(cx + Math.cos(angle) * radius, cy + Math.sin(angle) * radius, particle.size, particle.size);
+        }
+        context.fillStyle = color;
+        for (let i = 0; i < visible; i += 1) {
+          if (i % 3 === 1) continue;
+          const particle = list[i]!;
+          const progress = clamp01(now / invocationEnd - particle.delay);
+          const eased = progress * progress;
+          const orbitMin = 16 + (i % 6) * 6;
+          const radius = progress < 1
+            ? particle.distance * (1 - eased) + orbitMin
+            : orbitMin + Math.sin(now * 3 + i) * 3;
+          const angle = particle.angle + now * (0.6 + (i % 5) * 0.2) + progress * 1.4;
+          context.globalAlpha = 0.25 + 0.55 * eased;
           context.fillRect(cx + Math.cos(angle) * radius, cy + Math.sin(angle) * radius, particle.size, particle.size);
         }
       } else {
         const duration = Math.max(0.45, cfg.particleDuration);
         const reach = 1 + GACHA_TIERS.indexOf(rarityRef.current) * 0.05;
         context.globalCompositeOperation = "lighter";
-        for (let i = 0; i < list.length; i += 1) {
-          const particle = list[i]!;
-          const progress = clamp01((now - burstStart.current - particle.delay * 0.3) / duration);
-          if (progress <= 0) continue;
-          const eased = 1 - (1 - progress) ** 3;
-          const tail = 1 - (1 - Math.max(0, progress - 0.06)) ** 3;
-          const rx = particle.distance * (cfg.particleReach.x / 180) * reach;
-          const ry = particle.distance * (cfg.particleReach.y / 230) * reach;
-          const cos = Math.cos(particle.angle);
-          const sin = Math.sin(particle.angle);
-          context.globalAlpha = (1 - progress) * 0.95;
-          context.strokeStyle = burstPalette[i % burstPalette.length]!;
-          context.lineWidth = particle.size;
+        const pLen = burstPalette.length;
+        for (let pIdx = 0; pIdx < pLen; pIdx += 1) {
+          const color = burstPalette[pIdx]!;
+          context.strokeStyle = color;
           context.beginPath();
-          context.moveTo(cx + cos * rx * tail, cy + sin * ry * tail);
-          context.lineTo(cx + cos * rx * eased, cy + sin * ry * eased);
-          context.stroke();
+          let drawn = false;
+          for (let i = pIdx; i < list.length; i += pLen) {
+            const particle = list[i]!;
+            const progress = clamp01((now - burstStart.current - particle.delay * 0.3) / duration);
+            if (progress <= 0 || progress >= 1) continue;
+            const eased = 1 - (1 - progress) ** 3;
+            const tail = 1 - (1 - Math.max(0, progress - 0.06)) ** 3;
+            const rx = particle.distance * (cfg.particleReach.x / 180) * reach;
+            const ry = particle.distance * (cfg.particleReach.y / 230) * reach;
+            const cos = Math.cos(particle.angle);
+            const sin = Math.sin(particle.angle);
+            context.lineWidth = particle.size;
+            context.moveTo(cx + cos * rx * tail, cy + sin * ry * tail);
+            context.lineTo(cx + cos * rx * eased, cy + sin * ry * eased);
+            drawn = true;
+          }
+          if (drawn) context.stroke();
         }
         context.globalCompositeOperation = "source-over";
       }
@@ -802,9 +905,10 @@ export function RollStage({ pull, onClose, preview = false, config }: RollStageP
       if (tint && epicUp) resultTl.to(tint, { opacity: 0.55, duration: lock, ease: "power1.in" }, 0);
       if (stage && epicUp) resultTl.to(stage, { scale: 1.05, duration: impactAt, ease: "power1.inOut" }, 0);
 
-      /* Tremor crescente (±1 a ±3 px) */
+      /* Tremor crescente (±1 a ±5 px) */
       const maxAmp = TIER_TREMBLE[resultRarity];
-      if (stage && !compact && maxAmp > 0) {
+      const shakeTarget = frame ?? stage;
+      if (shakeTarget && !compact && maxAmp > 0) {
         const tremor = { p: 0 };
         resultTl.to(tremor, {
           p: 1,
@@ -812,10 +916,19 @@ export function RollStage({ pull, onClose, preview = false, config }: RollStageP
           ease: "power2.in",
           onUpdate: () => {
             const amp = 1 + (maxAmp - 1) * tremor.p;
-            gsap.set(stage, { x: (Math.random() * 2 - 1) * amp, y: (Math.random() * 2 - 1) * amp });
+            gsap.set(shakeTarget, { x: (Math.random() * 2 - 1) * amp, y: (Math.random() * 2 - 1) * amp });
           },
         }, 0);
-        resultTl.set(stage, { x: 0, y: 0 }, impactAt);
+        resultTl.set(shakeTarget, { x: 0, y: 0 }, impactAt);
+      }
+
+      /* Desaceleração (Hang) antes do impacto para faixas altas */
+      const hangDur = TIER_HANG[resultRarity];
+      if (hangDur > 0 && spins.length) {
+        const hangStart = impactAt - hangDur;
+        spins.forEach((spin) => {
+          resultTl.to(spin, { timeScale: 0.45, duration: hangDur, ease: "power2.in" }, hangStart);
+        });
       }
 
       /* Título da raridade + god rays (lendária ou acima) */
@@ -932,6 +1045,15 @@ export function RollStage({ pull, onClose, preview = false, config }: RollStageP
         [1, -1, 0.7, -0.6, 0.3, 0].forEach((mult, index) => {
           resultTl.to(frame, { x: mult * shake, y: -mult * shake * 0.7, duration: 0.045, ease: "none" }, impactAt + index * 0.045);
         });
+        const bursts = TIER_SHAKE_BURSTS[resultRarity];
+        if (bursts && bursts.length > 0) {
+          const burstStartAt = impactAt + 6 * 0.045 + 0.03;
+          bursts.forEach((mult, bIndex) => {
+            const bAt = burstStartAt + bIndex * 0.06;
+            resultTl.to(frame, { x: mult * shake, y: -mult * shake * 0.6, duration: 0.03, ease: "none" }, bAt);
+            resultTl.to(frame, { x: 0, y: 0, duration: 0.03, ease: "power1.out" }, bAt + 0.03);
+          });
+        }
       }
 
       /* Revelação */
@@ -942,7 +1064,7 @@ export function RollStage({ pull, onClose, preview = false, config }: RollStageP
           .to(flip, { scale: 1.1, duration: flipDur * 0.4, ease: "power2.out" }, revealAt)
           .to(flip, { scale: 1, duration: flipDur * 0.6, ease: "power2.inOut" }, revealAt + flipDur * 0.4);
       }
-      if (cardArt) resultTl.set(cardArt, { opacity: 1 }, cardRevealedAt);
+      if (cardArt) resultTl.set(cardArt, { opacity: 1 }, revealAt);
       if (sweep) {
         const sweepDur = Math.max(0.5, cfg.sweepDuration);
         const sweepAt = cardArtReadyAt;
@@ -1056,8 +1178,10 @@ export function RollStage({ pull, onClose, preview = false, config }: RollStageP
     if (crystal) {
       tl.to(crystal, { rotation: 720, scale: 0.88, duration: Math.max(0.75, cfg.crystalSpinDuration), ease: "power2.inOut" }, cfg.crystalSpinAt);
     }
+    const labelStart = 0.2;
+    const labelStep = Math.max(0.12, (invocationEnd - labelStart) / 3);
     if (label) {
-      tl.fromTo(label, { letterSpacing: "0.02em" }, { letterSpacing: "0.16em", duration: 0.6, repeat: 2, yoyo: true, ease: "sine.inOut" }, 0.2);
+      tl.fromTo(label, { letterSpacing: "0.02em" }, { letterSpacing: "0.16em", duration: labelStep, repeat: 2, yoyo: true, ease: "sine.inOut" }, labelStart);
     }
     if (spins.length) tl.to(spins, { timeScale: 2.6, duration: Math.max(0.5, invocationEnd - 0.15), ease: "power2.in" }, 0.15);
     if (beat) {
@@ -1138,13 +1262,14 @@ export function RollStage({ pull, onClose, preview = false, config }: RollStageP
           style={{
             left: "50%",
             top: "50%",
-            width: "160vmax",
-            height: "160vmax",
+            width: "min(120vmax, 760px)",
+            height: "min(120vmax, 760px)",
             opacity: 0,
             mixBlendMode: "screen",
             backgroundImage: `repeating-conic-gradient(from 0deg, ${accent}59 0deg 3deg, transparent 3deg 12deg)`,
             maskImage: "radial-gradient(closest-side, #000 0%, rgba(0,0,0,0.7) 40%, transparent 100%)",
             WebkitMaskImage: "radial-gradient(closest-side, #000 0%, rgba(0,0,0,0.7) 40%, transparent 100%)",
+            contain: "layout paint",
           }}
         />
       )}
@@ -1156,58 +1281,19 @@ export function RollStage({ pull, onClose, preview = false, config }: RollStageP
           style={{
             left: "50%",
             top: "50%",
-            width: "140vmax",
-            height: "140vmax",
+            width: "min(110vmax, 680px)",
+            height: "min(110vmax, 680px)",
             opacity: 0,
             mixBlendMode: "screen",
             // Raios mais espaçados que o principal, ângulo diferente para contrastar.
             backgroundImage: `repeating-conic-gradient(from 0deg, ${RARITY_COLORS.MITICA}40 0deg 2deg, transparent 2deg 18deg)`,
             maskImage: "radial-gradient(closest-side, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.3) 35%, transparent 100%)",
             WebkitMaskImage: "radial-gradient(closest-side, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.3) 35%, transparent 100%)",
+            contain: "layout paint",
           }}
         />
       )}
-      {showGalacticStars && (
-        <canvas
-          data-starfield
-          aria-hidden="true"
-          className="pointer-events-none fixed inset-0 z-[1] h-full w-full"
-          style={{ opacity: 0.65 }}
-          ref={(el) => {
-            if (!el) return;
-            // Pintura única de estrelas: pontos aleatórios distribuídos pelo canvas.
-            // Usa seed determinística do pull.id para não piscarem entre renders.
-            const dpr = Math.min(window.devicePixelRatio || 1, 2);
-            el.width = Math.round(window.innerWidth * dpr);
-            el.height = Math.round(window.innerHeight * dpr);
-            const ctx = el.getContext("2d");
-            if (!ctx) return;
-            ctx.scale(dpr, dpr);
-            const seed = displayPull?.id ?? "galaxy";
-            let h = 2166136261;
-            for (let ci = 0; ci < seed.length; ci++) h = Math.imul(h ^ seed.charCodeAt(ci), 16777619);
-            const count = 180;
-            const w = window.innerWidth;
-            const ht = window.innerHeight;
-            for (let i = 0; i < count; i++) {
-              h = Math.imul(h ^ (h >>> 13), 1274126177);
-              const u = (h >>> 0) / 4294967295;
-              h = Math.imul(h ^ (h >>> 13), 1274126177);
-              const v = (h >>> 0) / 4294967295;
-              h = Math.imul(h ^ (h >>> 13), 1274126177);
-              const s = 0.5 + (h >>> 0) / 4294967295 * 2;
-              const palette = ["#C084FC", "#F472B6", "#38BDF8", "#FFFFFF"];
-              const color = palette[i % palette.length]!;
-              ctx.globalAlpha = 0.3 + ((h >>> 0) / 4294967295) * 0.65;
-              ctx.fillStyle = color;
-              ctx.beginPath();
-              ctx.arc(u * w, v * ht, s, 0, Math.PI * 2);
-              ctx.fill();
-            }
-            ctx.globalAlpha = 1;
-          }}
-        />
-      )}
+      {showGalacticStars && <GalacticStarfield seed={displayPull?.id ?? "galaxy"} />}
       {showEpicRays && (
         <svg aria-hidden="true" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice" className="pointer-events-none fixed inset-0 z-[2] h-full w-full">
           <g data-rays-pos transform="translate(50 50)">
@@ -1267,20 +1353,27 @@ export function RollStage({ pull, onClose, preview = false, config }: RollStageP
             applyTilt(0, 0);
           }}
         >
-          <div data-glow aria-hidden="true" className="absolute inset-[-10%] rounded-full bg-current opacity-20 blur-3xl" />
+          <div
+            data-glow
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-[-15%] rounded-full opacity-25"
+            style={{
+              background: "radial-gradient(circle at center, currentColor 0%, currentColor 25%, transparent 70%)",
+            }}
+          />
           {fxLive && (
             <svg data-orbit-svg aria-hidden="true" viewBox="0 0 400 520" className="pointer-events-none absolute inset-[-10%] h-[120%] w-[120%] overflow-visible">
-              <defs>
-                <filter id={`${filterId}-glow`} x="-60%" y="-60%" width="220%" height="220%">
-                  <feGaussianBlur stdDeviation="5" result="blur" />
-                  <feColorMatrix in="blur" type="matrix" values="1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 0 1.8 0" result="colored" />
-                  <feMerge><feMergeNode in="colored" /><feMergeNode in="SourceGraphic" /></feMerge>
-                </filter>
-              </defs>
-              <g data-orbit-outer fill="none" stroke="currentColor" strokeWidth="1.1" opacity="0.6" filter={`url(#${filterId}-glow)`}>
-                <circle cx={CX} cy={CY} r="220" strokeDasharray="2 9" />
-                <circle cx={CX} cy={CY} r="208" strokeWidth="0.7" opacity="0.7" />
-                <path d={SIGIL.ticks} strokeWidth="0.9" />
+              <g data-orbit-outer fill="none" stroke="currentColor">
+                <g opacity="0.22" strokeWidth="3.4">
+                  <circle cx={CX} cy={CY} r="220" strokeDasharray="2 9" />
+                  <circle cx={CX} cy={CY} r="208" strokeWidth="2.4" />
+                  <path d={SIGIL.ticks} strokeWidth="2.6" />
+                </g>
+                <g strokeWidth="1.1" opacity="0.85">
+                  <circle cx={CX} cy={CY} r="220" strokeDasharray="2 9" />
+                  <circle cx={CX} cy={CY} r="208" strokeWidth="0.7" opacity="0.7" />
+                  <path d={SIGIL.ticks} strokeWidth="0.9" />
+                </g>
               </g>
               <g data-orbit-inner fill="none" stroke="currentColor" strokeWidth="1.3" opacity="0.75">
                 <circle cx={CX} cy={CY} r="176" strokeDasharray="56 18 4 18" />
@@ -1300,11 +1393,6 @@ export function RollStage({ pull, onClose, preview = false, config }: RollStageP
           {fxLive && (
             <svg data-fx-svg aria-hidden="true" viewBox="0 0 400 520" className="pointer-events-none absolute inset-[-10%] z-0 h-[120%] w-[120%] overflow-visible">
               <defs>
-                <filter id={`${filterId}-glow-fx`} x="-60%" y="-60%" width="220%" height="220%">
-                  <feGaussianBlur stdDeviation="5" result="blur" />
-                  <feColorMatrix in="blur" type="matrix" values="1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 0 1.8 0" result="colored" />
-                  <feMerge><feMergeNode in="colored" /><feMergeNode in="SourceGraphic" /></feMerge>
-                </filter>
                 {GACHA_TIERS.map((tier) => (
                   <radialGradient key={tier} id={`${filterId}-aura-${tier}`}>
                     <stop offset="0%" stopColor={RARITY_COLORS[tier]} stopOpacity="0.6" />
@@ -1316,7 +1404,9 @@ export function RollStage({ pull, onClose, preview = false, config }: RollStageP
               {GACHA_TIERS.map((tier) => (
                 <g key={tier} data-tier-aura={tier} style={{ opacity: 0 }}>
                   <circle cx={CX} cy={CY} r="190" fill={`url(#${filterId}-aura-${tier})`} />
-                  <circle cx={CX} cy={CY} r="100" fill="none" stroke={RARITY_COLORS[tier]} strokeWidth="6" filter={`url(#${filterId}-glow-fx)`} />
+                  <circle cx={CX} cy={CY} r="100" fill="none" stroke={RARITY_COLORS[tier]} strokeWidth="12" opacity="0.22" />
+                  <circle cx={CX} cy={CY} r="100" fill="none" stroke={RARITY_COLORS[tier]} strokeWidth="4" opacity="0.9" />
+                  <circle cx={CX} cy={CY} r="100" fill="none" stroke="#FFFFFF" strokeWidth="1.2" opacity="0.65" />
                   <circle cx={CX} cy={CY} r="132" fill="none" stroke={RARITY_COLORS[tier]} strokeWidth="1.4" strokeDasharray="3 7" />
                 </g>
               ))}
@@ -1388,7 +1478,7 @@ export function RollStage({ pull, onClose, preview = false, config }: RollStageP
                     data-card-art
                     data-art-ready={revealed ? "true" : undefined}
                     className="absolute inset-0"
-                    style={{ opacity: flat ? (revealed ? 1 : 0) : 0, transition: "none" }}
+                    style={{ opacity: flat ? (revealed ? 1 : 0) : 1, transition: "none" }}
                   >
                     <GachaCard pull={displayPull} preview={preview} showInfo={false} />
                     {holoStrength > 0 && (
