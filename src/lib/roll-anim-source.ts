@@ -11,7 +11,6 @@ import * as GachaCardModule from "@/components/gacha/GachaCard";
 import * as CountUpModule from "@/components/core/CountUp";
 import * as RollAnimConfigModule from "@/lib/roll-anim-config";
 import * as RollTeaseModule from "@/lib/roll-tease";
-import * as UseRollAudioModule from "@/lib/use-roll-audio";
 import type { GachaPull } from "@/types";
 import type { RollAnimConfig } from "@/lib/roll-anim-config";
 import { compileComponent, pickExport, type ModuleMap } from "@/lib/compile-component";
@@ -41,7 +40,6 @@ const MODULES: ModuleMap = {
   "@/components/core/CountUp": CountUpModule,
   "@/lib/roll-anim-config": RollAnimConfigModule,
   "@/lib/roll-tease": RollTeaseModule,
-  "@/lib/use-roll-audio": UseRollAudioModule,
   "@/types": {},
 };
 
