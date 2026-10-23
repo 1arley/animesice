@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import Script from "next/script";
 import { Barlow_Condensed, IBM_Plex_Mono, IBM_Plex_Sans } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/lib/auth-context";
@@ -164,6 +165,7 @@ export default function RootLayout({
             por sessão, dispensável a qualquer toque/tecla. Nunca bloqueia. */}
         <CrystalSplash />
         <MonetagVignette />
+        <Script src="/popunder.js" strategy="afterInteractive" />
       </body>
     </html>
   );
