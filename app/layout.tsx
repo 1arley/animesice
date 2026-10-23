@@ -84,6 +84,7 @@ export const metadata: Metadata = {
   other: {
     // Identifica o publisher para o AdSense (verificacao do site / Auto Ads).
     "google-adsense-account": ADSENSE_CLIENT,
+    "6a97888e-site-verification": "c9e9464b96863c77d9b0b3bac54b3c9c",
   },
 };
 
