@@ -34,6 +34,7 @@ const items = {
   },
   shop: { href: "/gacha/loja", label: "Loja", icon: "shop" },
   crystals: { href: "/gacha/cristais", label: "Cristais" },
+  inventory: { href: "/gacha/inventário", label: "Inventário" },
 } as const;
 
 const groups = [
@@ -44,7 +45,7 @@ const groups = [
   },
   {
     label: "Economia",
-    items: [items.market, items.nightMarket, items.shop, items.crystals],
+    items: [items.market, items.nightMarket, items.shop, items.inventory, items.crystals],
   },
 ] as const;
 

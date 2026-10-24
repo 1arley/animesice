@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { api } from "@/lib/api";
+import { api, ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import {
   GachaCard,
@@ -10,7 +10,10 @@ import {
   gachaConditionLabel,
 } from "@/components/gacha/GachaCard";
 import { CardPreview } from "@/components/gacha/CardPreview";
-import { GachaCardGridSkeleton, GachaPageSkeleton } from "@/components/gacha/GachaPageSkeleton";
+import {
+  GachaCardGridSkeleton,
+  GachaPageSkeleton,
+} from "@/components/gacha/GachaPageSkeleton";
 import { CardsFilterBar } from "@/components/gacha/CardsFilterBar";
 import { PaginationControls } from "@/components/ui/PaginationControls";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -19,6 +22,7 @@ import { useToast } from "@/components/common/ToastProvider";
 import type {
   GachaCollectionProgress,
   GachaFeatured,
+  GachaEconomyInventory,
   GachaPull,
 } from "@/types";
 
@@ -36,11 +40,25 @@ export default function GachaCollectionPage() {
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [pages, setPages] = useState(1);
+  const collectionLoadGenerationRef = useRef(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [featuredError, setFeaturedError] = useState("");
   const [progressError, setProgressError] = useState("");
   const [rerolling, setRerolling] = useState(false);
+  const [rerollReconciling, setRerollReconciling] = useState(false);
+  const rerollBusy = useRef(false);
+  const [rerollUncertainCardId, setRerollUncertainCardId] = useState<
+    string | null
+  >(null);
+  const [rerollUncertainLegacyCardId, setRerollUncertainLegacyCardId] =
+    useState<string | null>(null);
+  const [rerollUncertainReconciledId, setRerollUncertainReconciledId] =
+    useState<string | null>(null);
+  const previewIdRef = useRef<string | null>(null);
+  const previewGenerationRef = useRef(0);
+  const previewUserIdRef = useRef<string | null>(null);
+  const [economy, setEconomy] = useState<GachaEconomyInventory | null>(null);
   const [listing, setListing] = useState(false);
   const [burning, setBurning] = useState(false);
   const [applyingRanking, setApplyingRanking] = useState(false);
@@ -51,6 +69,8 @@ export default function GachaCollectionPage() {
     pull: GachaPull;
     payout: number;
   } | null>(null);
+  const previewUserId = user?.id;
+  const previewCardId = preview?.id;
 
   // Ref para o topo da grade — usado para rolar quando a página muda.
   const gridTopRef = useRef<HTMLDivElement>(null);
@@ -64,6 +84,7 @@ export default function GachaCollectionPage() {
   useEffect(() => {
     if (!user) return;
     let cancelled = false;
+    const generation = ++collectionLoadGenerationRef.current;
     const load = async () => {
       setLoading(true);
       setError("");
@@ -76,19 +97,24 @@ export default function GachaCollectionPage() {
           rarity,
           foil,
         );
-        if (cancelled) return;
+        if (cancelled || generation !== collectionLoadGenerationRef.current)
+          return;
         setItems(collection.data);
         setTotal(collection.meta.total);
         setPages(collection.meta.totalPages);
       } catch {
-        if (!cancelled) setError("Não foi possível carregar sua coleção.");
+        if (!cancelled && generation === collectionLoadGenerationRef.current)
+          setError("Não foi possível carregar sua coleção.");
       } finally {
-        if (!cancelled) setLoading(false);
+        if (!cancelled && generation === collectionLoadGenerationRef.current)
+          setLoading(false);
       }
     };
     void load();
     return () => {
       cancelled = true;
+      if (generation === collectionLoadGenerationRef.current)
+        collectionLoadGenerationRef.current += 1;
     };
   }, [user, page, sort, rarity, foil]);
 
@@ -112,6 +138,50 @@ export default function GachaCollectionPage() {
       cancelled = true;
     };
   }, [user, toast]);
+
+  useEffect(() => {
+    if (!user) return;
+    void api
+      .gachaEconomyInventory()
+      .then(setEconomy)
+      .catch(() => setEconomy(null));
+  }, [user]);
+
+  useEffect(() => {
+    setRerollConfirm(false);
+    previewGenerationRef.current += 1;
+    previewIdRef.current = previewCardId ?? null;
+    previewUserIdRef.current = previewUserId ?? null;
+    setRerollUncertainReconciledId(null);
+    if (!previewUserId || !previewCardId) {
+      setRerollUncertainCardId(null);
+      setRerollUncertainLegacyCardId(null);
+      return;
+    }
+    try {
+      const raw = localStorage.getItem(
+        `animesice:gacha-reroll-uncertain:${previewUserId}:${previewCardId}`,
+      );
+      const pending = raw !== null;
+      let legacy = pending;
+      if (raw) {
+        try {
+          const operation = JSON.parse(raw) as Record<string, unknown>;
+          legacy =
+            typeof operation.operationId !== "string" ||
+            typeof operation.useProtection !== "boolean";
+        } catch {
+          legacy = true;
+        }
+      }
+      setRerollUncertainCardId(pending ? previewCardId : null);
+      setRerollUncertainLegacyCardId(legacy ? previewCardId : null);
+    } catch {
+      setRerollUncertainCardId(null);
+      setRerollUncertainLegacyCardId(null);
+      setRerollUncertainReconciledId(null);
+    }
+  }, [previewUserId, previewCardId]);
 
   useEffect(() => {
     if (!user) return;
@@ -165,23 +235,310 @@ export default function GachaCollectionPage() {
     }
   }
 
-  async function handleReroll() {
-    if (!preview || rerolling) return;
-    const before = `${preview.conditionLabel ?? gachaConditionLabel(preview.condition)}·${preview.foil}`;
-    setRerolling(true);
+  async function reconcileRerollState(cardId: string) {
+    if (!user) throw new Error("Entre novamente para atualizar a carta.");
+    const userId = user.id;
+    const generation = previewGenerationRef.current;
+    const queryGeneration = collectionLoadGenerationRef.current;
+    const requestPage = page;
+    const requestSort = sort;
+    const requestRarity = rarity;
+    const requestFoil = foil;
+    const [currentEconomy, currentCardResponse] = await Promise.all([
+      api.gachaEconomyInventory(),
+      api.gachaOwnedCard(cardId),
+    ]);
+    if (
+      generation !== previewGenerationRef.current ||
+      previewIdRef.current !== cardId ||
+      previewUserIdRef.current !== userId ||
+      queryGeneration !== collectionLoadGenerationRef.current
+    )
+      return null;
+    setLoading(true);
+    let visiblePage: Awaited<ReturnType<typeof api.gachaCollection>>;
     try {
-      const updated = await api.gachaReroll({ userCardId: preview.id });
-      setPreview(updated);
-      setItems((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
-      setRerollConfirm(false);
-      const after = `${updated.conditionLabel ?? gachaConditionLabel(updated.condition)}·${updated.foil}`;
-      toast(`Reroll: ${before} → ${after}.`, "success");
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Erro ao rerrollar a carta.",
+      visiblePage = await api.gachaCollection(
+        userId,
+        requestPage,
+        24,
+        requestSort,
+        requestRarity,
+        requestFoil,
       );
     } finally {
+      if (queryGeneration === collectionLoadGenerationRef.current)
+        setLoading(false);
+    }
+    const currentCard = currentCardResponse.card;
+    if (
+      generation !== previewGenerationRef.current ||
+      previewIdRef.current !== cardId ||
+      previewUserIdRef.current !== userId ||
+      queryGeneration !== collectionLoadGenerationRef.current
+    )
+      return null;
+    collectionLoadGenerationRef.current += 1;
+    return { currentEconomy, currentCard, visiblePage };
+  }
+
+  async function handleReroll(
+    useProtection = false,
+    operationId = crypto.randomUUID(),
+    retryUncertain = false,
+  ) {
+    if (
+      !preview ||
+      rerollBusy.current ||
+      (rerollUncertainCardId === preview.id && !retryUncertain)
+    )
+      return;
+    const card = preview;
+    const storageKey = `animesice:gacha-reroll-uncertain:${user?.id}:${card.id}`;
+    try {
+      if (!retryUncertain && localStorage.getItem(storageKey) != null) {
+        setRerollUncertainCardId(card.id);
+        setError(
+          "Este reroll ainda precisa ser conferido. Atualize carta e saldo antes de tentar novamente.",
+        );
+        return;
+      }
+      localStorage.setItem(
+        storageKey,
+        JSON.stringify({ operationId, useProtection }),
+      );
+    } catch {
+      setError(
+        "Não foi possível salvar a tentativa com segurança. Ative o armazenamento do navegador e tente novamente.",
+      );
+      return;
+    }
+    rerollBusy.current = true;
+    const before = `${card.conditionLabel ?? gachaConditionLabel(card.condition)}·${card.foil}`;
+    const generation = previewGenerationRef.current;
+    const requestUserId = user?.id;
+    setRerolling(true);
+    try {
+      await api.gachaReroll({
+        userCardId: card.id,
+        useProtection,
+        operationId,
+      });
+      if (
+        generation !== previewGenerationRef.current ||
+        previewUserIdRef.current !== requestUserId
+      )
+        return;
+      let current: Awaited<ReturnType<typeof reconcileRerollState>>;
+      try {
+        current = await reconcileRerollState(card.id);
+      } catch {
+        if (
+          generation !== previewGenerationRef.current ||
+          previewUserIdRef.current !== requestUserId
+        )
+          return;
+        setRerollUncertainCardId(card.id);
+        setRerollUncertainReconciledId(null);
+        setError(
+          "Reroll confirmado, mas não foi possível sincronizar. Repita a mesma operação para conferir sem nova cobrança.",
+        );
+        return;
+      }
+      if (!current) {
+        if (
+          generation === previewGenerationRef.current &&
+          previewIdRef.current === card.id &&
+          previewUserIdRef.current === requestUserId
+        ) {
+          setRerollUncertainCardId(card.id);
+          setRerollUncertainReconciledId(null);
+          setError(
+            "Reroll confirmado, mas a coleção mudou durante a atualização. Repita a mesma operação para conferir sem nova cobrança.",
+          );
+        }
+        return;
+      }
+      if (!current.currentCard) {
+        try {
+          if (user) localStorage.removeItem(storageKey);
+        } catch {
+          /* Keep the lock if storage is unavailable. */
+        }
+        setRerollUncertainCardId(null);
+        setRerollUncertainLegacyCardId(null);
+        setRerollUncertainReconciledId(null);
+        setItems(
+          current.visiblePage.data.filter((item) => item.id !== card.id),
+        );
+        setTotal(current.visiblePage.meta.total);
+        setPages(current.visiblePage.meta.totalPages);
+        setPreview(null);
+        setError("Reroll confirmado; esta carta não está mais na sua coleção.");
+        return;
+      }
+      const { currentCard } = current;
+      try {
+        if (user) localStorage.removeItem(storageKey);
+      } catch {
+        /* Storage is optional. */
+      }
+      setRerollUncertainCardId(null);
+      setRerollUncertainReconciledId(null);
+      setEconomy(current.currentEconomy);
+      setPreview(currentCard);
+      setItems(
+        current.visiblePage.data.map((item) =>
+          item.id === card.id ? currentCard : item,
+        ),
+      );
+      setRerollConfirm(false);
+      const after = `${currentCard.conditionLabel ?? gachaConditionLabel(currentCard.condition)}·${currentCard.foil}`;
+      toast(`Reroll: ${before} → ${after}.`, "success");
+    } catch (err) {
+      if (!(err instanceof ApiError) || ![400, 404].includes(err.statusCode)) {
+        try {
+          if (user)
+            localStorage.setItem(
+              storageKey,
+              JSON.stringify({ operationId, useProtection }),
+            );
+        } catch {
+          /* Keep the lock for this session. */
+        }
+        if (
+          generation === previewGenerationRef.current &&
+          previewUserIdRef.current === requestUserId
+        ) {
+          setRerollUncertainCardId(card.id);
+          setRerollUncertainReconciledId(null);
+          setRerollConfirm(false);
+          setError(
+            "Resultado incerto. Atualize saldo e carta antes de liberar outra tentativa.",
+          );
+        }
+      } else {
+        try {
+          if (user) localStorage.removeItem(storageKey);
+        } catch {
+          /* Storage is optional. */
+        }
+        if (
+          generation !== previewGenerationRef.current ||
+          previewUserIdRef.current !== requestUserId
+        )
+          return;
+        setRerollUncertainCardId(null);
+        setRerollUncertainLegacyCardId(null);
+        setRerollUncertainReconciledId(null);
+        setRerollConfirm(false);
+        setError(err.message || "Erro ao rerrollar a carta.");
+      }
+    } finally {
       setRerolling(false);
+      rerollBusy.current = false;
+    }
+  }
+
+  function retryRerollOperation(cardId: string) {
+    if (!user || preview?.id !== cardId || preview.user.id !== user.id) return;
+    try {
+      const raw = localStorage.getItem(
+        `animesice:gacha-reroll-uncertain:${user.id}:${cardId}`,
+      );
+      if (!raw) return;
+      const pending = JSON.parse(raw) as {
+        operationId?: unknown;
+        useProtection?: unknown;
+      };
+      if (
+        typeof pending.operationId !== "string" ||
+        typeof pending.useProtection !== "boolean"
+      ) {
+        setError(
+          "Esta tentativa antiga não tem chave para repetição segura. Confira o estado da carta e do saldo.",
+        );
+        return;
+      }
+      void handleReroll(pending.useProtection, pending.operationId, true);
+    } catch {
+      setError("Não foi possível recuperar a tentativa anterior do navegador.");
+    }
+  }
+
+  function releaseLegacyReroll(cardId: string) {
+    if (
+      rerollUncertainLegacyCardId !== cardId ||
+      rerollUncertainReconciledId !== cardId ||
+      !user ||
+      preview?.id !== cardId ||
+      preview.user.id !== user.id
+    )
+      return;
+    try {
+      localStorage.removeItem(
+        `animesice:gacha-reroll-uncertain:${user.id}:${cardId}`,
+      );
+    } catch {
+      setError("Não foi possível remover o bloqueio antigo do navegador.");
+      return;
+    }
+    setRerollUncertainCardId(null);
+    setRerollUncertainLegacyCardId(null);
+    setRerollUncertainReconciledId(null);
+  }
+
+  async function retryRerollReconciliation(cardId: string) {
+    if (rerollBusy.current) return;
+    rerollBusy.current = true;
+    setRerollReconciling(true);
+    const generation = previewGenerationRef.current;
+    const userId = user?.id;
+    try {
+      const current = await reconcileRerollState(cardId);
+      if (!current) return;
+      const { currentEconomy, currentCard, visiblePage } = current;
+      if (!currentCard) {
+        setItems(visiblePage.data.filter((item) => item.id !== cardId));
+        setTotal(visiblePage.meta.total);
+        setPages(visiblePage.meta.totalPages);
+        setPreview(null);
+        setRerollUncertainCardId(null);
+        setRerollUncertainLegacyCardId(null);
+        setRerollUncertainReconciledId(null);
+        try {
+          if (user)
+            localStorage.removeItem(
+              `animesice:gacha-reroll-uncertain:${user.id}:${cardId}`,
+            );
+        } catch {
+          /* Keep the lock if storage is unavailable. */
+        }
+        setError("Esta carta não está mais na sua coleção.");
+        return;
+      }
+      setEconomy(currentEconomy);
+      setItems(
+        visiblePage.data.map((item) =>
+          item.id === cardId ? currentCard : item,
+        ),
+      );
+      setPreview(currentCard);
+      setRerollUncertainReconciledId(cardId);
+      setError(
+        "Saldo e carta atualizados. Confira os valores antes de continuar.",
+      );
+    } catch {
+      if (
+        generation !== previewGenerationRef.current ||
+        previewIdRef.current !== cardId ||
+        previewUserIdRef.current !== userId
+      )
+        return;
+      setError("Não foi possível atualizar carta e saldo. Tente novamente.");
+    } finally {
+      rerollBusy.current = false;
+      setRerollReconciling(false);
     }
   }
 
@@ -241,8 +598,7 @@ export default function GachaCollectionPage() {
 
   // `useAuth` resolve /user/me no idle; sem esta guarda a página mostraria o
   // convite para entrar antes de a sessão ser lida.
-  if (authLoading)
-    return <GachaPageSkeleton kind="cards" />;
+  if (authLoading) return <GachaPageSkeleton kind="cards" />;
 
   if (!user)
     return (
@@ -259,12 +615,44 @@ export default function GachaCollectionPage() {
         <CardPreview
           pull={preview}
           onClose={() => setPreview(null)}
-          canReroll={preview.user.id === user.id}
+          canReroll={
+            preview.user.id === user.id && rerollUncertainCardId !== preview.id
+          }
           rerolling={rerolling}
+          rerollReconciling={rerollReconciling}
           onReroll={() => setRerollConfirm(true)}
           rerollConfirm={rerollConfirm}
-          onRerollConfirm={() => void handleReroll()}
+          onRerollConfirm={(useProtection) => void handleReroll(useProtection)}
           onRerollCancel={() => setRerollConfirm(false)}
+          rerollCost={
+            economy?.itemConfig?.card_floors[preview.card.rarity] == null ||
+            !economy?.itemConfig
+              ? null
+              : Math.max(
+                  1,
+                  Math.round(
+                    economy.itemConfig.card_floors[preview.card.rarity]! *
+                      economy.itemConfig.reroll_cost_pct,
+                  ),
+                )
+          }
+          protectionCount={economy?.protecao ?? 0}
+          protectionDisabledReason={
+            economy?.itemConfig?.reroll_protection_mint_block &&
+            preview.condition <= 0.07
+              ? "Proteção de reroll não pode ser usada em cartas MINT."
+              : economy?.protecao
+                ? ""
+                : "Você não tem proteção de reroll."
+          }
+          rerollUncertain={rerollUncertainCardId === preview.id}
+          rerollUncertainReconciled={rerollUncertainReconciledId === preview.id}
+          rerollUncertainLegacy={rerollUncertainLegacyCardId === preview.id}
+          onRetryRerollUncertain={() => retryRerollOperation(preview.id)}
+          onReleaseLegacyReroll={() => releaseLegacyReroll(preview.id)}
+          onReconcileRerollUncertain={() =>
+            void retryRerollReconciliation(preview.id)
+          }
           onChange={(updated) => {
             setPreview(updated);
             setItems((current) =>

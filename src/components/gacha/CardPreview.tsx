@@ -42,10 +42,20 @@ type CardPreviewProps = {
   onClose: () => void;
   canReroll?: boolean;
   rerolling?: boolean;
+  rerollReconciling?: boolean;
   onReroll?: () => void;
   rerollConfirm?: boolean;
-  onRerollConfirm?: () => void;
+  onRerollConfirm?: (useProtection: boolean) => void;
   onRerollCancel?: () => void;
+  rerollCost?: number | null;
+  protectionCount?: number;
+  protectionDisabledReason?: string;
+  rerollUncertain?: boolean;
+  rerollUncertainReconciled?: boolean;
+  rerollUncertainLegacy?: boolean;
+  onRetryRerollUncertain?: () => void;
+  onReleaseLegacyReroll?: () => void;
+  onReconcileRerollUncertain?: () => void;
   onList?: (price: number) => void;
   listing?: boolean;
   burning?: boolean;
@@ -154,10 +164,20 @@ function OwnedCardPreview({
   onClose,
   canReroll = false,
   rerolling = false,
+  rerollReconciling = false,
   onReroll,
   rerollConfirm = false,
   onRerollConfirm,
   onRerollCancel,
+  rerollCost = null,
+  protectionCount = 0,
+  protectionDisabledReason = "",
+  rerollUncertain = false,
+  rerollUncertainReconciled = false,
+  rerollUncertainLegacy = false,
+  onRetryRerollUncertain,
+  onReleaseLegacyReroll,
+  onReconcileRerollUncertain,
   onList,
   listing = false,
   burning = false,
@@ -189,7 +209,6 @@ function OwnedCardPreview({
   const destaque = highlightKey
     ? highlightKey === "DESTAQUE_CARTA"
     : cosmetics.includes("DESTAQUE_CARTA");
-  const rerollCost = Math.max(1, pull.value + Math.round(pull.value * 0.15));
   const applyCost =
     pull.rankedValue !== undefined && pull.value > pull.rankedValue
       ? Math.max(1, Math.round((pull.value - pull.rankedValue) * 0.1))
@@ -218,6 +237,10 @@ function OwnedCardPreview({
   const [skinLoading, setSkinLoading] = useState(false);
   const [skinError, setSkinError] = useState("");
   const [shareStatus, setShareStatus] = useState("");
+  const [useProtection, setUseProtection] = useState(false);
+  useEffect(() => {
+    if (!rerollConfirm) setUseProtection(false);
+  }, [rerollConfirm]);
   const [cardBacks, setCardBacks] = useState<GachaShopItem[]>([]);
   const [activeBack, setActiveBack] = useState<string | null>(
     pull.user?.gachaCardBack ?? null,
@@ -422,7 +445,9 @@ function OwnedCardPreview({
                             >
                               {originalOwnerName}
                             </UserProfilePreview>
-                          ) : originalOwnerName}
+                          ) : (
+                            originalOwnerName
+                          )}
                         </dd>
                       </div>
                       <div className="col-span-2">
@@ -712,14 +737,76 @@ function OwnedCardPreview({
           <button
             type="button"
             onClick={onReroll}
-            disabled={rerolling}
+            disabled={rerolling || rerollReconciling || rerollCost == null}
             title="Sorteia nova condition e foil para esta carta — pode piorar."
             className="btn-ghost mt-3 w-full px-4 py-3 disabled:opacity-50"
           >
-            {rerolling
-              ? "Rerrollando…"
-              : `Rerrollar condition/foil · ${rerollCost} pts`}
+            {rerollReconciling
+              ? "Sincronizando…"
+              : rerolling
+                ? "Rerrollando…"
+                : rerollCost == null
+                  ? "Cotação de reroll indisponível"
+                  : `Rerrollar condition/foil · ${rerollCost} crystals`}
           </button>
+        )}
+        {rerollUncertain && (
+          <div className="mt-3 border border-signal/50 p-3" role="status">
+            <p className="text-sm text-snow">
+              Resultado do reroll incerto.{" "}
+              {rerollUncertainLegacy
+                ? "Esta tentativa antiga não tem chave idempotente. Atualize carta e saldo antes de liberar uma nova operação."
+                : rerollUncertainReconciled
+                  ? "O saldo e a carta foram atualizados; repita a mesma operação para confirmar o resultado sem nova cobrança."
+                  : "Repita a mesma operação para confirmar o resultado sem nova cobrança."}
+            </p>
+            {rerollUncertainLegacy ? (
+              rerollUncertainReconciled ? (
+                onReleaseLegacyReroll && (
+                  <button
+                    type="button"
+                    onClick={onReleaseLegacyReroll}
+                    className="btn-ghost mt-3 min-h-11 w-full px-4"
+                  >
+                    Conferi carta e saldo; liberar nova operação
+                  </button>
+                )
+              ) : (
+                <button
+                  type="button"
+                  onClick={onReconcileRerollUncertain}
+                  className="btn-ghost mt-3 min-h-11 w-full px-4"
+                >
+                  Atualizar carta e saldo
+                </button>
+              )
+            ) : (
+              <>
+                {onRetryRerollUncertain && (
+                  <button
+                    type="button"
+                    onClick={onRetryRerollUncertain}
+                    disabled={rerolling || rerollReconciling}
+                    className="btn-ghost mt-3 min-h-11 w-full px-4"
+                  >
+                    Repetir operação anterior
+                  </button>
+                )}
+                {!rerollUncertainReconciled && (
+                  <button
+                    type="button"
+                    onClick={onReconcileRerollUncertain}
+                    disabled={rerolling || rerollReconciling}
+                    className="btn-ghost mt-3 min-h-11 w-full px-4"
+                  >
+                    {rerollReconciling
+                      ? "Atualizando…"
+                      : "Atualizar carta e saldo"}
+                  </button>
+                )}
+              </>
+            )}
+          </div>
         )}
         {canApply && onApplyRanking && (
           <button
@@ -812,12 +899,31 @@ function OwnedCardPreview({
           busyLabel="Rerrollando…"
           busy={rerolling}
           onCancel={onRerollCancel}
-          onConfirm={onRerollConfirm}
+          onConfirm={() => onRerollConfirm(useProtection)}
         >
           <p className="mt-4 text-body-sm text-mist">
-            Sorteia nova condition e foil por {rerollCost} crystals. Pode
-            piorar.
+            Sorteia nova condition e foil por{" "}
+            {rerollCost?.toLocaleString("pt-BR") ?? "—"} crystals. Pode piorar.
           </p>
+          <label className="mt-4 flex min-h-11 items-center gap-3 text-sm text-snow">
+            <input
+              type="checkbox"
+              checked={useProtection}
+              disabled={!!protectionDisabledReason || protectionCount < 1}
+              onChange={(event) => setUseProtection(event.target.checked)}
+              className="size-5 accent-sky-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-ice"
+            />
+            Usar proteção ({protectionCount} disponível)
+          </label>
+          {protectionDisabledReason && (
+            <p className="mt-1 text-sm text-mist">{protectionDisabledReason}</p>
+          )}
+          {!protectionDisabledReason && protectionCount > 0 && (
+            <p className="mt-1 text-sm text-mist">
+              Consome 1 proteção ao concluir. Se o valor sorteado não for maior,
+              sua carta atual é preservada.
+            </p>
+          )}
         </ConfirmDialog>
       )}
     </dialog>

@@ -68,6 +68,7 @@ import type {
   GachaSkin,
   GachaBoxTier,
   GachaEconomyInventory,
+  GachaItemKind,
   GachaEconomyListingItem,
   GachaEconomyOrder,
   GachaMarketOffer,
@@ -1495,7 +1496,8 @@ export const api = {
     }),
 
   // --- Gacha ---
-  gachaRollAnimation: () => request<Partial<RollAnimConfig>>("/gacha/anim-config"),
+  gachaRollAnimation: () =>
+    request<Partial<RollAnimConfig>>("/gacha/anim-config"),
 
   gachaStatus: () => request<GachaStatus>(`/gacha/status`),
 
@@ -1504,7 +1506,11 @@ export const api = {
 
   gachaShop: () => request<GachaShop>(`/gacha/shop`),
 
-  gachaReroll: (body: { userCardId: string }) =>
+  gachaReroll: (body: {
+    userCardId: string;
+    useProtection?: boolean;
+    operationId: string;
+  }) =>
     request<GachaPull>(`/gacha/reroll`, {
       method: "POST",
       body: JSON.stringify(body),
@@ -1571,6 +1577,47 @@ export const api = {
     }),
 
   gachaEconomyInventory: () => request<GachaEconomyInventory>("/gacha/economy"),
+  gachaEconomyBuyItem: (body: {
+    operationId: string;
+    kind: GachaItemKind;
+    quantity: number;
+  }) =>
+    request("/gacha/economy/items/buy", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  gachaEconomyConvertItem: (body: {
+    operationId: string;
+    kind: Exclude<GachaItemKind, "PROTECAO">;
+    quantity: number;
+  }) =>
+    request("/gacha/economy/items/convert", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  gachaEconomyCraftItem: (body: {
+    operationId: string;
+    kind: Exclude<GachaItemKind, "PROTECAO">;
+    quantity: number;
+  }) =>
+    request("/gacha/economy/items/craft", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  gachaEconomyUseItem: (body: {
+    operationId: string;
+    kind: Exclude<GachaItemKind, "PROTECAO">;
+    userCardId: string;
+  }) =>
+    request<{
+      userCardId: string;
+      condition: number;
+      conditionLabel: string;
+      value: number;
+    }>("/gacha/economy/items/use", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
   gachaEconomyDaily: () =>
     request<{ claimed: number; day: string }>("/gacha/economy/daily", {
       method: "POST",
@@ -1792,15 +1839,18 @@ export const api = {
       method: "POST",
       body: JSON.stringify(body),
     }),
-  adminUpdateSkin: (id: string, body: {
-    name?: string;
-    imageUrl?: string;
-    sourceUrl?: string | null;
-    cardId?: string | null;
-    rarity?: "COMMON" | "RARE" | "EPIC" | "LEGENDARY";
-    active?: boolean;
-    blocked?: boolean;
-  }) =>
+  adminUpdateSkin: (
+    id: string,
+    body: {
+      name?: string;
+      imageUrl?: string;
+      sourceUrl?: string | null;
+      cardId?: string | null;
+      rarity?: "COMMON" | "RARE" | "EPIC" | "LEGENDARY";
+      active?: boolean;
+      blocked?: boolean;
+    },
+  ) =>
     request<AdminGachaSkin>(`/gacha/admin/skins/${encodeURIComponent(id)}`, {
       method: "PATCH",
       body: JSON.stringify(body),
@@ -1928,6 +1978,10 @@ export const api = {
       Omit<GachaCollectionResponse, "data"> & { data: GachaPullResponse[] }
     >(
       `/gacha/collection?userId=${encodeURIComponent(userId)}&page=${page}&limit=${limit}&sort=${sort}&rarity=${rarity}&foil=${foil}`,
+    ),
+  gachaOwnedCard: (userCardId: string) =>
+    request<{ card: GachaPullResponse | null }>(
+      `/gacha/collection/${encodeURIComponent(userCardId)}`,
     ),
 
   gachaFeatured: () => request<GachaFeatured | null>(`/gacha/featured`),
@@ -2058,10 +2112,10 @@ export const api = {
       crystalsRequested?: number;
     },
   ) =>
-    request<GachaTrade>(
-      `/gacha/trades/${encodeURIComponent(id)}/counter`,
-      { method: "POST", body: JSON.stringify(body) },
-    ),
+    request<GachaTrade>(`/gacha/trades/${encodeURIComponent(id)}/counter`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
 
   gachaMyTrades: () => request<GachaTrade[]>(`/gacha/trades/mine`),
 
