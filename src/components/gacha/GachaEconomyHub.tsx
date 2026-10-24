@@ -41,6 +41,76 @@ import type {
 
 type GachaEconomyMode = "market" | "shop";
 
+const ITEM_KIND_LABEL: Record<string, string> = {
+  TITANITA: "Fragmentos de Titanita",
+  TITANITA_SOMBRIA: "Fragmentos de Titanita Sombria",
+  DRACONICA: "Fragmentos de Dracônica",
+  SOMBRIA_DRACONICA: "Fragmentos de Dracônica Sombria",
+  PROTECAO: "Proteção de reroll",
+};
+const BOX_CATEGORY_LABEL: Record<string, string> = {
+  CARD: "Carta",
+  CARD_BACK: "Verso de carta",
+  CRYSTAL: "Cristais",
+  ITEM: "Itens",
+  KEY: "Chave",
+  KEY_PREMIUM_BOX: "Caixa premium + chave",
+  KEY_RARE_BOX: "Caixa rara + chave",
+  RARE_BOX: "Caixa rara",
+  SKIN: "Skin",
+  SPIN_RESET: "Reset de giro",
+};
+
+function itemDropProbabilities(odds: GachaEconomyOdds, tier: GachaBoxTier) {
+  const categoryWeights = odds.categories[tier] ?? {};
+  const itemWeights = odds.itemKindWeights?.[tier];
+  const qualityWeights = odds.qualities[tier] ?? {};
+  if (!itemWeights || !odds.itemQtyPerQuality) return null;
+  const categoryTotal = Object.values(categoryWeights).reduce(
+    (sum, value) => sum + value,
+    0,
+  );
+  const itemTotal = Object.values(itemWeights).reduce(
+    (sum, value) => sum + value,
+    0,
+  );
+  const qualityTotal = Object.values(qualityWeights).reduce(
+    (sum, value) => sum + value,
+    0,
+  );
+  if (categoryTotal <= 0 || itemTotal <= 0 || qualityTotal <= 0) return null;
+  const itemChance =
+    categoryTotal > 0 ? (categoryWeights.ITEM ?? 0) / categoryTotal : 0;
+
+  return Object.entries(itemWeights).flatMap(([kind, kindWeight]) => {
+    if (kindWeight <= 0 || itemTotal <= 0) return [];
+    const amounts = new Map<number, number>();
+    for (const [quality, qualityWeight] of Object.entries(qualityWeights)) {
+      if (qualityWeight <= 0 || qualityTotal <= 0) continue;
+      const amount =
+        kind === "PROTECAO" ? 1 : (odds.itemQtyPerQuality?.[quality] ?? 0);
+      if (amount <= 0) continue;
+      amounts.set(
+        amount,
+        (amounts.get(amount) ?? 0) +
+          itemChance *
+            (kindWeight / itemTotal) *
+            (qualityWeight / qualityTotal),
+      );
+    }
+    return [...amounts].map(([amount, probability]) => ({
+      kind,
+      amount,
+      probability,
+    }));
+  });
+}
+
+function formatChance(probability: number) {
+  const percent = probability * 100;
+  return `${percent > 0 && percent < 0.01 ? "<0,01" : percent.toLocaleString("pt-BR", { maximumFractionDigits: 2 })}%`;
+}
+
 const BOX_FIELD: Record<
   GachaBoxTier,
   "commonBoxes" | "rareBoxes" | "premiumBoxes"
@@ -295,13 +365,10 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
 
   useEffect(() => {
     setMarketClock(Date.now());
-    const timer = window.setInterval(
-      () => {
-        setResetCountdown(timeUntilReset());
-        setMarketClock(Date.now());
-      },
-      60_000,
-    );
+    const timer = window.setInterval(() => {
+      setResetCountdown(timeUntilReset());
+      setMarketClock(Date.now());
+    }, 60_000);
     return () => window.clearInterval(timer);
   }, []);
 
@@ -464,9 +531,7 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
   }
 
   async function cancelMarketListing(listing: GachaEconomyListingItem) {
-    if (
-      !window.confirm("Cancelar este anúncio e devolver o item à coleção?")
-    )
+    if (!window.confirm("Cancelar este anúncio e devolver o item à coleção?"))
       return;
     await act(
       `cancel-${listing.id}`,
@@ -622,7 +687,10 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
                 <a href="#market-offers" className="btn-ghost min-h-11 px-4">
                   Propostas
                 </a>
-                <a href="#listing-form-title" className="btn-ghost min-h-11 px-4">
+                <a
+                  href="#listing-form-title"
+                  className="btn-ghost min-h-11 px-4"
+                >
                   Anunciar
                 </a>
               </>
@@ -677,19 +745,17 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
               Regras para negociar
             </h2>
             <p className="mt-1 text-body-sm text-mist">
-              É necessário verificar o e-mail e ter uma conta com pelo menos 7 dias.
+              É necessário verificar o e-mail e ter uma conta com pelo menos 7
+              dias.
             </p>
           </div>
           <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-body-sm sm:mt-0">
             <span className={user.isVerified ? "text-ice" : "text-signal"}>
               E-mail: {user.isVerified ? "verificado" : "verificação pendente"}
             </span>
-            <span
-              className={
-                accountAgeReady ? "text-ice" : "text-signal"
-              }
-            >
-              Conta: {accountAgeReady
+            <span className={accountAgeReady ? "text-ice" : "text-signal"}>
+              Conta:{" "}
+              {accountAgeReady
                 ? "7 dias completos"
                 : `libera em ${accountEligibleAt?.toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" }) ?? "—"}`}
             </span>
@@ -1460,9 +1526,7 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
                   onSubmit={(event) => void listCard(event)}
                   className="grid content-start gap-4 border border-hairline bg-panel p-5"
                 >
-                  <h3 className="font-display text-xl text-snow">
-                    Carta
-                  </h3>
+                  <h3 className="font-display text-xl text-snow">Carta</h3>
                   <fieldset className="min-w-0">
                     <legend className="text-body-sm text-mist">
                       Escolha uma carta
@@ -1471,7 +1535,9 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
                       <SearchField
                         name="card-copy-search"
                         value={cardCopySearch}
-                        onChange={(event) => setCardCopySearch(event.target.value)}
+                        onChange={(event) =>
+                          setCardCopySearch(event.target.value)
+                        }
                         placeholder="Buscar por nome, anime ou edição…"
                         autoComplete="off"
                         aria-label="Buscar carta da coleção"
@@ -1484,9 +1550,10 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
                     </p>
                     {cardCopyId && (
                       <p className="mt-1 text-body-sm text-ice">
-                        Selecionada: {selectedCardCopy?.card.imageHidden
+                        Selecionada:{" "}
+                        {selectedCardCopy?.card.imageHidden
                           ? "Carta misteriosa"
-                          : selectedCardCopy?.card.name ?? "carta"}
+                          : (selectedCardCopy?.card.name ?? "carta")}
                       </p>
                     )}
                     <ul
@@ -1507,7 +1574,9 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
                               className={`flex min-h-24 w-full items-center gap-3 border p-2 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-ice ${selected ? "border-ice bg-ice/10" : "border-hairline bg-ink hover:border-ice/50"}`}
                             >
                               <MarketItemThumbnail
-                                image={copy.card.imageHidden ? null : copy.card.image}
+                                image={
+                                  copy.card.imageHidden ? null : copy.card.image
+                                }
                                 className="h-20 w-14 shrink-0"
                               />
                               <span className="min-w-0">
@@ -1526,11 +1595,12 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
                         );
                       })}
                     </ul>
-                    {ownedCards.length > 0 && filteredCardCopies.length === 0 && (
-                      <p className="mt-3 text-body-sm text-mist">
-                        Nenhuma carta corresponde à busca.
-                      </p>
-                    )}
+                    {ownedCards.length > 0 &&
+                      filteredCardCopies.length === 0 && (
+                        <p className="mt-3 text-body-sm text-mist">
+                          Nenhuma carta corresponde à busca.
+                        </p>
+                      )}
                     {ownedCards.length === 0 && (
                       <p className="mt-2 text-caption text-mist">
                         Sem cópias disponíveis? Veja sua{" "}
@@ -1559,15 +1629,16 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
                       aria-describedby="card-price-help"
                       className="field mt-2 min-h-11 w-full"
                     />
-                    <span id="card-price-help" className="mt-1 block text-caption text-mist">
+                    <span
+                      id="card-price-help"
+                      className="mt-1 block text-caption text-mist"
+                    >
                       Informe um valor inteiro, a partir de 1 cristal.
                     </span>
                   </label>
                   <button
                     type="submit"
-                    disabled={
-                      !marketReady || busy !== null || !cardCopyId
-                    }
+                    disabled={!marketReady || busy !== null || !cardCopyId}
                     className="btn-ice min-h-11 px-4 disabled:opacity-40"
                   >
                     {busy === `card-${cardCopyId}`
@@ -1579,9 +1650,7 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
                   onSubmit={(event) => void listSkin(event)}
                   className="grid content-start gap-4 border border-hairline bg-panel p-5"
                 >
-                  <h3 className="font-display text-xl text-snow">
-                    Skin
-                  </h3>
+                  <h3 className="font-display text-xl text-snow">Skin</h3>
                   <fieldset className="min-w-0">
                     <legend className="text-body-sm text-mist">
                       Escolha uma skin
@@ -1590,7 +1659,9 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
                       <SearchField
                         name="skin-copy-search"
                         value={skinCopySearch}
-                        onChange={(event) => setSkinCopySearch(event.target.value)}
+                        onChange={(event) =>
+                          setSkinCopySearch(event.target.value)
+                        }
                         placeholder="Buscar por nome ou raridade…"
                         autoComplete="off"
                         aria-label="Buscar skin da coleção"
@@ -1637,11 +1708,12 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
                         );
                       })}
                     </ul>
-                    {ownedSkins.length > 0 && filteredSkinCopies.length === 0 && (
-                      <p className="mt-3 text-body-sm text-mist">
-                        Nenhuma skin corresponde à busca.
-                      </p>
-                    )}
+                    {ownedSkins.length > 0 &&
+                      filteredSkinCopies.length === 0 && (
+                        <p className="mt-3 text-body-sm text-mist">
+                          Nenhuma skin corresponde à busca.
+                        </p>
+                      )}
                     {ownedSkins.length === 0 && (
                       <p className="mt-2 text-caption text-mist">
                         Sem skins disponíveis? Veja suas{" "}
@@ -1670,15 +1742,16 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
                       aria-describedby="skin-price-help"
                       className="field mt-2 min-h-11 w-full"
                     />
-                    <span id="skin-price-help" className="mt-1 block text-caption text-mist">
+                    <span
+                      id="skin-price-help"
+                      className="mt-1 block text-caption text-mist"
+                    >
                       Informe um valor inteiro, a partir de 1 cristal.
                     </span>
                   </label>
                   <button
                     type="submit"
-                    disabled={
-                      !marketReady || busy !== null || !skinCopyId
-                    }
+                    disabled={!marketReady || busy !== null || !skinCopyId}
                     className="btn-ice min-h-11 px-4 disabled:opacity-40"
                   >
                     {busy === `skin-${skinCopyId}`
@@ -1764,36 +1837,6 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
             />
           )}
 
-          {mode === "shop" && odds && (
-            <details className="mt-10 border border-hairline bg-panel p-5">
-              <summary className="min-h-11 cursor-pointer font-display text-xl text-snow focus-visible:ring-2 focus-visible:ring-ice">
-                Probabilidades das caixas · versão {odds.version ?? "inicial"}
-              </summary>
-              <div className="mt-5 grid gap-5 lg:grid-cols-3">
-                {(["COMMON", "RARE", "PREMIUM"] as const).map((tier) => (
-                  <div key={tier}>
-                    <h3 className="font-display text-body-sm text-ice">
-                      Caixa {BOX_LABEL[tier]}
-                    </h3>
-                    <dl className="mt-2 space-y-1 text-caption text-mist">
-                      {Object.entries(odds.categories[tier] ?? {}).map(
-                        ([name, chance]) => (
-                          <div
-                            key={name}
-                            className="flex justify-between gap-4"
-                          >
-                            <dt>{name}</dt>
-                            <dd className="tabular-nums">{chance}%</dd>
-                          </div>
-                        ),
-                      )}
-                    </dl>
-                  </div>
-                ))}
-              </div>
-            </details>
-          )}
-
           {!user && (
             <div className="mt-10 border border-ice/30 bg-panel p-5 text-body-sm text-mist">
               <Link href="/login" className="text-ice hover:text-snow">
@@ -1803,6 +1846,84 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
                 ? " para anunciar itens, criar ofertas e enviar propostas de troca."
                 : " para comprar ofertas, abrir caixas e resgatar recompensas."}
             </div>
+          )}
+
+          {mode === "shop" && odds && (
+            <details className="mt-10 border border-hairline bg-panel p-5">
+              <summary className="min-h-11 cursor-pointer font-display text-xl text-snow focus-visible:ring-2 focus-visible:ring-ice">
+                Probabilidades das caixas · versão {odds.version ?? "inicial"}
+              </summary>
+              <div className="mt-5 grid gap-5 lg:grid-cols-3">
+                {(["COMMON", "RARE", "PREMIUM"] as const).map((tier) => {
+                  const categoryWeights = odds.categories[tier] ?? {};
+                  const categoryTotal = Object.values(categoryWeights).reduce(
+                    (sum, value) => sum + value,
+                    0,
+                  );
+                  const itemDrops = itemDropProbabilities(odds, tier);
+                  return (
+                    <div key={tier}>
+                      <h3 className="font-display text-body-sm text-ice">
+                        Caixa {BOX_LABEL[tier]}
+                      </h3>
+                      <dl className="mt-2 space-y-1 text-caption text-mist">
+                        {Object.entries(categoryWeights).map(
+                          ([name, chance]) => (
+                            <div
+                              key={name}
+                              className="flex justify-between gap-4"
+                            >
+                              <dt>{BOX_CATEGORY_LABEL[name] ?? name}</dt>
+                              <dd className="tabular-nums">
+                                {categoryTotal > 0
+                                  ? formatChance(chance / categoryTotal)
+                                  : "Indisponível"}
+                              </dd>
+                            </div>
+                          ),
+                        )}
+                      </dl>
+                      <h4 className="mt-4 font-display text-body-sm text-ice">
+                        Detalhe dos itens · por abertura
+                      </h4>
+                      {itemDrops === null ? (
+                        <p className="mt-2 text-caption text-mist">
+                          Detalhamento indisponível.
+                        </p>
+                      ) : (categoryWeights.ITEM ?? 0) <= 0 ||
+                        itemDrops.length === 0 ? (
+                        <p className="mt-2 text-caption text-mist">
+                          Esta caixa não concede itens na configuração ativa.
+                        </p>
+                      ) : (
+                        <dl className="mt-2 space-y-1 text-caption text-mist">
+                          {itemDrops.map(({ kind, amount, probability }) => (
+                            <div
+                              key={`${kind}-${amount}`}
+                              className="flex justify-between gap-4"
+                            >
+                              <dt>
+                                {ITEM_KIND_LABEL[kind] ?? kind}
+                                {kind === "PROTECAO" ? "" : ` · ${amount}`}
+                              </dt>
+                              <dd className="tabular-nums">
+                                {formatChance(probability)}
+                              </dd>
+                            </div>
+                          ))}
+                        </dl>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+              <p className="mt-5 text-caption text-mist">
+                As chances por abertura usam os pesos ativos da versão exibida,
+                sem bônus de fidelidade; com o bônus, a caixa garante uma carta
+                e não concede item. O detalhamento dos itens está incluído na
+                chance de “Itens”.
+              </p>
+            </details>
           )}
         </>
       )}
@@ -2134,8 +2255,7 @@ function MarketSection({
                     user={seller}
                     className="text-ice underline decoration-hairline underline-offset-2 hover:text-snow"
                   >
-                    {seller.name?.trim() ||
-                      `@${seller.userName ?? "jogador"}`}
+                    {seller.name?.trim() || `@${seller.userName ?? "jogador"}`}
                   </UserProfilePreview>
                 </p>
                 {marketReady && available < listing.price && (
@@ -2414,7 +2534,10 @@ function MarketItemThumbnail({
           className="object-contain"
         />
       ) : (
-        <span aria-hidden="true" className="px-1 text-center text-[10px] text-mist">
+        <span
+          aria-hidden="true"
+          className="px-1 text-center text-[10px] text-mist"
+        >
           Sem arte
         </span>
       )}
