@@ -796,13 +796,18 @@ export interface GachaItemConfig {
   item_convert_value: Record<GachaItemKind, number>;
   item_recipes: Partial<Record<Exclude<GachaItemKind, "PROTECAO">, number>>;
   item_eligibility: Partial<
-    Record<Exclude<GachaItemKind, "PROTECAO">, {
-      foils: string[];
-      sourceConditions: string[];
-      maxCondition: string;
-    }>
+    Record<
+      Exclude<GachaItemKind, "PROTECAO">,
+      {
+        foils: string[];
+        sourceConditions: string[];
+        maxCondition: string;
+      }
+    >
   >;
-  item_condition_anchor: Partial<Record<"PLAYED" | "EX" | "NM" | "MINT", number>>;
+  item_condition_anchor: Partial<
+    Record<"PLAYED" | "EX" | "NM" | "MINT", number>
+  >;
   card_floors: Record<string, number>;
   base_value: Record<string, number>;
   foil_mult: Record<string, number>;
@@ -968,6 +973,8 @@ export interface GachaEconomyOdds {
   dailyBonus: number;
   categories: Record<GachaBoxTier, Record<string, number>>;
   qualities: Record<GachaBoxTier, Record<string, number>>;
+  itemKindWeights?: Record<GachaBoxTier, Record<string, number>>;
+  itemQtyPerQuality?: Record<string, number>;
   foilWeights: Record<string, number>;
   // Pesos de raridade e pity vêm do GachaConfig do admin (fonte do sorteio).
   // pityWeights/pityDays podem ser null se as chaves não estiverem no cache.
