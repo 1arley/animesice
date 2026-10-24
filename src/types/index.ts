@@ -784,6 +784,32 @@ export interface CrystalPage {
 
 export type GachaBoxTier = "COMMON" | "RARE" | "PREMIUM";
 
+export type GachaItemKind =
+  | "TITANITA"
+  | "TITANITA_SOMBRIA"
+  | "DRACONICA"
+  | "SOMBRIA_DRACONICA"
+  | "PROTECAO";
+
+export interface GachaItemConfig {
+  item_shop_price: Record<GachaItemKind, number>;
+  item_convert_value: Record<GachaItemKind, number>;
+  item_recipes: Partial<Record<Exclude<GachaItemKind, "PROTECAO">, number>>;
+  item_eligibility: Partial<
+    Record<Exclude<GachaItemKind, "PROTECAO">, {
+      foils: string[];
+      sourceConditions: string[];
+      maxCondition: string;
+    }>
+  >;
+  item_condition_anchor: Partial<Record<"PLAYED" | "EX" | "NM" | "MINT", number>>;
+  card_floors: Record<string, number>;
+  base_value: Record<string, number>;
+  foil_mult: Record<string, number>;
+  reroll_cost_pct: number;
+  reroll_protection_mint_block: boolean;
+}
+
 export interface GachaEconomyInventory {
   commonBoxes: number;
   rareBoxes: number;
@@ -796,6 +822,16 @@ export interface GachaEconomyInventory {
   balance: number;
   reserved: number;
   available: number;
+  titanitaShards: number;
+  titanitaItems: number;
+  titanitaSombriaShards: number;
+  titanitaSombriaItems: number;
+  draconicaShards: number;
+  draconicaItems: number;
+  sombriaDraconicaShards: number;
+  sombriaDraconicaItems: number;
+  protecao: number;
+  itemConfig: GachaItemConfig;
   dailyClaimedToday: boolean;
   watchEarnedToday: number;
 }
