@@ -793,6 +793,8 @@ export type GachaItemKind =
 
 export interface GachaItemConfig {
   item_shop_price: Record<GachaItemKind, number>;
+  item_shop_enabled?: Record<GachaItemKind, boolean>;
+  item_drop_available?: Record<GachaItemKind, boolean>;
   item_convert_value: Record<GachaItemKind, number>;
   item_recipes: Partial<Record<Exclude<GachaItemKind, "PROTECAO">, number>>;
   item_eligibility: Partial<
@@ -973,7 +975,7 @@ export interface GachaEconomyOdds {
   dailyBonus: number;
   categories: Record<GachaBoxTier, Record<string, number>>;
   qualities: Record<GachaBoxTier, Record<string, number>>;
-  itemKindWeights?: Record<GachaBoxTier, Record<string, number>>;
+  itemKindWeights?: Record<GachaBoxTier, Record<GachaItemKind, number>>;
   itemQtyPerQuality?: Record<string, number>;
   foilWeights: Record<string, number>;
   // Pesos de raridade e pity vêm do GachaConfig do admin (fonte do sorteio).
