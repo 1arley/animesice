@@ -4,7 +4,7 @@ Implement this in `animesice/`, the main app. Do not put it in `animesice-gacha-
 
 ## Deliverables
 
-- Add `/gacha/inventário` and link it from `src/components/gacha/GachaNav.tsx`.
+- Add `/gacha/inventario` and link it from `src/components/gacha/GachaNav.tsx`.
 - Build one reusable inventory component for balances, item actions, and card upgrades.
 - Add an opt-in protection choice to the shared reroll confirmation in `src/components/gacha/CardPreview.tsx`. Both callers must pass it through: `app/(app)/gacha/page.tsx` and `app/(app)/gacha/cartas/page.tsx`.
 

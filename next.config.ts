@@ -127,6 +127,11 @@ const nextConfig: NextConfig = {
       },
       { source: "/room/:slug", destination: "/sala/:slug", permanent: true },
       {
+        source: "/gacha/invent%C3%A1rio",
+        destination: "/gacha/inventario",
+        permanent: true,
+      },
+      {
         // /gacha/colecao virou o gerenciador de cosméticos (capa, moldura,
         // destaque); a galeria de cartas vive em /gacha/cartas.
         source: "/gacha/collection",

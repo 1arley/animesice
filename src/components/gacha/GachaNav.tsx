@@ -34,7 +34,7 @@ const items = {
   },
   shop: { href: "/gacha/loja", label: "Loja", icon: "shop" },
   crystals: { href: "/gacha/cristais", label: "Cristais" },
-  inventory: { href: "/gacha/inventário", label: "Inventário" },
+  inventory: { href: "/gacha/inventario", label: "Inventário" },
 } as const;
 
 const groups = [
