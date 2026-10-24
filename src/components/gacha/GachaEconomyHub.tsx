@@ -31,6 +31,7 @@ import type {
   GachaEconomyInventory,
   GachaEconomyListingItem,
   GachaEconomyOdds,
+  GachaItemKind,
   GachaEconomyOffer,
   GachaEconomyOrder,
   GachaMarketMission,
@@ -41,13 +42,14 @@ import type {
 
 type GachaEconomyMode = "market" | "shop";
 
-const ITEM_KIND_LABEL: Record<string, string> = {
+const ITEM_KIND_LABEL: Record<GachaItemKind, string> = {
   TITANITA: "Fragmentos de Titanita",
   TITANITA_SOMBRIA: "Fragmentos de Titanita Sombria",
   DRACONICA: "Fragmentos de Dracônica",
   SOMBRIA_DRACONICA: "Fragmentos de Dracônica Sombria",
   PROTECAO: "Proteção de reroll",
 };
+
 const BOX_CATEGORY_LABEL: Record<string, string> = {
   CARD: "Carta",
   CARD_BACK: "Verso de carta",
@@ -61,54 +63,55 @@ const BOX_CATEGORY_LABEL: Record<string, string> = {
   SPIN_RESET: "Reset de giro",
 };
 
-function itemDropProbabilities(odds: GachaEconomyOdds, tier: GachaBoxTier) {
-  const categoryWeights = odds.categories[tier] ?? {};
-  const itemWeights = odds.itemKindWeights?.[tier];
-  const qualityWeights = odds.qualities[tier] ?? {};
-  if (!itemWeights || !odds.itemQtyPerQuality) return null;
-  const categoryTotal = Object.values(categoryWeights).reduce(
-    (sum, value) => sum + value,
-    0,
-  );
-  const itemTotal = Object.values(itemWeights).reduce(
-    (sum, value) => sum + value,
-    0,
-  );
-  const qualityTotal = Object.values(qualityWeights).reduce(
-    (sum, value) => sum + value,
-    0,
-  );
-  if (categoryTotal <= 0 || itemTotal <= 0 || qualityTotal <= 0) return null;
-  const itemChance =
-    categoryTotal > 0 ? (categoryWeights.ITEM ?? 0) / categoryTotal : 0;
+function formatChance(probability: number) {
+  const percentage = probability * 100;
+  const formatted =
+    percentage > 0 && percentage < 0.01
+      ? "<0,01"
+      : percentage.toLocaleString("pt-BR", { maximumFractionDigits: 2 });
+  return `${formatted}%`;
+}
 
-  return Object.entries(itemWeights).flatMap(([kind, kindWeight]) => {
-    if (kindWeight <= 0 || itemTotal <= 0) return [];
-    const amounts = new Map<number, number>();
-    for (const [quality, qualityWeight] of Object.entries(qualityWeights)) {
-      if (qualityWeight <= 0 || qualityTotal <= 0) continue;
-      const amount =
-        kind === "PROTECAO" ? 1 : (odds.itemQtyPerQuality?.[quality] ?? 0);
-      if (amount <= 0) continue;
-      amounts.set(
+function itemDropProbabilities(odds: GachaEconomyOdds, tier: GachaBoxTier) {
+  const itemWeights = odds.itemKindWeights?.[tier];
+  const quantities = odds.itemQtyPerQuality;
+  if (!itemWeights || !quantities) return null;
+
+  const categories = odds.categories[tier] ?? {};
+  const qualities = odds.qualities[tier] ?? {};
+  const categoryTotal = Object.values(categories).reduce(
+    (sum, value) => sum + value,
+    0,
+  );
+  const kindTotal = Object.values(itemWeights).reduce(
+    (sum, value) => sum + value,
+    0,
+  );
+  const qualityTotal = Object.values(qualities).reduce(
+    (sum, value) => sum + value,
+    0,
+  );
+  if (categoryTotal <= 0 || kindTotal <= 0 || qualityTotal <= 0) return null;
+
+  const itemChance = (categories.ITEM ?? 0) / categoryTotal;
+  return Object.entries(itemWeights).flatMap(([kind, weight]) => {
+    if (weight <= 0) return [];
+    const quantitiesByAmount = new Map<number, number>();
+    for (const [quality, qualityWeight] of Object.entries(qualities)) {
+      const amount = kind === "PROTECAO" ? 1 : (quantities[quality] ?? 0);
+      if (qualityWeight <= 0 || amount <= 0) continue;
+      quantitiesByAmount.set(
         amount,
-        (amounts.get(amount) ?? 0) +
-          itemChance *
-            (kindWeight / itemTotal) *
-            (qualityWeight / qualityTotal),
+        (quantitiesByAmount.get(amount) ?? 0) +
+          itemChance * (weight / kindTotal) * (qualityWeight / qualityTotal),
       );
     }
-    return [...amounts].map(([amount, probability]) => ({
-      kind,
+    return [...quantitiesByAmount].map(([amount, probability]) => ({
+      kind: kind as GachaItemKind,
       amount,
       probability,
     }));
   });
-}
-
-function formatChance(probability: number) {
-  const percent = probability * 100;
-  return `${percent > 0 && percent < 0.01 ? "<0,01" : percent.toLocaleString("pt-BR", { maximumFractionDigits: 2 })}%`;
 }
 
 const BOX_FIELD: Record<
@@ -1849,7 +1852,11 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
           )}
 
           {mode === "shop" && odds && (
-            <details className="mt-10 border border-hairline bg-panel p-5">
+            <details
+              id="box-odds"
+              open
+              className="mt-10 border border-hairline bg-panel p-5"
+            >
               <summary className="min-h-11 cursor-pointer font-display text-xl text-snow focus-visible:ring-2 focus-visible:ring-ice">
                 Probabilidades das caixas · versão {odds.version ?? "inicial"}
               </summary>

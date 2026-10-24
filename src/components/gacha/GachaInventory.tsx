@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import { useAuth } from "@/lib/auth-context";
 import { api, ApiError } from "@/lib/api";
@@ -49,7 +50,9 @@ export function GachaInventory() {
   const [cards, setCards] = useState<GachaPull[]>([]);
   const [selectedKind, setSelectedKind] = useState<StoneKind>("TITANITA");
   const [selectedCard, setSelectedCard] = useState<GachaPull | null>(null);
+  const [cardSearch, setCardSearch] = useState("");
   const [quantity, setQuantity] = useState(1);
+  const [protectionQuantity, setProtectionQuantity] = useState(1);
   const [busy, setBusy] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -137,7 +140,7 @@ export function GachaInventory() {
               }
             } else if (action?.[0] === "buy" && action[1] === "PROTECAO" && Number.isInteger(Number(action[2]))) {
               const retryQuantity = Number(action[2]);
-              setQuantity(retryQuantity);
+              setProtectionQuantity(retryQuantity);
               setPendingRetry({ operation: "buy", kind: "PROTECAO", quantity: retryQuantity });
             }
           } catch { /* Storage is optional; operation IDs remain usable in-session. */ }
@@ -274,7 +277,16 @@ export function GachaInventory() {
   const convertReason = inventory[stone.shards] < quantity ? "Fragmentos insuficientes." : convertValue <= 0 ? "Este fragmento não pode ser convertido." : "";
   const craftReason = !recipe ? "Receita indisponível." : inventory[stone.shards] < recipe * quantity ? `São necessários ${recipe * quantity} fragmentos.` : "";
   const protectionPrice = config.item_shop_price.PROTECAO;
-  const protectionReason = protectionPrice <= 0 ? "Proteção indisponível para compra." : inventory.available < protectionPrice * quantity ? "Saldo de cristais insuficiente." : "";
+  const protectionReason = protectionPrice <= 0 ? "Proteção indisponível para compra." : inventory.available < protectionPrice * protectionQuantity ? "Saldo de cristais insuficiente." : "";
+  const shopEnabled = config.item_shop_enabled?.[selectedKind] ?? buyPrice > 0;
+  const protectionShopEnabled = config.item_shop_enabled?.PROTECAO ?? protectionPrice > 0;
+  const dropAvailable = config.item_drop_available?.[selectedKind];
+  const validQuantity = Number.isSafeInteger(quantity) && quantity >= 1;
+  const validProtectionQuantity = Number.isSafeInteger(protectionQuantity) && protectionQuantity >= 1;
+  const visibleEligibleCards = eligibleCards.filter((card) => {
+    const query = cardSearch.trim().toLocaleLowerCase("pt-BR");
+    return !query || `${card.card.name} ${card.card.animeTitle ?? ""} ${card.card.rarity ?? ""}`.toLocaleLowerCase("pt-BR").includes(query);
+  });
 
   return (
     <main className="mx-auto max-w-shelf px-4 pb-16 pt-8">
@@ -284,50 +296,77 @@ export function GachaInventory() {
         <p className="mt-2 max-w-2xl text-body-sm text-mist">Gerencie seus fragmentos, pedras e proteção. Melhore suas cartas sem alterar o foil.</p>
       </header>
 
-      <section aria-label="Saldos" className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <section aria-label="Resumo dos saldos" className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-4 xl:grid-cols-8">
         {[
-          ["Cristais disponíveis", inventory.available],
-          ["Proteções", inventory.protecao],
-          ["Fragmentos", STONES.reduce((sum, item) => sum + inventory[item.shards], 0)],
-          ["Pedras prontas", STONES.reduce((sum, item) => sum + inventory[item.items], 0)],
-        ].map(([label, value]) => <div key={label} className="border border-hairline bg-panel p-4"><p className="text-xs text-mist">{label}</p><p className="mt-2 font-mono text-xl tabular-nums text-snow">{Number(value).toLocaleString("pt-BR")}</p></div>)}
+          { label: "Cristais disponíveis", value: inventory.available },
+          { label: "Cristais reservados", value: inventory.reserved },
+          { label: "Caixas", value: inventory.commonBoxes + inventory.rareBoxes + inventory.premiumBoxes, detail: `${inventory.commonBoxes} comuns · ${inventory.rareBoxes} raras · ${inventory.premiumBoxes} premium` },
+          { label: "Chaves", value: inventory.keys },
+          { label: "Resets", value: inventory.spinResets },
+          { label: "Fragmentos", value: STONES.reduce((sum, item) => sum + inventory[item.shards], 0) },
+          { label: "Pedras prontas", value: STONES.reduce((sum, item) => sum + inventory[item.items], 0) },
+          { label: "Proteções", value: inventory.protecao },
+        ].map(({ label, value, detail }) => <div key={label} className="border border-hairline bg-panel p-4"><p className="text-xs text-mist">{label}</p><p className="mt-2 font-mono text-xl tabular-nums text-snow">{value.toLocaleString("pt-BR")}</p>{detail && <p className="mt-1 text-[10px] leading-4 text-mist">{detail}</p>}</div>)}
       </section>
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,0.8fr)]">
+      <nav aria-label="Atalhos do gacha" className="mb-6 flex flex-wrap gap-2">
+        <Link className="btn-ghost inline-flex min-h-11 items-center px-4" href="/gacha/loja">Ver caixas e probabilidades</Link>
+        <Link className="btn-ghost inline-flex min-h-11 items-center px-4" href="/gacha/cartas">Abrir coleção</Link>
+      </nav>
+
+      <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-3">
         <section className="border border-hairline bg-panel p-4 sm:p-6" aria-labelledby="stone-heading">
           <h2 id="stone-heading" className="font-display text-xl text-snow">Pedras e fragmentos</h2>
-          <label className="mt-4 block text-sm text-mist" htmlFor="stone-kind">Tipo de pedra</label>
-          <select id="stone-kind" value={selectedKind} disabled={!!pendingUseRetry} onChange={(event) => { setSelectedKind(event.target.value as StoneKind); setSelectedCard(null); setStatus(""); }} className="mt-2 h-11 w-full border border-hairline bg-ink px-3 text-snow focus-visible:outline focus-visible:outline-2 focus-visible:outline-ice disabled:opacity-60">
-            {STONES.map((item) => <option key={item.kind} value={item.kind}>{item.label}</option>)}
-          </select>
+          <p className="mt-2 text-sm text-mist">Escolha uma pedra para ver o progresso da receita e as ações disponíveis.</p>
+          <div className="mt-4 grid gap-2 sm:grid-cols-2">
+            {STONES.map((item) => {
+              const current = inventory[item.shards];
+              const needed = config.item_recipes[item.kind] ?? 0;
+              const progress = needed > 0 ? Math.min(100, Math.floor((current / needed) * 100)) : 0;
+              return <button key={item.kind} type="button" aria-pressed={selectedKind === item.kind} disabled={!!pendingUseRetry} onClick={() => { setSelectedKind(item.kind); setSelectedCard(null); setStatus(""); }} className={`min-h-11 border p-3 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-ice disabled:opacity-60 ${selectedKind === item.kind ? "border-ice bg-ice/10" : "border-hairline bg-ink hover:border-ice/50"}`}>
+                <span className="flex items-center justify-between gap-2 font-display text-sm text-snow"><span>{item.label}</span><span className="font-mono text-xs tabular-nums text-ice">{inventory[item.items]}</span></span>
+                <span className="mt-2 block text-xs text-mist">{current} / {needed} fragmentos · {inventory[item.items]} prontas</span>
+                <span role="progressbar" aria-label={`Progresso de fabricação de ${item.label}`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={progress} className="mt-2 block h-1.5 overflow-hidden bg-hairline"><span className="block h-full bg-ice" style={{ width: `${progress}%` }} /></span>
+              </button>;
+            })}
+          </div>
           <dl className="mt-5 grid grid-cols-2 gap-3 text-sm">
             <div className="border border-hairline p-3"><dt className="text-mist">Fragmentos</dt><dd className="mt-1 font-mono text-lg text-snow">{fragmentCount(inventory, stone)}</dd></div>
             <div className="border border-hairline p-3"><dt className="text-mist">Pedras prontas</dt><dd className="mt-1 font-mono text-lg text-snow">{craftedCount(inventory, stone)}</dd></div>
           </dl>
           <label className="mt-5 block text-sm text-mist" htmlFor="item-quantity">Quantidade</label>
           <input id="item-quantity" type="number" min={1} max={2_147_483_647} step={1} disabled={!!pendingRetry || !!pendingUseRetry} value={quantity} onChange={(event) => setQuantity(Math.min(2_147_483_647, Math.max(1, Number(event.target.value) || 1)))} className="mt-2 h-11 w-full border border-hairline bg-ink px-3 font-mono text-snow focus-visible:outline focus-visible:outline-2 focus-visible:outline-ice disabled:opacity-60" />
-          <div className="mt-4 grid gap-3 sm:grid-cols-3">
-            <div><button type="button" onClick={() => void runItemOperation("buy")} disabled={!!busy || !!buyReason || reconcileNeeded || !!pendingRetry || !!pendingUseRetry} className="btn-ghost min-h-11 w-full px-3 disabled:opacity-50">Comprar fragmentos</button><p className="mt-1 min-h-10 text-xs text-mist">{buyReason || `${(buyPrice * quantity).toLocaleString("pt-BR")} cristais · ${buyPrice.toLocaleString("pt-BR")} cada`}</p></div>
-            <div><button type="button" onClick={() => void runItemOperation("convert")} disabled={!!busy || !!convertReason || reconcileNeeded || !!pendingRetry || !!pendingUseRetry} className="btn-ghost min-h-11 w-full px-3 disabled:opacity-50">Converter</button><p className="mt-1 min-h-10 text-xs text-mist">{convertReason || `Recebe ${(convertValue * quantity).toLocaleString("pt-BR")} cristais`}</p></div>
-            <div><button type="button" onClick={() => void runItemOperation("craft")} disabled={!!busy || !!craftReason || reconcileNeeded || !!pendingRetry || !!pendingUseRetry} className="btn-ice min-h-11 w-full px-3 disabled:opacity-50">Fabricar pedra</button><p className="mt-1 min-h-10 text-xs text-mist">{craftReason || `Consome ${(recipe ?? 0) * quantity} fragmentos`}</p></div>
+          <div className={`mt-4 grid gap-3 ${shopEnabled ? "sm:grid-cols-3" : "sm:grid-cols-2"}`}>
+            {shopEnabled && <div><button type="button" onClick={() => void runItemOperation("buy")} disabled={!validQuantity || !!busy || !!buyReason || reconcileNeeded || !!pendingRetry || !!pendingUseRetry} className="btn-ghost min-h-11 w-full px-3 disabled:opacity-50">Comprar fragmentos</button><p className="mt-1 min-h-10 text-xs text-mist">{buyReason || `${(buyPrice * quantity).toLocaleString("pt-BR")} cristais · ${buyPrice.toLocaleString("pt-BR")} cada`}</p></div>}
+            <div><button type="button" onClick={() => void runItemOperation("convert")} disabled={!validQuantity || !!busy || !!convertReason || reconcileNeeded || !!pendingRetry || !!pendingUseRetry} className="btn-ghost min-h-11 w-full px-3 disabled:opacity-50">Converter</button><p className="mt-1 min-h-10 text-xs text-mist">{convertReason || `Recebe ${(convertValue * quantity).toLocaleString("pt-BR")} cristais`}</p></div>
+            <div><button type="button" onClick={() => void runItemOperation("craft")} disabled={!validQuantity || !!busy || !!craftReason || reconcileNeeded || !!pendingRetry || !!pendingUseRetry} className="btn-ice min-h-11 w-full px-3 disabled:opacity-50">Fabricar pedra</button><p className="mt-1 min-h-10 text-xs text-mist">{craftReason || `Consome ${(recipe ?? 0) * quantity} fragmentos`}</p></div>
           </div>
-          <div className="mt-5 border-t border-hairline pt-4">
-            <p className="text-sm text-mist">Proteções de reroll: {inventory.protecao}</p>
-            <button type="button" onClick={() => void runItemOperation("buy", "PROTECAO")} disabled={!!busy || !!protectionReason || reconcileNeeded || !!pendingRetry || !!pendingUseRetry} className="btn-ghost mt-2 min-h-11 w-full px-3 disabled:opacity-50">Comprar proteção</button>
-            <p className="mt-1 text-xs text-mist">{protectionReason || `${(protectionPrice * quantity).toLocaleString("pt-BR")} cristais · ${protectionPrice.toLocaleString("pt-BR")} cada`}</p>
-          </div>
+          {dropAvailable === true ? <p className="mt-3 text-xs text-ice">{shopEnabled ? "Fonte ativa:" : "Compra direta pausada no piloto. Fonte ativa:"} caixas de gacha. <Link href="/gacha/loja#box-odds" className="underline underline-offset-4">Ver chances</Link></p> : dropAvailable === false ? <p className="mt-3 text-xs text-mist">Nenhuma caixa ativa concede este item.{shopEnabled ? "" : " A compra está pausada até existir uma fonte ativa."}</p> : <p className="mt-3 text-xs text-mist">Fonte em loot boxes indisponível para consulta.</p>}
+        </section>
+
+        <section className="border border-hairline bg-panel p-4 sm:p-6" aria-labelledby="protection-heading">
+          <p className="font-mono text-caption uppercase tracking-[0.16em] text-ice">Consumível</p>
+          <h2 id="protection-heading" className="mt-2 font-display text-xl text-snow">Proteção de reroll</h2>
+          <p className="mt-2 text-sm text-mist">Usada ao refazer a condition de uma carta. Não pode ser fabricada nem convertida.</p>
+          <p className="mt-5 border border-hairline p-4 text-sm text-mist">No inventário: <strong className="font-mono text-lg text-snow">{inventory.protecao}</strong></p>
+          {config.item_drop_available?.PROTECAO === true ? <p className="mt-4 text-sm text-ice">Disponível em loot boxes durante o piloto.</p> : config.item_drop_available?.PROTECAO === false ? <p className="mt-4 text-sm text-mist">Nenhuma loot box ativa concede proteção agora.</p> : <p className="mt-4 text-sm text-mist">Fonte em loot boxes indisponível para consulta.</p>}
+          <p className="mt-1 text-xs text-mist"><Link href="/gacha/loja#box-odds" className="text-ice underline underline-offset-4">Ver probabilidades das caixas</Link></p>
+          {protectionShopEnabled ? <div className="mt-5 border-t border-hairline pt-4"><label htmlFor="protection-quantity" className="block text-sm text-mist">Quantidade</label><input id="protection-quantity" type="number" min={1} max={2_147_483_647} step={1} disabled={!!pendingRetry || !!pendingUseRetry} value={protectionQuantity} onChange={(event) => setProtectionQuantity(Math.min(2_147_483_647, Math.max(1, Number(event.target.value) || 1)))} className="mt-2 h-11 w-full border border-hairline bg-ink px-3 font-mono text-snow focus-visible:outline focus-visible:outline-2 focus-visible:outline-ice disabled:opacity-60"/><button type="button" onClick={() => void runItemOperation("buy", "PROTECAO", protectionQuantity)} disabled={!validProtectionQuantity || !!busy || !!protectionReason || reconcileNeeded || !!pendingRetry || !!pendingUseRetry} className="btn-ghost mt-3 min-h-11 w-full px-3 disabled:opacity-50">Comprar proteção</button><p className="mt-1 text-xs text-mist">{protectionReason || `${(protectionPrice * protectionQuantity).toLocaleString("pt-BR")} cristais · ${protectionPrice.toLocaleString("pt-BR")} cada`}</p></div> : config.item_drop_available?.PROTECAO === true ? <p className="mt-5 border-t border-hairline pt-4 text-sm text-mist">Compra direta pausada no piloto. Obtenha proteção em uma loot box.</p> : <p className="mt-5 border-t border-hairline pt-4 text-sm text-signal">Compra direta pausada e nenhuma fonte ativa em loot boxes. A equipe precisa restaurar uma fonte antes de continuar.</p>}
+          <Link href="/gacha/cartas" className="mt-5 inline-flex min-h-11 items-center text-sm text-ice underline underline-offset-4">Escolher carta para reroll</Link>
         </section>
 
         <section className="border border-hairline bg-panel p-4 sm:p-6" aria-labelledby="upgrade-heading">
           <h2 id="upgrade-heading" className="font-display text-xl text-snow">Melhorar uma carta</h2>
           <p className="mt-2 text-sm text-mist">Elegibilidade calculada pelas regras atuais da economia.</p>
           <label className="mt-4 block text-sm text-mist" htmlFor="eligible-card">Carta elegível para {stone.label}</label>
+          <input id="eligible-card-search" type="search" value={cardSearch} onChange={(event) => setCardSearch(event.target.value)} placeholder="Buscar por carta, anime ou raridade" aria-label="Buscar carta elegível" className="mt-2 h-11 w-full border border-hairline bg-ink px-3 text-snow placeholder:text-mist focus-visible:outline focus-visible:outline-2 focus-visible:outline-ice" />
           <select id="eligible-card" value={selectedCard?.id ?? ""} disabled={!!pendingUseRetry} onChange={(event) => setSelectedCard(eligibleCards.find((card) => card.id === event.target.value) ?? null)} className="mt-2 h-11 w-full border border-hairline bg-ink px-3 text-snow focus-visible:outline focus-visible:outline-2 focus-visible:outline-ice disabled:opacity-60">
             <option value="">Selecione uma carta</option>
-            {eligibleCards.map((card) => <option key={card.id} value={card.id}>{card.card.name} · {card.conditionLabel ?? gachaConditionLabel(card.condition)} · {card.foil}</option>)}
+            {selectedCard && !visibleEligibleCards.some((card) => card.id === selectedCard.id) && <option value={selectedCard.id}>{selectedCard.card.name} · selecionada</option>}
+            {visibleEligibleCards.map((card) => <option key={card.id} value={card.id}>{card.card.name} · {card.conditionLabel ?? gachaConditionLabel(card.condition)} · {card.foil}</option>)}
           </select>
-          {eligibleCards.length === 0 && <p className="mt-3 text-sm text-mist">Nenhuma carta elegível para esta pedra.</p>}
-          {selectedCard && <div className="mt-4 border border-hairline p-4"><p className="font-display text-snow">{selectedCard.card.name}</p><p className="mt-2 text-sm text-mist">Condition: {selectedCard.conditionLabel ?? gachaConditionLabel(selectedCard.condition)} → {selectedNext ?? "—"}</p><p className="mt-1 text-sm text-mist">Valor: {selectedCard.value.toLocaleString("pt-BR")} → {afterValue?.toLocaleString("pt-BR") ?? "indisponível"} cristais</p><p className="mt-1 text-sm text-mist">Foil mantido: {selectedCard.foil}</p></div>}
+          {eligibleCards.length === 0 ? <p className="mt-3 text-sm text-mist">Nenhuma carta elegível para esta pedra.</p> : visibleEligibleCards.length === 0 && <p className="mt-3 text-sm text-mist">Nenhuma carta corresponde à busca.</p>}
+          {selectedCard && <div className="mt-4 border border-hairline p-4"><p className="font-display text-snow">{selectedCard.card.name}</p><p className="mt-2 text-sm text-mist">Condição: {selectedCard.conditionLabel ?? gachaConditionLabel(selectedCard.condition)} → {selectedNext ?? "—"}</p><p className="mt-1 text-sm text-mist">Valor: {selectedCard.value.toLocaleString("pt-BR")} → {afterValue?.toLocaleString("pt-BR") ?? "indisponível"} cristais</p><p className="mt-1 text-sm text-mist">Foil mantido: {selectedCard.foil}</p></div>}
           <button type="button" disabled={!selectedCard || !inventory[stone.items] || !!busy || afterValue == null || reconcileNeeded || !!pendingRetry} onClick={() => setStatus("confirm-upgrade")} className="btn-ice mt-4 min-h-11 w-full px-4 disabled:opacity-50">Usar pedra</button>
           {!inventory[stone.items] && <p className="mt-2 text-sm text-mist">Fabrique ou obtenha uma pedra antes de melhorar uma carta.</p>}
           <a href="/gacha/cartas" className="mt-4 inline-flex min-h-11 items-center text-sm text-ice underline underline-offset-4">Ver coleção completa</a>
