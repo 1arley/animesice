@@ -2,10 +2,16 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { api, ApiError, type User } from "@/lib/api";
-import { safeImageSrc } from "@/lib/url";
 import { useAuth } from "@/lib/auth-context";
+import { GachaItemThumbnail } from "@/components/gacha/cards/GachaItemThumbnail";
+import {
+  GachaArtworkBay,
+  GachaBadge,
+  GachaOfferCard,
+  GachaOfferGrid,
+  GachaPriceTag,
+} from "@/components/gacha/cards";
 import {
   BoxReveal,
   BOX_LABEL,
@@ -1576,7 +1582,7 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
                               onClick={() => setCardCopyId(copy.id)}
                               className={`flex min-h-24 w-full items-center gap-3 border p-2 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-ice ${selected ? "border-ice bg-ice/10" : "border-hairline bg-ink hover:border-ice/50"}`}
                             >
-                              <MarketItemThumbnail
+                              <GachaItemThumbnail
                                 image={
                                   copy.card.imageHidden ? null : copy.card.image
                                 }
@@ -1694,7 +1700,7 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
                               onClick={() => setSkinCopyId(copy.id)}
                               className={`flex min-h-24 w-full items-center gap-3 border p-2 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-ice ${selected ? "border-ice bg-ice/10" : "border-hairline bg-ink hover:border-ice/50"}`}
                             >
-                              <MarketItemThumbnail
+                              <GachaItemThumbnail
                                 image={copy.imageUrl}
                                 className="h-20 w-14 shrink-0"
                               />
@@ -1985,7 +1991,10 @@ function ShopOfferSection({
           Nenhuma oferta disponível nesta seleção agora.
         </p>
       ) : (
-        <ul className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <GachaOfferGrid
+          empty={offers.length === 0}
+          emptyLabel="Nenhuma oferta disponível nesta seleção agora."
+        >
           {offers.map((offer) => {
             const name =
               (offer.card?.imageHidden
@@ -1997,69 +2006,64 @@ function ShopOfferSection({
             const shortfall = Math.max(0, offer.price - available);
             const inspection = shopInspection(offer);
             return (
-              <li
+              <GachaOfferCard
+                as="li"
                 key={offer.id}
-                className="flex min-w-0 flex-col border border-hairline bg-panel p-4"
-              >
-                <MarketArtwork
-                  name={name}
-                  image={
-                    offer.card?.imageHidden
-                      ? null
-                      : (offer.card?.image ?? offer.skin?.imageUrl)
-                  }
-                  onInspectCard={
-                    inspection ? () => onInspectCard(offer) : undefined
-                  }
-                  details={[
-                    offer.itemType === "SKIN"
+                artwork={
+                  <GachaArtworkBay
+                    name={name}
+                    image={
+                      offer.card?.imageHidden
+                        ? null
+                        : (offer.card?.image ?? offer.skin?.imageUrl)
+                    }
+                    onInspectCard={
+                      inspection ? () => onInspectCard(offer) : undefined
+                    }
+                    details={[
+                      offer.itemType === "SKIN"
+                        ? "Skin"
+                        : offer.itemType === "CARD"
+                          ? "Carta"
+                          : name,
+                      rarity,
+                    ]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  />
+                }
+                caption={
+                  <span className="text-mist">
+                    {offer.itemType === "SKIN"
                       ? "Skin"
                       : offer.itemType === "CARD"
                         ? "Carta"
-                        : name,
-                    rarity,
-                  ]
-                    .filter(Boolean)
-                    .join(" · ")}
-                />
-                {inspection && (
-                  <button
-                    type="button"
-                    onClick={() => onInspectCard(offer)}
-                    className="btn-ghost mt-2 min-h-11 w-full px-3"
-                  >
-                    Inspecionar carta
-                  </button>
-                )}
-                <p className="mt-4 text-caption text-ice">
-                  {offer.itemType === "SKIN"
-                    ? "Skin"
-                    : offer.itemType === "CARD"
-                      ? "Carta"
-                      : "Consumível"}
-                  {rarity ? ` · ${rarity}` : ""}
-                </p>
-                <h3 className="mt-1 break-words font-display text-xl text-snow">
-                  {name}
-                </h3>
-                <p className="mt-2 text-body-sm text-mist">
-                  {offer.itemType === "SKIN"
+                        : "Consumível"}
+                    {rarity ? ` · ${rarity}` : ""}
+                  </span>
+                }
+                captionAside={
+                  offer.discount > 0 ? (
+                    <GachaBadge>−{offer.discount}%</GachaBadge>
+                  ) : null
+                }
+                title={name}
+                description={
+                  offer.itemType === "SKIN"
                     ? "Uma cópia de skin para sua coleção."
                     : offer.itemType === "KEY"
                       ? "Abre uma caixa do seu inventário. A caixa é adquirida separadamente."
                       : offer.itemType === "COMMON_BOX"
                         ? "Recompensa aleatória. Precisa de 1 chave para abrir."
-                        : "Uma carta para sua coleção."}
-                </p>
-                <div className="mt-auto pt-4">
-                  <p className="font-display text-xl tabular-nums text-ice">
-                    {offer.price.toLocaleString("pt-BR")} Cristais{" "}
-                    {offer.discount > 0 && (
-                      <span className="text-caption text-snow">
-                        · {offer.discount}% de desconto
-                      </span>
-                    )}
-                  </p>
+                        : "Uma carta para sua coleção."
+                }
+                price={
+                  <GachaPriceTag
+                    amount={offer.price.toLocaleString("pt-BR")}
+                    suffix="Cristais"
+                  />
+                }
+                notes={
                   <p className="mt-2 text-caption text-mist">
                     {offer.purchasedAt
                       ? "Esta oferta já foi comprada."
@@ -2067,19 +2071,21 @@ function ShopOfferSection({
                         ? `Faltam ${shortfall.toLocaleString("pt-BR")} Cristais.`
                         : "Disponível · 1 compra por oferta"}
                   </p>
+                }
+                actions={
                   <button
                     type="button"
                     disabled={busy || !!offer.purchasedAt || shortfall > 0}
                     onClick={() => onBuy(offer)}
-                    className="btn-ice mt-3 min-h-11 w-full px-3 disabled:opacity-40"
+                    className="btn-ice min-h-11 w-full px-3 disabled:opacity-40"
                   >
                     {offer.purchasedAt ? "Comprado" : "Comprar"}
                   </button>
-                </div>
-              </li>
+                }
+              />
             );
           })}
-        </ul>
+        </GachaOfferGrid>
       )}
     </section>
   );
@@ -2178,26 +2184,26 @@ function MarketSection({
           Limpar busca
         </button>
       )}
-      {visibleListings.length === 0 ? (
-        <p className="mt-4 border border-dashed border-hairline p-5 text-body-sm text-mist">
-          {normalizedQuery
+      <GachaOfferGrid
+        empty={visibleListings.length === 0}
+        emptyLabel={
+          normalizedQuery
             ? "Nenhum anúncio corresponde à busca."
-            : "Ainda não há anúncios nesta categoria. Volte mais tarde para ver novas ofertas."}
-        </p>
-      ) : (
-        <ul className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {visibleListings.map((listing) => {
-            const own = listing.userId === myId;
-            const seller = listing.user ?? {
-              name: null,
-              userName: null,
-            };
-            return (
-              <li
-                key={listing.id}
-                className="min-w-0 border border-hairline bg-panel p-4"
-              >
-                <MarketArtwork
+            : "Ainda não há anúncios nesta categoria. Volte mais tarde para ver novas ofertas."
+        }
+      >
+        {visibleListings.map((listing) => {
+          const own = listing.userId === myId;
+          const seller = listing.user ?? {
+            name: null,
+            userName: null,
+          };
+          return (
+            <GachaOfferCard
+              as="li"
+              key={listing.id}
+              artwork={
+                <GachaArtworkBay
                   name={itemName(listing)}
                   image={
                     listing.item.card?.imageHidden
@@ -2219,62 +2225,27 @@ function MarketSection({
                     .filter(Boolean)
                     .join(" · ")}
                 />
-                {listing.itemType === "CARD" && (
-                  <button
-                    type="button"
-                    onClick={() => onInspectCard(listing)}
-                    className="btn-ghost mt-2 min-h-11 w-full px-3"
-                  >
-                    Inspecionar carta
-                  </button>
-                )}
-                <div className="mt-4 flex flex-wrap items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <h3 className="break-words font-display text-lg text-snow">
-                      {itemName(listing)}
-                    </h3>
-                    <p className="mt-1 break-words text-body-sm text-mist">
-                      {[
-                        listing.item.rarity ?? listing.item.card?.rarity,
-                        listing.item.foil,
-                        listing.item.animeTitle ??
-                          listing.item.card?.animeTitle,
-                      ]
-                        .filter(Boolean)
-                        .join(" · ") || listing.itemType}
-                    </p>
-                  </div>
-                  <span className="shrink-0 text-right font-display text-body-sm tabular-nums text-ice">
-                    {listing.price.toLocaleString("pt-BR")} cristais
-                  </span>
-                </div>
-                {listing.item.edition != null && (
-                  <p className="mt-2 text-caption text-mist">
-                    Edição #{listing.item.edition}
-                    {listing.item.condition != null
-                      ? ` · Desgaste ${listing.item.condition.toLocaleString("pt-BR", { maximumFractionDigits: 4 })}`
-                      : ""}
-                  </p>
-                )}
-                <p className="mt-2 text-caption text-mist">
-                  Anunciado por{" "}
-                  <UserProfilePreview
-                    user={seller}
-                    className="text-ice underline decoration-hairline underline-offset-2 hover:text-snow"
-                  >
-                    {seller.name?.trim() || `@${seller.userName ?? "jogador"}`}
-                  </UserProfilePreview>
-                </p>
-                {marketReady && available < listing.price && (
-                  <p className="mt-2 text-caption text-mist">
-                    Faltam {(listing.price - available).toLocaleString("pt-BR")}{" "}
-                    cristais.
-                  </p>
-                )}
-                <p className="mt-3 text-caption text-mist">
-                  Expira em {timeLeft(listing.expiresAt)}
-                </p>
-                <div className="mt-3 grid grid-cols-2 gap-2">
+              }
+              caption={
+                <span className="text-mist">
+                  {[
+                    listing.item.rarity ?? listing.item.card?.rarity,
+                    listing.item.foil,
+                    listing.item.animeTitle ??
+                      listing.item.card?.animeTitle,
+                  ]
+                    .filter(Boolean)
+                    .join(" · ") || listing.itemType}
+                </span>
+              }
+              title={itemName(listing)}
+              price={
+                <GachaPriceTag
+                  amount={listing.price.toLocaleString("pt-BR")}
+                />
+              }
+              actions={
+                <div className="grid grid-cols-2 gap-2">
                   <button
                     type="button"
                     disabled={busy !== null}
@@ -2329,11 +2300,38 @@ function MarketSection({
                     </>
                   )}
                 </div>
-              </li>
-            );
-          })}
-        </ul>
-      )}
+              }
+            >
+              {listing.item.edition != null && (
+                <p className="mt-2 text-caption text-mist">
+                  Edição #{listing.item.edition}
+                  {listing.item.condition != null
+                    ? ` · Desgaste ${listing.item.condition.toLocaleString("pt-BR", { maximumFractionDigits: 4 })}`
+                    : ""}
+                </p>
+              )}
+              <p className="mt-2 text-caption text-mist">
+                Anunciado por{" "}
+                <UserProfilePreview
+                  user={seller}
+                  className="text-ice underline decoration-hairline underline-offset-2 hover:text-snow"
+                >
+                  {seller.name?.trim() || `@${seller.userName ?? "jogador"}`}
+                </UserProfilePreview>
+              </p>
+              {marketReady && available < listing.price && (
+                <p className="mt-2 text-caption text-mist">
+                  Faltam {(listing.price - available).toLocaleString("pt-BR")}{" "}
+                  cristais.
+                </p>
+              )}
+              <p className="mt-2 text-caption text-mist">
+                Expira em {timeLeft(listing.expiresAt)}
+              </p>
+            </GachaOfferCard>
+          );
+        })}
+      </GachaOfferGrid>
       {canLoadMore && (
         <button
           type="button"
@@ -2397,157 +2395,5 @@ function PositionList({
         </ul>
       )}
     </div>
-  );
-}
-
-function MarketArtwork({
-  name,
-  image,
-  details,
-  onInspectCard,
-}: {
-  name: string;
-  image?: string | null;
-  details: string;
-  onInspectCard?: () => void;
-}) {
-  const [open, setOpen] = useState(false);
-  const [zoom, setZoom] = useState(false);
-  const [failed, setFailed] = useState(false);
-  const src = safeImageSrc(image);
-  return (
-    <>
-      <button
-        type="button"
-        onClick={() => {
-          if (onInspectCard) {
-            onInspectCard();
-            return;
-          }
-          setZoom(false);
-          setOpen(true);
-        }}
-        aria-label={
-          onInspectCard
-            ? `Inspecionar carta ${name}`
-            : `Ver detalhes de ${name}`
-        }
-        className="group block w-full text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ice"
-      >
-        <span className="flex h-64 items-center justify-center overflow-hidden bg-ink sm:h-72">
-          {src && !failed ? (
-            <Image
-              src={src}
-              alt={name}
-              width={480}
-              height={640}
-              sizes="(max-width: 479px) 90vw, (max-width: 1023px) 45vw, 400px"
-              onError={() => setFailed(true)}
-              className="h-full w-full object-contain"
-            />
-          ) : (
-            <span className="text-body-sm text-mist">Imagem indisponível</span>
-          )}
-        </span>
-        <span className="flex min-h-11 items-center justify-center border-b border-hairline text-body-sm text-ice group-hover:text-snow">
-          {onInspectCard ? "Inspecionar carta" : "Ver arte e detalhes"}
-        </span>
-      </button>
-      {open && (
-        <Modal
-          open
-          size="wide"
-          onClose={() => setOpen(false)}
-          title={name}
-          footer={
-            <button
-              type="button"
-              onClick={() => setOpen(false)}
-              className="btn-ghost min-h-11 px-4"
-            >
-              Fechar prévia
-            </button>
-          }
-        >
-          <p className="mb-4 break-words text-body-sm text-mist">{details}</p>
-          {src && !failed ? (
-            <>
-              <button
-                type="button"
-                aria-pressed={zoom}
-                onClick={() => setZoom(!zoom)}
-                className="btn-ghost mb-3 min-h-11 px-4"
-              >
-                {zoom ? "Ajustar à tela" : "Ampliar 2×"}
-              </button>
-              <div
-                tabIndex={0}
-                role="region"
-                aria-label="Arte ampliada; use a rolagem para explorar"
-                className="max-h-[60dvh] overflow-auto overscroll-contain bg-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-ice"
-              >
-                <Image
-                  src={src}
-                  alt={name}
-                  width={960}
-                  height={1280}
-                  sizes={zoom ? "1600px" : "800px"}
-                  className={
-                    zoom
-                      ? "h-auto w-[200%] max-w-none"
-                      : "mx-auto h-auto max-h-[60dvh] w-full object-contain"
-                  }
-                />
-              </div>
-              {zoom && (
-                <p className="mt-2 text-caption text-mist">
-                  Deslize ou role para explorar a imagem ampliada.
-                </p>
-              )}
-            </>
-          ) : (
-            <p className="py-10 text-center text-mist">
-              Imagem indisponível para este item.
-            </p>
-          )}
-        </Modal>
-      )}
-    </>
-  );
-}
-
-function MarketItemThumbnail({
-  image,
-  className,
-}: {
-  image: string | null;
-  className: string;
-}) {
-  const [failed, setFailed] = useState(false);
-  const src = safeImageSrc(image);
-
-  return (
-    <span
-      className={`relative flex items-center justify-center overflow-hidden bg-panel ${className}`}
-    >
-      {src && !failed ? (
-        <Image
-          src={src}
-          alt=""
-          fill
-          sizes="64px"
-          onError={() => setFailed(true)}
-          aria-hidden="true"
-          className="object-contain"
-        />
-      ) : (
-        <span
-          aria-hidden="true"
-          className="px-1 text-center text-[10px] text-mist"
-        >
-          Sem arte
-        </span>
-      )}
-    </span>
   );
 }
