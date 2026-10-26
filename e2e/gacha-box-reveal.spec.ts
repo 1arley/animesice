@@ -110,11 +110,12 @@ test("filme toca uma vez e só depois revela o prêmio, sem spoiler no toast", a
   await expect
     .poll(() => movie.evaluate((v: HTMLVideoElement) => v.currentTime))
     .toBeGreaterThan(0.1);
-  await expect(page.getByText("640 cristais", { exact: true })).toHaveCount(0);
+  await expect(page.getByText("+640", { exact: true })).toHaveCount(0);
   await page.screenshot({ path: info.outputPath("box-opening.png") });
-  await expect(dialog.getByText("640 cristais", { exact: true })).toBeVisible({
+  await expect(dialog.getByText("+640", { exact: true })).toBeVisible({
     timeout: 7000,
   });
+  await expect(dialog.locator(".box-reveal-name")).toHaveText("Cristais");
   await expect(dialog).toHaveAccessibleName("Premium aberta");
   expect(calls).toBe(1);
   await expect(movie).toHaveCount(0);
@@ -153,7 +154,8 @@ test("pular não inventa prêmio; fechar durante API lenta preserva o resultado"
   resolve();
   await expect(page.getByText("2 chaves", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Ver resultado da caixa" }).click();
-  await expect(dialog.getByText("2 chaves", { exact: true })).toBeVisible();
+  await expect(dialog.getByText("+2", { exact: true })).toBeVisible();
+  await expect(dialog.getByText("Chaves", { exact: true })).toBeVisible();
   await expect(dialog.locator("video")).toHaveCount(0);
 });
 
@@ -168,11 +170,9 @@ test("movimento reduzido revela direto e não baixa vídeo", async ({ page }) =>
   );
   await page.goto("/gacha/loja");
   await openButton(page, "Comum").click();
-  await expect(
-    page
-      .getByRole("dialog")
-      .getByText("1 reset de giro (5 previews)", { exact: true }),
-  ).toBeVisible();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog.getByText("+1", { exact: true })).toBeVisible();
+  await expect(dialog.locator(".box-reveal-name")).toHaveText("Reset de giro");
   expect(movies).toEqual([]);
 });
 
@@ -212,7 +212,8 @@ test("só permite abrir outra caixa depois de confirmar o inventário atualizado
   await page.goto("/gacha/loja");
   await openButton(page, "Comum").click();
   const dialog = page.getByRole("dialog");
-  await expect(dialog.getByText("50 cristais", { exact: true })).toBeVisible();
+  await expect(dialog.getByText("+50", { exact: true })).toBeVisible();
+  await expect(dialog.locator(".box-reveal-name")).toHaveText("Cristais");
   await expect(dialog.getByRole("button", { name: /^Abrir outra/ })).toHaveCount(
     0,
   );
@@ -232,8 +233,11 @@ test("compra caixa e chave antes de abrir", async ({ page }) => {
     .getByRole("button", { name: /Comprar e abrir/ })
     .click();
   await expect(
-    page.getByRole("dialog").getByText("75 cristais", { exact: true }),
+    page.getByRole("dialog").getByText("+75", { exact: true }),
   ).toBeVisible();
+  await expect(
+    page.getByRole("dialog").locator(".box-reveal-name"),
+  ).toHaveText("Cristais");
   expect(calls).toEqual(["box", "key", "open"]);
 });
 
@@ -270,7 +274,8 @@ test("vídeo ausente não esconde recompensa e erro da API não celebra sucesso"
   await page.goto("/gacha/loja");
   await openButton(page, "Comum").click();
   const dialog = page.getByRole("dialog");
-  await expect(dialog.getByText("100 cristais", { exact: true })).toBeVisible();
+  await expect(dialog.getByText("+100", { exact: true })).toBeVisible();
+  await expect(dialog.locator(".box-reveal-name")).toHaveText("Cristais");
   await dialog.getByRole("button", { name: "Continuar", exact: true }).click();
   await openButton(page, "Rara").click();
   await expect(dialog.getByRole("alert")).toContainText(
@@ -292,8 +297,9 @@ test("download travado libera a recompensa sem depender do evento ended", async 
   await page.goto("/gacha/loja");
   await openButton(page, "Rara").click();
   await expect(
-    page.getByRole("dialog").getByText("750 cristais", { exact: true }),
+    page.getByRole("dialog").getByText("+750", { exact: true }),
   ).toBeVisible({ timeout: 7000 });
+  await expect(page.getByRole("dialog").locator(".box-reveal-name")).toHaveText("Cristais");
 });
 
 test("arte e nome longo cabem na cena; teclado permanece no diálogo", async ({
@@ -363,7 +369,7 @@ test("abrir outra caixa toca o filme de novo, sem reaproveitar estado antigo", a
   const dialog = page.getByRole("dialog");
 
   await openButton(page, "Comum").click();
-  await expect(dialog.getByText("101 cristais", { exact: true })).toBeVisible({
+  await expect(dialog.getByText("+101", { exact: true })).toBeVisible({
     timeout: 7000,
   });
   await dialog.getByRole("button", { name: "Continuar", exact: true }).click();
@@ -377,11 +383,12 @@ test("abrir outra caixa toca o filme de novo, sem reaproveitar estado antigo", a
   await expect
     .poll(() => movie.evaluate((v: HTMLVideoElement) => v.currentTime))
     .toBeGreaterThan(0);
-  await expect(dialog.getByText("102 cristais", { exact: true })).toHaveCount(
+  await expect(dialog.getByText("+102", { exact: true })).toHaveCount(
     0,
   );
-  await expect(dialog.getByText("102 cristais", { exact: true })).toBeVisible({
+  await expect(dialog.getByText("+102", { exact: true })).toBeVisible({
     timeout: 7000,
   });
+  await expect(dialog.locator(".box-reveal-name")).toHaveText("Cristais");
   expect(calls).toBe(2);
 });
