@@ -121,7 +121,7 @@ test("movimento reduzido revela direto e não baixa vídeo", async ({ page }) =>
   await expect(
     page
       .getByRole("dialog")
-      .getByText("1 reset de giro (5 previews)", { exact: true }),
+      .getByText("1 reset de giro", { exact: true }),
   ).toBeVisible();
   expect(movies).toEqual([]);
 });

@@ -15,8 +15,11 @@ import {
 import {
   BoxReveal,
   BOX_LABEL,
-  boxRewardLabel,
 } from "@/components/gacha/BoxReveal";
+import {
+  boxRewardLabel,
+  ITEM_KIND_LABEL,
+} from "@/lib/gacha-box-reward";
 import { Modal } from "@/components/common/Modal";
 import { SearchField } from "@/components/ui/SearchField";
 import { useToast } from "@/components/common/ToastProvider";
@@ -47,14 +50,6 @@ import type {
 } from "@/types";
 
 type GachaEconomyMode = "market" | "shop";
-
-const ITEM_KIND_LABEL: Record<GachaItemKind, string> = {
-  TITANITA: "Fragmentos de Titanita",
-  TITANITA_SOMBRIA: "Fragmentos de Titanita Sombria",
-  DRACONICA: "Fragmentos de Dracônica",
-  SOMBRIA_DRACONICA: "Fragmentos de Dracônica Sombria",
-  PROTECAO: "Proteção de reroll",
-};
 
 const BOX_CATEGORY_LABEL: Record<string, string> = {
   CARD: "Carta",
