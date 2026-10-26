@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, type Page } from "@playwright/test";
 import { blockAds, loginAs } from "./helpers";
 
 test.beforeEach(async ({ page }) => {
@@ -38,6 +38,56 @@ function openButton(page: import("@playwright/test").Page, tier: string) {
     .getByRole("article")
     .filter({ has: page.getByRole("heading", { name: tier, exact: true }) })
     .getByRole("button", { name: "Abrir", exact: true });
+}
+
+async function mockPurchaseFlow(page: Page, failKeyPurchase = false) {
+  const calls: string[] = [];
+  let inventory = {
+    balance: 4000,
+    available: 4000,
+    reserved: 0,
+    commonBoxes: 0,
+    rareBoxes: 2,
+    premiumBoxes: 2,
+    keys: 0,
+    spinResets: 0,
+    loyaltyDays: 1,
+  };
+  await page.route("**/gacha/economy**", async (route) => {
+    const path = new URL(route.request().url()).pathname;
+    if (path.endsWith("/economy")) return route.fulfill({ json: inventory });
+    if (path.endsWith("/boxes/open")) {
+      calls.push("open");
+      return route.fulfill({
+        json: { reward: { category: "CRYSTAL", amount: 75 } },
+      });
+    }
+    if (path.endsWith("/boxes")) {
+      calls.push("box");
+      inventory = { ...inventory, commonBoxes: 1, available: 3500 };
+      return route.fulfill({ json: { inventory } });
+    }
+    return route.fallback();
+  });
+  await page.route("**/gacha/economy/keys**", async (route) => {
+    calls.push("key");
+    if (failKeyPurchase) {
+      return route.fulfill({ status: 400, json: { message: "Compra recusada." } });
+    }
+    inventory = { ...inventory, keys: 1, available: 3400 };
+    return route.fulfill({ json: { inventory } });
+  });
+  await page.route("**/gacha/economy/odds", (route) =>
+    route.fulfill({
+      json: {
+        boxPrices: { COMMON: 500, RARE: 1000, PREMIUM: 2000 },
+        keyPrice: 100,
+        categories: {},
+        qualities: {},
+      },
+    }),
+  );
+  return calls;
 }
 
 test("filme toca uma vez e só depois revela o prêmio, sem spoiler no toast", async ({
@@ -126,6 +176,80 @@ test("movimento reduzido revela direto e não baixa vídeo", async ({ page }) =>
   expect(movies).toEqual([]);
 });
 
+test("só permite abrir outra caixa depois de confirmar o inventário atualizado", async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  let inventoryReads = 0;
+  let releaseRefresh!: () => void;
+  const refreshGate = new Promise<void>((resolve) => {
+    releaseRefresh = resolve;
+  });
+  await page.route("**/gacha/economy**", async (route) => {
+    const path = new URL(route.request().url()).pathname;
+    if (path.endsWith("/economy")) {
+      inventoryReads++;
+      if (inventoryReads === 2) await refreshGate;
+      return route.fulfill({
+        json: {
+          balance: 4000,
+          available: 4000,
+          reserved: 0,
+          commonBoxes: 1,
+          rareBoxes: 2,
+          premiumBoxes: 2,
+          keys: 1,
+          spinResets: 0,
+          loyaltyDays: 1,
+        },
+      });
+    }
+    return route.fallback();
+  });
+  await page.route("**/boxes/open", (route) =>
+    route.fulfill({ json: { reward: { category: "CRYSTAL", amount: 50 } } }),
+  );
+  await page.goto("/gacha/loja");
+  await openButton(page, "Comum").click();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog.getByText("50 cristais", { exact: true })).toBeVisible();
+  await expect(dialog.getByRole("button", { name: /^Abrir outra/ })).toHaveCount(
+    0,
+  );
+  releaseRefresh();
+  await expect(
+    dialog.getByRole("button", { name: /^Abrir outra/ }),
+  ).toBeEnabled();
+});
+
+test("compra caixa e chave antes de abrir", async ({ page }) => {
+  const calls = await mockPurchaseFlow(page);
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/gacha/loja");
+  await page
+    .getByRole("article")
+    .filter({ has: page.getByRole("heading", { name: "Comum", exact: true }) })
+    .getByRole("button", { name: /Comprar e abrir/ })
+    .click();
+  await expect(
+    page.getByRole("dialog").getByText("75 cristais", { exact: true }),
+  ).toBeVisible();
+  expect(calls).toEqual(["box", "key", "open"]);
+});
+
+test("não abre a caixa se a compra da chave falhar", async ({ page }) => {
+  const calls = await mockPurchaseFlow(page, true);
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/gacha/loja");
+  await page
+    .getByRole("article")
+    .filter({ has: page.getByRole("heading", { name: "Comum", exact: true }) })
+    .getByRole("button", { name: /Comprar e abrir/ })
+    .click();
+  await expect(page.getByText("Compra recusada.", { exact: true })).toBeVisible();
+  expect(calls).toEqual(["box", "key"]);
+});
+
 test("vídeo ausente não esconde recompensa e erro da API não celebra sucesso", async ({
   page,
 }) => {
@@ -189,6 +313,7 @@ test("arte e nome longo cabem na cena; teclado permanece no diálogo", async ({
         reward: {
           category: "CARD",
           name,
+          rarity: "LENDARIA",
           image: "https://cdn.myanimelist.net/test-box-art.png",
           foil: "HOLO",
         },
@@ -199,6 +324,7 @@ test("arte e nome longo cabem na cena; teclado permanece no diálogo", async ({
   await openButton(page, "Rara").click();
   const dialog = page.getByRole("dialog");
   const art = dialog.getByRole("img", { name, exact: true });
+  await expect(dialog.getByText("Lendária", { exact: true })).toBeVisible();
   await expect(art).toBeVisible();
   await expect
     .poll(() => art.evaluate((el: HTMLImageElement) => el.naturalWidth))
@@ -208,8 +334,13 @@ test("arte e nome longo cabem na cena; teclado permanece no diálogo", async ({
     dialog.getByRole("button", { name: "Continuar", exact: true }),
   ).toBeFocused();
   await page.keyboard.press("Tab");
+  const again = dialog.getByRole("button", { name: /^Abrir outra/ });
+  if (await again.count()) {
+    await expect(again).toBeFocused();
+    await page.keyboard.press("Tab");
+  }
   await expect(
-    dialog.getByRole("button", { name: "Voltar ao mercado", exact: true }),
+    dialog.getByRole("button", { name: "Voltar à loja", exact: true }),
   ).toBeFocused();
   expect(await dialog.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(
     true,

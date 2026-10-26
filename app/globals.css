@@ -73,19 +73,23 @@
   .roll-stage-dialog[data-reduced="true"] [data-card-back] {
     opacity: 0;
     transform: none !important;
-    transition: opacity 220ms ease, transform 220ms ease;
+    transition:
+      opacity 220ms ease,
+      transform 220ms ease;
   }
 
   .roll-stage-dialog[data-reduced="true"] [data-card-front] {
     opacity: 1;
   }
 
-  .roll-stage-dialog[data-reduced="true"][data-revealed="true"] [data-card-front] {
+  .roll-stage-dialog[data-reduced="true"][data-revealed="true"]
+    [data-card-front] {
     opacity: 0;
     transform: scale(0.97) !important;
   }
 
-  .roll-stage-dialog[data-reduced="true"][data-revealed="true"] [data-card-back] {
+  .roll-stage-dialog[data-reduced="true"][data-revealed="true"]
+    [data-card-back] {
     opacity: 1;
     transform: scale(1) !important;
   }
@@ -896,18 +900,42 @@
 
   .gold-foil-overlay::before {
     background:
-      linear-gradient(115deg, transparent 23%, rgba(255, 246, 206, 0.7) 29%, transparent 34%),
-      linear-gradient(165deg, transparent 48%, rgba(255, 220, 105, 0.42) 53%, transparent 59%),
-      radial-gradient(ellipse at 50% 0%, rgba(255, 246, 210, 0.5), transparent 58%);
+      linear-gradient(
+        115deg,
+        transparent 23%,
+        rgba(255, 246, 206, 0.7) 29%,
+        transparent 34%
+      ),
+      linear-gradient(
+        165deg,
+        transparent 48%,
+        rgba(255, 220, 105, 0.42) 53%,
+        transparent 59%
+      ),
+      radial-gradient(
+        ellipse at 50% 0%,
+        rgba(255, 246, 210, 0.5),
+        transparent 58%
+      );
     mix-blend-mode: screen;
     opacity: 0.78;
   }
 
   .gold-foil-overlay::after {
     background:
-      repeating-linear-gradient(42deg, transparent 0 5px, rgba(255, 247, 215, 0.12) 5px 6px),
-      radial-gradient(circle, rgba(255, 244, 194, 0.52) 0 0.6px, transparent 0.9px);
-    background-size: auto, 7px 7px;
+      repeating-linear-gradient(
+        42deg,
+        transparent 0 5px,
+        rgba(255, 247, 215, 0.12) 5px 6px
+      ),
+      radial-gradient(
+        circle,
+        rgba(255, 244, 194, 0.52) 0 0.6px,
+        transparent 0.9px
+      );
+    background-size:
+      auto,
+      7px 7px;
     box-shadow: inset 0 0 18px 3px rgba(255, 224, 119, 0.42);
     mix-blend-mode: soft-light;
     opacity: 0.72;
@@ -917,7 +945,7 @@
      foil precisam contribuid juntos, e o utilitario declarado por ultimo
      apagaria o outro. Ambos entram por var e compoem aqui. */
   .foil-art {
-    filter: var(--foil-art, ) var(--cond-art, );
+    filter: var(--foil-art,) var(--cond-art,);
   }
 
   /* INK: foil preto fosco. Sem brilho — a identidade vem do escuro e da
@@ -926,8 +954,16 @@
   .ink-foil-overlay {
     border: 1px solid rgba(148, 163, 184, 0.5);
     background:
-      repeating-linear-gradient(48deg, transparent 0 6px, rgba(203, 213, 225, 0.05) 6px 7px),
-      radial-gradient(ellipse at 50% 0%, rgba(226, 232, 240, 0.24), transparent 60%);
+      repeating-linear-gradient(
+        48deg,
+        transparent 0 6px,
+        rgba(203, 213, 225, 0.05) 6px 7px
+      ),
+      radial-gradient(
+        ellipse at 50% 0%,
+        rgba(226, 232, 240, 0.24),
+        transparent 60%
+      );
     box-shadow: inset 0 0 22px 4px rgba(2, 6, 23, 0.75);
     mix-blend-mode: multiply;
     opacity: 0.9;
@@ -956,36 +992,42 @@
         rgba(255, 255, 255, 0.05) 18px 19px,
         transparent 19px 36px
       );
-    --spectrum:
-      repeating-linear-gradient(
-        118deg,
-        rgba(255, 50, 110, 0.38) 0 20px,
-        rgba(255, 140, 40, 0.36) 20px 40px,
-        rgba(255, 225, 60, 0.38) 40px 60px,
-        rgba(40, 235, 160, 0.36) 60px 80px,
-        rgba(35, 195, 255, 0.38) 80px 100px,
-        rgba(130, 95, 255, 0.38) 100px 120px,
-        rgba(240, 75, 215, 0.38) 120px 140px,
-        rgba(255, 50, 110, 0.38) 140px 160px
-      );
-    --sheen-caustic:
-      repeating-linear-gradient(
-        118deg,
-        transparent 0 35px,
-        rgba(255, 255, 255, 0.22) 35px 37px,
-        transparent 37px 72px
-      );
+    --spectrum: repeating-linear-gradient(
+      118deg,
+      rgba(255, 50, 110, 0.38) 0 20px,
+      rgba(255, 140, 40, 0.36) 20px 40px,
+      rgba(255, 225, 60, 0.38) 40px 60px,
+      rgba(40, 235, 160, 0.36) 60px 80px,
+      rgba(35, 195, 255, 0.38) 80px 100px,
+      rgba(130, 95, 255, 0.38) 100px 120px,
+      rgba(240, 75, 215, 0.38) 120px 140px,
+      rgba(255, 50, 110, 0.38) 140px 160px
+    );
+    --sheen-caustic: repeating-linear-gradient(
+      118deg,
+      transparent 0 35px,
+      rgba(255, 255, 255, 0.22) 35px 37px,
+      transparent 37px 72px
+    );
     --radial-depth:
-      radial-gradient(ellipse at 50% 18%, rgba(255, 255, 255, 0.32) 0%, transparent 60%),
-      radial-gradient(ellipse at 50% 86%, rgba(168, 85, 247, 0.25) 0%, transparent 65%);
+      radial-gradient(
+        ellipse at 50% 18%,
+        rgba(255, 255, 255, 0.32) 0%,
+        transparent 60%
+      ),
+      radial-gradient(
+        ellipse at 50% 86%,
+        rgba(168, 85, 247, 0.25) 0%,
+        transparent 65%
+      );
     background-image:
-      var(--diamond-facets),
-      var(--spectrum),
-      var(--sheen-caustic),
+      var(--diamond-facets), var(--spectrum), var(--sheen-caustic),
       var(--radial-depth);
     mix-blend-mode: color-dodge;
     opacity: 0.58;
-    transition: opacity 350ms ease, filter 350ms ease;
+    transition:
+      opacity 350ms ease,
+      filter 350ms ease;
   }
 
   /* Borda biselada de arco-iris espectral — lapidacao holografica nas bordas.
@@ -1029,30 +1071,94 @@
   .prism-foil-overlay::after {
     background:
       /* Estrela 1 (horizontal + vertical + nucleo ciano) */
-      radial-gradient(ellipse 16px 1.5px at 24% 22%, rgba(255, 255, 255, 0.95), transparent 75%),
-      radial-gradient(ellipse 1.5px 16px at 24% 22%, rgba(255, 255, 255, 0.95), transparent 75%),
-      radial-gradient(circle 3px at 24% 22%, #fff 0%, rgba(130, 220, 255, 0.9) 40%, transparent 80%),
-
+      radial-gradient(
+        ellipse 16px 1.5px at 24% 22%,
+        rgba(255, 255, 255, 0.95),
+        transparent 75%
+      ),
+      radial-gradient(
+        ellipse 1.5px 16px at 24% 22%,
+        rgba(255, 255, 255, 0.95),
+        transparent 75%
+      ),
+      radial-gradient(
+        circle 3px at 24% 22%,
+        #fff 0%,
+        rgba(130, 220, 255, 0.9) 40%,
+        transparent 80%
+      ),
       /* Estrela 2 (horizontal + vertical + nucleo magenta) */
-      radial-gradient(ellipse 14px 1.5px at 78% 18%, rgba(255, 255, 255, 0.92), transparent 75%),
-      radial-gradient(ellipse 1.5px 14px at 78% 18%, rgba(255, 255, 255, 0.92), transparent 75%),
-      radial-gradient(circle 2.5px at 78% 18%, #fff 0%, rgba(255, 180, 220, 0.9) 40%, transparent 80%),
-
+        radial-gradient(
+          ellipse 14px 1.5px at 78% 18%,
+          rgba(255, 255, 255, 0.92),
+          transparent 75%
+        ),
+      radial-gradient(
+        ellipse 1.5px 14px at 78% 18%,
+        rgba(255, 255, 255, 0.92),
+        transparent 75%
+      ),
+      radial-gradient(
+        circle 2.5px at 78% 18%,
+        #fff 0%,
+        rgba(255, 180, 220, 0.9) 40%,
+        transparent 80%
+      ),
       /* Estrela 3 (horizontal + vertical + nucleo dourado) */
-      radial-gradient(ellipse 15px 1.5px at 32% 76%, rgba(255, 255, 255, 0.92), transparent 75%),
-      radial-gradient(ellipse 1.5px 15px at 32% 76%, rgba(255, 255, 255, 0.92), transparent 75%),
-      radial-gradient(circle 2.5px at 32% 76%, #fff 0%, rgba(255, 240, 150, 0.9) 40%, transparent 80%),
-
+        radial-gradient(
+          ellipse 15px 1.5px at 32% 76%,
+          rgba(255, 255, 255, 0.92),
+          transparent 75%
+        ),
+      radial-gradient(
+        ellipse 1.5px 15px at 32% 76%,
+        rgba(255, 255, 255, 0.92),
+        transparent 75%
+      ),
+      radial-gradient(
+        circle 2.5px at 32% 76%,
+        #fff 0%,
+        rgba(255, 240, 150, 0.9) 40%,
+        transparent 80%
+      ),
       /* Estrela 4 (horizontal + vertical + nucleo esmeralda) */
-      radial-gradient(ellipse 14px 1.5px at 82% 68%, rgba(255, 255, 255, 0.9), transparent 75%),
-      radial-gradient(ellipse 1.5px 14px at 82% 68%, rgba(255, 255, 255, 0.9), transparent 75%),
-      radial-gradient(circle 2.5px at 82% 68%, #fff 0%, rgba(160, 240, 210, 0.9) 40%, transparent 80%),
-
+        radial-gradient(
+          ellipse 14px 1.5px at 82% 68%,
+          rgba(255, 255, 255, 0.9),
+          transparent 75%
+        ),
+      radial-gradient(
+        ellipse 1.5px 14px at 82% 68%,
+        rgba(255, 255, 255, 0.9),
+        transparent 75%
+      ),
+      radial-gradient(
+        circle 2.5px at 82% 68%,
+        #fff 0%,
+        rgba(160, 240, 210, 0.9) 40%,
+        transparent 80%
+      ),
       /* Micro-diamantes / glints espalhados */
-      radial-gradient(circle 1.5px at 52% 44%, rgba(255, 255, 255, 0.95) 0, transparent 2.5px),
-      radial-gradient(circle 1.2px at 15% 55%, rgba(255, 255, 255, 0.85) 0, transparent 2px),
-      radial-gradient(circle 1.4px at 68% 88%, rgba(255, 255, 255, 0.9) 0, transparent 2.2px),
-      radial-gradient(circle 1.2px at 88% 38%, rgba(255, 255, 255, 0.85) 0, transparent 2px);
+        radial-gradient(
+          circle 1.5px at 52% 44%,
+          rgba(255, 255, 255, 0.95) 0,
+          transparent 2.5px
+        ),
+      radial-gradient(
+        circle 1.2px at 15% 55%,
+        rgba(255, 255, 255, 0.85) 0,
+        transparent 2px
+      ),
+      radial-gradient(
+        circle 1.4px at 68% 88%,
+        rgba(255, 255, 255, 0.9) 0,
+        transparent 2.2px
+      ),
+      radial-gradient(
+        circle 1.2px at 88% 38%,
+        rgba(255, 255, 255, 0.85) 0,
+        transparent 2px
+      );
     background-size: 100% 100%;
     mix-blend-mode: screen;
     opacity: 0.65;
@@ -2161,11 +2267,15 @@
 @keyframes night-market-nav-glow {
   0%,
   100% {
-    box-shadow: 0 0 0 1px rgba(251, 191, 36, 0.24), 0 0 8px rgba(251, 191, 36, 0.2);
+    box-shadow:
+      0 0 0 1px rgba(251, 191, 36, 0.24),
+      0 0 8px rgba(251, 191, 36, 0.2);
   }
 
   50% {
-    box-shadow: 0 0 0 2px rgba(251, 191, 36, 0.65), 0 0 18px rgba(251, 191, 36, 0.45);
+    box-shadow:
+      0 0 0 2px rgba(251, 191, 36, 0.65),
+      0 0 18px rgba(251, 191, 36, 0.45);
   }
 }
 
@@ -2237,8 +2347,17 @@
   overflow: hidden;
   transform: rotateY(0deg);
   background-image:
-    radial-gradient(ellipse at 50% 48%, rgba(var(--offer-accent), 0.2), transparent 54%),
-    linear-gradient(145deg, rgba(var(--offer-accent), 0.3), rgba(var(--offer-accent), 0.08) 62%, #0b1018 100%);
+    radial-gradient(
+      ellipse at 50% 48%,
+      rgba(var(--offer-accent), 0.2),
+      transparent 54%
+    ),
+    linear-gradient(
+      145deg,
+      rgba(var(--offer-accent), 0.3),
+      rgba(var(--offer-accent), 0.08) 62%,
+      #0b1018 100%
+    );
 }
 
 .night-offer-card__back[data-rarity="COMUM"] {
@@ -2333,7 +2452,12 @@
   position: absolute;
   z-index: 1;
   inset: -35% -55%;
-  background: linear-gradient(112deg, transparent 47%, rgba(255, 255, 255, 0.12) 50%, transparent 53%);
+  background: linear-gradient(
+    112deg,
+    transparent 47%,
+    rgba(255, 255, 255, 0.12) 50%,
+    transparent 53%
+  );
   pointer-events: none;
   transform: translateX(-72%);
   animation: night-offer-sheen 6.5s ease-in-out infinite;
@@ -2551,49 +2675,152 @@
   stroke-width: 1;
 }
 
+.box-reveal-stage {
+  overflow: clip;
+}
+
 .box-reveal-prize {
+  --prize-accent: var(--box-accent);
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 0.65rem;
   width: 100%;
   padding: 1.25rem 1.5rem;
+}
+
+/* The clip ends on a white-out; the prize resolves out of it. */
+.box-reveal-flash {
+  position: absolute;
+  inset: -20%;
+  z-index: 2;
+  pointer-events: none;
+  background: radial-gradient(
+    circle at 50% 42%,
+    color-mix(in srgb, var(--prize-accent) 55%, #fff),
+    transparent 62%
+  );
+  animation: box-flash 900ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+/* Slow-turning light rays in the same circular geometry as the orbit rings. */
+.box-reveal-rays {
+  position: absolute;
+  top: 4%;
+  left: 50%;
+  z-index: -1;
+  width: min(130%, 34rem);
+  aspect-ratio: 1;
+  translate: -50% 0;
+  border-radius: 50%;
+  background: repeating-conic-gradient(
+    from 0deg,
+    color-mix(in srgb, var(--prize-accent) 20%, transparent) 0 6deg,
+    transparent 6deg 18deg
+  );
+  mask-image: radial-gradient(circle, #000 0, transparent 66%);
+  animation:
+    box-rays-in 1200ms cubic-bezier(0.16, 1, 0.3, 1) both,
+    box-rays-turn 40s linear infinite;
+}
+
+.box-reveal-chips {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.4rem;
+}
+
+.box-reveal-chip {
+  padding: 0.3rem 0.7rem;
+  border: 1px solid color-mix(in srgb, var(--prize-accent) 45%, transparent);
+  border-radius: 999px;
+  color: var(--prize-accent);
+  background: color-mix(in srgb, var(--prize-accent) 10%, #080c12);
+}
+
+.box-reveal-chip-rarity {
+  color: #080c12;
+  background: var(--prize-accent);
+}
+
+/* Staggered resolve: chip, art, amount, caption, name. */
+.box-reveal-chips,
+.box-reveal-art,
+.box-reveal-step {
   animation: box-prize-in 650ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: calc(var(--i, 0) * 110ms + 120ms);
 }
 
 .box-reveal-art {
+  position: relative;
   display: grid;
   place-items: center;
   min-height: 9rem;
-  color: var(--box-accent);
+  color: var(--prize-accent);
   filter: drop-shadow(
-    0 0 25px color-mix(in srgb, var(--box-accent) 22%, transparent)
+    0 0 28px color-mix(in srgb, var(--prize-accent) 30%, transparent)
   );
 }
 
-.box-reveal-art img {
-  border-radius: 0.5rem;
-  box-shadow: 0 12px 50px #0008;
+.box-reveal-art[data-kind="item"] img {
+  border: 1px solid color-mix(in srgb, var(--prize-accent) 55%, transparent);
+  border-radius: 0.6rem;
+  box-shadow:
+    0 0 0 4px color-mix(in srgb, var(--prize-accent) 10%, transparent),
+    0 18px 60px #000a;
+}
+
+/* One shine sweep across the artwork after it lands. */
+.box-reveal-art[data-kind="item"]::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: min(100%, 14rem);
+  height: 100%;
+  border-radius: 0.6rem;
+  pointer-events: none;
+  background: linear-gradient(
+    105deg,
+    transparent 35%,
+    #ffffff55 50%,
+    transparent 65%
+  );
+  background-size: 250% 100%;
+  animation: box-shine 1100ms 750ms cubic-bezier(0.4, 0, 0.2, 1) both;
 }
 
 .box-reveal-symbol {
-  width: clamp(7rem, 18dvh, 11rem);
+  width: clamp(6rem, 16dvh, 9rem);
   stroke: currentColor;
   stroke-width: 1.8;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
 
-.box-reveal-prize > p:first-of-type {
-  color: var(--box-accent);
+.box-reveal-amount {
+  font-size: clamp(2.75rem, 11vw, 4.25rem);
+  line-height: 1;
+  color: var(--prize-accent);
+  text-shadow: 0 0 36px color-mix(in srgb, var(--prize-accent) 45%, transparent);
+}
+
+.box-reveal-prize > p.box-reveal-step:not(.box-reveal-name) {
+  color: var(--prize-accent);
 }
 
 .box-reveal-name {
-  font-size: clamp(1.5rem, 5vw, 2.25rem);
+  font-size: clamp(1.25rem, 4vw, 1.75rem);
   line-height: 1.15;
   overflow-wrap: anywhere;
   text-align: center;
   text-wrap: balance;
+}
+
+.box-reveal-prize[data-kind="item"] .box-reveal-name {
+  font-size: clamp(1.5rem, 5vw, 2.25rem);
 }
 
 .box-reveal-footer {
@@ -2624,6 +2851,58 @@
 .box-reveal-action:disabled {
   color: #94a3b8;
   border-color: #1f2b3e;
+}
+
+.box-reveal-again {
+  min-height: 44px;
+  padding: 0.5rem 1rem;
+  color: #94a3b8;
+  font-size: 0.875rem;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.box-reveal-again:hover {
+  color: var(--box-accent);
+}
+
+/* Box art is rendered on black like the opening clip; screen blending lets the card show through. */
+.shop-box-art {
+  display: grid;
+  place-items: center;
+  margin-bottom: 1rem;
+  border-radius: 0.5rem;
+  background: radial-gradient(
+    ellipse at 50% 60%,
+    color-mix(in srgb, var(--tier-glow, #94c9dd) 14%, transparent),
+    transparent 70%
+  );
+}
+
+.shop-box-art[data-tier="RARE"] {
+  --tier-glow: #38e8da;
+}
+
+.shop-box-art[data-tier="PREMIUM"] {
+  --tier-glow: #f5cb7d;
+}
+
+.shop-box-art img {
+  mix-blend-mode: screen;
+  transition: transform 300ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.market-box:hover .shop-box-art img {
+  transform: translateY(-4px) scale(1.04);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shop-box-art img {
+    transition: none;
+  }
+  .market-box:hover .shop-box-art img {
+    transform: none;
+  }
 }
 
 .box-reveal-dialog button:focus-visible {
@@ -2660,9 +2939,163 @@
   }
 }
 
+@keyframes box-flash {
+  from {
+    opacity: 1;
+    transform: scale(0.6);
+  }
+  to {
+    opacity: 0;
+    transform: scale(1.4);
+  }
+}
+
+@keyframes box-rays-in {
+  from {
+    opacity: 0;
+    scale: 0.5;
+  }
+  to {
+    opacity: 1;
+    scale: 1;
+  }
+}
+
+@keyframes box-rays-turn {
+  to {
+    rotate: 360deg;
+  }
+}
+
+@keyframes box-shine {
+  from {
+    background-position: 150% 0;
+  }
+  to {
+    background-position: -50% 0;
+  }
+}
+
+/* Key balance: glint on purchase, quiet drop on spend. */
+.key-vault {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 44px;
+  padding: 0 0.9rem;
+  border: 1px solid #1f2b3e;
+  border-radius: 999px;
+  color: #94c9dd;
+  background: #0b111b;
+  font-size: 0.8125rem;
+}
+
+.key-vault[data-pulse="gain"] {
+  animation: key-vault-ring 900ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.key-vault-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+  stroke: currentColor;
+  stroke-width: 7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.key-vault[data-pulse="gain"] .key-vault-icon {
+  animation: key-vault-spin 800ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.key-vault[data-pulse] .key-vault-count {
+  display: inline-block;
+  animation: key-vault-bump 420ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.key-vault-delta {
+  position: absolute;
+  top: 0;
+  right: 0.9rem;
+  pointer-events: none;
+  color: #38e8da;
+  font-weight: 700;
+  animation: key-vault-float 1100ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.key-vault[data-pulse="spend"] .key-vault-delta {
+  color: #94a3b8;
+  animation-name: key-vault-drop;
+}
+
+@keyframes key-vault-ring {
+  0% {
+    border-color: #38e8da;
+    box-shadow: 0 0 0 0 #38e8da66;
+  }
+  100% {
+    border-color: #1f2b3e;
+    box-shadow: 0 0 0 14px transparent;
+  }
+}
+
+@keyframes key-vault-spin {
+  from {
+    transform: rotate(-200deg) scale(0.4);
+    color: #f5cb7d;
+  }
+  to {
+    transform: none;
+  }
+}
+
+@keyframes key-vault-bump {
+  from {
+    transform: scale(1.35);
+    color: #fff;
+  }
+  to {
+    transform: none;
+  }
+}
+
+@keyframes key-vault-float {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-1.75rem);
+  }
+}
+
+@keyframes key-vault-drop {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(1.5rem);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .box-reveal-prize {
-    animation: none;
+  .box-reveal-chips,
+  .box-reveal-art,
+  .box-reveal-step,
+  .box-reveal-art::after,
+  .box-reveal-flash,
+  .box-reveal-rays,
+  .key-vault,
+  .key-vault *,
+  .key-vault-delta {
+    animation: none !important;
+  }
+  .box-reveal-flash,
+  .key-vault-delta {
+    display: none;
   }
   .box-reveal-action {
     transition: none;
