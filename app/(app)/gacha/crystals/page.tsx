@@ -7,6 +7,10 @@ import { useAuth } from "@/lib/auth-context";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { SectionLabel } from "@/components/common/SectionLabel";
 import {
+  GachaOfferCard,
+  GachaOfferGrid,
+} from "@/components/gacha/cards";
+import {
   GachaPanelGridSkeleton,
   GachaRowsSkeleton,
 } from "@/components/gacha/GachaPageSkeleton";
@@ -307,35 +311,34 @@ export default function GachaCrystalsPage() {
             Abrir Mercado
           </Link>
         </div>
-        <ul className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+        <GachaOfferGrid>
           {packages.map((pack) => (
-            <li
+            <GachaOfferCard
+              as="li"
               key={pack.id}
-              className="flex flex-col border border-hairline bg-panel p-5"
-            >
-              <p className="font-display text-xl tabular-nums text-ice">
-                {pack.crystals.toLocaleString("pt-BR")}
-                <span className="mt-1 block text-caption font-normal text-mist">
-                  cristais
-                </span>
-              </p>
-              <p className="mt-4 text-lg tabular-nums text-snow">
-                {(pack.cents / 100).toLocaleString("pt-BR", {
-                  style: "currency",
-                  currency: "BRL",
-                })}
-              </p>
-              <button
-                type="button"
-                disabled={buying !== null}
-                onClick={() => void handleCrystalPurchase(pack.id)}
-                className="btn-ice mt-4 min-h-11 w-full disabled:opacity-40"
-              >
-                {buying === pack.id ? "Criando Pix…" : "Comprar via Pix"}
-              </button>
-            </li>
+              caption={<span className="text-mist">Pacote</span>}
+              title={`${pack.crystals.toLocaleString("pt-BR")} cristais`}
+              price={
+                <p className="font-sans text-lg tabular-nums text-snow">
+                  {(pack.cents / 100).toLocaleString("pt-BR", {
+                    style: "currency",
+                    currency: "BRL",
+                  })}
+                </p>
+              }
+              actions={
+                <button
+                  type="button"
+                  disabled={buying !== null}
+                  onClick={() => void handleCrystalPurchase(pack.id)}
+                  className="btn-ice min-h-11 w-full disabled:opacity-40"
+                >
+                  {buying === pack.id ? "Criando Pix…" : "Comprar via Pix"}
+                </button>
+              }
+            />
           ))}
-        </ul>
+        </GachaOfferGrid>
         {checkoutUrl && (
           <a
             href={checkoutUrl}

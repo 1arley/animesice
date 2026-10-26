@@ -3,6 +3,12 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { FOCUSABLE } from "@/components/common/Modal";
+import {
+  boxRewardDisplay,
+  boxRewardLabel,
+  boxRewardStatus,
+  isKnownBoxRewardCategory,
+} from "@/lib/gacha-box-reward";
 import { safeImageSrc } from "@/lib/url";
 import type { GachaBoxTier } from "@/types";
 
@@ -17,30 +23,14 @@ const ACCENT = { COMMON: "#94c9dd", RARE: "#38e8da", PREMIUM: "#f5cb7d" };
 const NO_METADATA_GRACE_MS = 4000;
 const ENDED_GRACE_MS = 1200;
 
-export function boxRewardLabel(reward: Record<string, unknown>): string {
-  const amount = Number(reward.amount ?? 1).toLocaleString("pt-BR");
-  switch (reward.category) {
-    case "CRYSTAL":
-      return `${amount} cristais`;
-    case "KEY":
-      return `${amount} chave${Number(reward.amount ?? 1) === 1 ? "" : "s"}`;
-    case "SPIN_RESET":
-      return `${amount} reset de giro (5 previews)`;
-    case "SKIN":
-      return `Skin: ${String(reward.name ?? "Nova skin")}`;
-    case "CARD":
-      return `Carta ${String(reward.name ?? "Nova carta")}${reward.foil ? ` · ${String(reward.foil)}` : ""}`;
-    case "CARD_BACK":
-      return `Capa: ${String(reward.name ?? "Nova capa")}`;
-    default:
-      return String(reward.name ?? "Recompensa recebida");
-  }
-}
-
 const KIND_LABEL: Record<string, string> = {
   CRYSTAL: "Cristais",
   KEY: "Chave",
   SPIN_RESET: "Reset de giro",
+  ITEM: "Item",
+  RARE_BOX: "Caixa rara",
+  KEY_RARE_BOX: "Caixa rara + chave",
+  KEY_PREMIUM_BOX: "Caixa premium + chave",
   SKIN: "Skin",
   CARD: "Carta",
   CARD_BACK: "Capa de carta",
@@ -138,11 +128,24 @@ export function BoxReveal({
   const [imageFailed, setImageFailed] = useState(false);
   const ready = !!reward && (finished || motion === false);
   const asset = `/gacha/box-${tier.toLowerCase()}`;
-  const art =
-    reward && safeImageSrc(String(reward.imageUrl ?? reward.image ?? ""));
-  const amount = Math.max(0, Math.floor(Number(reward?.amount ?? 1)));
+  const hiddenCard =
+    reward?.category === "CARD" &&
+    (reward.imageHidden === true || reward.name === "???");
+  const knownReward = !!reward && isKnownBoxRewardCategory(reward.category);
+  const art = reward &&
+    knownReward &&
+    !hiddenCard &&
+    safeImageSrc(String(reward.imageUrl ?? reward.image ?? ""));
+  const rawAmount = reward?.amount;
+  const amount =
+    typeof rawAmount === "number"
+      ? rawAmount
+      : typeof rawAmount === "string" && rawAmount.trim()
+        ? Number(rawAmount)
+        : Number.NaN;
   const stackable =
     !!reward &&
+    Number.isSafeInteger(amount) &&
     amount > 0 &&
     (reward.category === "CRYSTAL" ||
       reward.category === "KEY" ||
@@ -150,6 +153,23 @@ export function BoxReveal({
   const rarity = String(reward?.rarity ?? "").toUpperCase();
   const rarityLabel = RARITY_LABEL[rarity];
   const rarityColor = RARITY_COLOR[rarity];
+  const prize = reward ? boxRewardDisplay(reward) : null;
+  const stackableTitle =
+    reward?.category === "CRYSTAL"
+      ? amount === 1
+        ? "Cristal"
+        : "Cristais"
+      : reward?.category === "KEY"
+        ? amount === 1
+          ? "Chave"
+          : "Chaves"
+        : amount === 1
+          ? "Reset de giro"
+          : "Resets de giro";
+  const prizeTitle = stackable ? stackableTitle : prize?.title;
+  const prizeDetails = prize?.details?.filter(
+    (detail) => !(rarityLabel && detail.startsWith("Raridade: ")),
+  );
 
   useEffect(() => {
     const el = dialog.current!;
@@ -312,7 +332,9 @@ export function BoxReveal({
                 style={{ "--i": 0 } as React.CSSProperties}
               >
                 <span className="box-reveal-chip font-mono text-caption uppercase tracking-[0.18em]">
-                  {KIND_LABEL[String(reward.category)] ?? "Recompensa"}
+                  {reward.category === "CARD_BACK" && reward.duplicate === true
+                    ? "Compensação"
+                    : (KIND_LABEL[String(reward.category)] ?? "Recompensa")}
                 </span>
                 {rarityLabel && (
                   <span className="box-reveal-chip box-reveal-chip-rarity font-mono text-caption uppercase tracking-[0.18em]">
@@ -328,7 +350,11 @@ export function BoxReveal({
                 {art && !imageFailed ? (
                   <Image
                     src={art}
-                    alt={String(reward.name ?? "Recompensa da caixa")}
+                    alt={
+                      hiddenCard
+                        ? "Carta misteriosa"
+                        : String(reward.name ?? "Recompensa da caixa")
+                    }
                     width={280}
                     height={350}
                     onError={() => setImageFailed(true)}
@@ -352,7 +378,9 @@ export function BoxReveal({
                         <path d="M91 46a40 40 0 1 0 7 44M91 22v27H64" />
                         <path d="m51 52 25 18-25 18Z" />
                       </>
-                    ) : reward.category === "CRYSTAL" ? (
+                    ) : reward.category === "CRYSTAL" ||
+                      (reward.category === "CARD_BACK" &&
+                        reward.duplicate === true) ? (
                       <>
                         <path
                           d="m60 10 42 38-11 49-31 33-31-33-11-49Z"
@@ -361,6 +389,16 @@ export function BoxReveal({
                         />
                         <path d="m60 10-18 42 18 78 18-78ZM18 48l24 4h36l24-4M29 97l31 33 31-33" />
                       </>
+                    ) : !knownReward ? (
+                      <text
+                        x="60"
+                        y="104"
+                        fill="currentColor"
+                        fontSize="104"
+                        textAnchor="middle"
+                      >
+                        ?
+                      </text>
                     ) : (
                       <>
                         <rect x="24" y="12" width="72" height="116" rx="5" />
@@ -382,14 +420,25 @@ export function BoxReveal({
                 className="box-reveal-step font-mono text-caption uppercase tracking-[0.26em]"
                 style={{ "--i": 3 } as React.CSSProperties}
               >
-                Você ganhou
+                {reward.category === "CARD_BACK" && reward.duplicate === true
+                  ? "Compensação por duplicata"
+                  : knownReward
+                    ? "Você ganhou"
+                    : "Resultado da abertura"}
               </p>
               <p
                 className="box-reveal-name box-reveal-step font-display"
                 style={{ "--i": 4 } as React.CSSProperties}
               >
-                {boxRewardLabel(reward)}
+                {prizeTitle}
               </p>
+              {prizeDetails && prizeDetails.length > 0 && (
+                <div className="box-reveal-details">
+                  {prizeDetails.map((detail, index) => (
+                    <p key={index}>{detail}</p>
+                  ))}
+                </div>
+              )}
             </div>
           )}
           {error && (
@@ -415,11 +464,7 @@ export function BoxReveal({
             {error
               ? "Nenhuma nova tentativa foi enviada."
               : ready && reward
-                ? reward.category === "CRYSTAL"
-                  ? "Cristais já entram no seu saldo disponível."
-                  : reward.category === "SPIN_RESET"
-                    ? "Reset guardado. Use após gastar os 5 previews da hora."
-                    : "Recompensa adicionada ao seu inventário."
+                ? boxRewardStatus(reward)
                 : finished || motion === false
                   ? "Confirmando a abertura…"
                   : "Rompendo o selo…"}

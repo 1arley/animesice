@@ -2823,6 +2823,18 @@
   font-size: clamp(1.5rem, 5vw, 2.25rem);
 }
 
+.box-reveal-details {
+  display: grid;
+  gap: 0.25rem;
+  max-width: 36rem;
+  color: #cbd5e1;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+  text-align: center;
+  text-wrap: pretty;
+}
+
 .box-reveal-footer {
   display: flex;
   flex-direction: column;

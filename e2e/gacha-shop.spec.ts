@@ -350,7 +350,8 @@ test("abrir caixa mostra a recompensa em modal mesmo com a página rolada", asyn
   // O prêmio precisa estar no viewport, não no topo da página.
   const dialog = page.getByRole("dialog", { name: "Comum aberta" });
   await expect(dialog).toBeVisible();
-  await expect(dialog.getByText("640 cristais", { exact: true })).toBeVisible();
+  await expect(dialog.getByText("+640", { exact: true })).toBeVisible();
+  await expect(dialog.locator(".box-reveal-name")).toHaveText("Cristais");
   await expect(
     dialog.getByText("Cristais já entram no seu saldo disponível."),
   ).toBeVisible();

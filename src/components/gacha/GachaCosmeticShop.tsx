@@ -5,6 +5,12 @@ import Link from "next/link";
 import { api } from "@/lib/api";
 import { CosmeticSvg } from "@/components/gacha/CosmeticSvg";
 import { CosmeticThumb } from "@/components/gacha/CosmeticThumb";
+import {
+  GachaBadge,
+  GachaOfferCard,
+  GachaOfferGrid,
+  GachaPriceTag,
+} from "@/components/gacha/cards";
 import { GachaOfferGridSkeleton } from "@/components/gacha/GachaPageSkeleton";
 import { cosmeticTypeOf } from "@/lib/cosmetic-svg";
 import { useToast } from "@/components/common/ToastProvider";
@@ -134,115 +140,120 @@ export function GachaCosmeticShop({
           label="Carregando cosméticos"
           className="mt-4"
         />
-      ) : shop.length === 0 && !error ? (
-        <p className="mt-4 border border-dashed border-hairline p-5 text-body-sm text-mist">
-          Nenhum cosmético disponível no momento.
-        </p>
       ) : (
-        <ul className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <GachaOfferGrid
+          empty={shop.length === 0 && !error}
+          emptyLabel="Nenhum cosmético disponível no momento."
+        >
           {shop.map((item) => {
             const insufficient = balance != null && balance < item.price;
             const type = item.type ?? cosmeticTypeOf(item.key);
             const isBack = type === "BACK";
             const active = activeBack === item.key;
+            const labels = {
+              BACK: "Capa de carta",
+              FRAME: "Moldura",
+              HIGHLIGHT: "Destaque",
+              OTHER: "Cosmético",
+            } as const;
             return (
-              <li
+              <GachaOfferCard
+                as="li"
                 key={item.key}
-                className={`flex min-w-0 flex-col border bg-panel ${active ? "border-ice/60" : "border-hairline"}`}
-              >
-                {isBack ? (
-                  <div className="flex h-52 items-center justify-center border-b border-hairline bg-ink p-5">
-                    <CosmeticSvg
-                      cosmeticKey={item.key}
-                      className="aspect-[3/4] h-full object-contain"
+                selected={active}
+                artwork={
+                  isBack ? (
+                    <div className="flex h-52 items-center justify-center border-b border-hairline bg-ink p-5">
+                      <CosmeticSvg
+                        cosmeticKey={item.key}
+                        className="aspect-[3/4] h-full object-contain"
+                      />
+                    </div>
+                  ) : (
+                    // Moldura e destaque só se julgam sobre a arte.
+                    <div className="flex h-52 items-center justify-center border-b border-hairline bg-ink p-5">
+                      <CosmeticThumb
+                        svg={item.svg}
+                        type={type ?? "FRAME"}
+                        className="h-full"
+                      />
+                    </div>
+                  )
+                }
+                caption={
+                  <span className="text-mist">
+                    {labels[type ?? "OTHER"] ?? "Cosmético"}
+                  </span>
+                }
+                captionAside={
+                  item.owned ? <GachaBadge tone="owned">SEU</GachaBadge> : null
+                }
+                title={item.label}
+                description={item.description}
+                price={
+                  !item.owned ? (
+                    <GachaPriceTag
+                      amount={item.price.toLocaleString("pt-BR")}
                     />
-                  </div>
-                ) : (
-                  // Moldura e destaque só se julgam sobre a arte.
-                  <div className="flex h-52 items-center justify-center border-b border-hairline bg-ink p-5">
-                    <CosmeticThumb svg={item.svg} type={type ?? "FRAME"} className="h-full" />
-                  </div>
-                )}
-                <div className="flex flex-1 flex-col p-5">
-                  <div className="flex flex-wrap items-center justify-between gap-2 text-caption">
-                    <span className="text-mist">
-                      {isBack
-                        ? "Capa de carta"
-                        : type === "FRAME"
-                          ? "Moldura"
-                          : type === "HIGHLIGHT"
-                            ? "Destaque"
-                            : "Cosmético"}
-                    </span>
-                    {item.owned && (
-                      <span className="font-mono text-ice">SEU</span>
-                    )}
-                  </div>
-                  <h3 className="mt-2 font-display text-xl text-snow">
-                    {item.label}
-                  </h3>
-                  <p className="mt-2 text-body-sm text-mist">
-                    {item.description}
-                  </p>
-                  <div className="mt-auto pt-5">
-                    {item.owned ? (
-                      isBack ? (
-                        <>
-                          <p
-                            className="mb-2 text-caption text-mist"
-                            role="status"
-                          >
-                            {active
-                              ? "Equipada em todas as suas cartas"
-                              : "Pronta para usar na sua coleção"}
-                          </p>
-                          <button
-                            type="button"
-                            disabled={equipping}
-                            onClick={() =>
-                              void setBack(active ? null : item.key)
-                            }
-                            className={`${active ? "btn-ghost" : "btn-ice"} min-h-11 w-full px-3 disabled:opacity-50`}
-                          >
-                            {equipping
-                              ? "Atualizando…"
-                              : active
-                                ? "Remover capa"
-                                : "Usar capa"}
-                          </button>
-                        </>
-                      ) : (
-                        <p className="text-body-sm text-ice">Na sua coleção</p>
-                      )
+                  ) : null
+                }
+                notes={
+                  item.owned ? (
+                    isBack ? (
+                      <p
+                        className="mt-2 text-caption text-mist"
+                        role="status"
+                      >
+                        {active
+                          ? "Equipada em todas as suas cartas"
+                          : "Pronta para usar na sua coleção"}
+                      </p>
                     ) : (
-                      <>
-                        <p className="mb-3 font-display text-lg tabular-nums text-snow">
-                          {item.price.toLocaleString("pt-BR")} Cristais
-                        </p>
-                        <button
-                          type="button"
-                          onClick={() => void buy(item.key)}
-                          disabled={
-                            balance == null || buying !== null || insufficient
-                          }
-                          className="btn-ice min-h-11 w-full px-3 disabled:opacity-50"
-                        >
-                          {buying === item.key
-                            ? "Comprando…"
-                            : balance == null
-                              ? "Carregando saldo…"
-                              : insufficient
-                                ? "Saldo insuficiente"
-                                : "Comprar cosmético"}
-                        </button>
-                      </>
-                    )}
-                  </div>
-                </div>
-              </li>
+                      <p className="text-body-sm text-ice">Na sua coleção</p>
+                    )
+                  ) : null
+                }
+                actions={
+                  item.owned ? (
+                    isBack ? (
+                      <button
+                        type="button"
+                        disabled={equipping}
+                        onClick={() =>
+                          void setBack(active ? null : item.key)
+                        }
+                        className={`${active ? "btn-ghost" : "btn-ice"} min-h-11 w-full px-3 disabled:opacity-50`}
+                      >
+                        {equipping
+                          ? "Atualizando…"
+                          : active
+                            ? "Remover capa"
+                            : "Usar capa"}
+                      </button>
+                    ) : null
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => void buy(item.key)}
+                      disabled={
+                        balance == null || buying !== null || insufficient
+                      }
+                      className="btn-ice min-h-11 w-full px-3 disabled:opacity-50"
+                    >
+                      {buying === item.key
+                        ? "Comprando…"
+                        : balance == null
+                          ? "Carregando saldo…"
+                          : insufficient
+                            ? "Saldo insuficiente"
+                            : "Comprar cosmético"}
+                    </button>
+                  )
+                }
+              />
             );
           })}
-        </ul>
+        </GachaOfferGrid>
       )}
     </section>
   );
