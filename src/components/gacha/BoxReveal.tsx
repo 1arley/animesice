@@ -3,6 +3,12 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { FOCUSABLE } from "@/components/common/Modal";
+import {
+  boxRewardDisplay,
+  boxRewardLabel,
+  boxRewardStatus,
+  isKnownBoxRewardCategory,
+} from "@/lib/gacha-box-reward";
 import { safeImageSrc } from "@/lib/url";
 import type { GachaBoxTier } from "@/types";
 
@@ -16,26 +22,6 @@ const ACCENT = { COMMON: "#94c9dd", RARE: "#38e8da", PREMIUM: "#f5cb7d" };
 // Two constants, both measured from real media instead of guessed up front.
 const NO_METADATA_GRACE_MS = 4000;
 const ENDED_GRACE_MS = 1200;
-
-export function boxRewardLabel(reward: Record<string, unknown>): string {
-  const amount = Number(reward.amount ?? 1).toLocaleString("pt-BR");
-  switch (reward.category) {
-    case "CRYSTAL":
-      return `${amount} cristais`;
-    case "KEY":
-      return `${amount} chave${Number(reward.amount ?? 1) === 1 ? "" : "s"}`;
-    case "SPIN_RESET":
-      return `${amount} reset de giro (5 previews)`;
-    case "SKIN":
-      return `Skin: ${String(reward.name ?? "Nova skin")}`;
-    case "CARD":
-      return `Carta ${String(reward.name ?? "Nova carta")}${reward.foil ? ` · ${String(reward.foil)}` : ""}`;
-    case "CARD_BACK":
-      return `Capa: ${String(reward.name ?? "Nova capa")}`;
-    default:
-      return String(reward.name ?? "Recompensa recebida");
-  }
-}
 
 /** The API owns the reward; the clip only controls when we present it. */
 export function BoxReveal({
@@ -63,8 +49,15 @@ export function BoxReveal({
   const [imageFailed, setImageFailed] = useState(false);
   const ready = !!reward && (finished || motion === false);
   const asset = `/gacha/box-${tier.toLowerCase()}`;
-  const art =
-    reward && safeImageSrc(String(reward.imageUrl ?? reward.image ?? ""));
+  const hiddenCard =
+    reward?.category === "CARD" &&
+    (reward.imageHidden === true || reward.name === "???");
+  const knownReward = !!reward && isKnownBoxRewardCategory(reward.category);
+  const art = reward &&
+    knownReward &&
+    !hiddenCard &&
+    safeImageSrc(String(reward.imageUrl ?? reward.image ?? ""));
+  const prize = reward ? boxRewardDisplay(reward) : null;
 
   useEffect(() => {
     const el = dialog.current!;
@@ -216,7 +209,11 @@ export function BoxReveal({
                 {art && !imageFailed ? (
                   <Image
                     src={art}
-                    alt={String(reward.name ?? "Recompensa da caixa")}
+                    alt={
+                      hiddenCard
+                        ? "Carta misteriosa"
+                        : String(reward.name ?? "Recompensa da caixa")
+                    }
                     width={280}
                     height={350}
                     onError={() => setImageFailed(true)}
@@ -240,7 +237,9 @@ export function BoxReveal({
                         <path d="M91 46a40 40 0 1 0 7 44M91 22v27H64" />
                         <path d="m51 52 25 18-25 18Z" />
                       </>
-                    ) : reward.category === "CRYSTAL" ? (
+                    ) : reward.category === "CRYSTAL" ||
+                      (reward.category === "CARD_BACK" &&
+                        reward.duplicate === true) ? (
                       <>
                         <path
                           d="m60 10 42 38-11 49-31 33-31-33-11-49Z"
@@ -249,6 +248,16 @@ export function BoxReveal({
                         />
                         <path d="m60 10-18 42 18 78 18-78ZM18 48l24 4h36l24-4M29 97l31 33 31-33" />
                       </>
+                    ) : !knownReward ? (
+                      <text
+                        x="60"
+                        y="104"
+                        fill="currentColor"
+                        fontSize="104"
+                        textAnchor="middle"
+                      >
+                        ?
+                      </text>
                     ) : (
                       <>
                         <rect x="24" y="12" width="72" height="116" rx="5" />
@@ -259,11 +268,20 @@ export function BoxReveal({
                 )}
               </div>
               <p className="font-mono text-caption uppercase tracking-[0.26em]">
-                Você ganhou
+                {reward.category === "CARD_BACK" && reward.duplicate === true
+                  ? "Compensação por duplicata"
+                  : knownReward
+                    ? "Você ganhou"
+                    : "Resultado da abertura"}
               </p>
-              <p className="box-reveal-name font-display">
-                {boxRewardLabel(reward)}
-              </p>
+              <p className="box-reveal-name font-display">{prize?.title}</p>
+              {prize?.details && (
+                <div className="box-reveal-details">
+                  {prize.details.map((detail, index) => (
+                    <p key={index}>{detail}</p>
+                  ))}
+                </div>
+              )}
             </div>
           )}
           {error && (
@@ -289,11 +307,7 @@ export function BoxReveal({
             {error
               ? "Nenhuma nova tentativa foi enviada."
               : ready && reward
-                ? reward.category === "CRYSTAL"
-                  ? "Cristais já entram no seu saldo disponível."
-                  : reward.category === "SPIN_RESET"
-                    ? "Reset guardado. Use após gastar os 5 previews da hora."
-                    : "Recompensa adicionada ao seu inventário."
+                ? boxRewardStatus(reward)
                 : finished || motion === false
                   ? "Confirmando a abertura…"
                   : "Rompendo o selo…"}
