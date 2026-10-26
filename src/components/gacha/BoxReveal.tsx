@@ -37,17 +37,92 @@ export function boxRewardLabel(reward: Record<string, unknown>): string {
   }
 }
 
+const KIND_LABEL: Record<string, string> = {
+  CRYSTAL: "Cristais",
+  KEY: "Chave",
+  SPIN_RESET: "Reset de giro",
+  SKIN: "Skin",
+  CARD: "Carta",
+  CARD_BACK: "Capa de carta",
+};
+const RARITY_LABEL: Record<string, string> = {
+  COMMON: "Comum",
+  COMUM: "Comum",
+  UNCOMMON: "Incomum",
+  INCOMUM: "Incomum",
+  RARE: "Rara",
+  RARA: "Rara",
+  EPIC: "Épica",
+  EPICA: "Épica",
+  MYTHIC: "Mítica",
+  MITICA: "Mítica",
+  LEGENDARY: "Lendária",
+  LENDARIA: "Lendária",
+  GALACTIC: "Galáctica",
+  GALACTICA: "Galáctica",
+};
+const RARITY_COLOR: Record<string, string> = {
+  EPIC: "#c4a1ff",
+  EPICA: "#c4a1ff",
+  MYTHIC: "#e879f9",
+  MITICA: "#e879f9",
+  LEGENDARY: "#f5cb7d",
+  LENDARIA: "#f5cb7d",
+  GALACTIC: "#67e8f9",
+  GALACTICA: "#67e8f9",
+};
+const COUNT_MS = 1100;
+
+/** Eases a number up from 0 so stackable prizes feel earned; static when motion is off. */
+function useCountUp(target: number, animate: boolean) {
+  const [value, setValue] = useState(animate ? 0 : target);
+  useEffect(() => {
+    if (!animate) return;
+    let frame = 0;
+    const start = performance.now();
+    const tick = (now: number) => {
+      const progress = Math.min(1, (now - start) / COUNT_MS);
+      setValue(Math.round(target * (1 - (1 - progress) ** 3)));
+      if (progress < 1) frame = requestAnimationFrame(tick);
+    };
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, [target, animate]);
+  return animate ? value : target;
+}
+
+function PrizeAmount({
+  amount,
+  animate,
+}: {
+  amount: number;
+  animate: boolean;
+}) {
+  const value = useCountUp(amount, animate);
+  return (
+    <p
+      aria-hidden="true"
+      className="box-reveal-amount font-display tabular-nums"
+    >
+      +{value.toLocaleString("pt-BR")}
+    </p>
+  );
+}
+
 /** The API owns the reward; the clip only controls when we present it. */
 export function BoxReveal({
   tier,
   reward,
   error,
   onClose,
+  onOpenAgain,
 }: {
   tier: GachaBoxTier;
   reward: Record<string, unknown> | null;
   error: string;
   onClose: () => void;
+  /** Present only when another box and key are available. */
+  onOpenAgain?: () => void;
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const video = useRef<HTMLVideoElement>(null);
@@ -65,6 +140,16 @@ export function BoxReveal({
   const asset = `/gacha/box-${tier.toLowerCase()}`;
   const art =
     reward && safeImageSrc(String(reward.imageUrl ?? reward.image ?? ""));
+  const amount = Math.max(0, Math.floor(Number(reward?.amount ?? 1)));
+  const stackable =
+    !!reward &&
+    amount > 0 &&
+    (reward.category === "CRYSTAL" ||
+      reward.category === "KEY" ||
+      reward.category === "SPIN_RESET");
+  const rarity = String(reward?.rarity ?? "").toUpperCase();
+  const rarityLabel = RARITY_LABEL[rarity];
+  const rarityColor = RARITY_COLOR[rarity];
 
   useEffect(() => {
     const el = dialog.current!;
@@ -150,7 +235,7 @@ export function BoxReveal({
             type="button"
             autoFocus
             onClick={onClose}
-            aria-label="Voltar ao mercado"
+            aria-label="Voltar à loja"
             className="box-reveal-close"
           >
             ✕
@@ -211,8 +296,35 @@ export function BoxReveal({
             </div>
           )}
           {ready && reward && (
-            <div className="box-reveal-prize">
-              <div className="box-reveal-art">
+            <div
+              className="box-reveal-prize"
+              data-kind={stackable ? "stack" : "item"}
+              style={
+                rarityColor
+                  ? ({ "--prize-accent": rarityColor } as React.CSSProperties)
+                  : undefined
+              }
+            >
+              <span className="box-reveal-flash" aria-hidden="true" />
+              <span className="box-reveal-rays" aria-hidden="true" />
+              <div
+                className="box-reveal-chips"
+                style={{ "--i": 0 } as React.CSSProperties}
+              >
+                <span className="box-reveal-chip font-mono text-caption uppercase tracking-[0.18em]">
+                  {KIND_LABEL[String(reward.category)] ?? "Recompensa"}
+                </span>
+                {rarityLabel && (
+                  <span className="box-reveal-chip box-reveal-chip-rarity font-mono text-caption uppercase tracking-[0.18em]">
+                    {rarityLabel}
+                  </span>
+                )}
+              </div>
+              <div
+                className="box-reveal-art"
+                data-kind={stackable ? "stack" : "item"}
+                style={{ "--i": 1 } as React.CSSProperties}
+              >
                 {art && !imageFailed ? (
                   <Image
                     src={art}
@@ -258,10 +370,24 @@ export function BoxReveal({
                   </svg>
                 )}
               </div>
-              <p className="font-mono text-caption uppercase tracking-[0.26em]">
+              {stackable && (
+                <div
+                  style={{ "--i": 2 } as React.CSSProperties}
+                  className="box-reveal-step"
+                >
+                  <PrizeAmount amount={amount} animate={motion === true} />
+                </div>
+              )}
+              <p
+                className="box-reveal-step font-mono text-caption uppercase tracking-[0.26em]"
+                style={{ "--i": 3 } as React.CSSProperties}
+              >
                 Você ganhou
               </p>
-              <p className="box-reveal-name font-display">
+              <p
+                className="box-reveal-name box-reveal-step font-display"
+                style={{ "--i": 4 } as React.CSSProperties}
+              >
                 {boxRewardLabel(reward)}
               </p>
             </div>
@@ -305,13 +431,22 @@ export function BoxReveal({
             disabled={!ready && !error && (finished || motion === false)}
           >
             {error
-              ? "Voltar ao mercado"
+              ? "Voltar à loja"
               : ready
                 ? "Continuar"
                 : finished || motion === false
                   ? "Aguardando recompensa…"
                   : "Pular animação"}
           </button>
+          {ready && reward && onOpenAgain && (
+            <button
+              type="button"
+              className="box-reveal-again"
+              onClick={onOpenAgain}
+            >
+              Abrir outra {BOX_LABEL[tier].toLowerCase()}
+            </button>
+          )}
         </footer>
       </div>
     </dialog>

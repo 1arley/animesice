@@ -12,6 +12,7 @@ import {
   boxRewardLabel,
 } from "@/components/gacha/BoxReveal";
 import { Modal } from "@/components/common/Modal";
+import { KeyVault } from "@/components/gacha/KeyVault";
 import { SearchField } from "@/components/ui/SearchField";
 import { useToast } from "@/components/common/ToastProvider";
 import { GachaTradeHub } from "@/components/gacha/GachaTradeHub";
@@ -236,6 +237,10 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
     error: string;
     visible: boolean;
   } | null>(null);
+  const [refreshedBoxInventory, setRefreshedBoxInventory] = useState<{
+    seq: number;
+    inventory: GachaEconomyInventory;
+  } | null>(null);
   const openingRequest = useRef(false);
   const revealSeq = useRef(0);
   const [orderTarget, setOrderTarget] =
@@ -298,7 +303,7 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
   const selectedSkinCopy = ownedSkins.find((copy) => copy.id === skinCopyId);
 
   const refresh = useCallback(async () => {
-    if (!user) return;
+    if (!user) return null;
     try {
       const wallet = await api.gachaEconomyInventory();
       setInventory(wallet);
@@ -319,12 +324,14 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
         setOwnedSkins(copies.filter((copy) => copy.status === "ACTIVE"));
         setOwnedCards(collection.data);
       }
+      return wallet;
     } catch (cause) {
       setError(
         cause instanceof ApiError
           ? cause.message
           : "Mercado indisponível. Tente carregar novamente.",
       );
+      return null;
     }
   }, [mode, user]);
 
@@ -418,9 +425,9 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
     openingRequest.current = true;
     setBusy(`open-${tier}`);
     setError("");
-    revealSeq.current += 1;
+    const seq = ++revealSeq.current;
     setOpenedBox({
-      seq: revealSeq.current,
+      seq,
       tier,
       reward: null,
       error: "",
@@ -432,7 +439,11 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
         (current) => current && { ...current, reward: result.reward },
       );
       // Refresh is independent of the reveal and cannot turn a granted prize into an error.
-      void refresh();
+      void refresh().then((updatedInventory) => {
+        if (updatedInventory) {
+          setRefreshedBoxInventory({ seq, inventory: updatedInventory });
+        }
+      });
     } catch (cause) {
       const message =
         cause instanceof ApiError
@@ -443,6 +454,30 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
       openingRequest.current = false;
       setBusy(null);
     }
+  }
+
+  /** Buys whatever is missing (box and/or key), then opens, so one click covers the whole path. */
+  async function buyAndOpen(
+    tier: GachaBoxTier,
+    needBox: boolean,
+    needKey: boolean,
+  ) {
+    if (openingRequest.current || busy !== null) return;
+    if (
+      needBox &&
+      !(await act(
+        `buy-${tier}`,
+        () => api.gachaEconomyBuyBox(tier),
+        `${BOX_LABEL[tier]} comprada.`,
+      ))
+    )
+      return;
+    if (
+      needKey &&
+      !(await act("key", api.gachaEconomyBuyKey, "Chave comprada."))
+    )
+      return;
+    await openBox(tier);
   }
 
   async function createOrder(event: React.FormEvent<HTMLFormElement>) {
@@ -801,6 +836,13 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
           tier={openedBox.tier}
           reward={openedBox.reward}
           error={openedBox.error}
+          onOpenAgain={
+            refreshedBoxInventory?.seq === openedBox.seq &&
+            refreshedBoxInventory.inventory[BOX_FIELD[openedBox.tier]] > 0 &&
+            refreshedBoxInventory.inventory.keys > 0
+              ? () => void openBox(openedBox.tier)
+              : undefined
+          }
           onClose={() =>
             setOpenedBox((current) => current && { ...current, visible: false })
           }
@@ -890,78 +932,105 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
                     Toda abertura consome 1 caixa e 1 chave.
                   </p>
                 </div>
-                <button
-                  type="button"
-                  disabled={
-                    busy !== null || inventory.available < odds.keyPrice
-                  }
-                  onClick={() =>
-                    void act("key", api.gachaEconomyBuyKey, "Chave comprada.")
-                  }
-                  className="btn-ghost min-h-11 px-4 disabled:opacity-40"
-                >
-                  {busy === "key"
-                    ? "Comprando…"
-                    : `Comprar chave · ${odds.keyPrice.toLocaleString("pt-BR")} cristais`}
-                </button>
+                <div className="flex flex-wrap items-center gap-3">
+                  <KeyVault count={inventory.keys} />
+                  <button
+                    type="button"
+                    disabled={
+                      busy !== null || inventory.available < odds.keyPrice
+                    }
+                    onClick={() =>
+                      void act("key", api.gachaEconomyBuyKey, "Chave comprada.")
+                    }
+                    className="btn-ghost min-h-11 px-4 disabled:opacity-40"
+                  >
+                    {busy === "key"
+                      ? "Comprando…"
+                      : `Comprar chave · ${odds.keyPrice.toLocaleString("pt-BR")} cristais`}
+                  </button>
+                </div>
               </div>
               <div className="mt-5 grid gap-4 md:grid-cols-3">
                 {(["COMMON", "RARE", "PREMIUM"] as const).map((tier) => {
                   const count = inventory[BOX_FIELD[tier]];
-                  const canOpen = count > 0 && inventory.keys > 0;
+                  const needBox = count === 0;
+                  const needKey = inventory.keys === 0;
+                  const canOpen = !needBox && !needKey;
+                  const cost =
+                    (needBox ? odds.boxPrices[tier] : 0) +
+                    (needKey ? odds.keyPrice : 0);
+                  const shortfall = Math.max(0, cost - inventory.available);
+                  const accent =
+                    tier === "PREMIUM"
+                      ? "text-amber-300"
+                      : tier === "RARE"
+                        ? "text-ice"
+                        : "text-mist";
                   return (
                     <article
                       key={tier}
                       className={`market-box border ${tier === "PREMIUM" ? "border-amber-300/30" : tier === "RARE" ? "border-ice/25" : "border-hairline"} bg-panel p-5 ${busy === `open-${tier}` ? "market-box-opening" : ""}`}
                     >
-                      <svg
-                        viewBox="0 0 120 96"
-                        fill="none"
-                        aria-hidden="true"
-                        className={`mx-auto mb-5 h-24 w-32 ${tier === "PREMIUM" ? "text-amber-300" : tier === "RARE" ? "text-ice" : "text-mist"}`}
-                      >
-                        <path
-                          d="M16 34 60 12l44 22v40L60 94 16 74Z"
-                          fill="currentColor"
-                          fillOpacity=".06"
-                          stroke="currentColor"
-                          strokeWidth="2"
+                      <div className="shop-box-art" data-tier={tier}>
+                        <Image
+                          src={`/gacha/box-${tier.toLowerCase()}.webp`}
+                          alt=""
+                          width={160}
+                          height={160}
+                          className="mx-auto h-32 w-32 object-contain"
                         />
-                        <path
-                          d="m16 34 44 22 44-22M60 56v38M38 23l44 22v18L60 74"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                        />
-                      </svg>
+                      </div>
                       <div className="flex items-baseline justify-between gap-3">
                         <h3 className="font-display text-xl text-snow">
                           {BOX_LABEL[tier]}
                         </h3>
-                        <span className="font-mono text-caption tabular-nums text-mist">
+                        <span
+                          className={`font-mono text-caption tabular-nums ${count > 0 ? accent : "text-mist"}`}
+                        >
                           {count} caixa{count === 1 ? "" : "s"}
                         </span>
                       </div>
-                      <p className="mt-5 font-display text-2xl tabular-nums text-ice">
+                      <p className="mt-4 font-display text-2xl tabular-nums text-ice">
                         {odds.boxPrices[tier].toLocaleString("pt-BR")} cristais
                       </p>
-                      {count === 0 &&
-                        inventory.available < odds.boxPrices[tier] && (
-                          <p className="mt-1 text-caption text-mist">
-                            Faltam{" "}
-                            {(
-                              odds.boxPrices[tier] - inventory.available
-                            ).toLocaleString("pt-BR")}{" "}
-                            cristais
+                      <p className="mt-2 min-h-10 text-caption text-mist">
+                        {canOpen
+                          ? "Pronta para abrir com uma das suas chaves."
+                          : needBox && needKey
+                            ? "Falta a caixa e uma chave. Compramos as duas e abrimos."
+                            : needBox
+                              ? "Você tem chave. Falta a caixa."
+                              : "Você tem a caixa. Falta uma chave para abrir."}
+                      </p>
+                      <div className="mt-4 grid gap-2">
+                        {canOpen ? (
+                          <button
+                            type="button"
+                            disabled={busy !== null}
+                            onClick={() => void openBox(tier)}
+                            className="btn-ice min-h-11 disabled:opacity-40"
+                          >
+                            {busy === `open-${tier}` ? "Abrindo…" : "Abrir"}
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            disabled={busy !== null || shortfall > 0}
+                            onClick={() =>
+                              void buyAndOpen(tier, needBox, needKey)
+                            }
+                            className="btn-ice min-h-11 disabled:opacity-40"
+                          >
+                            {busy !== null
+                              ? "Aguarde…"
+                              : `Comprar e abrir · ${cost.toLocaleString("pt-BR")}`}
+                          </button>
+                        )}
+                        {!canOpen && shortfall > 0 && (
+                          <p role="status" className="text-caption text-mist">
+                            Faltam {shortfall.toLocaleString("pt-BR")} cristais.
                           </p>
                         )}
-                      <p className="mt-2 min-h-10 text-caption text-mist">
-                        {count === 0
-                          ? "Compre uma caixa para começar."
-                          : inventory.keys === 0
-                            ? "Você tem a caixa. Falta uma chave para abrir."
-                            : "Pronta para abrir com uma das suas chaves."}
-                      </p>
-                      <div className="mt-4 grid grid-cols-2 gap-2">
                         <button
                           type="button"
                           disabled={
@@ -979,15 +1048,7 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
                         >
                           {busy === `buy-${tier}`
                             ? "Comprando…"
-                            : "Comprar caixa"}
-                        </button>
-                        <button
-                          type="button"
-                          disabled={busy !== null || !canOpen}
-                          onClick={() => void openBox(tier)}
-                          className="btn-ice min-h-11 disabled:opacity-40"
-                        >
-                          {busy === `open-${tier}` ? "Abrindo…" : "Abrir"}
+                            : "Comprar só a caixa"}
                         </button>
                       </div>
                     </article>
@@ -995,9 +1056,6 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
                 })}
               </div>
               <div className="mt-3 flex flex-wrap items-center gap-3 text-caption text-mist">
-                <span>
-                  {inventory.keys} chave{inventory.keys === 1 ? "" : "s"}
-                </span>
                 <span>
                   {inventory.spinResets} reset
                   {inventory.spinResets === 1 ? "" : "s"}

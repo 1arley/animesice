@@ -20,6 +20,7 @@ const AD_PATTERNS = [
   "**/n6wxm.com/**",
   "**/my.rtmark.net/**",
   "**/255md.com/**",
+  /^https?:\/\/(?:www\.)?gptgirlfriend\.online\//,
   "**/ep1.adtrafficquality.google/**",
   "**/ep2.adtrafficquality.google/**",
   "**/static.cloudflareinsights.com/**",
