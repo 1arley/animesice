@@ -67,8 +67,8 @@ function isMeusanimesCover(raw: string): boolean {
 
 /**
  * Sobe o nível de resolução da arte quando a fonte oferece um maior:
- * - AniList cover: `cover/medium` -> `cover/large` -> `cover/extraLarge`
- *   (banner do AniList não tem variação de tamanho — é só o arquivo).
+ * - AniList cover: `cover/medium` -> `cover/large` (a variante extraLarge usa
+ *   a rota `/large/`; não existe uma rota `/extraLarge/`).
  * - MyAnimeList: versão `l` (grande, ~600px) quando ainda é a miniatura padrão
  *   (~225px); se já é `l`, não há nível maior confiável — mantém.
  * - Capas do WordPress associadas a um anime: usa o resolver local do MAL.
@@ -86,13 +86,9 @@ export function upgradeImageUrl(
   const url = safeUrl;
 
   // --- AniList cover ---
-  const anilist = url.match(
-    /\/anilistcdn\/media\/anime\/cover\/(medium|large)\//i,
-  );
+  const anilist = url.match(/\/anilistcdn\/media\/anime\/cover\/medium\//i);
   if (anilist) {
-    // O candidato só é usado em desktop e tem fallback. Pedir extraLarge
-    // diretamente evita ampliar a variante `large` em telas de alta densidade.
-    return url.replace(anilist[0], "/anilistcdn/media/anime/cover/extraLarge/");
+    return url.replace(anilist[0], "/anilistcdn/media/anime/cover/large/");
   }
 
   // --- MyAnimeList ---
