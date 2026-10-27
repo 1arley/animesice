@@ -43,7 +43,10 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 export async function serverFetchJson<T>(
   path: string,
-  init?: { cache?: RequestCache; next?: { revalidate?: number; tags?: string[] } },
+  init?: {
+    cache?: RequestCache;
+    next?: { revalidate?: number; tags?: string[] };
+  },
 ): Promise<T | null> {
   let lastError: unknown = null;
 
@@ -86,10 +89,15 @@ export async function serverListBlogPosts(
   );
 }
 
-export async function serverGetBlogPost(slug: string): Promise<BlogPost | null> {
+export async function serverGetBlogPost(
+  slug: string,
+): Promise<BlogPost | null> {
   return serverFetchJson<BlogPost>(
     `/blog-posts/slug/${encodeURIComponent(slug)}`,
-    { cache: "force-cache", next: { revalidate: 900, tags: ["blog-posts", `blog-post:${slug}`] } },
+    {
+      cache: "force-cache",
+      next: { revalidate: 900, tags: ["blog-posts", `blog-post:${slug}`] },
+    },
   );
 }
 
@@ -103,16 +111,41 @@ export async function serverStreamSourceAsync(
   animeSlug: string,
   episodeNumber: number,
   refresh = false,
+  sourceId?: string | null,
 ): Promise<
-  | { src: string; embedUrl?: string; thumbnailUrl?: string }
-  | { jobId: string; status: string; message?: string }
+  | {
+      src: string;
+      embedUrl?: string;
+      thumbnailUrl?: string;
+      availableSources?: { id: string; label: string }[];
+      selectedSourceId?: string | null;
+    }
+  | {
+      jobId: string;
+      status: string;
+      message?: string;
+      availableSources?: { id: string; label: string }[];
+      selectedSourceId?: string | null;
+    }
   | null
 > {
   return serverFetchJson<
-    | { src: string; embedUrl?: string; thumbnailUrl?: string }
-    | { jobId: string; status: string; message?: string }
+    | {
+        src: string;
+        embedUrl?: string;
+        thumbnailUrl?: string;
+        availableSources?: { id: string; label: string }[];
+        selectedSourceId?: string | null;
+      }
+    | {
+        jobId: string;
+        status: string;
+        message?: string;
+        availableSources?: { id: string; label: string }[];
+        selectedSourceId?: string | null;
+      }
   >(
-    `/stream/source/async?anime=${encodeURIComponent(animeSlug)}&episode=${episodeNumber}${refresh ? "&refresh=1" : ""}`,
+    `/stream/source/async?anime=${encodeURIComponent(animeSlug)}&episode=${episodeNumber}${refresh ? "&refresh=1" : ""}${sourceId ? `&sourceId=${encodeURIComponent(sourceId)}` : ""}`,
     { cache: "no-store" },
   );
 }

@@ -18,6 +18,9 @@ function json(res, obj, status = 200) {
   res.end(s);
 }
 
+const delayedSourceResponses = new Map();
+const delayedSourceTimeouts = new Map();
+
 const server = http.createServer((req, res) => {
   const parsed = url.parse(req.url, true);
   const p = parsed.pathname;
@@ -25,6 +28,18 @@ const server = http.createServer((req, res) => {
     res.writeHead(204, CORS_HEADERS);
     res.end();
     return;
+  }
+  if (req.method === 'GET' && p === '/__e2e/pending-source') {
+    return json(res, { pending: delayedSourceResponses.has(parsed.query.anime) });
+  }
+  if (req.method === 'GET' && p === '/__e2e/release-source') {
+    const key = parsed.query.anime;
+    const release = delayedSourceResponses.get(key);
+    delayedSourceResponses.delete(key);
+    clearTimeout(delayedSourceTimeouts.get(key));
+    delayedSourceTimeouts.delete(key);
+    release?.();
+    return json(res, { released: Boolean(release) });
   }
   // Catálogo paginado fake — usado pelo spec de paginação do /buscar.
   // Sem filtros retorna [] (comportamento anterior, outros specs dependem).
@@ -113,6 +128,31 @@ const server = http.createServer((req, res) => {
         src: 'https://video.example/episode.m3u8', rawVideoUrl: null,
         embedUrl: null, reextracted: false, thumbnailUrl: null,
       });
+    }
+    if (parsed.query.anime.startsWith('server-selection-')) {
+      const sourceId = parsed.query.sourceId || null;
+      const sources = [
+        { id: 'animesonline', label: 'Animes Online' },
+        { id: 'topanimes', label: 'Top Animes' },
+      ];
+      const response = () => json(res, {
+        animeSlug: 'server-selection', episodeNumber: 1,
+        src: `http://localhost:${process.env.MOCK_BACKEND_PORT || 3001}/__e2e/video/${sourceId || 'auto'}.mp4`, rawVideoUrl: null,
+        embedUrl: null, reextracted: false, thumbnailUrl: null,
+        availableSources: sources, selectedSourceId: sourceId,
+      });
+      if (sourceId === 'animesonline') {
+        const key = parsed.query.anime;
+        delayedSourceResponses.set(key, response);
+        delayedSourceTimeouts.set(key, setTimeout(() => {
+          if (delayedSourceResponses.get(key) !== response) return;
+          delayedSourceResponses.delete(key);
+          delayedSourceTimeouts.delete(key);
+          response();
+        }, 30_000));
+        return;
+      }
+      return response();
     }
     const response = () => json(res, { jobId: 'slow-job', status: 'pending' }, 202);
     if (parsed.query.anime === 'slow-stream') return setTimeout(response, 5_000);

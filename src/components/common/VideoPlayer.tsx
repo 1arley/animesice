@@ -23,6 +23,7 @@ interface VideoPlayerProps {
   startAt?: number;
   /** Disparado apenas para erro fatal do elemento de vídeo. */
   onPlaybackError?: (currentTime: number) => void;
+  onTimeUpdate?: (currentTime: number) => void;
 }
 
 /** Embed do YouTube (youtube-nocookie.com/embed/<id>): fonte sem .mp4
@@ -46,7 +47,9 @@ export function isBloggerEmbed(url: string): boolean {
       const inner = u.searchParams.get("url");
       if (inner && /blogger\.com\/video\.g\?token=/i.test(inner)) return true;
     }
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
   return false;
 }
 
@@ -59,12 +62,14 @@ export function VideoPlayer({
   animeTitle,
   startAt,
   onPlaybackError,
+  onTimeUpdate,
 }: VideoPlayerProps) {
-  const bloggerSource = embedUrl && isBloggerEmbed(embedUrl)
-    ? embedUrl
-    : src && isBloggerEmbed(src)
-      ? src
-      : null;
+  const bloggerSource =
+    embedUrl && isBloggerEmbed(embedUrl)
+      ? embedUrl
+      : src && isBloggerEmbed(src)
+        ? src
+        : null;
 
   if (bloggerSource) {
     return (
@@ -105,6 +110,7 @@ export function VideoPlayer({
       animeTitle={animeTitle}
       startAt={startAt}
       onPlaybackError={onPlaybackError}
+      onTimeUpdate={onTimeUpdate}
     />
   );
 }
@@ -211,6 +217,7 @@ function NativeVideoPlayer({
   animeTitle,
   startAt,
   onPlaybackError,
+  onTimeUpdate,
 }: {
   src: string;
   posterUrl?: string;
@@ -219,6 +226,7 @@ function NativeVideoPlayer({
   animeTitle?: string;
   startAt?: number;
   onPlaybackError?: (currentTime: number) => void;
+  onTimeUpdate?: (currentTime: number) => void;
 }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const { user } = useAuth();
@@ -449,11 +457,7 @@ function NativeVideoPlayer({
     return (
       <div className="video-frame flex flex-col items-center justify-center gap-3 text-center">
         <p className="text-body-sm text-mist">Falha ao carregar o vídeo.</p>
-        <button
-          type="button"
-          onClick={retry}
-          className="btn-ghost"
-        >
+        <button type="button" onClick={retry} className="btn-ghost">
           Tentar novamente
         </button>
       </div>
@@ -474,6 +478,9 @@ function NativeVideoPlayer({
             : "Player de vídeo"
         }
         className="video-frame"
+        onTimeUpdate={(event) =>
+          onTimeUpdate?.(event.currentTarget.currentTime)
+        }
       />
       {watchToast > 0 && (
         <div
