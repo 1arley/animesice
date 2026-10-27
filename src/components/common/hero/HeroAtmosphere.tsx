@@ -16,6 +16,7 @@ const Aurora = dynamic(() =>
 
 interface HeroAtmosphereProps {
   ambientColor?: string;
+  bloodWar?: boolean;
   mouseX: MotionValue<number>;
   mouseY: MotionValue<number>;
   isMobile: boolean;
@@ -23,6 +24,7 @@ interface HeroAtmosphereProps {
 
 export function HeroAtmosphere({
   ambientColor = "#1C2534",
+  bloodWar = false,
   mouseX,
   mouseY,
   isMobile,
@@ -57,7 +59,9 @@ export function HeroAtmosphere({
       {!reduceMotion && !isMobile && (
         <Aurora
           className="absolute inset-0 opacity-25"
-          colorStops={["#0E141D", ambientColor, "#1C2534"]}
+          colorStops={bloodWar
+            ? ["#1A060A", "#4A0E14", "#2A0A0E"]
+            : ["#0E141D", ambientColor, "#1C2534"]}
           speed={0.4}
           amplitude={0.5}
           blend={0.8}

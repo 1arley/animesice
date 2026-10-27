@@ -5,6 +5,7 @@ import { AnimatePresence } from "motion/react";
 import Link from "next/link";
 import type { Anime } from "@/types";
 import { useIsMobile } from "@/lib/use-is-mobile";
+import { isBloodWarAnime } from "@/lib/event-theme";
 import { HeroSlide } from "./hero/HeroSlide";
 
 const ROTATE_MS = 7000;
@@ -70,6 +71,7 @@ export function HomeHero({ animes }: { animes: Anime[] }) {
               label={label}
               priority={index === 0}
               isMobile={isMobile}
+              bloodWar={isBloodWarAnime(current)}
             />
           </AnimatePresence>
         </div>
