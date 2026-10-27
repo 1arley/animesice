@@ -347,6 +347,49 @@
     transition-duration: 100ms;
   }
 
+  /* Botão primário do evento Guerra Sangrenta: variante vermelho sangue
+     do .btn-ice, mesma engenharia (fundo sólido, texto escuro) para manter
+     o mesmo contraste AA no hero. */
+  .btn-blood {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.55rem 1.15rem;
+    background: theme("colors.blood");
+    color: theme("colors.ink");
+    font-family: theme("fontFamily.sans");
+    font-size: theme("fontSize.body-sm");
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    border-radius: 3px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow:
+      0 2px 10px rgba(229, 72, 77, 0.25),
+      inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    cursor: pointer;
+    transition:
+      background-color 180ms cubic-bezier(0.16, 1, 0.3, 1),
+      color 180ms cubic-bezier(0.16, 1, 0.3, 1),
+      border-color 180ms cubic-bezier(0.16, 1, 0.3, 1),
+      box-shadow 180ms cubic-bezier(0.16, 1, 0.3, 1),
+      transform 180ms cubic-bezier(0.16, 1, 0.3, 1);
+    will-change: transform, box-shadow;
+  }
+  .btn-blood:hover {
+    background: #F0565B;
+    transform: translateY(-2px);
+    box-shadow:
+      0 6px 20px rgba(229, 72, 77, 0.45),
+      inset 0 1px 0 rgba(255, 255, 255, 0.5);
+    color: theme("colors.ink");
+  }
+  .btn-blood:active {
+    transform: translateY(0);
+    scale: 0.97;
+    transition-duration: 100ms;
+  }
+
   /* Botão secundário / fantasma */
   .btn-ghost {
     display: inline-flex;
@@ -497,12 +540,14 @@
   }
 
   .btn-ice:disabled,
+  .btn-blood:disabled,
   .btn-ghost:disabled {
     opacity: 0.45;
     cursor: not-allowed;
     transform: none;
   }
   .btn-ice:disabled:hover,
+  .btn-blood:disabled:hover,
   .btn-ghost:disabled:hover {
     transform: none;
     box-shadow: none;
@@ -1686,6 +1731,17 @@
   animation: hero-dust-drift 20s linear infinite;
   opacity: 0.5;
   z-index: 3;
+}
+
+/* Evento Guerra Sangrenta: a mesma poeira, em cinzas incandescentes —
+   partículas de reiatsu subindo, em vez de gelo soprado. */
+.hero-dust--blood {
+  background-image:
+    radial-gradient(1px 1px at 20% 30%, rgba(229, 72, 77, 0.4), transparent),
+    radial-gradient(1px 1px at 60% 70%, rgba(255, 180, 150, 0.18), transparent),
+    radial-gradient(2px 2px at 80% 40%, rgba(229, 72, 77, 0.22), transparent),
+    radial-gradient(1px 1px at 40% 80%, rgba(120, 30, 34, 0.35), transparent),
+    radial-gradient(1px 1px at 90% 20%, rgba(229, 72, 77, 0.3), transparent);
 }
 
 @keyframes hero-dust-drift {

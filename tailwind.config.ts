@@ -40,6 +40,11 @@ module.exports = {
         signal: "#FF6B4A", // indicador de status no ar / badge quente
         "signal-dim": "rgba(255, 107, 74, 0.12)",
 
+        // Evento sazonal (Guerra Sangrenta): vermelho sangue usado só no
+        // banner de evento e no hero quando Bleach está em destaque.
+        blood: "#E5484D",
+        "blood-dim": "rgba(229, 72, 77, 0.12)",
+
         // Tokens de Motion — ciano cristalino e aço profundo para a identidade do gelo.
         motion: {
           void: "#05080E",

@@ -18,6 +18,7 @@ interface HeroSlideProps {
   label: string;
   priority: boolean;
   isMobile: boolean;
+  bloodWar?: boolean;
 }
 
 export const slideVariants = {
@@ -65,7 +66,7 @@ export const slideVariantsMobile = {
   },
 };
 
-export function HeroSlide({ anime, label, priority, isMobile }: HeroSlideProps) {
+export function HeroSlide({ anime, label, priority, isMobile, bloodWar = false }: HeroSlideProps) {
   const containerRef = useRef<HTMLElement>(null);
   const parallax = useHeroParallax(containerRef);
 
@@ -93,7 +94,8 @@ export function HeroSlide({ anime, label, priority, isMobile }: HeroSlideProps) 
       >
         {/* z-0: Atmosphere */}
         <HeroAtmosphere
-          ambientColor="#1C2534"
+          ambientColor={bloodWar ? "#2A0A0E" : "#1C2534"}
+          bloodWar={bloodWar}
           mouseX={parallax.mouseX}
           mouseY={parallax.mouseY}
           isMobile={isMobile}
@@ -126,10 +128,10 @@ export function HeroSlide({ anime, label, priority, isMobile }: HeroSlideProps) 
         )}
 
         {/* z-3: Particles (CSS dust) */}
-        <HeroParticles partX={parallax.partX} isMobile={isMobile} />
+        <HeroParticles isMobile={isMobile} bloodWar={bloodWar} />
 
         {/* z-4: UI overlay */}
-        <HeroUI anime={anime} label={label} isMobile={isMobile} />
+        <HeroUI anime={anime} label={label} isMobile={isMobile} bloodWar={bloodWar} />
       </m.section>
     </LazyMotion>
   );

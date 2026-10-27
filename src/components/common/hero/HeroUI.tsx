@@ -9,6 +9,7 @@ interface HeroUIProps {
   anime: Anime;
   label: string;
   isMobile: boolean;
+  bloodWar?: boolean;
 }
 
 /**
@@ -47,7 +48,7 @@ function RevealLabel({ text }: { text: string }) {
   );
 }
 
-export function HeroUI({ anime, label, isMobile }: HeroUIProps) {
+export function HeroUI({ anime, label, isMobile, bloodWar = false }: HeroUIProps) {
   const onAir = isOnAir(anime.status);
 
   return (
@@ -74,9 +75,9 @@ export function HeroUI({ anime, label, isMobile }: HeroUIProps) {
 
       <div className="relative z-10">
         {/* Label */}
-        <span className="mb-2 inline-flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-caption font-medium uppercase tracking-wider text-ice sm:mb-3">
-          <span className="h-1 w-1 bg-ice" aria-hidden="true" />
-          <RevealLabel text={label} />
+        <span className={`mb-2 inline-flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-caption font-medium uppercase tracking-wider ${bloodWar ? "text-blood" : "text-ice"} sm:mb-3`}>
+          <span className={`h-1 w-1 ${bloodWar ? "bg-blood" : "bg-ice"}`} aria-hidden="true" />
+          <RevealLabel text={bloodWar ? "Guerra Sangrenta" : label} />
           {onAir && (
             <span className="inline-flex items-center gap-1.5 text-signal">
               <span className="h-1 w-1 animate-blink bg-signal" aria-hidden="true" />
@@ -104,7 +105,7 @@ export function HeroUI({ anime, label, isMobile }: HeroUIProps) {
         {/* Meta */}
         <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 sm:mt-4">
           {anime.rating != null && anime.rating > 0 && (
-            <span className="font-mono text-caption font-medium text-ice tabular-nums">
+            <span className={`font-mono text-caption font-medium tabular-nums ${bloodWar ? "text-blood" : "text-ice"}`}>
               {anime.rating.toFixed(2)}
             </span>
           )}
@@ -129,7 +130,7 @@ export function HeroUI({ anime, label, isMobile }: HeroUIProps) {
         <div className="mt-5 flex flex-wrap items-center gap-3">
           <Link
             href={`/animes/${anime.slug}`}
-            className="btn-ice flex-1 sm:flex-initial"
+            className={`${bloodWar ? "btn-blood" : "btn-ice"} flex-1 sm:flex-initial`}
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
               <path d="M8 5v14l11-7z" />

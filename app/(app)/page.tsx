@@ -6,6 +6,7 @@ import { DeferredPersonalizedRails } from "@/components/common/DeferredPersonali
 import { HomeBackdrop } from "@/components/common/crystal/HomeBackdrop";
 import { IceBeamDivider } from "@/components/common/crystal/IceBeamDivider";
 import { CatalogSections, LatestSection, RecentSection, SectionFallback, TrendingHeroSection, TrendingSection } from "@/components/home/HomeSections";
+import { isBloodWarActive } from "@/lib/event-theme";
 
 export const revalidate = 60;
 
@@ -24,6 +25,19 @@ export default function HomePage() {
     <HomeBackdrop />
     <h1 className="sr-only">AnimesIce — Assistir animes online em HD, legendados e dublados</h1>
     <div className="mx-auto max-w-shelf px-4 pb-4 pt-6">
+      {isBloodWarActive() && (
+        <Link
+          href="/buscar?q=bleach"
+          className="mb-4 flex min-h-11 items-center justify-between gap-4 overflow-hidden border border-blood/50 bg-blood/10 px-4 py-3 text-snow transition-colors hover:bg-blood/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blood"
+        >
+          <span className="flex items-center gap-3">
+            <span aria-hidden="true" className="h-2 w-2 animate-blink rounded-full bg-blood" />
+            <span className="font-mono text-caption font-medium uppercase tracking-wider text-blood">Guerra Sangrenta</span>
+            <span className="font-display text-body">O corte da Soul Society nunca acaba.</span>
+          </span>
+          <span className="shrink-0 font-mono text-caption text-blood">VER AGORA</span>
+        </Link>
+      )}
       <Link
         href="/gacha"
         className="mb-4 flex min-h-11 items-center justify-between gap-4 border border-ice/40 bg-ice/10 px-4 py-3 text-snow transition-colors hover:bg-ice/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ice"
