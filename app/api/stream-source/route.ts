@@ -11,12 +11,14 @@ export async function GET(request: NextRequest) {
   const episodeParam = request.nextUrl.searchParams.get("episode") ?? "";
   const episodeNumber = Number(episodeParam);
   const refresh = request.nextUrl.searchParams.get("refresh") === "1";
+  const sourceId = request.nextUrl.searchParams.get("sourceId");
 
   if (
     !ANIME_SLUG.test(animeSlug) ||
     !/^\d+$/.test(episodeParam) ||
     !Number.isSafeInteger(episodeNumber) ||
-    episodeNumber < 1
+    episodeNumber < 1 ||
+    (sourceId !== null && !/^[a-z0-9_-]+$/.test(sourceId))
   ) {
     return NextResponse.json(
       { message: "Anime ou episódio inválido." },
@@ -28,6 +30,7 @@ export async function GET(request: NextRequest) {
     animeSlug,
     episodeNumber,
     refresh,
+    sourceId,
   ).catch(() => null);
   if (!result) {
     return NextResponse.json(

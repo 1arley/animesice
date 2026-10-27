@@ -23,8 +23,18 @@ interface WatchClientProps {
   initialEpisode: Episode & { anime: Anime };
   /** Source já resolvido via SSR pre-fetch — renderiza instantaneamente. */
   initialSource?:
-    | { src: string; embedUrl?: string; thumbnailUrl?: string }
-    | { jobId: string }
+    | {
+        src: string;
+        embedUrl?: string;
+        thumbnailUrl?: string;
+        availableSources?: StreamSource["availableSources"];
+        selectedSourceId?: string | null;
+      }
+    | {
+        jobId: string;
+        availableSources?: StreamSource["availableSources"];
+        selectedSourceId?: string | null;
+      }
     | null;
 }
 
@@ -36,6 +46,12 @@ export function WatchClient({
 }: WatchClientProps) {
   const episode = initialEpisode;
   const [source, setSource] = useState<StreamSource | null>(null);
+  const [availableSources, setAvailableSources] = useState(
+    initialSourceProp?.availableSources ?? [],
+  );
+  const [selectedSourceId, setSelectedSourceId] = useState<string | null>(
+    initialSourceProp?.selectedSourceId ?? null,
+  );
   const [sourceError, setSourceError] = useState<string | null>(null);
   // `true` faz o shell 16:9 fazer parte do HTML inicial, antes da hidratação.
   const [loadingSource, setLoadingSource] = useState(true);
@@ -53,7 +69,7 @@ export function WatchClient({
    * 3. SSE + polling via resolveAsyncSource (src compartilhado com RoomPage)
    */
   const loadSourceAsync = useCallback(
-    async (forceRefresh = false) => {
+    async (forceRefresh = false, sourceId?: string | null) => {
       const id = ++loadSourceId.current;
       asyncAbortRef.current?.abort();
       const ac = new AbortController();
@@ -67,9 +83,11 @@ export function WatchClient({
         !forceRefresh &&
         initialSourceProp &&
         "src" in initialSourceProp &&
+        !sourceId &&
         id === loadSourceId.current
       ) {
         setSource(initialSourceProp as StreamSource);
+        setAvailableSources(initialSourceProp.availableSources ?? []);
         api._sourceCache.set(slug, number, initialSourceProp as StreamSource);
         setLoadingSource(false);
         return;
@@ -77,9 +95,13 @@ export function WatchClient({
 
       try {
         // 2. Check client-side cache (sessionStorage, 5m TTL)
-        const cached = forceRefresh ? null : api._sourceCache.get(slug, number);
+        const cached = forceRefresh
+          ? null
+          : api._sourceCache.get(slug, number, sourceId);
         if (cached && id === loadSourceId.current) {
           setSource(cached);
+          if (cached.availableSources)
+            setAvailableSources(cached.availableSources);
           setLoadingSource(false);
           return;
         }
@@ -88,15 +110,27 @@ export function WatchClient({
         // endpoint here can enqueue a duplicate extraction when the backend
         // has not yet deduplicated the original job.
         const res =
-          !forceRefresh && initialSourceProp && "jobId" in initialSourceProp
+          !forceRefresh &&
+          !sourceId &&
+          initialSourceProp &&
+          "jobId" in initialSourceProp
             ? initialSourceProp
-            : await api.episodeStreamSourceAsync(slug, number, forceRefresh);
+            : await api.episodeStreamSourceAsync(
+                slug,
+                number,
+                forceRefresh,
+                sourceId,
+              );
         if (id !== loadSourceId.current) return;
+        if ("availableSources" in res && res.availableSources) {
+          setAvailableSources(res.availableSources);
+        }
 
         // Source direto (vídeo já existia no cache)
         if ("src" in res) {
           setSource(res as StreamSource);
-          api._sourceCache.set(slug, number, res as StreamSource);
+          if (res.availableSources) setAvailableSources(res.availableSources);
+          api._sourceCache.set(slug, number, res as StreamSource, sourceId);
           setLoadingSource(false);
           return;
         }
@@ -109,14 +143,17 @@ export function WatchClient({
             number,
             jobId,
             ac.signal,
-            forceRefresh,
+            forceRefresh || Boolean(sourceId),
           );
 
           if (id !== loadSourceId.current) return;
 
           if (result.type === "source") {
             setSource(result.source);
-            api._sourceCache.set(slug, number, result.source);
+            if (result.source.availableSources) {
+              setAvailableSources(result.source.availableSources);
+            }
+            api._sourceCache.set(slug, number, result.source, sourceId);
           } else if (result.type === "failed") {
             setSourceError(result.error);
           } else {
@@ -144,10 +181,15 @@ export function WatchClient({
       if (recoveryAttempts.current >= 1 || loadingSource) return;
       recoveryAttempts.current += 1;
       resumeAt.current = currentTime;
-      void loadSourceAsync(true);
+      void loadSourceAsync(true, selectedSourceId);
     },
-    [loadSourceAsync, loadingSource],
+    [loadSourceAsync, loadingSource, selectedSourceId],
   );
+
+  useEffect(() => {
+    setAvailableSources(initialSourceProp?.availableSources ?? []);
+    setSelectedSourceId(initialSourceProp?.selectedSourceId ?? null);
+  }, [slug, number, initialSourceProp]);
 
   useEffect(() => {
     recoveryAttempts.current = 0;
@@ -199,6 +241,34 @@ export function WatchClient({
       </p>
 
       <div className="mt-4">
+        {availableSources.length > 0 && (
+          <div className="mb-3 flex flex-wrap items-center gap-3">
+            <label
+              htmlFor="episode-stream-source"
+              className="font-mono text-caption uppercase tracking-wider text-mist"
+            >
+              Servidor
+            </label>
+            <select
+              id="episode-stream-source"
+              value={selectedSourceId ?? ""}
+              onChange={(event) => {
+                const nextSourceId = event.target.value || null;
+                recoveryAttempts.current = 0;
+                setSelectedSourceId(nextSourceId);
+                void loadSourceAsync(false, nextSourceId);
+              }}
+              className="min-h-11 rounded-md border border-hairline bg-panel px-3 font-sans text-body-sm text-snow outline-none transition-colors focus-visible:border-ice focus-visible:ring-2 focus-visible:ring-ice/40"
+            >
+              <option value="">Automático</option>
+              {availableSources.map((server) => (
+                <option key={server.id} value={server.id}>
+                  {server.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
         {sourceError ? (
           <div
             className="flex aspect-video flex-col items-center justify-center gap-3 rounded-md border border-signal/30 bg-panel px-6 text-center"
@@ -208,7 +278,7 @@ export function WatchClient({
             <button
               type="button"
               className="rounded-md border border-ice/40 px-4 py-2 font-mono text-caption text-ice transition-colors hover:bg-ice/10"
-              onClick={() => void loadSourceAsync(true)}
+              onClick={() => void loadSourceAsync(true, selectedSourceId)}
             >
               Tentar novamente
             </button>
@@ -236,6 +306,9 @@ export function WatchClient({
             animeTitle={episode.anime.title}
             startAt={resumeAt.current}
             onPlaybackError={recoverPlayback}
+            onTimeUpdate={(currentTime) => {
+              resumeAt.current = currentTime;
+            }}
           />
         ) : (
           <p className="text-body-sm text-mist">

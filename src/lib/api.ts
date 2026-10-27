@@ -153,6 +153,8 @@ export interface StreamSource {
   embedUrl: string | null;
   reextracted: boolean;
   thumbnailUrl: string | null;
+  availableSources?: { id: string; label: string }[];
+  selectedSourceId?: string | null;
 }
 
 /** Proxy interno do backend: mesmo dominio, sem XFO/CSP bloqueando iframe. */
@@ -424,9 +426,13 @@ export const api = {
 
   // --- Source cache (sessionStorage, aligned with the 5m CDN TTL) ---
   _sourceCache: {
-    get(slug: string, episode: number): StreamSource | null {
+    get(
+      slug: string,
+      episode: number,
+      sourceId?: string | null,
+    ): StreamSource | null {
       try {
-        const key = `src:v2:${slug}:${episode}`;
+        const key = `src:v2:${slug}:${episode}${sourceId ? `:${sourceId}` : ""}`;
         const raw = sessionStorage.getItem(key);
         if (!raw) return null;
         const { source, ts } = JSON.parse(raw) as {
@@ -445,10 +451,15 @@ export const api = {
         return null;
       }
     },
-    set(slug: string, episode: number, source: StreamSource) {
+    set(
+      slug: string,
+      episode: number,
+      source: StreamSource,
+      sourceId?: string | null,
+    ) {
       try {
         sessionStorage.setItem(
-          `src:v2:${slug}:${episode}`,
+          `src:v2:${slug}:${episode}${sourceId ? `:${sourceId}` : ""}`,
           JSON.stringify({ source, ts: Date.now() }),
         );
       } catch {
@@ -480,9 +491,11 @@ export const api = {
     animeSlug: string,
     episodeNumber: number,
     refresh = false,
+    sourceId?: string | null,
   ) => {
+    const source = sourceId ? `&sourceId=${encodeURIComponent(sourceId)}` : "";
     const response = await fetch(
-      `/api/stream-source?anime=${encodeURIComponent(animeSlug)}&episode=${episodeNumber}${refresh ? "&refresh=1" : ""}`,
+      `/api/stream-source?anime=${encodeURIComponent(animeSlug)}&episode=${episodeNumber}${refresh ? "&refresh=1" : ""}${source}`,
       { credentials: "include" },
     );
     const data = await response.json().catch(() => null);
@@ -490,7 +503,14 @@ export const api = {
       throw new ApiError(response.status, readErrorMessage(data));
     }
     return data as
-      StreamSource | { jobId: string; status: string; message?: string };
+      | StreamSource
+      | {
+          jobId: string;
+          status: string;
+          message?: string;
+          availableSources?: StreamSource["availableSources"];
+          selectedSourceId?: string | null;
+        };
   },
 
   /**
