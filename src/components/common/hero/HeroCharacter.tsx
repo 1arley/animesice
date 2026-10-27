@@ -49,11 +49,11 @@ export function HeroCharacter({
         // AniList banners are 1900×400; account for object-cover cropping.
         sizes={isBanner
           ? "(max-width: 639px) 356vw, (max-width: 767px) 204vw, (max-width: 1023px) 170vw, (max-width: 1399px) 148vw, 1989px"
-          : "(min-width: 1400px) 1340px, 100vw"}
-        quality={80}
+          : "(min-width: 1400px) 300px, (min-width: 1024px) 25vw, (min-width: 640px) 30vw, 53vw"}
+        quality={100}
         placeholder="blur"
         blurDataURL={blur.landscape}
-        className="object-cover"
+        className={isBanner ? "object-cover" : "object-contain object-right"}
       />
     </m.div>
   );
