@@ -115,7 +115,8 @@ export function HeroSlide({ anime, label, priority, isMobile, bloodWar = false }
         {/* z-2: Character (sharp foreground) */}
         <HeroCharacter
           src={art ?? ""}
-          isBanner={isAniListBanner}
+          hasBanner={Boolean(banner)}
+          isAniListBanner={isAniListBanner}
           priority={priority}
           charX={parallax.charX}
           charY={parallax.charY}

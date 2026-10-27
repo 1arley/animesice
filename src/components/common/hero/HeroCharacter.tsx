@@ -9,7 +9,8 @@ import { isOptimizableImageUrl } from "@/lib/url";
 
 interface HeroCharacterProps {
   src: string;
-  isBanner: boolean;
+  hasBanner: boolean;
+  isAniListBanner: boolean;
   priority?: boolean;
   charX: MotionValue<number>;
   charY: MotionValue<number>;
@@ -18,7 +19,8 @@ interface HeroCharacterProps {
 
 export function HeroCharacter({
   src,
-  isBanner,
+  hasBanner,
+  isAniListBanner,
   priority = false,
   charX,
   charY,
@@ -27,7 +29,7 @@ export function HeroCharacter({
   const reduceMotion = usePrefersReducedMotion();
   return (
     <m.div
-      className="absolute inset-0 overflow-hidden"
+      className={`absolute inset-y-0 overflow-hidden ${hasBanner ? "inset-x-0" : "right-0 w-[min(65vw,250px)] sm:w-[250px]"}`}
       style={{
         x: reduceMotion || isMobile ? undefined : charX,
         y: reduceMotion || isMobile ? undefined : charY,
@@ -47,13 +49,15 @@ export function HeroCharacter({
         unoptimized={!isOptimizableImageUrl(src)}
         fetchPriority={priority ? "high" : undefined}
         // AniList banners are 1900×400; account for object-cover cropping.
-        sizes={isBanner
+        sizes={isAniListBanner
           ? "(max-width: 639px) 356vw, (max-width: 767px) 204vw, (max-width: 1023px) 170vw, (max-width: 1399px) 148vw, 1989px"
-          : "(min-width: 1400px) 300px, (min-width: 1024px) 25vw, (min-width: 640px) 30vw, 53vw"}
+          : hasBanner
+            ? "(min-width: 1400px) 1340px, 100vw"
+            : "(min-width: 640px) 250px, 65vw"}
         quality={100}
         placeholder="blur"
         blurDataURL={blur.landscape}
-        className={isBanner ? "object-cover" : "object-contain object-right"}
+        className={hasBanner ? "object-cover" : "object-contain object-center"}
       />
     </m.div>
   );
