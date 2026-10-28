@@ -1493,10 +1493,18 @@ export const api = {
     request<Paginated<GachaPull>>(
       `/gacha/admin/users/${userId}/cards?page=${page}&limit=${limit}`,
     ),
-  adminGrantUserCard: (userId: string, cardId: string) =>
+  adminGrantUserCard: (
+    userId: string,
+    body: {
+      cardId?: string;
+      rarity?: string;
+      foil?: string;
+      random?: boolean;
+    },
+  ) =>
     request<GachaPull>(`/gacha/admin/users/${userId}/cards`, {
       method: "POST",
-      body: JSON.stringify({ cardId }),
+      body: JSON.stringify(body),
     }),
   adminDeleteUserCard: (id: string) =>
     request<AdminGachaCard>(`/gacha/admin/user-cards/${id}`, {

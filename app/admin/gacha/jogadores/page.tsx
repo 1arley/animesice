@@ -7,6 +7,7 @@ import { useToast } from "@/components/common/ToastProvider";
 import { PaginationControls } from "@/components/ui/PaginationControls";
 import { SearchField } from "@/components/ui/SearchField";
 import { GachaAdminTabs } from "@/components/admin/GachaAdminTabs";
+import { GACHA_FOILS, GACHA_TIERS } from "@/components/gacha/GachaCard";
 import type { AdminGachaCard, GachaPull } from "@/types";
 
 /** Extraído do antigo workspace "users" do monolito /admin/gacha. */
@@ -35,12 +36,22 @@ export default function AdminGachaJogadoresPage() {
   const [userCardsVersion, setUserCardsVersion] = useState(0);
   const [grantSearch, setGrantSearch] = useState("");
   const [grantCards, setGrantCards] = useState<AdminGachaCard[]>([]);
+  // Qualidade (raridade) e foil escolhidos pelo admin; vazio = aleatório.
+  const [grantMode, setGrantMode] = useState<"card" | "random">("card");
+  const [grantRarity, setGrantRarity] = useState("");
+  const [grantFoil, setGrantFoil] = useState("");
+  const [granting, setGranting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const SEARCH_DEBOUNCE_MS = 250;
   const userSearchDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
   const userSearchRequest = useRef(0);
   const grantSearchRequest = useRef(0);
+
+  /** A qualidade escolhida filtra a busca da carta específica. */
+  const visibleGrantCards = grantRarity
+    ? grantCards.filter((card) => card.rarity === grantRarity)
+    : grantCards;
 
   function loadUserCards(id: string, page = 1) {
     setUserCards([]);
@@ -142,15 +153,49 @@ export default function AdminGachaJogadoresPage() {
   }
 
   async function grantCard(cardId: string) {
-    if (!selectedUser) return;
+    if (!selectedUser || granting) return;
     const card = grantCards.find((item) => item.id === cardId);
-    if (!card || !window.confirm(`Conceder \u201c${card.name}\u201d a este usu\u00e1rio?`)) return;
+    if (!card) return;
+    if (!window.confirm(`Conceder “${card.name}” a este usuário?`)) return;
+    setGranting(true);
     try {
-      await api.adminGrantUserCard(selectedUser, cardId);
+      const pull = await api.adminGrantUserCard(selectedUser, {
+        cardId,
+        foil: grantFoil || undefined,
+      });
       setUserCardsVersion((v) => v + 1);
-      toast("Carta concedida ao usuário.", "success");
+      toast(
+        `Carta “${pull.card.name}” (${pull.card.rarity} · ${pull.foil}) concedida.`,
+        "success",
+      );
     } catch (e) {
       setError(e instanceof ApiError ? e.message : "Erro ao conceder carta.");
+    } finally {
+      setGranting(false);
+    }
+  }
+
+  /** Sorteio: o backend puxa uma carta ativa do pool (respeitando a qualidade). */
+  async function grantRandomCard() {
+    if (!selectedUser || granting) return;
+    const quality = grantRarity ? ` da qualidade ${grantRarity}` : "";
+    if (!window.confirm(`Sortear e conceder uma carta${quality}?`)) return;
+    setGranting(true);
+    try {
+      const pull = await api.adminGrantUserCard(selectedUser, {
+        random: true,
+        rarity: grantRarity || undefined,
+        foil: grantFoil || undefined,
+      });
+      setUserCardsVersion((v) => v + 1);
+      toast(
+        `Sorteada “${pull.card.name}” (${pull.card.rarity} · ${pull.foil}).`,
+        "success",
+      );
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : "Erro ao conceder carta.");
+    } finally {
+      setGranting(false);
     }
   }
 
@@ -245,34 +290,114 @@ export default function AdminGachaJogadoresPage() {
         {selectedUser && (
           <div className="border-t border-hairline pt-4 space-y-3">
             <h3 className="font-display text-snow">Conceder carta</h3>
-            <SearchField
-              placeholder="Buscar carta ativa por nome…"
-              aria-label="Buscar carta para conceder"
-              value={grantSearch}
-              onChange={(e) => setGrantSearch(e.target.value)}
-              containerClassName="w-full max-w-xl"
-            />
-            {grantSearch.trim().length < 2 ? (
-              <p className="text-caption text-mist">Digite pelo menos 2 caracteres.</p>
-            ) : grantCards.length ? (
-              <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                {grantCards.map((card) => (
-                  <li key={card.id} className="flex items-center justify-between gap-3 border border-hairline p-3">
-                    <span className="min-w-0 truncate text-body-sm text-snow">
-                      {card.name} <span className="text-mist">· {card.rarity}</span>
-                    </span>
-                    <button
-                      type="button"
-                      className="admin-tab min-h-11 shrink-0 text-caption text-ice border-ice/30"
-                      onClick={() => void grantCard(card.id)}
-                    >
-                      Conceder
-                    </button>
-                  </li>
-                ))}
-              </ul>
+
+            <div className="grid gap-3 sm:grid-cols-3">
+              <label className="grid gap-1 text-caption text-mist" htmlFor="grant-mode">
+                Origem
+                <select
+                  id="grant-mode"
+                  className="field"
+                  value={grantMode}
+                  onChange={(e) => setGrantMode(e.target.value as "card" | "random")}
+                >
+                  <option value="card">Carta específica</option>
+                  <option value="random">Sortear carta do pool</option>
+                </select>
+              </label>
+
+              <label className="grid gap-1 text-caption text-mist" htmlFor="grant-rarity">
+                Qualidade (raridade)
+                <select
+                  id="grant-rarity"
+                  className="field"
+                  value={grantRarity}
+                  onChange={(e) => setGrantRarity(e.target.value)}
+                >
+                  <option value="">Aleatória</option>
+                  {GACHA_TIERS.map((tier) => (
+                    <option key={tier} value={tier}>
+                      {tier}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="grid gap-1 text-caption text-mist" htmlFor="grant-foil">
+                Foil
+                <select
+                  id="grant-foil"
+                  className="field"
+                  value={grantFoil}
+                  onChange={(e) => setGrantFoil(e.target.value)}
+                >
+                  <option value="">Aleatório (pesos da config)</option>
+                  {GACHA_FOILS.map((foil) => (
+                    <option key={foil} value={foil}>
+                      {foil}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+
+            {grantMode === "random" ? (
+              <div className="flex flex-wrap items-center gap-3">
+                <button
+                  type="button"
+                  className="admin-tab min-h-11 text-ice border-ice/30"
+                  disabled={granting}
+                  onClick={() => void grantRandomCard()}
+                >
+                  {granting ? "Concedendo…" : "Sortear e conceder"}
+                </button>
+                <p className="text-caption text-mist">
+                  A carta vem aleatória do pool
+                  {grantRarity ? ` (apenas ${grantRarity})` : ""}; o foil{" "}
+                  {grantFoil ? `saque ${grantFoil}` : "é sorteado pelos pesos da config"}.
+                </p>
+              </div>
             ) : (
-              <p className="text-caption text-mist">Nenhuma carta ativa encontrada.</p>
+              <>
+                <SearchField
+                  placeholder="Buscar carta ativa por nome…"
+                  aria-label="Buscar carta para conceder"
+                  value={grantSearch}
+                  onChange={(e) => setGrantSearch(e.target.value)}
+                  containerClassName="w-full max-w-xl"
+                />
+                {grantSearch.trim().length < 2 ? (
+                  <p className="text-caption text-mist">Digite pelo menos 2 caracteres.</p>
+                ) : visibleGrantCards.length ? (
+                  <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                    {visibleGrantCards.map((card) => (
+                      <li key={card.id} className="flex items-center justify-between gap-3 border border-hairline p-3">
+                        <span className="min-w-0 truncate text-body-sm text-snow">
+                          {card.name} <span className="text-mist">· {card.rarity}</span>
+                        </span>
+                        <button
+                          type="button"
+                          className="admin-tab min-h-11 shrink-0 text-caption text-ice border-ice/30"
+                          disabled={granting}
+                          onClick={() => void grantCard(card.id)}
+                        >
+                          Conceder
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-caption text-mist">
+                    Nenhuma carta ativa encontrada
+                    {grantRarity ? ` com qualidade ${grantRarity}` : ""}.
+                  </p>
+                )}
+                {grantRarity && (
+                  <p className="text-caption text-mist">
+                    A qualidade escolhida filtra a busca; a carta concedida
+                    mantém a própria qualidade.
+                  </p>
+                )}
+              </>
             )}
           </div>
         )}
