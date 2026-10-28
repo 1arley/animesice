@@ -104,7 +104,6 @@ export function TiltedCard({
           className="relative [transform-style:preserve-3d]"
           style={{ rotateX, rotateY, scale, width: "100%" }}
         >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
           <m.img
             src={imageSrc}
             alt={altText}
