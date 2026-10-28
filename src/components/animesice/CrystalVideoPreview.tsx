@@ -155,7 +155,6 @@ export function CrystalVideoPreview({ size = 288 }: { size?: number }) {
           aria-hidden="true"
         />
         <canvas ref={canvasRef} className="relative block h-full w-full" />
-        {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
         <video
           ref={videoRef}
           src={VIDEO_SRC}

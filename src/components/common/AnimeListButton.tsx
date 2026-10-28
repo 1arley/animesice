@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { api, ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { Modal as SharedModal } from "@/components/common/Modal";
@@ -27,6 +28,7 @@ interface AnimeListButtonProps {
  */
 export function AnimeListButton({ slug, className }: AnimeListButtonProps) {
   const { user } = useAuth();
+  const router = useRouter();
   const [checking, setChecking] = useState(true);
   const [inList, setInList] = useState(false);
   const [existing, setExisting] = useState<{
@@ -74,7 +76,7 @@ export function AnimeListButton({ slug, className }: AnimeListButtonProps) {
 
   function openModal() {
     if (!user) {
-      window.location.href = "/login";
+      router.push("/login");
       return;
     }
     setError(null);

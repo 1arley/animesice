@@ -41,7 +41,7 @@ export async function compileComponent(
   };
 
   const mod = { exports: {} as Record<string, unknown> };
-  // eslint-disable-next-line no-new-func -- é o ponto do recurso (preview de código colado).
+  // new Function é o ponto do recurso (preview de código colado).
   new Function("require", "module", "exports", code)(shimRequire, mod, mod.exports);
   return mod.exports;
 }
