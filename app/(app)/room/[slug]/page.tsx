@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState, useRef, use } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { api, ApiError, isProxyEmbed, type RoomInfo, type RoomMessageItem, type StreamSource } from "@/lib/api";
 import { resolveAsyncSource } from "@/lib/resolve-async-source";
 import { useAuth } from "@/lib/auth-context";
@@ -37,6 +38,7 @@ export default function RoomPage({
 }) {
   const { slug } = use(params);
   const { user, loading: authLoading } = useAuth();
+  const router = useRouter();
   const [room, setRoom] = useState<RoomInfo | null>(null);
   const [episode, setEpisode] = useState<(Episode & { anime: Anime }) | null>(null);
   const [source, setSource] = useState<StreamSource | null>(null);
@@ -276,7 +278,7 @@ export default function RoomPage({
     setDeleting(true);
     try {
       await api.deleteRoom(slug);
-      window.location.href = "/";
+      router.push("/");
     } catch (e) {
       setError(e instanceof ApiError ? e.message : "Erro ao deletar sala.");
       setConfirmDelete(false);

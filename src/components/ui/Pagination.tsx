@@ -37,7 +37,6 @@ export function Pagination({
       {paginationSlots(page, totalPages).map((entry, index) =>
         entry === "…" ? (
           <span
-            // eslint-disable-next-line react/no-array-index-key
             key={`gap-${index}`}
             aria-hidden="true"
             className={PAGINATION_CLASSES.ellipsis}

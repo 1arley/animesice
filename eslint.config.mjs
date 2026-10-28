@@ -11,7 +11,8 @@ export default defineConfig([
   },
   globalIgnores([
     ".agents/**",
-    ".next/**",
+    "**/.next/**",
+    ".worktree-*/**",
     "graphify-out/**",
     "out/**",
     "build/**",
