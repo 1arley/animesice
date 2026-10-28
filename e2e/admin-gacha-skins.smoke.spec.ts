@@ -38,7 +38,7 @@ test("admin cria, edita raridade, desativa e exclui skin", async ({ page }) => {
     return route.fulfill({ json: { data: current ? [current] : [], meta: { page: 1, limit: 48, total: Number(Boolean(current)), totalPages: 1 } } });
   });
 
-  await page.goto("/admin/gacha/skins");
+  await page.goto("/admin/gacha/cosmeticos/skins");
   await expect(page.getByRole("heading", { name: "Skins de personagens" })).toBeVisible();
   await page.getByLabel("Nome da skin").fill("Skin de teste");
   await page.getByLabel("URL da imagem (HTTPS)").fill("https://img.test/skin.jpg");
