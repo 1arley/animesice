@@ -49,7 +49,7 @@ async function openEditor(page: Page, svg: string) {
   await page.context().addCookies([{ name: "role", value: "ADMIN", url: "http://localhost:3000" }]);
   await page.route(/\/\/localhost:3001\/(?:api\/)?user\/me$/, route => route.fulfill({ json: VIEWER }));
   await page.route("**/gacha/admin/card-backs", route => route.fulfill({ json: [] }));
-  await page.goto("/admin/gacha/capas");
+  await page.goto("/admin/gacha/cosmeticos/capas");
   await page.getByLabel("SVG da capa").fill(svg);
   return page.getByRole("region", { name: "Padrão do cosmético" });
 }
@@ -120,7 +120,7 @@ test("editar uma camada preserva ordem, metadados da raiz e atributos nao modela
     { id: "back-1", key: "BACK_NOITE", name: "Noite Estrelada", description: null,
       type: "BACK", svg: MIXED_BACK, previewUrl: null, price: 0, status: "PUBLISHED" },
   ] }));
-  await page.goto("/admin/gacha/capas");
+  await page.goto("/admin/gacha/cosmeticos/capas");
 
   await page.getByRole("button", { name: /Noite Estrelada/ }).click();
 

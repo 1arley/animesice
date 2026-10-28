@@ -132,6 +132,18 @@ const nextConfig: NextConfig = {
         permanent: true,
       },
       {
+        // Hub de cosméticos unificou /admin/gacha/capas e /admin/gacha/skins
+        // (capas, molduras, destaques e skins em sub-rotas por tipo).
+        source: "/admin/gacha/capas",
+        destination: "/admin/gacha/cosmeticos/capas",
+        permanent: true,
+      },
+      {
+        source: "/admin/gacha/skins",
+        destination: "/admin/gacha/cosmeticos/skins",
+        permanent: true,
+      },
+      {
         // /gacha/colecao virou o gerenciador de cosméticos (capa, moldura,
         // destaque); a galeria de cartas vive em /gacha/cartas.
         source: "/gacha/collection",
