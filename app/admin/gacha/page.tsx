@@ -19,7 +19,6 @@ import { GACHA_RARITY_COLORS } from "@/lib/gacha-rarity-colors";
 import type {
   AdminGachaCard,
   GachaEngagementPilotDashboard,
-  GachaPull,
 } from "@/types";
 
 const TIERS = [
@@ -38,7 +37,7 @@ const ANIME_MIN_QUERY = 2;
 const SEARCH_DEBOUNCE_MS = 250;
 const REASON_MIN = 10;
 
-type WorkspaceTab = "cards" | "sets" | "users";
+type WorkspaceTab = "cards" | "sets";
 
 /** O picker aceita tanto o anime completo da busca quanto o resumo do card. */
 type AnimeOption = {
@@ -111,27 +110,7 @@ export default function AdminGachaPage() {
   });
   const [jsonBusy, setJsonBusy] = useState(false);
 
-  // Gestão de Usuários
-  const [users, setUsers] = useState<
-    {
-      id: string;
-      email: string;
-      name: string | null;
-      userName: string | null;
-    }[]
-  >([]);
-  const [userCards, setUserCards] = useState<GachaPull[]>([]);
-  const [userCardsMeta, setUserCardsMeta] = useState({
-    page: 1,
-    totalPages: 1,
-    total: 0,
-  });
-  const [userPage, setUserPage] = useState(1);
-  const [userCardsVersion, setUserCardsVersion] = useState(0);
-  const [grantSearch, setGrantSearch] = useState("");
-  const [grantCards, setGrantCards] = useState<AdminGachaCard[]>([]);
-  const [search, setSearch] = useState("");
-  const [selectedUser, setSelectedUser] = useState("");
+  // Gestão de Usuários: movida para /admin/gacha/jogadores
 
   // Formulário de criação/edição individual
   const [form, setForm] = useState({
@@ -153,11 +132,8 @@ export default function AdminGachaPage() {
 
   // Refs de debounce
   const debounce = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const userSearchDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
   const cardsRequest = useRef(0);
   const animeSearchRequest = useRef(0);
-  const userSearchRequest = useRef(0);
-  const grantSearchRequest = useRef(0);
 
   const isSuperAdmin = user?.role === "SUPERADMIN";
 
@@ -310,29 +286,6 @@ export default function AdminGachaPage() {
 
   function gotoCardPage(page: number) {
     void loadCards(page);
-  }
-
-  function onUserSearch(value: string) {
-    setSearch(value);
-    if (userSearchDebounce.current) clearTimeout(userSearchDebounce.current);
-    if (value.trim().length < ANIME_MIN_QUERY) {
-      setUsers([]);
-      return;
-    }
-    const requestId = ++userSearchRequest.current;
-    userSearchDebounce.current = setTimeout(() => {
-      api
-        .adminListUsers(1, 10, value.trim())
-        .then((res) => {
-          if (requestId === userSearchRequest.current) setUsers(res.data);
-        })
-        .catch((e) => {
-          if (requestId !== userSearchRequest.current) return;
-          setError(
-            e instanceof ApiError ? e.message : "Erro ao buscar usuários.",
-          );
-        });
-    }, SEARCH_DEBOUNCE_MS);
   }
 
   useEffect(() => {
@@ -715,117 +668,7 @@ export default function AdminGachaPage() {
     }
   }
 
-  // Usuários
-  function loadUserCards(id: string, page = 1) {
-    setUserCards([]);
-    setUserCardsMeta({ page, totalPages: 1, total: 0 });
-    setSelectedUser(id);
-    setUserPage(page);
-    setUserCardsVersion((v) => v + 1);
-  }
-
-  useEffect(() => {
-    if (!selectedUser) return;
-    let cancelled = false;
-    setError(null);
-    api
-      .adminListUserCards(selectedUser, userPage)
-      .then((res) => {
-        if (cancelled) return;
-        setUserCards(res.data);
-        setUserCardsMeta({
-          page: res.meta.page,
-          totalPages: res.meta.totalPages,
-          total: res.meta.total,
-        });
-      })
-      .catch((e) => {
-        if (!cancelled)
-          setError(
-            e instanceof ApiError ? e.message : "Erro ao carregar cartas.",
-          );
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [selectedUser, userPage, userCardsVersion]);
-
-  useEffect(() => {
-    const query = grantSearch.trim();
-    const requestId = ++grantSearchRequest.current;
-    if (query.length < 2) {
-      setGrantCards([]);
-      return;
-    }
-    setGrantCards([]);
-    const timer = setTimeout(() => {
-      void api.adminListGachaCards(1, 20, query, undefined, undefined, "ACTIVE")
-        .then((res) => {
-          if (requestId === grantSearchRequest.current) setGrantCards(res.data);
-        })
-        .catch((e) => {
-          if (requestId === grantSearchRequest.current)
-            setError(e instanceof ApiError ? e.message : "Erro ao buscar cartas.");
-        });
-    }, SEARCH_DEBOUNCE_MS);
-    return () => clearTimeout(timer);
-  }, [grantSearch]);
-
-  async function removeCard(id: string) {
-    if (!window.confirm("Excluir carta do usuário?")) return;
-    try {
-      await api.adminDeleteUserCard(id);
-      setUserCardsVersion((v) => v + 1);
-      toast("Carta removida do usuário.", "success");
-    } catch (e) {
-      setError(e instanceof ApiError ? e.message : "Erro ao excluir carta.");
-    }
-  }
-
-  async function resetRoll() {
-    if (!selectedUser || !window.confirm("Resetar roll de hoje?")) return;
-    try {
-      await api.adminResetGachaRoll(selectedUser);
-      toast("Roll diário resetado.", "success");
-    } catch (e) {
-      setError(e instanceof ApiError ? e.message : "Erro ao resetar roll.");
-    }
-  }
-
-  async function grantCard(cardId: string) {
-    if (!selectedUser) return;
-    const card = grantCards.find((item) => item.id === cardId);
-    if (!card || !window.confirm(`Conceder “${card.name}” a este usuário?`)) return;
-    try {
-      await api.adminGrantUserCard(selectedUser, cardId);
-      setUserCardsVersion((v) => v + 1);
-      toast("Carta concedida ao usuário.", "success");
-    } catch (e) {
-      setError(e instanceof ApiError ? e.message : "Erro ao conceder carta.");
-    }
-  }
-
-  async function setCardValue(card: GachaPull, restore = false) {
-    const raw = restore
-      ? null
-      : window.prompt(
-          "Novo valor inteiro entre 0 e 1000000",
-          String(card.value),
-        );
-    if (!restore && raw === null) return;
-    const reasonPrompt = window.prompt("Motivo da alteração (mínimo 10 caracteres)");
-    if (!reasonPrompt) return;
-    try {
-      await api.adminSetUserCardValue(card.id, {
-        value: restore ? null : Number(raw),
-        reason: reasonPrompt,
-      });
-      setUserCardsVersion((v) => v + 1);
-      toast("Valor da carta ajustado.", "success");
-    } catch (e) {
-      setError(e instanceof ApiError ? e.message : "Erro ao ajustar valor.");
-    }
-  }
+  // Usuários: movido para /admin/gacha/jogadores
 
   return (
     <div className="space-y-6 pb-24">
@@ -879,17 +722,6 @@ export default function AdminGachaPage() {
           onClick={() => setWorkspace("sets")}
         >
           📦 Gerenciador de Conjuntos (Sets)
-        </button>
-        <button
-          type="button"
-          className={`px-4 py-2.5 font-display text-body-sm font-medium border-b-2 transition-colors ${
-            workspace === "users"
-              ? "border-ice text-ice bg-ice/5"
-              : "border-transparent text-mist hover:text-snow hover:bg-white/5"
-          }`}
-          onClick={() => setWorkspace("users")}
-        >
-          👤 Usuários & Concessões
         </button>
       </nav>
 
@@ -1716,163 +1548,6 @@ export default function AdminGachaPage() {
             else toast(msg, "success");
           }}
         />
-      )}
-
-      {/* ======================================================== */}
-      {/* ABA 3: USUÁRIOS & CONCESSÕES                             */}
-      {/* ======================================================== */}
-      {workspace === "users" && (
-        <section aria-labelledby="users-heading" className="border border-hairline bg-panel p-5 space-y-4">
-          <div className="border-b border-hairline pb-3">
-            <h2 id="users-heading" className="font-display text-display-lg text-snow">
-              Gestão de Usuários & Cartas
-            </h2>
-            <p className="mt-1 text-body-sm text-mist">
-              Buscar usuário para inspecionar cartas ganhas, resetar roll diário, ajustar valores com override ou conceder cartas manualmente.
-            </p>
-          </div>
-
-          <SearchField
-            placeholder="Buscar usuário por nome, username ou e-mail…"
-            aria-label="Buscar usuário"
-            value={search}
-            onChange={(e) => onUserSearch(e.target.value)}
-            containerClassName="w-full max-w-xl"
-          />
-
-          <div className="grid gap-2 sm:grid-cols-2 md:grid-cols-3">
-            {users.map((userItem) => (
-              <button
-                key={userItem.id}
-                type="button"
-                className={`p-3 text-left border rounded transition-colors ${
-                  selectedUser === userItem.id
-                    ? "border-ice bg-ice/10 text-snow"
-                    : "border-hairline text-mist hover:text-snow hover:bg-white/5"
-                }`}
-                onClick={() => void loadUserCards(userItem.id, 1)}
-              >
-                <div className="font-medium truncate">
-                  {userItem.userName ?? userItem.name ?? "Sem nome"}
-                </div>
-                <div className="text-caption text-mist-soft truncate">{userItem.email}</div>
-              </button>
-            ))}
-          </div>
-
-          {selectedUser && (
-            <div className="border-t border-hairline pt-4 space-y-3">
-              <h3 className="font-display text-snow">Conceder carta</h3>
-              <SearchField
-                placeholder="Buscar carta ativa por nome…"
-                aria-label="Buscar carta para conceder"
-                value={grantSearch}
-                onChange={(e) => setGrantSearch(e.target.value)}
-                containerClassName="w-full max-w-xl"
-              />
-              {grantSearch.trim().length < 2 ? (
-                <p className="text-caption text-mist">Digite pelo menos 2 caracteres.</p>
-              ) : grantCards.length ? (
-                <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                  {grantCards.map((card) => (
-                    <li key={card.id} className="flex items-center justify-between gap-3 border border-hairline p-3">
-                      <span className="min-w-0 truncate text-body-sm text-snow">
-                        {card.name} <span className="text-mist">· {card.rarity}</span>
-                      </span>
-                      <button
-                        type="button"
-                        className="admin-tab min-h-11 shrink-0 text-caption text-ice border-ice/30"
-                        onClick={() => void grantCard(card.id)}
-                      >
-                        Conceder
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="text-caption text-mist">Nenhuma carta ativa encontrada.</p>
-              )}
-            </div>
-          )}
-
-          {selectedUser && (
-            <div className="mt-6 border-t border-hairline pt-4 space-y-4">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    className="admin-tab"
-                    onClick={() => void resetRoll()}
-                  >
-                    Resetar Roll Diário
-                  </button>
-                </div>
-
-                <p className="font-mono text-caption text-mist">
-                  {userCardsMeta.total} cartas · página {userCardsMeta.page} de {userCardsMeta.totalPages}
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                {userCards.map((pull) => (
-                  <div
-                    key={pull.id}
-                    className="flex flex-col gap-2 border border-hairline p-3 sm:flex-row sm:items-center sm:justify-between"
-                  >
-                    <div className="min-w-0 flex-1">
-                      <span className="text-snow font-medium">
-                        {pull.card.name}
-                      </span>
-                      <span className="ml-2 text-caption text-mist">
-                        {pull.card.rarity} · {pull.value} pts
-                        {pull.valueOverride !== null && pull.valueOverride !== undefined
-                          ? " · (override ativo)"
-                          : ""}
-                      </span>
-                    </div>
-
-                    <div className="flex flex-wrap gap-1.5 sm:flex-none">
-                      {isSuperAdmin && (
-                        <>
-                          <button
-                            type="button"
-                            className="admin-tab text-caption"
-                            onClick={() => void setCardValue(pull)}
-                          >
-                            Ajustar Valor
-                          </button>
-                          {pull.valueOverride !== null && pull.valueOverride !== undefined && (
-                            <button
-                              type="button"
-                              className="admin-tab text-caption"
-                              onClick={() => void setCardValue(pull, true)}
-                            >
-                              Restaurar
-                            </button>
-                          )}
-                        </>
-                      )}
-                      <button
-                        type="button"
-                        className="admin-tab text-caption text-signal border-signal/30"
-                        onClick={() => void removeCard(pull.id)}
-                      >
-                        Excluir
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <PaginationControls
-                page={userCardsMeta.page}
-                totalPages={userCardsMeta.totalPages}
-                onPageChange={(target) => void loadUserCards(selectedUser, target)}
-                label="Paginação das cartas do usuário"
-              />
-            </div>
-          )}
-        </section>
       )}
 
       {/* ======================================================== */}
