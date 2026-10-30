@@ -1499,6 +1499,7 @@ export const api = {
       cardId?: string;
       rarity?: string;
       foil?: string;
+      condition?: string;
       random?: boolean;
     },
   ) =>

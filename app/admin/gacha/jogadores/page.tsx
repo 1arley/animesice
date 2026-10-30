@@ -40,6 +40,7 @@ export default function AdminGachaJogadoresPage() {
   const [grantMode, setGrantMode] = useState<"card" | "random">("card");
   const [grantRarity, setGrantRarity] = useState("");
   const [grantFoil, setGrantFoil] = useState("");
+  const [grantCondition, setGrantCondition] = useState("");
   const [granting, setGranting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -162,6 +163,7 @@ export default function AdminGachaJogadoresPage() {
       const pull = await api.adminGrantUserCard(selectedUser, {
         cardId,
         foil: grantFoil || undefined,
+        condition: grantCondition || undefined,
       });
       setUserCardsVersion((v) => v + 1);
       toast(
@@ -186,6 +188,7 @@ export default function AdminGachaJogadoresPage() {
         random: true,
         rarity: grantRarity || undefined,
         foil: grantFoil || undefined,
+        condition: grantCondition || undefined,
       });
       setUserCardsVersion((v) => v + 1);
       toast(
@@ -291,7 +294,7 @@ export default function AdminGachaJogadoresPage() {
           <div className="border-t border-hairline pt-4 space-y-3">
             <h3 className="font-display text-snow">Conceder carta</h3>
 
-            <div className="grid gap-3 sm:grid-cols-3">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               <label className="grid gap-1 text-caption text-mist" htmlFor="grant-mode">
                 Origem
                 <select
@@ -335,6 +338,21 @@ export default function AdminGachaJogadoresPage() {
                     <option key={foil} value={foil}>
                       {foil}
                     </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="grid gap-1 text-caption text-mist" htmlFor="grant-condition">
+                Condition
+                <select
+                  id="grant-condition"
+                  className="field"
+                  value={grantCondition}
+                  onChange={(e) => setGrantCondition(e.target.value)}
+                >
+                  <option value="">Aleatória</option>
+                  {["POOR", "PLAYED", "EX", "NM", "MINT"].map((condition) => (
+                    <option key={condition} value={condition}>{condition}</option>
                   ))}
                 </select>
               </label>
