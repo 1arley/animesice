@@ -136,6 +136,7 @@ function GachaPageContent() {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [bypassPending, setBypassPending] = useState(false);
   const [rerolling, setRerolling] = useState(false);
+  const [rerollError, setRerollError] = useState("");
   const [rerollReconciling, setRerollReconciling] = useState(false);
   const rerollBusy = useRef(false);
   const [rerollUncertainCardId, setRerollUncertainCardId] = useState<
@@ -231,6 +232,8 @@ function GachaPageContent() {
   }, [searchParams, user?.id]);
 
   function closePreview() {
+    setRerollConfirm(false);
+    setRerollError("");
     previewGenerationRef.current += 1;
     cardLoadGenerationRef.current += 1;
     previewIdRef.current = null;
@@ -466,11 +469,12 @@ function GachaPageContent() {
     )
       return;
     const card = preview;
+    setRerollError("");
     const storageKey = `animesice:gacha-reroll-uncertain:${user?.id}:${card.id}`;
     try {
       if (!retryUncertain && localStorage.getItem(storageKey) != null) {
         setRerollUncertainCardId(card.id);
-        setError(
+        setRerollError(
           "Este reroll ainda precisa ser conferido. Atualize carta e saldo antes de tentar novamente.",
         );
         return;
@@ -480,7 +484,7 @@ function GachaPageContent() {
         JSON.stringify({ operationId, useProtection }),
       );
     } catch {
-      setError(
+      setRerollError(
         "Não foi possível salvar a tentativa com segurança. Ative o armazenamento do navegador e tente novamente.",
       );
       return;
@@ -490,7 +494,7 @@ function GachaPageContent() {
     const generation = previewGenerationRef.current;
     const requestUserId = user?.id;
     setRerolling(true);
-    setError("");
+    setRerollError("");
     try {
       await api.gachaReroll({
         userCardId: card.id,
@@ -513,7 +517,7 @@ function GachaPageContent() {
           return;
         setRerollUncertainCardId(card.id);
         setRerollUncertainReconciledId(null);
-        setError(
+        setRerollError(
           "Reroll confirmado, mas não foi possível sincronizar. Repita a mesma operação para conferir sem nova cobrança.",
         );
         return;
@@ -564,7 +568,7 @@ function GachaPageContent() {
           setRerollUncertainCardId(card.id);
           setRerollUncertainReconciledId(null);
           setRerollConfirm(false);
-          setError(
+          setRerollError(
             "Resultado incerto. Atualize saldo e carta antes de liberar outra tentativa.",
           );
         }
@@ -582,8 +586,8 @@ function GachaPageContent() {
         setRerollUncertainCardId(null);
         setRerollUncertainLegacyCardId(null);
         setRerollUncertainReconciledId(null);
-        setRerollConfirm(false);
-        setError(err.message || "Erro ao rerrollar a carta.");
+        const message = err.message || "Erro ao rerrollar a carta.";
+        setRerollError(message);
       }
     } finally {
       setRerolling(false);
@@ -836,18 +840,28 @@ function GachaPageContent() {
       {preview && (
         <CardPreview
           pull={preview}
-          onClose={closePreview}
+          onClose={() => {
+            setRerollError("");
+            closePreview();
+          }}
           canReroll={
             !!user &&
             preview.user.id === user.id &&
             rerollUncertainCardId !== preview.id
           }
           rerolling={rerolling}
+          rerollError={rerollError}
           rerollReconciling={rerollReconciling}
-          onReroll={() => setRerollConfirm(true)}
+          onReroll={() => {
+            setRerollError("");
+            setRerollConfirm(true);
+          }}
           rerollConfirm={rerollConfirm}
           onRerollConfirm={(useProtection) => void handleReroll(useProtection)}
-          onRerollCancel={() => setRerollConfirm(false)}
+          onRerollCancel={() => {
+            setRerollError("");
+            setRerollConfirm(false);
+          }}
           rerollCost={
             economy?.itemConfig?.card_floors[preview.card.rarity] == null ||
             !economy?.itemConfig

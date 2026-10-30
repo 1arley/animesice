@@ -42,6 +42,7 @@ type CardPreviewProps = {
   onClose: () => void;
   canReroll?: boolean;
   rerolling?: boolean;
+  rerollError?: string;
   rerollReconciling?: boolean;
   onReroll?: () => void;
   rerollConfirm?: boolean;
@@ -164,6 +165,7 @@ function OwnedCardPreview({
   onClose,
   canReroll = false,
   rerolling = false,
+  rerollError = "",
   rerollReconciling = false,
   onReroll,
   rerollConfirm = false,
@@ -750,6 +752,11 @@ function OwnedCardPreview({
                   : `Rerrollar condition/foil · ${rerollCost} crystals`}
           </button>
         )}
+        {rerollError && !rerollConfirm && (
+          <p role="alert" className="mt-3 border border-signal/50 bg-signal/10 p-3 text-body-sm text-signal">
+            {rerollError}
+          </p>
+        )}
         {rerollUncertain && (
           <div className="mt-3 border border-signal/50 p-3" role="status">
             <p className="text-sm text-snow">
@@ -901,6 +908,11 @@ function OwnedCardPreview({
           onCancel={onRerollCancel}
           onConfirm={() => onRerollConfirm(useProtection)}
         >
+          {rerollError && (
+            <p role="alert" className="mt-4 border border-signal/50 bg-signal/10 p-3 text-body-sm text-signal">
+              {rerollError}
+            </p>
+          )}
           <p className="mt-4 text-body-sm text-mist">
             Sorteia nova condition e foil por{" "}
             {rerollCost?.toLocaleString("pt-BR") ?? "—"} crystals. Pode piorar.
