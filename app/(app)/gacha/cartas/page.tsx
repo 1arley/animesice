@@ -46,6 +46,7 @@ export default function GachaCollectionPage() {
   const [featuredError, setFeaturedError] = useState("");
   const [progressError, setProgressError] = useState("");
   const [rerolling, setRerolling] = useState(false);
+  const [rerollError, setRerollError] = useState("");
   const [rerollReconciling, setRerollReconciling] = useState(false);
   const rerollBusy = useRef(false);
   const [rerollUncertainCardId, setRerollUncertainCardId] = useState<
@@ -294,11 +295,12 @@ export default function GachaCollectionPage() {
     )
       return;
     const card = preview;
+    setRerollError("");
     const storageKey = `animesice:gacha-reroll-uncertain:${user?.id}:${card.id}`;
     try {
       if (!retryUncertain && localStorage.getItem(storageKey) != null) {
         setRerollUncertainCardId(card.id);
-        setError(
+        setRerollError(
           "Este reroll ainda precisa ser conferido. Atualize carta e saldo antes de tentar novamente.",
         );
         return;
@@ -308,7 +310,7 @@ export default function GachaCollectionPage() {
         JSON.stringify({ operationId, useProtection }),
       );
     } catch {
-      setError(
+      setRerollError(
         "Não foi possível salvar a tentativa com segurança. Ative o armazenamento do navegador e tente novamente.",
       );
       return;
@@ -340,7 +342,7 @@ export default function GachaCollectionPage() {
           return;
         setRerollUncertainCardId(card.id);
         setRerollUncertainReconciledId(null);
-        setError(
+        setRerollError(
           "Reroll confirmado, mas não foi possível sincronizar. Repita a mesma operação para conferir sem nova cobrança.",
         );
         return;
@@ -353,7 +355,7 @@ export default function GachaCollectionPage() {
         ) {
           setRerollUncertainCardId(card.id);
           setRerollUncertainReconciledId(null);
-          setError(
+          setRerollError(
             "Reroll confirmado, mas a coleção mudou durante a atualização. Repita a mesma operação para conferir sem nova cobrança.",
           );
         }
@@ -413,7 +415,7 @@ export default function GachaCollectionPage() {
           setRerollUncertainCardId(card.id);
           setRerollUncertainReconciledId(null);
           setRerollConfirm(false);
-          setError(
+          setRerollError(
             "Resultado incerto. Atualize saldo e carta antes de liberar outra tentativa.",
           );
         }
@@ -431,8 +433,8 @@ export default function GachaCollectionPage() {
         setRerollUncertainCardId(null);
         setRerollUncertainLegacyCardId(null);
         setRerollUncertainReconciledId(null);
-        setRerollConfirm(false);
-        setError(err.message || "Erro ao rerrollar a carta.");
+        const message = err.message || "Erro ao rerrollar a carta.";
+        setRerollError(message);
       }
     } finally {
       setRerolling(false);
@@ -614,16 +616,27 @@ export default function GachaCollectionPage() {
       {preview && (
         <CardPreview
           pull={preview}
-          onClose={() => setPreview(null)}
+          onClose={() => {
+            setRerollError("");
+            setRerollConfirm(false);
+            setPreview(null);
+          }}
           canReroll={
             preview.user.id === user.id && rerollUncertainCardId !== preview.id
           }
           rerolling={rerolling}
+          rerollError={rerollError}
           rerollReconciling={rerollReconciling}
-          onReroll={() => setRerollConfirm(true)}
+          onReroll={() => {
+            setRerollError("");
+            setRerollConfirm(true);
+          }}
           rerollConfirm={rerollConfirm}
           onRerollConfirm={(useProtection) => void handleReroll(useProtection)}
-          onRerollCancel={() => setRerollConfirm(false)}
+          onRerollCancel={() => {
+            setRerollError("");
+            setRerollConfirm(false);
+          }}
           rerollCost={
             economy?.itemConfig?.card_floors[preview.card.rarity] == null ||
             !economy?.itemConfig
