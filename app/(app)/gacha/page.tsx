@@ -18,6 +18,7 @@ import {
   RARITY_TEXT,
   gachaConditionLabel,
 } from "@/components/gacha/GachaCard";
+import { gachaRerollCost } from "@/lib/gacha-reroll";
 import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import { useToast } from "@/components/common/ToastProvider";
 import { SectionLabel } from "@/components/common/SectionLabel";
@@ -863,16 +864,9 @@ function GachaPageContent() {
             setRerollConfirm(false);
           }}
           rerollCost={
-            economy?.itemConfig?.card_floors[preview.card.rarity] == null ||
-            !economy?.itemConfig
-              ? null
-              : Math.max(
-                  1,
-                  Math.round(
-                    economy.itemConfig.card_floors[preview.card.rarity]! *
-                      economy.itemConfig.reroll_cost_pct,
-                  ),
-                )
+            economy?.itemConfig
+              ? gachaRerollCost(preview, economy.itemConfig)
+              : null
           }
           protectionCount={economy?.protecao ?? 0}
           protectionDisabledReason={

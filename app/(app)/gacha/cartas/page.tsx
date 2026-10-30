@@ -9,6 +9,7 @@ import {
   GACHA_TIERS,
   gachaConditionLabel,
 } from "@/components/gacha/GachaCard";
+import { gachaRerollCost } from "@/lib/gacha-reroll";
 import { CardPreview } from "@/components/gacha/CardPreview";
 import {
   GachaCardGridSkeleton,
@@ -638,16 +639,9 @@ export default function GachaCollectionPage() {
             setRerollConfirm(false);
           }}
           rerollCost={
-            economy?.itemConfig?.card_floors[preview.card.rarity] == null ||
-            !economy?.itemConfig
-              ? null
-              : Math.max(
-                  1,
-                  Math.round(
-                    economy.itemConfig.card_floors[preview.card.rarity]! *
-                      economy.itemConfig.reroll_cost_pct,
-                  ),
-                )
+            economy?.itemConfig
+              ? gachaRerollCost(preview, economy.itemConfig)
+              : null
           }
           protectionCount={economy?.protecao ?? 0}
           protectionDisabledReason={
