@@ -45,6 +45,10 @@ export function WatchClient({
   initialSource: initialSourceProp,
 }: WatchClientProps) {
   const episode = initialEpisode;
+  const [adjacent, setAdjacent] = useState<{
+    previous: number | null;
+    next: number | null;
+  } | null>(null);
   const [source, setSource] = useState<StreamSource | null>(null);
   const [availableSources, setAvailableSources] = useState(
     initialSourceProp?.availableSources ?? [],
@@ -59,6 +63,29 @@ export function WatchClient({
   const recoveryAttempts = useRef(0);
   const resumeAt = useRef(0);
   const asyncAbortRef = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setAdjacent(null);
+    api
+      .getEpisodes(slug)
+      .then((episodes) => {
+        if (cancelled) return;
+        const numbers = [...new Set(episodes.map((ep) => ep.number))].sort(
+          (a, b) => a - b,
+        );
+        setAdjacent({
+          previous: numbers.filter((value) => value < number).at(-1) ?? null,
+          next: numbers.find((value) => value > number) ?? null,
+        });
+      })
+      .catch(() => {
+        if (!cancelled) setAdjacent({ previous: null, next: null });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [slug, number]);
 
   /**
    * Tenta extração assíncrona com SSE (primário) e fallback para polling.
@@ -303,6 +330,7 @@ export function WatchClient({
             posterUrl={source.thumbnailUrl ?? episode.thumbnailUrl ?? undefined}
             animeSlug={slug}
             episodeNumber={episode.number}
+            nextEpisode={adjacent?.next}
             animeTitle={episode.anime.title}
             startAt={resumeAt.current}
             onPlaybackError={recoverPlayback}
@@ -324,7 +352,7 @@ export function WatchClient({
       <CommentSection episodeId={episode.id} title="Discussão do episódio" />
 
       {/* Navegação de episódios — Peak-End Rule: melhor experiência no fim */}
-      <EpisodeNavigation slug={slug} number={number} />
+      <EpisodeNavigation slug={slug} adjacent={adjacent} />
     </>
   );
 }
@@ -370,34 +398,14 @@ function EpisodePlayerShell({
  * Peak-End Rule: usuários lembram do fim da experiência.
  * Lei de Proximidade: botões agrupados por função (anterior/próximo).
  */
-function EpisodeNavigation({ slug, number }: { slug: string; number: number }) {
-  const [adjacent, setAdjacent] = useState<{
-    previous: number | null;
-    next: number | null;
-  } | null>(null);
+function EpisodeNavigation({
+  slug,
+  adjacent,
+}: {
+  slug: string;
+  adjacent: { previous: number | null; next: number | null } | null;
+}) {
   const prefetched = useRef(new Set<number>());
-
-  useEffect(() => {
-    let cancelled = false;
-    api
-      .getEpisodes(slug)
-      .then((episodes) => {
-        if (cancelled) return;
-        const numbers = [...new Set(episodes.map((ep) => ep.number))].sort(
-          (a, b) => a - b,
-        );
-        setAdjacent({
-          previous: numbers.filter((value) => value < number).at(-1) ?? null,
-          next: numbers.find((value) => value > number) ?? null,
-        });
-      })
-      .catch(() => {
-        if (!cancelled) setAdjacent({ previous: null, next: null });
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [slug, number]);
 
   /**
    * Prefetch de stream source ao hover: aquece o cache do backend

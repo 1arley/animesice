@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import type Hls from "hls.js";
 import { safeImageSrc } from "@/lib/url";
 import { isProxyEmbed, API_URL } from "@/lib/api";
@@ -17,6 +19,7 @@ interface VideoPlayerProps {
   /** Para rastreamento de progresso */
   animeSlug?: string;
   episodeNumber?: number;
+  nextEpisode?: number | null;
   /** Título para acessibilidade do iframe */
   animeTitle?: string;
   /** Retoma neste ponto depois de uma recuperação de source. */
@@ -59,6 +62,7 @@ export function VideoPlayer({
   embedUrl,
   animeSlug,
   episodeNumber,
+  nextEpisode,
   animeTitle,
   startAt,
   onPlaybackError,
@@ -87,6 +91,7 @@ export function VideoPlayer({
         embedUrl={embedUrl}
         animeSlug={animeSlug}
         episodeNumber={episodeNumber}
+        nextEpisode={nextEpisode}
         animeTitle={animeTitle}
       />
     );
@@ -97,6 +102,7 @@ export function VideoPlayer({
         embedUrl={src}
         animeSlug={animeSlug}
         episodeNumber={episodeNumber}
+        nextEpisode={nextEpisode}
         animeTitle={animeTitle}
       />
     );
@@ -107,6 +113,7 @@ export function VideoPlayer({
       posterUrl={posterUrl}
       animeSlug={animeSlug}
       episodeNumber={episodeNumber}
+      nextEpisode={nextEpisode}
       animeTitle={animeTitle}
       startAt={startAt}
       onPlaybackError={onPlaybackError}
@@ -120,11 +127,13 @@ function EmbedPlayer({
   embedUrl,
   animeSlug,
   episodeNumber,
+  nextEpisode,
   animeTitle,
 }: {
   embedUrl: string;
   animeSlug?: string;
   episodeNumber?: number;
+  nextEpisode?: number | null;
   animeTitle?: string;
 }) {
   const title =
@@ -141,13 +150,25 @@ function EmbedPlayer({
   }, [animeSlug, episodeNumber]);
 
   return (
-    <iframe
-      src={embedUrl}
-      title={title}
-      allowFullScreen
-      className="video-frame"
-      style={{ border: 0 }}
-    />
+    <div className="relative">
+      {animeSlug && nextEpisode != null && (
+        <Link
+          href={`/animes/${animeSlug}/${nextEpisode}`}
+          aria-label={`Pular para o episódio ${nextEpisode}`}
+          className="absolute right-3 top-3 z-10 inline-flex min-h-11 items-center gap-2 rounded-md border border-white/20 bg-ink/85 px-3 font-mono text-caption font-medium text-snow shadow-lg backdrop-blur-sm transition-colors hover:border-ice/60 hover:text-ice focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ice"
+        >
+          Próximo episódio
+          <span aria-hidden="true">›</span>
+        </Link>
+      )}
+      <iframe
+        src={embedUrl}
+        title={title}
+        allowFullScreen
+        className="video-frame"
+        style={{ border: 0 }}
+      />
+    </div>
   );
 }
 
@@ -214,6 +235,7 @@ function NativeVideoPlayer({
   posterUrl,
   animeSlug,
   episodeNumber,
+  nextEpisode,
   animeTitle,
   startAt,
   onPlaybackError,
@@ -223,16 +245,35 @@ function NativeVideoPlayer({
   posterUrl?: string;
   animeSlug?: string;
   episodeNumber?: number;
+  nextEpisode?: number | null;
   animeTitle?: string;
   startAt?: number;
   onPlaybackError?: (currentTime: number) => void;
   onTimeUpdate?: (currentTime: number) => void;
 }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const router = useRouter();
   const { user } = useAuth();
   const [fatalError, setFatalError] = useState(false);
   const [retryAttempt, setRetryAttempt] = useState(0);
   const [watchToast, setWatchToast] = useState(0);
+  const [nextEpisodeCountdown, setNextEpisodeCountdown] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (nextEpisodeCountdown === null || !animeSlug || nextEpisode == null) return;
+    if (nextEpisodeCountdown === 0) {
+      router.push(`/animes/${animeSlug}/${nextEpisode}`);
+      return;
+    }
+    const timer = window.setTimeout(
+      () =>
+        setNextEpisodeCountdown((countdown) =>
+          countdown === null ? null : countdown - 1,
+        ),
+      1000,
+    );
+    return () => window.clearTimeout(timer);
+  }, [animeSlug, nextEpisode, nextEpisodeCountdown, router]);
 
   useEffect(() => {
     if (!watchToast) return;
@@ -399,6 +440,7 @@ function NativeVideoPlayer({
     }
 
     function onPlay() {
+      setNextEpisodeCountdown(null);
       if (!viewsSent) {
         viewsSent = true;
         fetch(`${API_URL}/episode/${animeSlug}/${episodeNumber}/views`, {
@@ -424,6 +466,7 @@ function NativeVideoPlayer({
     }
 
     function onEnded() {
+      if (nextEpisode != null) setNextEpisodeCountdown(5);
       if (progressTimer) {
         clearInterval(progressTimer);
         progressTimer = null;
@@ -443,7 +486,7 @@ function NativeVideoPlayer({
       video.removeEventListener("ended", onEnded);
       if (progressTimer) clearInterval(progressTimer);
     };
-  }, [animeSlug, episodeNumber, user, retryAttempt]);
+  }, [animeSlug, episodeNumber, nextEpisode, user, retryAttempt]);
 
   const retry = useCallback(() => {
     setFatalError(false);
@@ -466,6 +509,28 @@ function NativeVideoPlayer({
 
   return (
     <div className="relative">
+      {animeSlug && nextEpisode != null && (
+        <Link
+          href={`/animes/${animeSlug}/${nextEpisode}`}
+          aria-label={`Pular para o episódio ${nextEpisode}`}
+          className="absolute right-3 top-3 z-10 inline-flex min-h-11 items-center gap-2 rounded-md border border-white/20 bg-ink/85 px-3 font-mono text-caption font-medium text-snow shadow-lg backdrop-blur-sm transition-colors hover:border-ice/60 hover:text-ice focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ice"
+        >
+          Próximo episódio
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <path d="m9 18 6-6-6-6" />
+          </svg>
+        </Link>
+      )}
       <video
         ref={videoRef}
         controls
@@ -482,6 +547,20 @@ function NativeVideoPlayer({
           onTimeUpdate?.(event.currentTarget.currentTime)
         }
       />
+      {nextEpisodeCountdown !== null && nextEpisode != null && (
+        <div className="absolute inset-x-3 top-1/2 z-10 mx-auto flex w-fit -translate-y-1/2 flex-col items-center gap-2 rounded-lg border border-hairline bg-ink/90 px-5 py-4 text-center shadow-xl backdrop-blur-sm">
+          <p className="text-body-sm text-snow">
+            Próximo episódio em {nextEpisodeCountdown}…
+          </p>
+          <button
+            type="button"
+            onClick={() => setNextEpisodeCountdown(null)}
+            className="min-h-11 rounded-md border border-white/20 px-4 font-mono text-caption text-mist transition-colors hover:border-ice/60 hover:text-snow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ice"
+          >
+            Cancelar
+          </button>
+        </div>
+      )}
       {watchToast > 0 && (
         <div
           role="status"
