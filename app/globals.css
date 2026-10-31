@@ -841,6 +841,21 @@
     }
   }
 
+  /* Fragmento bônus resgatado: brilho de pulso discreto no selo. Só a
+     drop-shadow anima (composited), reduzido-por-prefers-reduced-motion. */
+  .shard-bonus-glow {
+    filter: drop-shadow(0 0 3px rgba(56, 189, 248, 0.55));
+  }
+  @keyframes shard-bonus-glow {
+    0%,
+    100% {
+      filter: drop-shadow(0 0 2px rgba(56, 189, 248, 0.35));
+    }
+    50% {
+      filter: drop-shadow(0 0 6px rgba(56, 189, 248, 0.75));
+    }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .skeleton::after {
       display: none;

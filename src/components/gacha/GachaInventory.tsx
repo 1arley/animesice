@@ -6,6 +6,7 @@ import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import { useAuth } from "@/lib/auth-context";
 import { api, ApiError } from "@/lib/api";
 import { gachaConditionLabel } from "@/components/gacha/GachaCard";
+import { BonusShardIcon, SHARD_ICONS } from "@/components/gacha/BonusShardIcon";
 import type { GachaEconomyInventory, GachaFoil, GachaItemKind, GachaPull } from "@/types";
 
 type GemBalanceKey = "holoShards" | "goldShards" | "inkShards" | "prismShards" | "holoGems" | "goldGems" | "inkGems" | "prismGems";
@@ -19,8 +20,9 @@ const FOILS: { foil: GachaFoil; label: string; shards: GemBalanceKey; gems: GemB
 const STONES = [
   { kind: "TITANITA", label: "Titanita", shards: "titanitaShards", items: "titanitaItems" },
   { kind: "TITANITA_SOMBRIA", label: "Titanita Sombria", shards: "titanitaSombriaShards", items: "titanitaSombriaItems" },
-  { kind: "DRACONICA", label: "Dracônica", shards: "draconicaShards", items: "draconicaItems" },
-  { kind: "SOMBRIA_DRACONICA", label: "Dracônica Sombria", shards: "sombriaDraconicaShards", items: "sombriaDraconicaItems" },
+  // DRACONICA* são os tipos internos herdados; no gacha são exibidos como "Magnetita*".
+  { kind: "DRACONICA", label: "Magnetita", shards: "draconicaShards", items: "draconicaItems" },
+  { kind: "SOMBRIA_DRACONICA", label: "Magnetita Sombria", shards: "sombriaDraconicaShards", items: "sombriaDraconicaItems" },
 ] as const;
 
 type StoneKind = (typeof STONES)[number]["kind"];
@@ -383,7 +385,13 @@ export function GachaInventory() {
               const needed = config.item_recipes[item.kind] ?? 0;
               const progress = needed > 0 ? Math.min(100, Math.floor((current / needed) * 100)) : 0;
               return <button key={item.kind} type="button" aria-pressed={selectedKind === item.kind} disabled={!!pendingUseRetry} onClick={() => { setSelectedKind(item.kind); setSelectedCard(null); setStatus(""); }} className={`min-h-11 border p-3 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-ice disabled:opacity-60 ${selectedKind === item.kind ? "border-ice bg-ice/10" : "border-hairline bg-ink hover:border-ice/50"}`}>
-                <span className="flex items-center justify-between gap-2 font-display text-sm text-snow"><span>{item.label}</span><span className="font-mono text-xs tabular-nums text-ice">{inventory[item.items]}</span></span>
+                <span className="flex items-center justify-between gap-2 font-display text-sm text-snow">
+                  <span className="flex items-center gap-1.5">
+                    {SHARD_ICONS[item.kind] && <BonusShardIcon kind={item.kind} className="h-4 w-4" />}
+                    {item.label}
+                  </span>
+                  <span className="font-mono text-xs tabular-nums text-ice">{inventory[item.items]}</span>
+                </span>
                 <span className="mt-2 block text-xs text-mist">{current} / {needed} fragmentos · {inventory[item.items]} prontas</span>
                 <span role="progressbar" aria-label={`Progresso de fabricação de ${item.label}`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={progress} className="mt-2 block h-1.5 overflow-hidden bg-hairline"><span className="block h-full bg-ice" style={{ width: `${progress}%` }} /></span>
               </button>;

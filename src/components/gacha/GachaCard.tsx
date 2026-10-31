@@ -4,6 +4,7 @@ import { memo, type CSSProperties } from "react";
 import { safeImageSrc, isOptimizableImageUrl } from "@/lib/url";
 import { blur } from "@/lib/blur";
 import { CosmeticSvg } from "@/components/gacha/CosmeticSvg";
+import { BonusShardIcon } from "@/components/gacha/BonusShardIcon";
 import { cosmeticTypeOf } from "@/lib/cosmetic-svg";
 import { HoloTilt } from "@/components/core/HoloTilt";
 import type { GachaPull } from "@/types";
@@ -193,7 +194,7 @@ function scratchVars(id: string): CSSProperties {
   } as CSSProperties;
 }
 
-export const GachaCard = memo(function GachaCard({ pull, preview = false, linkAnime = true, showInfo = true, side = "front", cardBack }: { pull: GachaPull; linkAnime?: boolean; /** Preview de giro: sem edição definitiva nem valor final. */ preview?: boolean; /** Preview modal: usa só a arte. */ showInfo?: boolean; side?: "front" | "back"; cardBack?: string | null }) {
+export const GachaCard = memo(function GachaCard({ pull, preview = false, linkAnime = true, showInfo = true, side = "front", cardBack, shardGlow }: { pull: GachaPull; linkAnime?: boolean; /** Preview de giro: sem edição definitiva nem valor final. */ preview?: boolean; /** Preview modal: usa só a arte. */ showInfo?: boolean; side?: "front" | "back"; cardBack?: string | null; /** Força o brilho do fragmento bônus (spin já resgatado na grade). */ shardGlow?: boolean }) {
   const { card } = pull;
   const art = safeImageSrc(card.image);
   const label = pull.conditionLabel ?? gachaConditionLabel(pull.condition);
@@ -304,6 +305,15 @@ export const GachaCard = memo(function GachaCard({ pull, preview = false, linkAn
           )}
           {label === "MINT" && pull.foil === "NORMAL" && (
             <div aria-hidden className="condition-mint-glare pointer-events-none absolute inset-0" />
+          )}
+          {/* Fragmento bônus (5% dos giros): do lado esquerdo da arte. Brilho
+              leve depois do resgate; prévia não resgatada fica apagada. */}
+          {pull.bonusShard && (
+            <BonusShardIcon
+              kind={pull.bonusShard}
+              glow={shardGlow ?? !preview}
+              className="absolute left-1.5 top-1/2 z-20 h-5 w-5 -translate-y-1/2"
+            />
           )}
           <span
             className={`absolute left-1.5 top-1.5 z-20 bg-ink/85 px-1.5 py-0.5 font-mono text-caption font-medium backdrop-blur-sm ${isGalaxy ? GALAXY_TEXT : rarity.text}`}
