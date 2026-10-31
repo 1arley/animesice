@@ -870,9 +870,7 @@ function OwnedCardPreview({
             disabled={burning}
             className="mt-3 w-full border border-signal/60 px-4 py-3 font-mono text-caption text-signal disabled:opacity-50"
           >
-            {burning
-              ? "Queimando…"
-              : `Queimar · ${Math.max(1, Math.floor(pull.value * 0.4))} crystals`}
+            {burning ? "Queimando…" : "Queimar carta"}
           </button>
         )}
       </div>

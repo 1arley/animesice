@@ -785,6 +785,7 @@ export interface CrystalPage {
 }
 
 export type GachaBoxTier = "COMMON" | "RARE" | "PREMIUM";
+export type GachaFoil = "HOLO" | "GOLD" | "INK" | "PRISM";
 
 export type GachaItemKind =
   | "TITANITA"
@@ -839,6 +840,14 @@ export interface GachaEconomyInventory {
   draconicaItems: number;
   sombriaDraconicaShards: number;
   sombriaDraconicaItems: number;
+  holoShards: number;
+  goldShards: number;
+  inkShards: number;
+  prismShards: number;
+  holoGems: number;
+  goldGems: number;
+  inkGems: number;
+  prismGems: number;
   protecao: number;
   itemConfig: GachaItemConfig;
   dailyClaimedToday: boolean;
