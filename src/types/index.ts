@@ -620,6 +620,8 @@ export interface GachaPull {
   value: number;
   rankedValue?: number;
   valueOverride?: number | null;
+  /** Fragmento bônus veio junto do giro (5%); null depois da claim não tem bônus. */
+  bonusShard?: GachaItemKind | null;
   obtainedAt: string;
   user: SocialUser;
   card: GachaCardInfo;
@@ -783,6 +785,7 @@ export interface CrystalPage {
 }
 
 export type GachaBoxTier = "COMMON" | "RARE" | "PREMIUM";
+export type GachaFoil = "HOLO" | "GOLD" | "INK" | "PRISM";
 
 export type GachaItemKind =
   | "TITANITA"
@@ -837,6 +840,14 @@ export interface GachaEconomyInventory {
   draconicaItems: number;
   sombriaDraconicaShards: number;
   sombriaDraconicaItems: number;
+  holoShards: number;
+  goldShards: number;
+  inkShards: number;
+  prismShards: number;
+  holoGems: number;
+  goldGems: number;
+  inkGems: number;
+  prismGems: number;
   protecao: number;
   itemConfig: GachaItemConfig;
   dailyClaimedToday: boolean;
@@ -1043,6 +1054,8 @@ export interface GachaSpinPreview {
   conditionLabel?: string;
   foil: string;
   value: number;
+  /** Fragmento bônus (5%): anunciado na prévia, concedido só no claim. */
+  bonusShard?: GachaItemKind | null;
   claimedAt: string | null;
   expiresAt: string;
   createdAt: string;

@@ -70,6 +70,7 @@ export default function GachaCollectionPage() {
   const [burnResult, setBurnResult] = useState<{
     pull: GachaPull;
     payout: number;
+    fragments: { foil: "HOLO" | "GOLD" | "INK" | "PRISM"; quantity: number } | null;
   } | null>(null);
   const previewUserId = user?.id;
   const previewCardId = preview?.id;
@@ -79,7 +80,7 @@ export default function GachaCollectionPage() {
 
   useEffect(() => {
     if (!burnResult) return;
-    const timer = window.setTimeout(() => setBurnResult(null), 1200);
+    const timer = window.setTimeout(() => setBurnResult(null), 5000);
     return () => window.clearTimeout(timer);
   }, [burnResult]);
 
@@ -591,7 +592,12 @@ export default function GachaCollectionPage() {
       setTotal((value) => Math.max(0, value - 1));
       setPreview(null);
       setBurnTarget(null);
-      setBurnResult({ pull: target, payout: result.payout });
+      setBurnResult({ pull: target, payout: result.payout, fragments: result.fragments });
+      try {
+        setEconomy(await api.gachaEconomyInventory());
+      } catch {
+        setError("Carta queimada, mas não foi possível atualizar seus saldos. Atualize a página para sincronizar o inventário.");
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao queimar a carta.");
     } finally {
@@ -699,9 +705,7 @@ export default function GachaCollectionPage() {
         onConfirm={() => void handleBurn()}
       >
         <p className="text-body-sm text-mist">
-          Você receberá{" "}
-          {burnTarget ? Math.max(1, Math.floor(burnTarget.value * 0.4)) : 0}{" "}
-          crystals. Ação irreversível.
+          A recompensa em Crystal depende da raridade. Cartas com foil também concedem fragmentos. Ação irreversível.
         </p>
       </ConfirmDialog>
       {burnResult && (
@@ -725,8 +729,9 @@ export default function GachaCollectionPage() {
               Carta queimada
             </p>
             <p className="mt-1 font-mono text-body-sm text-amber-300">
-              +{burnResult.payout} crystals
+              +{burnResult.payout} Crystal
             </p>
+            {burnResult.fragments && <p className="mt-1 font-mono text-body-sm text-ice">+{burnResult.fragments.quantity} fragmentos {burnResult.fragments.foil}</p>}
           </div>
         </div>
       )}

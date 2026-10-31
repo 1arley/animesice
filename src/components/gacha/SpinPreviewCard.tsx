@@ -13,6 +13,7 @@ export function SpinPreviewCard({ spin }: { spin: GachaSpinPreview }) {
     <GachaCard
       linkAnime={false}
       preview
+      shardGlow={spin.claimedAt != null}
       pull={{
         id: spin.id,
         condition: spin.condition,
@@ -20,6 +21,7 @@ export function SpinPreviewCard({ spin }: { spin: GachaSpinPreview }) {
         foil: spin.foil,
         edition: 0,
         value: spin.value,
+        bonusShard: spin.bonusShard ?? null,
         obtainedAt: spin.createdAt,
         user: {
           id: "",

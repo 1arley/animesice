@@ -6,13 +6,23 @@ import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import { useAuth } from "@/lib/auth-context";
 import { api, ApiError } from "@/lib/api";
 import { gachaConditionLabel } from "@/components/gacha/GachaCard";
-import type { GachaEconomyInventory, GachaItemKind, GachaPull } from "@/types";
+import { BonusShardIcon, SHARD_ICONS } from "@/components/gacha/BonusShardIcon";
+import type { GachaEconomyInventory, GachaFoil, GachaItemKind, GachaPull } from "@/types";
+
+type GemBalanceKey = "holoShards" | "goldShards" | "inkShards" | "prismShards" | "holoGems" | "goldGems" | "inkGems" | "prismGems";
+const FOILS: { foil: GachaFoil; label: string; shards: GemBalanceKey; gems: GemBalanceKey }[] = [
+  { foil: "HOLO", label: "Holo", shards: "holoShards", gems: "holoGems" },
+  { foil: "GOLD", label: "Gold", shards: "goldShards", gems: "goldGems" },
+  { foil: "INK", label: "Ink", shards: "inkShards", gems: "inkGems" },
+  { foil: "PRISM", label: "Prismática", shards: "prismShards", gems: "prismGems" },
+];
 
 const STONES = [
   { kind: "TITANITA", label: "Titanita", shards: "titanitaShards", items: "titanitaItems" },
   { kind: "TITANITA_SOMBRIA", label: "Titanita Sombria", shards: "titanitaSombriaShards", items: "titanitaSombriaItems" },
-  { kind: "DRACONICA", label: "Dracônica", shards: "draconicaShards", items: "draconicaItems" },
-  { kind: "SOMBRIA_DRACONICA", label: "Dracônica Sombria", shards: "sombriaDraconicaShards", items: "sombriaDraconicaItems" },
+  // DRACONICA* são os tipos internos herdados; no gacha são exibidos como "Magnetita*".
+  { kind: "DRACONICA", label: "Magnetita", shards: "draconicaShards", items: "draconicaItems" },
+  { kind: "SOMBRIA_DRACONICA", label: "Magnetita Sombria", shards: "sombriaDraconicaShards", items: "sombriaDraconicaItems" },
 ] as const;
 
 type StoneKind = (typeof STONES)[number]["kind"];
@@ -50,6 +60,8 @@ export function GachaInventory() {
   const [cards, setCards] = useState<GachaPull[]>([]);
   const [selectedKind, setSelectedKind] = useState<StoneKind>("TITANITA");
   const [selectedCard, setSelectedCard] = useState<GachaPull | null>(null);
+  const [gemFoil, setGemFoil] = useState<GachaFoil>("HOLO");
+  const [gemCardId, setGemCardId] = useState("");
   const [cardSearch, setCardSearch] = useState("");
   const [quantity, setQuantity] = useState(1);
   const [protectionQuantity, setProtectionQuantity] = useState(1);
@@ -57,12 +69,16 @@ export function GachaInventory() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [status, setStatus] = useState("");
+  const [gemStatus, setGemStatus] = useState("");
+  const [gemError, setGemError] = useState("");
   const [reconcileNeeded, setReconcileNeeded] = useState(false);
   const [pendingRetry, setPendingRetry] = useState<{ operation: Operation; kind: GachaItemKind; quantity: number } | null>(null);
   const [pendingUseRetry, setPendingUseRetry] = useState<{ kind: StoneKind; userCardId: string } | null>(null);
   const pendingOperations = useRef(new Map<string, string>());
   const busyRef = useRef(false);
   const stone = STONES.find((entry) => entry.kind === selectedKind)!;
+  const gemType = FOILS.find((entry) => entry.foil === gemFoil)!;
+  const gemCards = cards.filter((card) => card.foil === "NORMAL");
 
   const refreshInventory = useCallback(async () => {
     const current = await api.gachaEconomyInventory();
@@ -296,6 +312,51 @@ export function GachaInventory() {
         <p className="mt-2 max-w-2xl text-body-sm text-mist">Gerencie seus fragmentos, pedras e proteção. Melhore suas cartas sem alterar o foil.</p>
       </header>
 
+      <section className="mb-8 border border-hairline bg-panel p-4 sm:p-6" aria-labelledby="foil-gems-heading">
+        <h2 id="foil-gems-heading" className="font-display text-xl text-snow">Fragmentos e gemas de foil</h2>
+        <p className="mt-2 text-sm text-mist">Cada gema exige 20 fragmentos do mesmo foil. A aplicação só funciona em uma carta sua sem foil; foils existentes não podem ser trocados.</p>
+        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {FOILS.map((entry) => <article key={entry.foil} className="border border-hairline p-4">
+            <h3 className="font-display text-snow">{entry.label}</h3>
+            <p className="mt-2 text-sm text-mist">Fragmentos: <strong className="font-mono text-snow">{inventory[entry.shards]}</strong></p>
+            <p className="mt-1 text-sm text-mist">Gemas: <strong className="font-mono text-snow">{inventory[entry.gems]}</strong></p>
+            <button type="button" onClick={async () => {
+              if (busy || inventory[entry.shards] < 20) return;
+              setBusy(`gem-craft:${entry.foil}`); setGemError(""); setGemStatus("");
+              try {
+                const updated = await api.gachaEconomyCraftGem({ foil: entry.foil });
+                setInventory(updated);
+                setGemStatus(`Gema ${entry.label} fabricada. Restam ${updated[entry.shards]} fragmentos e você tem ${updated[entry.gems]} ${updated[entry.gems] === 1 ? "gema" : "gemas"}.`);
+              } catch (cause) { setGemError(cause instanceof Error ? cause.message : "Não foi possível fabricar a gema."); }
+              finally { setBusy(""); }
+            }} disabled={!!busy || inventory[entry.shards] < 20} className="btn-ice mt-4 min-h-11 w-full px-3 disabled:opacity-50">
+              {busy === `gem-craft:${entry.foil}` ? "Fabricando…" : "Fabricar gema · 20 fragmentos"}
+            </button>
+          </article>)}
+        </div>
+        <div className="mt-5 grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,2fr)_auto] sm:items-end">
+          <div><label htmlFor="gem-foil" className="block text-sm text-mist">Gema</label><select id="gem-foil" value={gemFoil} disabled={!!busy} onChange={(event) => { setGemFoil(event.target.value as GachaFoil); setGemCardId(""); }} className="mt-2 h-11 w-full border border-hairline bg-ink px-3 text-snow focus-visible:outline focus-visible:outline-2 focus-visible:outline-ice disabled:opacity-60">{FOILS.map((entry) => <option key={entry.foil} value={entry.foil}>{entry.label} · {inventory[entry.gems]} disponível(is)</option>)}</select></div>
+          <div><label htmlFor="gem-card" className="block text-sm text-mist">Carta própria sem foil</label><select id="gem-card" value={gemCardId} onChange={(event) => setGemCardId(event.target.value)} disabled={!gemCards.length || !!busy} className="mt-2 h-11 w-full border border-hairline bg-ink px-3 text-snow focus-visible:outline focus-visible:outline-2 focus-visible:outline-ice disabled:opacity-60"><option value="">{gemCards.length ? "Selecione uma carta" : "Nenhuma carta própria disponível"}</option>{gemCards.map((card) => <option key={card.id} value={card.id}>{card.card.name} · {card.conditionLabel ?? gachaConditionLabel(card.condition)}</option>)}</select></div>
+          <button type="button" disabled={!gemCardId || inventory[gemType.gems] < 1 || !!busy} onClick={async () => {
+            const target = cards.find((card) => card.id === gemCardId);
+            if (!target || target.foil !== "NORMAL" || inventory[gemType.gems] < 1 || busy) return;
+            setBusy("gem-apply"); setGemError(""); setGemStatus("");
+            try {
+              const updatedCard = await api.gachaEconomyApplyGem({ foil: gemFoil, userCardId: target.id });
+              setCards((current) => current.map((card) => card.id === updatedCard.id ? updatedCard : card));
+              setGemCardId("");
+              setGemStatus(`Gema ${gemType.label} aplicada a ${updatedCard.card.name}. A carta agora tem foil ${updatedCard.foil} e valor de ${updatedCard.value.toLocaleString("pt-BR")} cristais.`);
+              try { setInventory(await api.gachaEconomyInventory()); }
+              catch { setGemError("Gema aplicada; não foi possível atualizar os saldos. Atualize a página para sincronizar o inventário."); }
+            } catch (cause) { setGemError(cause instanceof Error ? cause.message : "Não foi possível aplicar a gema."); }
+            finally { setBusy(""); }
+          }} className="btn-ice min-h-11 px-4 disabled:opacity-50">{busy === "gem-apply" ? "Aplicando…" : "Aplicar gema"}</button>
+        </div>
+        {cards.some((card) => card.foil !== "NORMAL") && <p className="mt-3 text-xs text-mist">Cartas com foil não aceitam outra gema. O foil atual é permanente.</p>}
+        {gemStatus && <p role="status" aria-live="polite" className="mt-3 text-sm text-ice">{gemStatus}</p>}
+        {gemError && <p role="alert" className="mt-3 text-sm text-signal">{gemError}</p>}
+      </section>
+
       <section aria-label="Resumo dos saldos" className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-4 xl:grid-cols-8">
         {[
           { label: "Cristais disponíveis", value: inventory.available },
@@ -324,7 +385,13 @@ export function GachaInventory() {
               const needed = config.item_recipes[item.kind] ?? 0;
               const progress = needed > 0 ? Math.min(100, Math.floor((current / needed) * 100)) : 0;
               return <button key={item.kind} type="button" aria-pressed={selectedKind === item.kind} disabled={!!pendingUseRetry} onClick={() => { setSelectedKind(item.kind); setSelectedCard(null); setStatus(""); }} className={`min-h-11 border p-3 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-ice disabled:opacity-60 ${selectedKind === item.kind ? "border-ice bg-ice/10" : "border-hairline bg-ink hover:border-ice/50"}`}>
-                <span className="flex items-center justify-between gap-2 font-display text-sm text-snow"><span>{item.label}</span><span className="font-mono text-xs tabular-nums text-ice">{inventory[item.items]}</span></span>
+                <span className="flex items-center justify-between gap-2 font-display text-sm text-snow">
+                  <span className="flex items-center gap-1.5">
+                    {SHARD_ICONS[item.kind] && <BonusShardIcon kind={item.kind} className="h-4 w-4" />}
+                    {item.label}
+                  </span>
+                  <span className="font-mono text-xs tabular-nums text-ice">{inventory[item.items]}</span>
+                </span>
                 <span className="mt-2 block text-xs text-mist">{current} / {needed} fragmentos · {inventory[item.items]} prontas</span>
                 <span role="progressbar" aria-label={`Progresso de fabricação de ${item.label}`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={progress} className="mt-2 block h-1.5 overflow-hidden bg-hairline"><span className="block h-full bg-ice" style={{ width: `${progress}%` }} /></span>
               </button>;

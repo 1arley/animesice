@@ -16,8 +16,9 @@ const BOX_REWARD_CATEGORIES = [
 export const ITEM_KIND_LABEL: Record<GachaItemKind, string> = {
   TITANITA: "Fragmentos de Titanita",
   TITANITA_SOMBRIA: "Fragmentos de Titanita Sombria",
-  DRACONICA: "Fragmentos de Dracônica",
-  SOMBRIA_DRACONICA: "Fragmentos de Dracônica Sombria",
+  // DRACONICA* são os tipos internos herdados; no gacha são exibidos como "Magnetita*".
+  DRACONICA: "Fragmentos de Magnetita",
+  SOMBRIA_DRACONICA: "Fragmentos de Magnetita Sombria",
   PROTECAO: "Proteção de reroll",
 };
 
