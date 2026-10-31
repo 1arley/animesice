@@ -620,6 +620,8 @@ export interface GachaPull {
   value: number;
   rankedValue?: number;
   valueOverride?: number | null;
+  /** Fragmento bônus veio junto do giro (5%); null depois da claim não tem bônus. */
+  bonusShard?: GachaItemKind | null;
   obtainedAt: string;
   user: SocialUser;
   card: GachaCardInfo;
@@ -1052,6 +1054,8 @@ export interface GachaSpinPreview {
   conditionLabel?: string;
   foil: string;
   value: number;
+  /** Fragmento bônus (5%): anunciado na prévia, concedido só no claim. */
+  bonusShard?: GachaItemKind | null;
   claimedAt: string | null;
   expiresAt: string;
   createdAt: string;
