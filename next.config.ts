@@ -2,7 +2,7 @@ import type { NextConfig } from "next";
 
 /**
  * Politica de Seguranca de Conteudo (CSP) para producao.
- * Ad networks (Monetag) carregam scripts, iframes e conexoes de um
+ * Ad networks (ExoClick/AdSense) carregam scripts, iframes e conexoes de um
  * conjunto dinamico de parceiros — sem `https:` eles nao renderizam. Com
  * `script-src https:` + os hosts explicitos, o bloqueio continua para http
  * e para recursos nao-HTTPS; os vetores de XSS mais criticos (object-src,
@@ -22,12 +22,12 @@ const localConnect =
 
 const cspHeader = `
   default-src 'self';
-  script-src 'self' 'unsafe-inline' 'unsafe-eval' https: https://al5sm.com https://static.cloudflareinsights.com https://challenges.cloudflare.com https://www.googletagmanager.com https://www.google-analytics.com;
+  script-src 'self' 'unsafe-inline' 'unsafe-eval' https: https://static.cloudflareinsights.com https://challenges.cloudflare.com https://www.googletagmanager.com https://www.google-analytics.com;
   style-src 'self' 'unsafe-inline' data: https: https://fonts.googleapis.com;
   img-src 'self' blob: data: https: https://cdn.myanimelist.net https://*.myanimelist.net https://meusanimes.blog https://*.meusanimes.blog https://svuaszdqsgztnetefcex.supabase.co https://*.anilist.co https://*.pinimg.com https://*.media-amazon.com https://*.ssl-images-amazon.com https://*.fliptru.com.br https://*.imgur.com;
   font-src 'self' data: https: https://fonts.gstatic.com;
   media-src 'self' blob: data: https://api.animesice.app https://api.dev.animesice.app https://cdn-sv01.maximaimg.online https://*.maximaimg.online${localConnect};
-  connect-src 'self' https: https://api.animesice.app wss://api.animesice.app https://al5sm.com https://static.cloudflareinsights.com https://challenges.cloudflare.com https://www.google-analytics.com https://www.googletagmanager.com${localConnect};
+  connect-src 'self' https: https://api.animesice.app wss://api.animesice.app https://static.cloudflareinsights.com https://challenges.cloudflare.com https://www.google-analytics.com https://www.googletagmanager.com${localConnect};
   frame-src 'self' https: https://www.youtube.com https://www.youtube-nocookie.com https://challenges.cloudflare.com${localConnect};
   object-src 'none';
   base-uri 'self';
