@@ -68,6 +68,7 @@ import type {
   GachaSkin,
   GachaBoxTier,
   GachaEconomyInventory,
+  GachaFoil,
   GachaItemKind,
   GachaEconomyListingItem,
   GachaEconomyOrder,
@@ -1552,7 +1553,11 @@ export const api = {
     }),
 
   gachaBurn: (body: { userCardId: string }) =>
-    request<{ burned: string; payout: number }>(`/gacha/burn`, {
+    request<{
+      burned: string;
+      payout: number;
+      fragments: { foil: GachaFoil; quantity: number } | null;
+    }>(`/gacha/burn`, {
       method: "POST",
       body: JSON.stringify(body),
     }),
@@ -1606,6 +1611,16 @@ export const api = {
     }),
 
   gachaEconomyInventory: () => request<GachaEconomyInventory>("/gacha/economy"),
+  gachaEconomyCraftGem: (body: { foil: GachaFoil }) =>
+    request<GachaEconomyInventory>("/gacha/economy/gems/craft", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  gachaEconomyApplyGem: (body: { foil: GachaFoil; userCardId: string }) =>
+    request<GachaPullResponse>("/gacha/economy/gems/apply", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
   gachaEconomyBuyItem: (body: {
     operationId: string;
     kind: GachaItemKind;
