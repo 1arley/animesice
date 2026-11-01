@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Header } from "@/components/common/Header";
 import { Footer } from "@/components/common/Footer";
 import { Avatar } from "@/components/common/Avatar";
-import { UserProfilePreview } from "@/components/social/UserProfilePreview";
+import { UserProfilePreview } from "@/features/social/identity";
 import Image from "next/image";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";

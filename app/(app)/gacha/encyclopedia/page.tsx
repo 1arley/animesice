@@ -12,7 +12,7 @@ import { WishlistButton } from "@/components/gacha/WishlistButton";
 import { Modal } from "@/components/common/Modal";
 import { PaginationControls } from "@/components/ui/PaginationControls";
 import { SearchField } from "@/components/ui/SearchField";
-import { UserProfilePreview } from "@/components/social/UserProfilePreview";
+import { UserProfilePreview } from "@/features/social/identity";
 import {
   GachaCardGridSkeleton,
   GachaPageSkeleton,

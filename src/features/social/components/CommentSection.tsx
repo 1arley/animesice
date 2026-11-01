@@ -9,7 +9,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { formatDate } from "@/lib/time";
 import type { CommentItem } from "@/types";
 import { Avatar } from "@/components/common/Avatar";
-import { UserProfilePreview } from "@/components/social/UserProfilePreview";
+import { UserProfilePreview } from "./UserProfilePreview";
 
 interface CommentSectionProps {
   animeId?: string;

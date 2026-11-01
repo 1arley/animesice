@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Avatar } from "@/components/common/Avatar";
 import { useToast } from "@/components/common/ToastProvider";
 import { GachaCardGridSkeleton } from "@/components/gacha/GachaPageSkeleton";
-import { UserProfilePreview } from "@/components/social/UserProfilePreview";
+import { UserProfilePreview } from "@/features/social/identity";
 import { useAuth } from "@/lib/auth-context";
 import { api, ApiError } from "@/lib/api";
 import type { GachaSkin } from "@/types";

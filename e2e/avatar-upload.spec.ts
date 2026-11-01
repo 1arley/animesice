@@ -1,10 +1,11 @@
 import { expect, test } from "@playwright/test";
 import path from "node:path";
-import { loginAs } from "./helpers";
+import { blockAds, loginAs } from "./helpers";
 
 test("comprime avatar grande e renova a sessao antes de enviar", async ({
   page,
 }) => {
+  await blockAds(page);
   await loginAs(page);
 
   let uploadAttempts = 0;

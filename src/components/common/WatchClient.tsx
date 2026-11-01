@@ -8,7 +8,7 @@ import { api, ApiError, type StreamSource } from "@/lib/api";
 import { safeImageSrc } from "@/lib/url";
 import { resolveAsyncSource } from "@/lib/resolve-async-source";
 import type { Episode, Anime } from "@/types";
-import { CommentSection } from "@/components/common/CommentSection";
+import { CommentSection } from "@/features/social/comments";
 import { CreateRoomButton } from "@/components/common/CreateRoomButton";
 import { AdSlot } from "@/components/ads/AdSlot";
 
@@ -221,11 +221,23 @@ export function WatchClient({
   useEffect(() => {
     recoveryAttempts.current = 0;
     resumeAt.current = 0;
+    // Retoma de onde o usuário parou de assistir (minutagem salva)
+    api
+      .getContinueWatching(20)
+      .then((items) => {
+        const item = items.find(
+          (i) => i.anime.slug === slug && i.episode.number === number,
+        );
+        if (item && !item.completed && item.progress > 0) {
+          resumeAt.current = item.progress;
+        }
+      })
+      .catch(() => {});
     void loadSourceAsync();
     return () => {
       asyncAbortRef.current?.abort();
     };
-  }, [loadSourceAsync]);
+  }, [loadSourceAsync, slug, number]);
 
   useEffect(() => {
     const navigation = performance.getEntriesByType("navigation")[0] as
@@ -336,6 +348,12 @@ export function WatchClient({
             onPlaybackError={recoverPlayback}
             onTimeUpdate={(currentTime) => {
               resumeAt.current = currentTime;
+              // Salva a minutagem periodicamente para "continuar assistindo"
+              if (Math.floor(currentTime) % 10 === 0) {
+                api
+                  .updateProgress(slug, episode.number, currentTime, undefined, false)
+                  .catch(() => {});
+              }
             }}
           />
         ) : (

@@ -150,14 +150,14 @@ function EmbedPlayer({
   }, [animeSlug, episodeNumber]);
 
   return (
-    <div className="relative">
+    <div className="relative group">
       {animeSlug && nextEpisode != null && (
         <Link
           href={`/animes/${animeSlug}/${nextEpisode}`}
           aria-label={`Pular para o episódio ${nextEpisode}`}
-          className="absolute right-3 top-3 z-10 inline-flex min-h-11 items-center gap-2 rounded-md border border-white/20 bg-ink/85 px-3 font-mono text-caption font-medium text-snow shadow-lg backdrop-blur-sm transition-colors hover:border-ice/60 hover:text-ice focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ice"
+          className="absolute bottom-3 right-3 z-10 inline-flex min-h-9 items-center gap-1.5 rounded-md border border-white/15 bg-ink/70 px-2.5 py-1 font-mono text-caption font-medium text-snow/80 shadow-lg backdrop-blur-sm opacity-0 transition-[opacity,border-color,color] duration-200 group-hover:opacity-100 hover:border-ice/60 hover:text-ice focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ice"
         >
-          Próximo episódio
+          Próximo
           <span aria-hidden="true">›</span>
         </Link>
       )}

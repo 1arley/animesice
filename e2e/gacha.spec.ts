@@ -185,7 +185,9 @@ test.describe("Gacha", () => {
       const startedAt = Date.now();
       await page.getByRole("button", { name: /^Girar/ }).click();
       const dialog = page.getByRole("dialog", { name: "Invocação" });
-      await expect(dialog).toHaveAttribute("data-phase", "showcase");
+      await expect(dialog).toHaveAttribute("data-phase", "showcase", {
+        timeout: 10_000,
+      });
       await expect(dialog.locator("[data-stage]")).toHaveCSS("color", cssColor(GACHA_RARITY_COLORS[rarity]));
       // Sample the first rendered frame with Continuar, before polling can
       // conceal a button that appeared while the card was still rotating.

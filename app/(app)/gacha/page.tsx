@@ -23,7 +23,7 @@ import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import { useToast } from "@/components/common/ToastProvider";
 import { SectionLabel } from "@/components/common/SectionLabel";
 import { Avatar } from "@/components/common/Avatar";
-import { UserProfilePreview } from "@/components/social/UserProfilePreview";
+import { UserProfilePreview } from "@/features/social/identity";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { CardPreview } from "@/components/gacha/CardPreview";
 import type {
@@ -361,13 +361,13 @@ function GachaPageContent() {
     setSpinning(true);
     setSpinResult(null);
     setClaimResult(null);
+    setStagePreview(true);
+    setStageOpen(true);
     try {
       const previewSpin = await api.gachaSpin(AbortSignal.timeout(15_000));
       setSpins((prev) => [...prev, previewSpin]);
       setSelectedSpinId(previewSpin.id);
       setSpinResult(previewSpin);
-      setStagePreview(true);
-      setStageOpen(true);
       setStatus((prev) =>
         prev && prev.spinsLeft != null
           ? {
@@ -380,6 +380,7 @@ function GachaPageContent() {
       void refresh();
     } catch (err) {
       setStageOpen(false);
+      setStagePreview(false);
       setSpinResult(null);
       setError(
         err instanceof Error && err.name === "TimeoutError"

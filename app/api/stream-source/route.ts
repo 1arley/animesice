@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { serverStreamSourceAsync } from "@/lib/api-server";
+import { API_URL, serverStreamSourceAsync } from "@/lib/api-server";
 
 const ANIME_SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const RESOLVED_CACHE_CONTROL =
@@ -12,6 +12,13 @@ export async function GET(request: NextRequest) {
   const episodeNumber = Number(episodeParam);
   const refresh = request.nextUrl.searchParams.get("refresh") === "1";
   const sourceId = request.nextUrl.searchParams.get("sourceId");
+
+  if (refresh && !request.cookies.has("access_token")) {
+    return NextResponse.json(
+      { message: "Autenticação necessária para atualizar a fonte." },
+      { status: 400, headers: { "Cache-Control": NO_STORE } },
+    );
+  }
 
   if (
     !ANIME_SLUG.test(animeSlug) ||
@@ -26,12 +33,32 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const result = await serverStreamSourceAsync(
-    animeSlug,
-    episodeNumber,
-    refresh,
-    sourceId,
-  ).catch(() => null);
+  let result: Awaited<ReturnType<typeof serverStreamSourceAsync>> = null;
+  if (refresh) {
+    const source = sourceId ? `&sourceId=${encodeURIComponent(sourceId)}` : "";
+    const response = await fetch(
+      `${API_URL}/stream/source?anime=${encodeURIComponent(animeSlug)}&episode=${episodeNumber}&refresh=1${source}`,
+      {
+        headers: { cookie: request.headers.get("cookie") ?? "" },
+        cache: "no-store",
+      },
+    ).catch(() => null);
+
+    if (response) {
+      const data = await response.json().catch(() => null);
+      if (!response.ok) {
+        return NextResponse.json(
+          data ?? { message: "Não foi possível atualizar a fonte do vídeo." },
+          { status: response.status, headers: { "Cache-Control": NO_STORE } },
+        );
+      }
+      result = data as typeof result;
+    }
+  } else {
+    result = await serverStreamSourceAsync(animeSlug, episodeNumber, false, sourceId).catch(
+      () => null,
+    );
+  }
   if (!result) {
     return NextResponse.json(
       { message: "Não foi possível obter o vídeo deste episódio." },

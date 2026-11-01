@@ -145,6 +145,16 @@ test("capa personalizada aparece no seletor da carta", async ({ page }) => {
 test("mercado preserva oferta com erro e só confirma cancelamento concluído", async ({
   page,
 }, testInfo) => {
+  await page.route("**/user/me", (route) =>
+    route.fulfill({
+      json: {
+        ...VIEWER,
+        role: "USER",
+        isVerified: true,
+        createdAt: "2020-01-01T00:00:00.000Z",
+      },
+    }),
+  );
   const listing = {
     id: "listing-a",
     userId: "seller-1",

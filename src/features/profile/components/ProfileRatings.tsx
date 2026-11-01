@@ -5,7 +5,7 @@ import { blur } from "@/lib/blur";
 import { timeAgo } from "@/lib/time";
 import type { UserRating } from "@/types";
 import { SectionLabel } from "@/components/common/SectionLabel";
-import { Stars } from "./Stars";
+import { Stars } from "@/components/ui/Stars";
 
 /**
  * ProfileRatings — avaliações com opinião: poster, título, estrelas e nota.
