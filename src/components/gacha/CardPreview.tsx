@@ -19,7 +19,7 @@ import { cosmeticTypeOf } from "@/lib/cosmetic-svg";
 import { api, ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { safeImageSrc, isOptimizableImageUrl } from "@/lib/url";
-import { UserProfilePreview } from "@/components/social/UserProfilePreview";
+import { UserProfilePreview } from "@/features/social/identity";
 import type { GachaPull, GachaShopItem } from "@/types";
 
 export type GachaCardInspection = {

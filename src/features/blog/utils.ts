@@ -1,4 +1,5 @@
-import type { BlogPost, Paginated } from "@/types";
+import type { Paginated } from "@/types";
+import type { BlogPost } from "./types";
 
 type LegacyPost = Pick<BlogPost, "slug" | "title" | "description" | "category" | "publishedAt" | "content">;
 
@@ -102,10 +103,4 @@ export function sanitizeBlogHtml(html: string): string {
     .replace(/<svg\b[^>]*\bon\w+\s*=[^>]*>/gi, "<svg>")
     // Remove expression() em CSS inline
     .replace(/expression\s*\(/gi, "expr(");
-}
-
-export function escapeXml(value: string): string {
-  return value.replace(/[<>&"']/g, (char) => ({
-    "<": "&lt;", ">": "&gt;", "&": "&amp;", '"': "&quot;", "'": "&apos;",
-  })[char] ?? char);
 }

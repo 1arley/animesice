@@ -13,6 +13,15 @@ test("stream endpoint rejects unauthenticated forced refresh", async ({ request 
   expect(response.headers()["cache-control"]).toBe("no-store");
 });
 
+test("stream endpoint forwards authenticated forced refresh without caching", async ({ request }) => {
+  const response = await request.get("/api/stream-source?anime=cached-stream&episode=1&refresh=1", {
+    headers: { cookie: "access_token=e2e-token; role=USER" },
+  });
+
+  expect(response.status()).toBe(200);
+  expect(response.headers()["cache-control"]).toBe("no-store");
+});
+
 test("stream endpoint does not cache pending extraction jobs", async ({ request }) => {
   const response = await request.get("/api/stream-source?anime=slow-stream&episode=1");
 

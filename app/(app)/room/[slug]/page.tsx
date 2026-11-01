@@ -9,7 +9,7 @@ import { useAuth } from "@/lib/auth-context";
 import type { Episode, Anime } from "@/types";
 import { SyncedVideoPlayer } from "@/components/common/SyncedVideoPlayer";
 import { EpisodeLoadingState } from "@/components/common/EpisodeLoadingState";
-import { UserProfilePreview } from "@/components/social/UserProfilePreview";
+import { UserProfilePreview } from "@/features/social/identity";
 import { io, Socket } from "socket.io-client";
 
 interface Participant {

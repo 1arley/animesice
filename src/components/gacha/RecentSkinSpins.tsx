@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Avatar } from "@/components/common/Avatar";
-import { UserProfilePreview } from "@/components/social/UserProfilePreview";
+import { UserProfilePreview } from "@/features/social/identity";
 import { api, ApiError, safeImageSrc } from "@/lib/api";
 import type { GachaSkinSpinActivity } from "@/types";
 

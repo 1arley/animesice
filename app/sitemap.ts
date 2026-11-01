@@ -1,8 +1,9 @@
 import type { MetadataRoute } from "next";
 import { SITE_URL } from "@/lib/site";
-import { serverFetchJson, serverListBlogPosts } from "@/lib/api-server";
+import { serverFetchJson } from "@/lib/api-server";
 import type { Anime, Genre, Paginated } from "@/types";
-import { blogPostDate, normalizeBlogList, withLegacyFallback } from "@/lib/blog";
+import { blogPostDate } from "@/features/blog";
+import { blogService } from "@/features/blog/server";
 
 const STATIC_ROUTES: { path: string; priority: number }[] = [
   { path: "", priority: 1.0 },
@@ -25,7 +26,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   );
 
   // Blog posts
-  const blogPosts = withLegacyFallback(normalizeBlogList(await serverListBlogPosts()));
+  const blogPosts = await blogService.listPublishedPosts();
   const blogEntries: MetadataRoute.Sitemap = blogPosts.map((post) => ({
     url: `${SITE_URL}/blog/${post.slug}`,
     lastModified: new Date(post.updatedAt || blogPostDate(post)),

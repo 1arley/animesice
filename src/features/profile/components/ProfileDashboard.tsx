@@ -5,8 +5,8 @@ import Link from "next/link";
 import { api, type User } from "@/lib/api";
 import { displayName } from "@/lib/displayName";
 import { Avatar } from "@/components/common/Avatar";
-import { PosterTile } from "@/components/profile/PosterTile";
-import { UserProfilePreview } from "@/components/social/UserProfilePreview";
+import { PosterTile } from "./PosterTile";
+import { UserProfilePreview } from "@/features/social/identity";
 import type {
   PublicUserProfile,
   CommentItem,

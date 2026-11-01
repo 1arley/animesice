@@ -1,4 +1,4 @@
-import { FeedView } from "@/components/social/FeedView";
+import { FeedView } from "@/features/social/feed";
 import { serverFetchJson } from "@/lib/api-server";
 import type { FeedItem, Paginated } from "@/types";
 

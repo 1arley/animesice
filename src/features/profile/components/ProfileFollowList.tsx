@@ -1,12 +1,11 @@
 "use client";
 
 import { Avatar } from "@/components/common/Avatar";
-import { FollowButton } from "@/components/social/FollowButton";
+import { FollowButton, UserProfilePreview } from "@/features/social/identity";
 import { formatDate } from "@/lib/time";
 import { SectionLabel } from "@/components/common/SectionLabel";
 import { EmptyState } from "@/components/ui/EmptyState";
 import type { UserSearchResult } from "@/types";
-import { UserProfilePreview } from "@/components/social/UserProfilePreview";
 
 /**
  * ProfileFollowList — quem segue / quem o perfil segue, em linhas

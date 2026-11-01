@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { api, ApiError } from "@/lib/api";
-import type { BlogPost, BlogPostInput } from "@/types";
+import type { BlogPost, BlogPostInput } from "@/features/blog/types";
 
 function slugify(value: string): string {
   return value.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase().trim()

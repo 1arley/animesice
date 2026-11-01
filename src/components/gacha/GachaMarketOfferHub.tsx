@@ -5,7 +5,7 @@ import { api, ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { useToast } from "@/components/common/ToastProvider";
 import { GachaRowsSkeleton } from "@/components/gacha/GachaPageSkeleton";
-import { UserProfilePreview } from "@/components/social/UserProfilePreview";
+import { UserProfilePreview } from "@/features/social/identity";
 import { EmptyState } from "@/components/ui/EmptyState";
 import type { GachaMarketOffer } from "@/types";
 

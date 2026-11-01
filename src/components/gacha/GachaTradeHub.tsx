@@ -10,7 +10,7 @@ import { Modal } from "@/components/common/Modal";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { SearchField } from "@/components/ui/SearchField";
 import { SectionLabel } from "@/components/common/SectionLabel";
-import { UserProfilePreview } from "@/components/social/UserProfilePreview";
+import { UserProfilePreview } from "@/features/social/identity";
 import { useToast } from "@/components/common/ToastProvider";
 import type { GachaPull, GachaTrade, PublicUserProfile } from "@/types";
 

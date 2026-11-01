@@ -1,6 +1,8 @@
 import { expect, test } from "@playwright/test";
+import { blockAds } from "./helpers";
 
 test("admin cria, edita raridade, desativa e exclui skin", async ({ page }) => {
+  await blockAds(page);
   await page.context().addCookies([
     { name: "role", value: "ADMIN", url: "http://localhost:3000" },
   ]);
@@ -55,6 +57,6 @@ test("admin cria, edita raridade, desativa e exclui skin", async ({ page }) => {
   await expect(page.getByText("Desativada", { exact: true })).toBeVisible();
   page.once("dialog", (dialog) => dialog.accept());
   await page.getByRole("button", { name: "Excluir", exact: true }).click();
-  await expect(page.getByRole("status").getByText("Skin excluída.")).toBeVisible();
+  await expect(page.getByRole("alert").getByText("Skin excluída.")).toBeVisible();
   await expect(page.getByText("Skin atualizada", { exact: true })).toHaveCount(0);
 });

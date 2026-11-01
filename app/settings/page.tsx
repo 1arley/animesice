@@ -8,14 +8,16 @@ import { api, ApiError } from "@/lib/api";
 import { Header } from "@/components/common/Header";
 import { Footer } from "@/components/common/Footer";
 import { NotificationPreferencesSection } from "@/components/common/NotificationPreferencesSection";
-import { ProfileDashboard } from "@/components/common/ProfileDashboard";
+import {
+  ProfileCoverSettings,
+  ProfileDashboard,
+  ProfileShowcaseSettings,
+} from "@/features/profile/settings";
 import { PrivacySection } from "@/components/common/PrivacySection";
 import { formatDate } from "@/lib/time";
 import { passwordError } from "@/lib/password";
 import { displayName } from "@/lib/displayName";
 import { Avatar } from "@/components/common/Avatar";
-import { ProfileCoverSettings } from "@/components/profile/ProfileCoverSettings";
-import { ProfileShowcaseSettings } from "@/components/profile/ProfileShowcaseSettings";
 
 const AVATAR_MAX_BYTES = 1024 * 1024;
 const AVATAR_SOURCE_MAX_BYTES = 20 * 1024 * 1024;

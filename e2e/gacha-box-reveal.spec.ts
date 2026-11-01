@@ -320,7 +320,7 @@ test("arte e nome longo cabem na cena; teclado permanece no diálogo", async ({
           category: "CARD",
           name,
           rarity: "LENDARIA",
-          image: "https://cdn.myanimelist.net/test-box-art.png",
+          image: "/aeliana/Aeliana.png",
           foil: "HOLO",
         },
       },

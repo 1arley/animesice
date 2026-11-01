@@ -79,30 +79,7 @@ export interface Paginated<T> {
   };
 }
 
-/** Artigo editorial do blog. O conteúdo é HTML sanitizado antes da renderização. */
-export interface BlogPost {
-  id: string;
-  slug: string;
-  title: string;
-  description: string;
-  content: string;
-  category: string;
-  published: boolean;
-  publishedAt: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
-
-/** Payload compartilhado pelas operações de criação e edição do CMS. */
-export interface BlogPostInput {
-  slug: string;
-  title: string;
-  description: string;
-  content: string;
-  category: string;
-  published: boolean;
-  publishedAt: string | null;
-}
+export type { BlogPost, BlogPostInput } from "@/features/blog/types";
 
 export interface Rating {
   userId: string;

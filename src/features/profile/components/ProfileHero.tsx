@@ -12,7 +12,7 @@ import { blur } from "@/lib/blur";
 import {
   FeaturedPortrait,
   FeaturedPortraitSkeleton,
-} from "@/components/profile/FeaturedPortrait";
+} from "./FeaturedPortrait";
 import type { GachaFeatured, PublicUserProfile, ReportReason } from "@/types";
 
 const REPORT_REASONS: Array<{ value: ReportReason; label: string }> = [

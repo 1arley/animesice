@@ -1,5 +1,3 @@
-import type { BlogPost, Paginated } from "@/types";
-
 /**
  * Adaptador de fetch para componentes servidor (RSC).
  * Interface única: path + revalidate -> dados | null.
@@ -77,28 +75,6 @@ export async function serverFetchJson<T>(
 
   console.error(`[serverFetchJson] ${path} -> ${lastError}`);
   return null;
-}
-
-export async function serverListBlogPosts(
-  page = 1,
-  limit = 100,
-): Promise<Paginated<BlogPost> | null> {
-  return serverFetchJson<Paginated<BlogPost>>(
-    `/blog-posts?published=true&page=${page}&limit=${limit}`,
-    { cache: "force-cache", next: { revalidate: 900, tags: ["blog-posts"] } },
-  );
-}
-
-export async function serverGetBlogPost(
-  slug: string,
-): Promise<BlogPost | null> {
-  return serverFetchJson<BlogPost>(
-    `/blog-posts/slug/${encodeURIComponent(slug)}`,
-    {
-      cache: "force-cache",
-      next: { revalidate: 900, tags: ["blog-posts", `blog-post:${slug}`] },
-    },
-  );
 }
 
 /**
