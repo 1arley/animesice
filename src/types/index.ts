@@ -620,7 +620,7 @@ export interface GachaPull {
   value: number;
   rankedValue?: number;
   valueOverride?: number | null;
-  /** Fragmento bônus veio junto do giro (5%); null depois da claim não tem bônus. */
+  /** Fragmento bônus do giro (5%): só na prévia anunciada; o claim credita o fragmento no inventário e a carta resgatada não carrega selo. */
   bonusShard?: GachaItemKind | null;
   obtainedAt: string;
   user: SocialUser;

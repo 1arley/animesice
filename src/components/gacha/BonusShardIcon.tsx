@@ -15,8 +15,8 @@ export const SHARD_ICONS: Partial<Record<GachaItemKind, { src: string; label: st
 };
 
 /**
- * Ícone pequeno do fragmento. `glow` entra depois do resgate: brilho leve,
- * sempre com animação atrás de prefers-reduced-motion.
+ * Ícone pequeno do fragmento. `glow` fica para uso ad-hoc: em cartas o selo
+ * aparece apagado apenas na prévia de giro e sai no resgate.
  */
 export function BonusShardIcon({ kind, glow = false, className = "" }: { kind: GachaItemKind; glow?: boolean; className?: string }) {
   const icon = SHARD_ICONS[kind];
