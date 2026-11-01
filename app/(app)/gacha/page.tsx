@@ -61,7 +61,7 @@ function spinToStagePull(spin: GachaSpinPreview): GachaPull {
     edition: 0,
     value: spin.value,
     // Anúncio do fragmento bônus na prévia do palco; no claim o selo sai.
-    bonusShard: spin.bonusShard ?? null,
+    bonusShard: spin.claimedAt == null ? (spin.bonusShard ?? null) : null,
     obtainedAt: spin.createdAt,
     user: { id: "", name: null, userName: null, avatar: null },
     card: spin.card,
