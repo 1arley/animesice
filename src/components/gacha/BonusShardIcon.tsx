@@ -15,18 +15,16 @@ export const SHARD_ICONS: Partial<Record<GachaItemKind, { src: string; label: st
 };
 
 /**
- * Ícone pequeno do fragmento. `glow` entra depois do resgate: brilho leve,
- * sempre com animação atrás de prefers-reduced-motion.
+ * Ícone pequeno do fragmento. Sem `glow`: em cartas o selo aparece apagado
+ * apenas na prévia de giro e sai no resgate.
  */
-export function BonusShardIcon({ kind, glow = false, className = "" }: { kind: GachaItemKind; glow?: boolean; className?: string }) {
+export function BonusShardIcon({ kind, className = "" }: { kind: GachaItemKind; className?: string }) {
   const icon = SHARD_ICONS[kind];
   if (!icon) return null;
   return (
     <span
       title={`${icon.label} · veio junto com esta carta`}
-      className={`inline-flex shrink-0 items-center justify-center rounded-full border border-white/25 bg-ink/70 p-0.5 shadow-[0_0_6px_rgba(0,0,0,0.45)] ${
-        glow ? "shard-bonus-glow motion-safe:animate-[shard-bonus-glow_2.4s_ease-in-out_infinite]" : ""
-      } ${className}`}
+      className={`inline-flex shrink-0 items-center justify-center rounded-full border border-white/25 bg-ink/70 p-0.5 shadow-[0_0_6px_rgba(0,0,0,0.45)] ${className}`}
     >
       <Image src={icon.src} alt={icon.label} width={20} height={20} className="h-full w-full object-contain" unoptimized />
     </span>

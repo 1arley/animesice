@@ -194,7 +194,7 @@ function scratchVars(id: string): CSSProperties {
   } as CSSProperties;
 }
 
-export const GachaCard = memo(function GachaCard({ pull, preview = false, linkAnime = true, showInfo = true, side = "front", cardBack, shardGlow }: { pull: GachaPull; linkAnime?: boolean; /** Preview de giro: sem edição definitiva nem valor final. */ preview?: boolean; /** Preview modal: usa só a arte. */ showInfo?: boolean; side?: "front" | "back"; cardBack?: string | null; /** Força o brilho do fragmento bônus (spin já resgatado na grade). */ shardGlow?: boolean }) {
+export const GachaCard = memo(function GachaCard({ pull, preview = false, linkAnime = true, showInfo = true, side = "front", cardBack }: { pull: GachaPull; linkAnime?: boolean; /** Preview de giro: sem edição definitiva nem valor final. */ preview?: boolean; /** Preview modal: usa só a arte. */ showInfo?: boolean; side?: "front" | "back"; cardBack?: string | null }) {
   const { card } = pull;
   const art = safeImageSrc(card.image);
   const label = pull.conditionLabel ?? gachaConditionLabel(pull.condition);
@@ -306,12 +306,12 @@ export const GachaCard = memo(function GachaCard({ pull, preview = false, linkAn
           {label === "MINT" && pull.foil === "NORMAL" && (
             <div aria-hidden className="condition-mint-glare pointer-events-none absolute inset-0" />
           )}
-          {/* Fragmento bônus (5% dos giros): do lado esquerdo da arte. Brilho
-              leve depois do resgate; prévia não resgatada fica apagada. */}
+          {/* Fragmento bônus (5% dos giros): do lado esquerdo da arte. Só
+              existe na prévia de giro ainda não resgatada; no resgate o
+              fragmento vai direto pro inventário e o selo sai da carta. */}
           {pull.bonusShard && (
             <BonusShardIcon
               kind={pull.bonusShard}
-              glow={shardGlow ?? !preview}
               className="absolute left-1.5 top-1/2 z-20 h-5 w-5 -translate-y-1/2"
             />
           )}
