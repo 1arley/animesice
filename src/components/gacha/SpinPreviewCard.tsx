@@ -7,13 +7,14 @@ import type { GachaSpinPreview } from "@/types";
  * SpinPreviewCard — preview de giro exibida com o mesmo visual da carta
  * final (GachaCard), mas sem edição definitiva nem dono: o que o usuário
  * vê antes de decidir guardar. Edition exibe "?" e valor é estimativa.
+ * O selo de fragmento bônus só aparece enquanto a prévia não foi
+ * resgatada; no resgate o ícone sai — não fica pendurado na carta.
  */
 export function SpinPreviewCard({ spin }: { spin: GachaSpinPreview }) {
   return (
     <GachaCard
       linkAnime={false}
       preview
-      shardGlow={spin.claimedAt != null}
       pull={{
         id: spin.id,
         condition: spin.condition,
@@ -21,7 +22,7 @@ export function SpinPreviewCard({ spin }: { spin: GachaSpinPreview }) {
         foil: spin.foil,
         edition: 0,
         value: spin.value,
-        bonusShard: spin.bonusShard ?? null,
+        bonusShard: spin.claimedAt == null ? (spin.bonusShard ?? null) : null,
         obtainedAt: spin.createdAt,
         user: {
           id: "",
