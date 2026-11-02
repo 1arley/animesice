@@ -127,6 +127,7 @@ function CardEncyclopedia() {
   const { user, loading: authLoading } = useAuth();
   const view = params.get("view") === "sets" ? "sets" : "cards";
   const animeId = params.get("animeId") ?? "";
+  const animeTitle = params.get("animeTitle") ?? "";
   const isSets = view === "sets" && !animeId;
   const rawPage = Number(params.get("page") ?? 1);
   const page =
@@ -152,6 +153,8 @@ function CardEncyclopedia() {
     if (["owned", "missing"].includes(ownership))
       query.set("ownership", ownership);
     if (animeId) query.set("animeId", animeId);
+    if (animeId === "orphan" && animeTitle)
+      query.set("animeTitle", animeTitle);
   }
   const queryString = query.toString();
   const requestKey = `${user?.id ?? "guest"}:${queryString}`;
@@ -419,10 +422,11 @@ function CardEncyclopedia() {
           ) : isSets ? (
             <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {data.sets.map((set) => (
-                <article key={set.animeId ?? "orphan"}>
+                <article key={set.animeId ?? `orphan:${set.animeTitle}`}>
                   <Link
                     href={href({
                       animeId: set.animeId ?? "orphan",
+                      animeTitle: set.animeId ? "" : set.animeTitle,
                       title: set.animeTitle,
                       search: "",
                       rarity: "",

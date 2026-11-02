@@ -1076,6 +1076,7 @@ export interface GachaEncyclopediaCard {
   id: string;
   name: string;
   image: string | null;
+  imageHidden: boolean;
   rarity: string;
   animeId: string | null;
   animeTitle: string | null;
