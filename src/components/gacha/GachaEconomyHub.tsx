@@ -13,17 +13,12 @@ import {
   GachaOfferGrid,
   GachaPriceTag,
 } from "@/components/gacha/cards";
-import {
-  BoxReveal,
-  BOX_LABEL,
-} from "@/components/gacha/BoxReveal";
-import {
-  boxRewardLabel,
-  ITEM_KIND_LABEL,
-} from "@/lib/gacha-box-reward";
+import { BoxReveal, BOX_LABEL } from "@/components/gacha/BoxReveal";
+import { boxRewardLabel, ITEM_KIND_LABEL } from "@/lib/gacha-box-reward";
 import { Modal } from "@/components/common/Modal";
 import { KeyVault } from "@/components/gacha/KeyVault";
 import { SearchField } from "@/components/ui/SearchField";
+import { PaginationControls } from "@/components/ui/PaginationControls";
 import { useToast } from "@/components/common/ToastProvider";
 import { GachaTradeHub } from "@/components/gacha/GachaTradeHub";
 import { GachaMarketOfferHub } from "@/components/gacha/GachaMarketOfferHub";
@@ -222,6 +217,16 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
   const [orders, setOrders] = useState<GachaEconomyOrder[]>([]);
   const [offers, setOffers] = useState<GachaEconomyOffer[]>([]);
   const [ownedCards, setOwnedCards] = useState<GachaPull[]>([]);
+  const [ownedCardPage, setOwnedCardPage] = useState(1);
+  const [ownedCardTotalPages, setOwnedCardTotalPages] = useState(1);
+  const [ownedCardTotal, setOwnedCardTotal] = useState(0);
+  const [ownedCardResultKey, setOwnedCardResultKey] = useState("");
+  const [ownedCardLoadErrorKey, setOwnedCardLoadErrorKey] = useState("");
+  const [ownedCardRetry, setOwnedCardRetry] = useState(0);
+  const [cardCopySearchDebounced, setCardCopySearchDebounced] = useState("");
+  const [selectedCardCopy, setSelectedCardCopy] = useState<GachaPull | null>(
+    null,
+  );
   const [ownedSkins, setOwnedSkins] = useState<GachaOwnedSkinCopy[]>([]);
   const [mission, setMission] = useState<GachaMarketMission | null>(null);
   const [odds, setOdds] = useState<GachaEconomyOdds | null>(null);
@@ -255,6 +260,7 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
   );
   const [offerCrystals, setOfferCrystals] = useState("");
   const [offerCardIds, setOfferCardIds] = useState<string[]>([]);
+  const [offerCardCopies, setOfferCardCopies] = useState<GachaPull[]>([]);
   const [offerRefreshKey, setOfferRefreshKey] = useState(0);
   const [cardCopyId, setCardCopyId] = useState("");
   const [cardCopySearch, setCardCopySearch] = useState("");
@@ -281,21 +287,17 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
     : null;
   const accountAgeReady =
     !!accountEligibleAt && marketClock >= accountEligibleAt.getTime();
-  const cardSearchTerm = cardCopySearch.trim().toLocaleLowerCase("pt-BR");
-  const filteredCardCopies = ownedCards.filter((copy) =>
-    [
-      copy.card.imageHidden ? "carta misteriosa" : copy.card.name,
-      copy.card.imageHidden ? null : copy.card.animeTitle,
-      copy.card.rarity,
-      copy.foil,
-      `edição ${copy.edition}`,
-    ]
-      .filter(Boolean)
-      .join(" ")
-      .toLocaleLowerCase("pt-BR")
-      .includes(cardSearchTerm),
-  );
-  const selectedCardCopy = ownedCards.find((copy) => copy.id === cardCopyId);
+  const filteredCardCopies = ownedCards;
+  const ownedCardQueryKey = `${user?.id ?? ""}:${ownedCardPage}:${cardCopySearchDebounced}:${ownedCardRetry}`;
+  const visibleOwnedCards =
+    ownedCardResultKey === ownedCardQueryKey &&
+    cardCopySearch === cardCopySearchDebounced
+      ? filteredCardCopies
+      : [];
+  const ownedCardLoadError = ownedCardLoadErrorKey === ownedCardQueryKey;
+  const ownedCardsLoading =
+    cardCopySearch !== cardCopySearchDebounced ||
+    (ownedCardResultKey !== ownedCardQueryKey && !ownedCardLoadError);
   const skinSearchTerm = skinCopySearch.trim().toLocaleLowerCase("pt-BR");
   const filteredSkinCopies = ownedSkins.filter((copy) =>
     `${copy.name} ${copy.rarity}`
@@ -312,19 +314,17 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
       if (mode === "shop") {
         setOffers(await api.gachaEconomyShop());
       } else {
-        const [myListings, myOrders, missionState, copies, collection] =
-          await Promise.all([
-            api.gachaEconomyMyListings(),
-            api.gachaEconomyMyOrders(),
-            api.gachaEconomyMission(),
-            api.gachaEconomyOwnedSkins(),
-            api.gachaCollection(user.id, 1, 100),
-          ]);
+        const [myListings, myOrders, missionState, copies] = await Promise.all([
+          api.gachaEconomyMyListings(),
+          api.gachaEconomyMyOrders(),
+          api.gachaEconomyMission(),
+          api.gachaEconomyOwnedSkins(),
+        ]);
         setMine(myListings.items);
         setOrders(myOrders.items);
         setMission(missionState);
         setOwnedSkins(copies.filter((copy) => copy.status === "ACTIVE"));
-        setOwnedCards(collection.data);
+        setOwnedCardRetry((retry) => retry + 1);
       }
       return wallet;
     } catch (cause) {
@@ -336,6 +336,59 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
       return null;
     }
   }, [mode, user]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(
+      () => setCardCopySearchDebounced(cardCopySearch),
+      250,
+    );
+    return () => window.clearTimeout(timer);
+  }, [cardCopySearch]);
+
+  useEffect(() => {
+    if (!user || mode !== "market") return;
+    let active = true;
+    void api
+      .gachaCollection(
+        user.id,
+        ownedCardPage,
+        48,
+        "value",
+        "",
+        "",
+        cardCopySearchDebounced,
+      )
+      .then((collection) => {
+        if (!active) return;
+        setOwnedCards(collection.data);
+        setOwnedCardResultKey(ownedCardQueryKey);
+        setOwnedCardLoadErrorKey("");
+        setOwnedCardTotal(collection.meta.total);
+        const totalPages = Math.max(1, collection.meta.totalPages);
+        setOwnedCardTotalPages(totalPages);
+        setOwnedCardPage((page) => Math.min(page, totalPages));
+      })
+      .catch((cause: unknown) => {
+        if (active) {
+          setOwnedCardLoadErrorKey(ownedCardQueryKey);
+          setListingError(
+            cause instanceof ApiError
+              ? cause.message
+              : "Não foi possível carregar suas cartas.",
+          );
+        }
+      });
+    return () => {
+      active = false;
+    };
+  }, [
+    user,
+    mode,
+    ownedCardPage,
+    cardCopySearchDebounced,
+    ownedCardRetry,
+    ownedCardQueryKey,
+  ]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -544,6 +597,7 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
       setOfferTarget(null);
       setOfferCrystals("");
       setOfferCardIds([]);
+      setOfferCardCopies([]);
       setOfferRefreshKey((key) => key + 1);
     }
   }
@@ -566,6 +620,7 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
     );
     if (completed) {
       setCardCopyId("");
+      setSelectedCardCopy(null);
       setCardPrice("");
     }
   }
@@ -1213,6 +1268,9 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
                 setOfferMethod("crystals");
                 setOfferCrystals("");
                 setOfferCardIds([]);
+                setOfferCardCopies([]);
+                setCardCopySearch("");
+                setOwnedCardPage(1);
               }}
               onHistory={(listing) => void showHistory(listing)}
               onCancel={(listing) => void cancelMarketListing(listing)}
@@ -1257,6 +1315,9 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
                 setOfferMethod("crystals");
                 setOfferCrystals("");
                 setOfferCardIds([]);
+                setOfferCardCopies([]);
+                setCardCopySearch("");
+                setOwnedCardPage(1);
               }}
               onHistory={(listing) => void showHistory(listing)}
               onCancel={(listing) => void cancelMarketListing(listing)}
@@ -1496,13 +1557,45 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
                     <legend className="text-body-sm text-snow">
                       Escolha até 5 cartas
                     </legend>
+                    {offerCardCopies.length > 0 && (
+                      <ul
+                        aria-label="Cartas selecionadas para oferecer"
+                        className="mt-3 space-y-2"
+                      >
+                        {offerCardCopies.map((copy) => (
+                          <li
+                            key={copy.id}
+                            className="flex items-center justify-between gap-3 border border-hairline p-2 text-body-sm text-snow"
+                          >
+                            <span className="truncate">
+                              {copy.card.name} · edição #{copy.edition}
+                            </span>
+                            <button
+                              type="button"
+                              className="min-h-11 px-3 text-ice underline"
+                              aria-label={`Remover ${copy.card.name} da proposta`}
+                              onClick={() => {
+                                setOfferCardIds((current) =>
+                                  current.filter((id) => id !== copy.id),
+                                );
+                                setOfferCardCopies((current) =>
+                                  current.filter((card) => card.id !== copy.id),
+                                );
+                              }}
+                            >
+                              Remover
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
                     <div className="mt-2 max-h-72 space-y-2 overflow-y-auto border border-hairline p-3">
-                      {ownedCards.length === 0 ? (
+                      {ownedCardTotal === 0 ? (
                         <p className="text-body-sm text-mist">
                           Nenhuma carta disponível para oferecer.
                         </p>
                       ) : (
-                        ownedCards.map((copy) => {
+                        visibleOwnedCards.map((copy) => {
                           const checked = offerCardIds.includes(copy.id);
                           return (
                             <label
@@ -1513,13 +1606,20 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
                                 type="checkbox"
                                 checked={checked}
                                 disabled={!checked && offerCardIds.length >= 5}
-                                onChange={() =>
+                                onChange={() => {
                                   setOfferCardIds((current) =>
                                     checked
                                       ? current.filter((id) => id !== copy.id)
                                       : [...current, copy.id],
-                                  )
-                                }
+                                  );
+                                  setOfferCardCopies((current) =>
+                                    checked
+                                      ? current.filter(
+                                          (card) => card.id !== copy.id,
+                                        )
+                                      : [...current, copy],
+                                  );
+                                }}
                                 aria-label={`Oferecer ${copy.card.name}, edição ${copy.edition}`}
                               />
                               <span className="min-w-0 text-body-sm text-snow">
@@ -1539,6 +1639,19 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
                     <p className="mt-2 text-caption text-mist" role="status">
                       {offerCardIds.length} de 5 selecionadas
                     </p>
+                    <p className="mt-2 text-caption text-mist">
+                      Página {ownedCardPage} de {ownedCardTotalPages} ·{" "}
+                      {ownedCardTotal} cartas
+                    </p>
+                    <PaginationControls
+                      page={ownedCardPage}
+                      totalPages={ownedCardTotalPages}
+                      onPageChange={(page) => {
+                        setOwnedCards([]);
+                        setOwnedCardPage(page);
+                      }}
+                      label="Cartas disponíveis para oferecer"
+                    />
                   </fieldset>
                 )}
 
@@ -1594,21 +1707,21 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
                     <legend className="text-body-sm text-mist">
                       Escolha uma carta
                     </legend>
-                    {ownedCards.length > 0 && (
-                      <SearchField
-                        name="card-copy-search"
-                        value={cardCopySearch}
-                        onChange={(event) =>
-                          setCardCopySearch(event.target.value)
-                        }
-                        placeholder="Buscar por nome, anime ou edição…"
-                        autoComplete="off"
-                        aria-label="Buscar carta da coleção"
-                        className="mt-2 w-full"
-                      />
-                    )}
+                    <SearchField
+                      name="card-copy-search"
+                      value={cardCopySearch}
+                      onChange={(event) => {
+                        setOwnedCards([]);
+                        setOwnedCardPage(1);
+                        setCardCopySearch(event.target.value);
+                      }}
+                      placeholder="Buscar por nome ou anime…"
+                      autoComplete="off"
+                      aria-label="Buscar carta da coleção"
+                      className="mt-2 w-full"
+                    />
                     <p className="mt-2 text-caption text-mist" role="status">
-                      {filteredCardCopies.length} de {ownedCards.length} cartas
+                      {visibleOwnedCards.length} de {ownedCardTotal} cartas
                       {cardCopyId ? " · 1 selecionada" : " disponíveis"}
                     </p>
                     {cardCopyId && (
@@ -1623,7 +1736,7 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
                       aria-label="Cartas disponíveis para anúncio"
                       className="mt-2 grid max-h-72 grid-cols-1 gap-2 overflow-y-auto pr-1 sm:grid-cols-2"
                     >
-                      {filteredCardCopies.map((copy) => {
+                      {visibleOwnedCards.map((copy) => {
                         const selected = cardCopyId === copy.id;
                         const name = copy.card.imageHidden
                           ? "Carta misteriosa"
@@ -1633,7 +1746,10 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
                             <button
                               type="button"
                               aria-pressed={selected}
-                              onClick={() => setCardCopyId(copy.id)}
+                              onClick={() => {
+                                setCardCopyId(copy.id);
+                                setSelectedCardCopy(copy);
+                              }}
                               className={`flex min-h-24 w-full items-center gap-3 border p-2 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-ice ${selected ? "border-ice bg-ice/10" : "border-hairline bg-ink hover:border-ice/50"}`}
                             >
                               <GachaItemThumbnail
@@ -1658,24 +1774,68 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
                         );
                       })}
                     </ul>
-                    {ownedCards.length > 0 &&
-                      filteredCardCopies.length === 0 && (
+                    {ownedCardsLoading && (
+                      <p role="status" className="mt-3 text-body-sm text-mist">
+                        Carregando cartas…
+                      </p>
+                    )}
+                    {ownedCardLoadError && (
+                      <p role="alert" className="mt-3 text-body-sm text-signal">
+                        Não foi possível carregar esta página.{" "}
+                        <button
+                          type="button"
+                          className="underline"
+                          onClick={() =>
+                            setOwnedCardRetry((retry) => retry + 1)
+                          }
+                        >
+                          Tentar novamente
+                        </button>
+                      </p>
+                    )}
+                    {!ownedCardsLoading &&
+                      !ownedCardLoadError &&
+                      ownedCardTotal === 0 &&
+                      cardCopySearch && (
                         <p className="mt-3 text-body-sm text-mist">
                           Nenhuma carta corresponde à busca.
                         </p>
                       )}
-                    {ownedCards.length === 0 && (
-                      <p className="mt-2 text-caption text-mist">
-                        Sem cópias disponíveis? Veja sua{" "}
-                        <Link
-                          href="/gacha/colecao"
-                          className="text-ice underline underline-offset-4"
-                        >
-                          coleção de cartas
-                        </Link>
-                        .
-                      </p>
-                    )}
+                    {!ownedCardsLoading &&
+                      !ownedCardLoadError &&
+                      ownedCardTotal > 0 &&
+                      visibleOwnedCards.length === 0 && (
+                        <p className="mt-3 text-body-sm text-mist">
+                          Nenhuma carta disponível nesta página.
+                        </p>
+                      )}
+                    <p className="mt-2 text-caption text-mist">
+                      Página {ownedCardPage} de {ownedCardTotalPages}
+                    </p>
+                    <PaginationControls
+                      page={ownedCardPage}
+                      totalPages={ownedCardTotalPages}
+                      onPageChange={(page) => {
+                        setOwnedCards([]);
+                        setOwnedCardPage(page);
+                      }}
+                      label="Cartas da coleção para anúncio"
+                    />
+                    {!ownedCardsLoading &&
+                      !ownedCardLoadError &&
+                      ownedCardTotal === 0 &&
+                      !cardCopySearch && (
+                        <p className="mt-2 text-caption text-mist">
+                          Sem cópias disponíveis? Veja sua{" "}
+                          <Link
+                            href="/gacha/colecao"
+                            className="text-ice underline underline-offset-4"
+                          >
+                            coleção de cartas
+                          </Link>
+                          .
+                        </p>
+                      )}
                   </fieldset>
                   <label className="text-body-sm text-mist">
                     Quanto quer receber (Cristais)
@@ -2285,8 +2445,7 @@ function MarketSection({
                   {[
                     listing.item.rarity ?? listing.item.card?.rarity,
                     listing.item.foil,
-                    listing.item.animeTitle ??
-                      listing.item.card?.animeTitle,
+                    listing.item.animeTitle ?? listing.item.card?.animeTitle,
                   ]
                     .filter(Boolean)
                     .join(" · ") || listing.itemType}
@@ -2294,9 +2453,7 @@ function MarketSection({
               }
               title={itemName(listing)}
               price={
-                <GachaPriceTag
-                  amount={listing.price.toLocaleString("pt-BR")}
-                />
+                <GachaPriceTag amount={listing.price.toLocaleString("pt-BR")} />
               }
               actions={
                 <div className="grid grid-cols-2 gap-2">

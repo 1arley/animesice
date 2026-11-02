@@ -640,6 +640,13 @@ export interface GachaSkin {
 export interface GachaSkinsResponse {
   skins: GachaSkin[];
   owned: GachaSkin[];
+  equippedSkin?: GachaSkin | null;
+  ownedMeta?: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
   equippedSkinId: string | null;
   crystalBalance: number;
   crystalReserved: number;

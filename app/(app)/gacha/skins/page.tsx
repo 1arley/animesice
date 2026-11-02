@@ -29,7 +29,7 @@ export default function GachaSkinsPage() {
   const load = useCallback(async () => {
     setError("");
     try {
-      const res = await api.gachaSkins(1, PAGE_LIMIT);
+      const res = await api.gachaSkins(1, PAGE_LIMIT, "", "count");
       const owned = res.owned ?? res.skins.filter((s) => s.owned);
       const meta = res.meta ?? {
         total: res.skins.length,
@@ -40,9 +40,7 @@ export default function GachaSkinsPage() {
       setData({ ...res, owned, meta });
     } catch (e: unknown) {
       setError(
-        e instanceof ApiError
-          ? e.message
-          : "Não foi possível carregar skins.",
+        e instanceof ApiError ? e.message : "Não foi possível carregar skins.",
       );
     }
   }, []);
@@ -57,6 +55,7 @@ export default function GachaSkinsPage() {
 
   const remaining = countdown(data?.nextSpinAt ?? null);
   const owned = data?.owned ?? [];
+  const ownedCount = data?.ownedMeta?.total ?? owned.length;
 
   async function spin() {
     if (!data?.canSpin || busy) return;
@@ -64,19 +63,8 @@ export default function GachaSkinsPage() {
     setError("");
     try {
       const res = await api.gachaSkinSpin();
-      const fresh: GachaSkin = { ...res.skin, owned: true, equipped: false };
-      setData((prev) =>
-        prev
-          ? {
-              ...prev,
-              crystalBalance: res.crystalBalance,
-              canSpin: false,
-              nextSpinAt: res.nextSpinAt,
-              owned: [fresh, ...prev.owned.filter((s) => s.id !== fresh.id)],
-            }
-          : prev,
-      );
-      setRevealedSkin(fresh);
+      setRevealedSkin({ ...res.skin, owned: true, equipped: false });
+      await load();
     } catch (e) {
       setError(e instanceof ApiError ? e.message : "Giro indisponível.");
     } finally {
@@ -101,15 +89,14 @@ export default function GachaSkinsPage() {
   return (
     <main id="body-content" className="mx-auto max-w-shelf px-4 py-10">
       {revealedSkin && (
-        <SkinReveal
-          skin={revealedSkin}
-          onClose={() => setRevealedSkin(null)}
-        />
+        <SkinReveal skin={revealedSkin} onClose={() => setRevealedSkin(null)} />
       )}
       <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="shelf-label">Gacha / Skins</p>
-          <h1 className="font-display text-display-lg text-ice">Giro de skins</h1>
+          <h1 className="font-display text-display-lg text-ice">
+            Giro de skins
+          </h1>
           <p className="mt-2 text-mist">
             Colecione retratos de personagens do MyAnimeList.
           </p>
@@ -148,7 +135,7 @@ export default function GachaSkinsPage() {
               href="/gacha/colecao#skins"
               className="inline-flex min-h-11 items-center text-sm text-ice underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-ice"
             >
-              Minha coleção ({owned.length})
+              Minha coleção ({ownedCount})
             </Link>
           </div>
         </div>

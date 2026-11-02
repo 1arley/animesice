@@ -1954,10 +1954,26 @@ export const api = {
   gachaSpin: (signal?: AbortSignal) =>
     request<GachaSpinPreview>(`/gacha/spin`, { method: "POST", signal }),
 
-  gachaSkins: (page = 1, limit = 48, search = "") =>
-    request<GachaSkinsResponse>(
-      `/gacha/skins?page=${page}&limit=${limit}&search=${encodeURIComponent(search)}`,
-    ),
+  gachaSkins: (
+    page = 1,
+    limit = 48,
+    search = "",
+    includeOwned: "all" | "count" | "none" = "all",
+    ownedPage?: number,
+    ownedLimit = 48,
+  ) => {
+    const query = new URLSearchParams({
+      page: String(page),
+      limit: String(limit),
+      search,
+    });
+    if (includeOwned !== "all") query.set("includeOwned", includeOwned);
+    if (ownedPage !== undefined) {
+      query.set("ownedPage", String(ownedPage));
+      query.set("ownedLimit", String(ownedLimit));
+    }
+    return request<GachaSkinsResponse>(`/gacha/skins?${query}`);
+  },
   gachaRecentSkinSpins: () =>
     request<GachaSkinSpinActivity[]>(`/gacha/skins/recent`),
   gachaSkinSpin: () =>
@@ -2017,11 +2033,13 @@ export const api = {
     sort = "value",
     rarity = "",
     foil = "",
+    search = "",
+    eligibleKind = "",
   ) =>
     request<
       Omit<GachaCollectionResponse, "data"> & { data: GachaPullResponse[] }
     >(
-      `/gacha/collection?userId=${encodeURIComponent(userId)}&page=${page}&limit=${limit}&sort=${sort}&rarity=${rarity}&foil=${foil}`,
+      `/gacha/collection?userId=${encodeURIComponent(userId)}&page=${page}&limit=${limit}&sort=${sort}&rarity=${rarity}&foil=${foil}&search=${encodeURIComponent(search)}&eligibleKind=${encodeURIComponent(eligibleKind)}`,
     ),
   gachaOwnedCard: (userCardId: string) =>
     request<{ card: GachaPullResponse | null }>(

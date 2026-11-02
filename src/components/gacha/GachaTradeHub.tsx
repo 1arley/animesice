@@ -37,7 +37,7 @@ function CrystalAmount({
   empty?: boolean;
 }) {
   if (!amount) {
-return empty ? null : <p className="text-caption text-mist">{label}: 0</p>;
+    return empty ? null : <p className="text-caption text-mist">{label}: 0</p>;
   }
   return (
     <p className="font-mono text-caption text-ice">
@@ -317,8 +317,9 @@ export function GachaTradeHub() {
   const [error, setError] = useState("");
   const [busyId, setBusyId] = useState<string | null>(null);
   const [composing, setComposing] = useState(false);
-  const [counteringTrade, setCounteringTrade] =
-    useState<GachaTrade | null>(null);
+  const [counteringTrade, setCounteringTrade] = useState<GachaTrade | null>(
+    null,
+  );
   const [preview, setPreview] = useState<GachaPull | null>(null);
   const [now, setNow] = useState(() => Date.now());
   const { toast } = useToast();
@@ -613,14 +614,14 @@ function ProposalComposer({
     "outro jogador";
 
   const initialTargetCards = counterTrade
-    ? (counterTrade.offeredUserCards?.length
-        ? counterTrade.offeredUserCards
-        : [counterTrade.offeredUserCard])
+    ? counterTrade.offeredUserCards?.length
+      ? counterTrade.offeredUserCards
+      : [counterTrade.offeredUserCard]
     : [];
   const initialMyCards = counterTrade
-    ? (counterTrade.requestedUserCards?.length
-        ? counterTrade.requestedUserCards
-        : [counterTrade.requestedUserCard])
+    ? counterTrade.requestedUserCards?.length
+      ? counterTrade.requestedUserCards
+      : [counterTrade.requestedUserCard]
     : [];
 
   const [userName, setUserName] = useState(
@@ -648,11 +649,23 @@ function ProposalComposer({
       },
     };
   });
-  const [targetCards, setTargetCards] = useState<GachaPull[]>(initialTargetCards);
+  const [targetCards, setTargetCards] =
+    useState<GachaPull[]>(initialTargetCards);
+  const [targetPage, setTargetPage] = useState(1);
+  const [targetTotalPages, setTargetTotalPages] = useState(1);
+  const [targetTotal, setTargetTotal] = useState(0);
+  const [targetSearch, setTargetSearch] = useState("");
+  const [targetResultIds, setTargetResultIds] = useState<string[]>([]);
+  const [targetPickerKey, setTargetPickerKey] = useState(0);
   const [targetCardIds, setTargetCardIds] = useState<string[]>(() =>
     initialTargetCards.map((c) => c.id),
   );
   const [myCards, setMyCards] = useState<GachaPull[]>(initialMyCards);
+  const [myPage, setMyPage] = useState(1);
+  const [myTotalPages, setMyTotalPages] = useState(1);
+  const [myTotal, setMyTotal] = useState(0);
+  const [mySearch, setMySearch] = useState("");
+  const [myResultIds, setMyResultIds] = useState<string[]>([]);
   const [myCardIds, setMyCardIds] = useState<string[]>(() =>
     initialMyCards.map((c) => c.id),
   );
@@ -673,32 +686,34 @@ function ProposalComposer({
   );
   const [available, setAvailable] = useState<number | null>(null);
   const { toast } = useToast();
+  const searchMine = useCallback(
+    (query: string) => {
+      if (query === mySearch) return;
+      setMySearch(query);
+      setMyPage(1);
+      setMyResultIds([]);
+      setMyCards((cards) =>
+        cards.filter((card) => myCardIds.includes(card.id)),
+      );
+    },
+    [mySearch, myCardIds],
+  );
+  const searchTargetCards = useCallback(
+    (query: string) => {
+      if (query === targetSearch) return;
+      setTargetSearch(query);
+      setTargetPage(1);
+      setTargetResultIds([]);
+      setTargetCards((cards) =>
+        cards.filter((card) => targetCardIds.includes(card.id)),
+      );
+      setTargetTotal(0);
+    },
+    [targetSearch, targetCardIds],
+  );
 
   useEffect(() => {
     let current = true;
-    api
-      .gachaCollection(myId, 1, 100)
-      .then((collection) => {
-        if (!current) return;
-        setMyCards((prev) => {
-          const list = [...prev];
-          for (const card of collection.data) {
-            if (!list.some((existing) => existing.id === card.id)) {
-              list.push(card);
-            }
-          }
-          return list;
-        });
-      })
-      .catch(() => {
-        if (current && !counterTrade) {
-          setError("Não foi possível carregar sua coleção.");
-        }
-      })
-      .finally(() => {
-        if (current) setLoadingMine(false);
-      });
-
     api
       .gachaEconomyInventory()
       .then((wallet) => {
@@ -715,6 +730,44 @@ function ProposalComposer({
   }, [myId, counterTrade]);
 
   useEffect(() => {
+    let current = true;
+    setLoadingMine(true);
+    void api
+      .gachaCollection(myId, myPage, 48, "value", "", "", mySearch)
+      .then((collection) => {
+        if (!current) return;
+        setMyCards((prev) => [
+          ...prev,
+          ...collection.data.filter(
+            (card) => !prev.some((existing) => existing.id === card.id),
+          ),
+        ]);
+        setMyTotalPages(collection.meta.totalPages);
+        setMyTotal(collection.meta.total);
+        setMyResultIds((current) =>
+          myPage === 1
+            ? collection.data.map((card) => card.id)
+            : [
+                ...new Set([
+                  ...current,
+                  ...collection.data.map((card) => card.id),
+                ]),
+              ],
+        );
+      })
+      .catch(() => {
+        if (current && !counterTrade)
+          setError("Não foi possível carregar sua coleção.");
+      })
+      .finally(() => {
+        if (current) setLoadingMine(false);
+      });
+    return () => {
+      current = false;
+    };
+  }, [myId, myPage, mySearch, counterTrade]);
+
+  useEffect(() => {
     if (!counterTrade) return;
     let current = true;
     setLoadingTarget(true);
@@ -728,31 +781,49 @@ function ProposalComposer({
         .catch(() => undefined);
     }
 
-    api
-      .gachaCollection(counterTrade.offeredUserId, 1, 100)
-      .then((collection) => {
-        if (!current) return;
-        setTargetCards((prev) => {
-          const list = [...prev];
-          for (const card of collection.data) {
-            if (!list.some((existing) => existing.id === card.id)) {
-              list.push(card);
-            }
-          }
-          return list;
-        });
-      })
-      .catch(() => {
-        // Se a coleção for privada, mantém as cartas já oferecidas na proposta original
-      })
-      .finally(() => {
-        if (current) setLoadingTarget(false);
-      });
-
     return () => {
       current = false;
     };
   }, [counterTrade, counterpartyUser?.userName]);
+
+  useEffect(() => {
+    if (!target) return;
+    let current = true;
+    setLoadingTarget(true);
+    void api
+      .gachaCollection(target.id, targetPage, 48, "value", "", "", targetSearch)
+      .then((collection) => {
+        if (!current) return;
+        setTargetCards((prev) => [
+          ...prev,
+          ...collection.data.filter(
+            (card) => !prev.some((existing) => existing.id === card.id),
+          ),
+        ]);
+        setTargetTotalPages(collection.meta.totalPages);
+        setTargetTotal(collection.meta.total);
+        setTargetResultIds((current) =>
+          targetPage === 1
+            ? collection.data.map((card) => card.id)
+            : [
+                ...new Set([
+                  ...current,
+                  ...collection.data.map((card) => card.id),
+                ]),
+              ],
+        );
+      })
+      .catch(() => {
+        if (current && !counterTrade)
+          setError("Não foi possível carregar esta coleção.");
+      })
+      .finally(() => {
+        if (current) setLoadingTarget(false);
+      });
+    return () => {
+      current = false;
+    };
+  }, [target, targetPage, targetSearch, counterTrade]);
 
   const maxAvailable =
     available !== null
@@ -772,6 +843,12 @@ function ProposalComposer({
     setTargetCardIds([]);
     setTarget(null);
     setTargetCards([]);
+    setTargetSearch("");
+    setTargetResultIds([]);
+    setTargetTotal(0);
+    setTargetPickerKey((key) => key + 1);
+    setTargetPage(1);
+    setTargetTotalPages(1);
     try {
       const profile = await api.getPublicProfile(name);
       if (profile.id === myId) {
@@ -779,12 +856,6 @@ function ProposalComposer({
         return;
       }
       setTarget(profile);
-      const collection = await api.gachaCollection(profile.id, 1, 48);
-      if (collection.data.length === 0) {
-        setError("Essa pessoa ainda não tem cartas.");
-        return;
-      }
-      setTargetCards(collection.data);
     } catch (e) {
       const message =
         e instanceof Error ? e.message : "Não foi possível achar essa pessoa.";
@@ -793,6 +864,16 @@ function ProposalComposer({
     } finally {
       setLoadingTarget(false);
     }
+  };
+
+  const loadMoreMine = () => {
+    if (loadingMine || myPage >= myTotalPages) return;
+    setMyPage((page) => page + 1);
+  };
+
+  const loadMoreTarget = () => {
+    if (!target || loadingTarget || targetPage >= targetTotalPages) return;
+    setTargetPage((page) => page + 1);
   };
 
   const toggleCard = (
@@ -978,8 +1059,8 @@ function ProposalComposer({
                   className="underline decoration-hairline underline-offset-2 hover:text-snow"
                 >
                   {target.name?.trim() || target.userName || "jogador"}
-                </UserProfilePreview> ·{" "}
-                {targetCards.length} cartas disponíveis
+                </UserProfilePreview>{" "}
+                · {targetTotal.toLocaleString("pt-BR")} cartas disponíveis
               </p>
             )}
           </section>
@@ -988,6 +1069,7 @@ function ProposalComposer({
         {target && (
           <div className="mt-4 grid gap-4 lg:grid-cols-2">
             <CardChoiceList
+              key={`target-${target.id}-${targetPickerKey}`}
               title={`2. Cartas que você quer (${targetCardIds.length}/5)`}
               description={
                 counterTrade
@@ -995,20 +1077,29 @@ function ProposalComposer({
                   : "Escolha até cinco cartas da outra coleção."
               }
               cards={targetCards}
+              visibleIds={targetResultIds}
               selectedIds={targetCardIds}
               onToggle={(id) => toggleCard(id, setTargetCardIds)}
               onPreview={setPreview}
               loading={loadingTarget}
+              hasMore={targetPage < targetTotalPages}
+              onLoadMore={() => void loadMoreTarget()}
+              onSearch={searchTargetCards}
               emptyText="Essa pessoa ainda não tem cartas disponíveis para troca."
             />
             <CardChoiceList
+              key={`mine-${myId}`}
               title={`3. Cartas que você oferece (${myCardIds.length}/5)`}
-              description="Escolha até cinco cartas da sua coleção."
+              description={`Escolha até cinco cartas da sua coleção (${myTotal.toLocaleString("pt-BR")} disponíveis).`}
               cards={myCards}
+              visibleIds={myResultIds}
               selectedIds={myCardIds}
               onToggle={(id) => toggleCard(id, setMyCardIds)}
               onPreview={setPreview}
               loading={loadingMine}
+              hasMore={myPage < myTotalPages}
+              onLoadMore={() => void loadMoreMine()}
+              onSearch={searchMine}
               emptyText="Sua coleção ainda não tem cartas disponíveis para troca."
             />
           </div>
@@ -1047,8 +1138,8 @@ function ProposalComposer({
         <p role="status" className="mt-4 text-body-sm text-mist">
           {maxAvailable !== null && (
             <span className="block mb-2">
-              Disponíveis para esta troca: {maxAvailable.toLocaleString("pt-BR")}{" "}
-              Cristais.
+              Disponíveis para esta troca:{" "}
+              {maxAvailable.toLocaleString("pt-BR")} Cristais.
             </span>
           )}
           {counterTrade ? "Sua contraproposta" : "Sua proposta"}:{" "}
@@ -1099,45 +1190,50 @@ function CardChoiceList({
   title,
   description,
   cards,
+  visibleIds,
   selectedIds,
   onToggle,
   onPreview,
   loading = false,
+  hasMore = false,
+  onLoadMore,
+  onSearch,
   emptyText,
 }: {
   title: string;
   description: string;
   cards: GachaPull[];
+  visibleIds: string[];
   selectedIds: string[];
   onToggle: (id: string) => void;
   onPreview: (pull: GachaPull) => void;
   loading?: boolean;
+  hasMore?: boolean;
+  onLoadMore?: () => void;
+  onSearch: (query: string) => void;
   emptyText: string;
 }) {
   const [filter, setFilter] = useState("");
-  const normFilter = filter.trim().toLowerCase();
-  const visibleCards = normFilter
-    ? cards.filter(
-        (c) =>
-          c.card.name.toLowerCase().includes(normFilter) ||
-          c.card.animeTitle?.toLowerCase().includes(normFilter) ||
-          c.card.rarity.toLowerCase().includes(normFilter),
-      )
-    : cards;
+  useEffect(() => {
+    const timer = window.setTimeout(() => onSearch(filter), 250);
+    return () => window.clearTimeout(timer);
+  }, [filter, onSearch]);
+  const visibleCards = cards.filter(
+    (card) => visibleIds.includes(card.id) || selectedIds.includes(card.id),
+  );
 
   return (
     <section aria-label={title} className="min-w-0 border border-hairline p-4">
       <h3 className="font-display text-lg text-snow">{title}</h3>
       <p className="mt-1 text-caption text-mist">{description}</p>
-      {cards.length > 5 && (
-        <input
-          type="search"
-          value={filter}
-          onChange={(e) => setFilter(e.target.value)}
-          placeholder="Filtrar por nome ou anime…"
-          className="field mt-3 min-h-9 w-full text-caption"
-        />
-      )}
+      <input
+        type="search"
+        aria-label={`Buscar cartas para ${title.toLowerCase()}`}
+        value={filter}
+        onChange={(e) => setFilter(e.target.value)}
+        placeholder="Buscar por nome ou anime…"
+        className="field mt-3 min-h-11 w-full text-caption"
+      />
       {loading ? (
         <GachaRowsSkeleton
           count={4}
@@ -1145,7 +1241,11 @@ function CardChoiceList({
           className="mt-3"
         />
       ) : cards.length === 0 ? (
-        <p className="mt-3 text-body-sm text-mist">{emptyText}</p>
+        <p className="mt-3 text-body-sm text-mist">
+          {filter
+            ? `Nenhuma carta corresponde à busca “${filter}”.`
+            : emptyText}
+        </p>
       ) : visibleCards.length === 0 ? (
         <p className="mt-3 text-body-sm text-mist">
           Nenhuma carta corresponde ao filtro &ldquo;{filter}&rdquo;.
@@ -1186,6 +1286,16 @@ function CardChoiceList({
             );
           })}
         </ul>
+      )}
+      {hasMore && (
+        <button
+          type="button"
+          onClick={onLoadMore}
+          disabled={loading}
+          className="btn-ghost mt-3 min-h-11 w-full px-3 disabled:opacity-50"
+        >
+          {loading ? "Carregando cartas…" : "Carregar mais cartas"}
+        </button>
       )}
     </section>
   );

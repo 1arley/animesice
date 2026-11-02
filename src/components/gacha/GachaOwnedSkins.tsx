@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Avatar } from "@/components/common/Avatar";
 import { useToast } from "@/components/common/ToastProvider";
 import { GachaCardGridSkeleton } from "@/components/gacha/GachaPageSkeleton";
+import { PaginationControls } from "@/components/ui/PaginationControls";
 import { UserProfilePreview } from "@/features/social/identity";
 import { useAuth } from "@/lib/auth-context";
 import { api, ApiError } from "@/lib/api";
@@ -15,26 +16,40 @@ export function GachaOwnedSkins() {
   const { toast } = useToast();
   const [result, setResult] = useState<{
     userId: string;
+    page: number;
     skins: GachaSkin[];
+    equippedSkin: GachaSkin | null;
+    total: number;
+    totalPages: number;
   } | null>(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [retry, setRetry] = useState(0);
+  const [page, setPage] = useState(1);
   const skins =
-    !authLoading && user && result?.userId === user.id ? result.skins : null;
+    !authLoading && user && result?.userId === user.id && result.page === page
+      ? result.skins
+      : null;
 
   useEffect(() => {
     if (authLoading || !user) return;
     let cancelled = false;
     setError("");
     void api
-      .gachaSkins(1, 48)
+      .gachaSkins(1, 48, "", "all", page, 48)
       .then((response) => {
         if (!cancelled) {
           setResult({
             userId: user.id,
+            page,
             skins:
               response.owned ?? response.skins.filter((skin) => skin.owned),
+            equippedSkin:
+              response.equippedSkin ??
+              response.owned.find((skin) => skin.equipped) ??
+              null,
+            total: response.ownedMeta?.total ?? response.owned.length,
+            totalPages: response.ownedMeta?.totalPages ?? 1,
           });
         }
       })
@@ -50,7 +65,7 @@ export function GachaOwnedSkins() {
     return () => {
       cancelled = true;
     };
-  }, [authLoading, user, retry]);
+  }, [authLoading, user, retry, page]);
 
   async function equip(skinId: string | null) {
     if (!user || busy) return;
@@ -62,6 +77,9 @@ export function GachaOwnedSkins() {
         current?.userId === user.id
           ? {
               ...current,
+              equippedSkin: skinId
+                ? (current.skins.find((skin) => skin.id === skinId) ?? null)
+                : null,
               skins: current.skins.map((skin) => ({
                 ...skin,
                 equipped: skin.id === response.equippedSkinId,
@@ -103,7 +121,10 @@ export function GachaOwnedSkins() {
 
   if (skins === null && error) {
     return (
-      <p role="alert" className="flex flex-wrap items-center gap-3 text-sm text-red-300">
+      <p
+        role="alert"
+        className="flex flex-wrap items-center gap-3 text-sm text-red-300"
+      >
         {error}
         <button
           type="button"
@@ -120,12 +141,16 @@ export function GachaOwnedSkins() {
     return <GachaCardGridSkeleton label="Carregando suas skins" />;
   }
 
-  const equippedSkin = skins.find((skin) => skin.equipped);
+  const equippedSkin =
+    result?.equippedSkin ?? skins.find((skin) => skin.equipped);
 
   return (
     <>
       {error && (
-        <p role="alert" className="mb-4 flex flex-wrap items-center gap-3 text-sm text-red-300">
+        <p
+          role="alert"
+          className="mb-4 flex flex-wrap items-center gap-3 text-sm text-red-300"
+        >
           {error}
           <button
             type="button"
@@ -145,7 +170,9 @@ export function GachaOwnedSkins() {
           className="border border-ice"
         />
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-semibold text-ice">Avatar do perfil público</p>
+          <p className="text-sm font-semibold text-ice">
+            Avatar do perfil público
+          </p>
           <p aria-live="polite" className="text-body-sm text-mist">
             {busy
               ? "Salvando seleção…"
@@ -156,7 +183,7 @@ export function GachaOwnedSkins() {
                   : "Avatar padrão ativo"}
           </p>
         </div>
-<UserProfilePreview
+        <UserProfilePreview
           user={user}
           ariaLabel="Ver perfil público"
           className="btn-ghost min-h-11 px-3"
@@ -168,9 +195,11 @@ export function GachaOwnedSkins() {
         <>
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <p role="status" className="text-body-sm text-mist">
-              {skins.length} {skins.length === 1 ? "skin" : "skins"} na sua coleção
+              {result?.total ?? skins.length}{" "}
+              {(result?.total ?? skins.length) === 1 ? "skin" : "skins"} na sua
+              coleção
             </p>
-            {skins.some((skin) => skin.equipped) && (
+            {equippedSkin && (
               <button
                 type="button"
                 className="btn-ghost min-h-11 px-3 text-sm"
@@ -205,7 +234,11 @@ export function GachaOwnedSkins() {
                     type="button"
                     disabled={busy || skin.equipped}
                     aria-pressed={skin.equipped}
-                    aria-label={skin.equipped ? `${skin.name} já está equipada` : `Equipar ${skin.name}`}
+                    aria-label={
+                      skin.equipped
+                        ? `${skin.name} já está equipada`
+                        : `Equipar ${skin.name}`
+                    }
                     onClick={() => void equip(skin.id)}
                     className="btn-ghost mt-2 min-h-11 w-full px-3 text-sm uppercase tracking-wider disabled:cursor-default disabled:opacity-70"
                   >
@@ -215,10 +248,17 @@ export function GachaOwnedSkins() {
               </article>
             ))}
           </div>
+          <PaginationControls
+            page={page}
+            totalPages={result?.totalPages ?? 1}
+            onPageChange={setPage}
+            label="Paginação das skins da coleção"
+          />
         </>
       ) : (
         <p className="border border-dashed border-hairline p-5 text-body-sm text-mist">
-          Você ainda não tem skins. Faça o giro semanal para começar sua coleção.{" "}
+          Você ainda não tem skins. Faça o giro semanal para começar sua
+          coleção.{" "}
           <Link href="/gacha/skins" className="text-ice underline">
             Girar skins
           </Link>

@@ -145,6 +145,7 @@ function CardEncyclopedia() {
   });
   if (search) query.set("search", search);
   if (isSets) {
+    query.set("summary", "1");
     if (["complete", "near"].includes(progress))
       query.set("progress", progress);
   } else {
@@ -153,8 +154,7 @@ function CardEncyclopedia() {
     if (["owned", "missing"].includes(ownership))
       query.set("ownership", ownership);
     if (animeId) query.set("animeId", animeId);
-    if (animeId === "orphan" && animeTitle)
-      query.set("animeTitle", animeTitle);
+    if (animeId === "orphan" && animeTitle) query.set("animeTitle", animeTitle);
   }
   const queryString = query.toString();
   const requestKey = `${user?.id ?? "guest"}:${queryString}`;
@@ -510,7 +510,9 @@ function CardEncyclopedia() {
           <PaginationControls
             page={page}
             totalPages={data.meta.totalPages}
-            onPageChange={(target) => router.push(href({ page: String(target) }))}
+            onPageChange={(target) =>
+              router.push(href({ page: String(target) }))
+            }
             label="Paginação da enciclopédia"
           />
           {data.meta.total > 0 &&
@@ -551,7 +553,7 @@ function SkinCatalog() {
   useEffect(() => {
     let cancelled = false;
     setResult(null);
-    void api.gachaSkins(page, 48, search).then(
+    void api.gachaSkins(page, 48, search, "none").then(
       (data) => {
         if (!cancelled) setResult({ key: requestKey, data });
       },
@@ -597,10 +599,16 @@ function SkinCatalog() {
         aria-label="Visão da enciclopédia"
         className="mt-8 flex flex-wrap gap-3"
       >
-        <Link href="/gacha/enciclopedia?view=cards" className="btn-ghost px-4 py-3">
+        <Link
+          href="/gacha/enciclopedia?view=cards"
+          className="btn-ghost px-4 py-3"
+        >
           Explorar cartas
         </Link>
-        <Link href="/gacha/enciclopedia?view=sets" className="btn-ghost px-4 py-3">
+        <Link
+          href="/gacha/enciclopedia?view=sets"
+          className="btn-ghost px-4 py-3"
+        >
           Completar conjuntos
         </Link>
         <Link
@@ -697,7 +705,9 @@ function SkinCatalog() {
           <PaginationControls
             page={page}
             totalPages={data.meta.totalPages}
-            onPageChange={(target) => router.push(href({ page: String(target) }))}
+            onPageChange={(target) =>
+              router.push(href({ page: String(target) }))
+            }
             label="Paginação do catálogo de skins"
           />
         </>
@@ -708,7 +718,11 @@ function SkinCatalog() {
 
 function Encyclopedia() {
   const params = useSearchParams();
-  return params.get("view") === "skins" ? <SkinCatalog /> : <CardEncyclopedia />;
+  return params.get("view") === "skins" ? (
+    <SkinCatalog />
+  ) : (
+    <CardEncyclopedia />
+  );
 }
 
 export default function EncyclopediaPage() {
