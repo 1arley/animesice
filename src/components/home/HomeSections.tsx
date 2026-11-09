@@ -192,7 +192,7 @@ export function SectionFallback({ hero = false }: { hero?: boolean }) {
       aria-hidden="true"
       className={
         hero
-          ? "mb-6 aspect-[4/3] animate-pulse bg-panel sm:aspect-[21/9] lg:aspect-[2.4/1]"
+          ? "-mx-4 aspect-[4/3] min-h-80 w-[calc(100%+2rem)] animate-pulse bg-panel pb-[61px] [box-sizing:content-box] sm:mx-0 sm:aspect-[21/9] sm:min-h-72 sm:w-full md:aspect-[2.8/1] lg:aspect-[3.2/1]"
           : "mb-10 h-64 animate-pulse border border-hairline bg-panel/40"
       }
     />

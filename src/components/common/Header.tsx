@@ -141,7 +141,7 @@ export function Header() {
         <form
           onSubmit={onSubmit}
           role="search"
-          className="hidden flex-1 max-w-md sm:block"
+          className="hidden min-w-0 flex-1 max-w-md sm:block"
         >
           <label htmlFor="header-search" className="sr-only">
             Buscar animes
@@ -181,12 +181,12 @@ export function Header() {
             <span className="hidden md:inline" translate="no">Discord</span>
           </a>
           {/* LivePix: só desktop no header — no mobile fica no footer */}
-          <div className="hidden sm:block">
+          <div className="hidden lg:block">
             <SupportLink variant="header" />
           </div>
           <NotificationBell />
           {/* Auth some da linha no mobile: fica no menu do SiteNav / tab bar */}
-          <div className="hidden sm:contents">
+          <div className="hidden md:contents">
             <AuthButtons />
           </div>
         </div>
