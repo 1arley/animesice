@@ -79,7 +79,10 @@ const server = http.createServer((req, res) => {
     ]);
   }
   if (req.method === 'GET' && (p === '/api/episode/latest' || p === '/episode/latest')) return json(res, []);
-  if (req.method === 'GET' && (p === '/api/anime/trending' || p === '/anime/trending')) return json(res, []);
+  if (req.method === 'GET' && (p === '/api/anime/trending' || p === '/anime/trending')) return json(res, [
+    { id: 'home-1', slug: 'destaque-da-semana', title: 'Destaque da semana', coverImage: '/images/logo.png', status: 'LANCAMENTO', audio: 'LEGENDADO', rating: 8.5 },
+    { id: 'home-2', slug: 'uma-historia-para-descobrir', title: 'Uma história para descobrir', coverImage: '/images/logo.png', status: 'FINALIZADO', audio: 'DUBLADO', rating: 9 },
+  ]);
   if (req.method === 'GET' && (p === '/api/recently-added' || p === '/anime/recently-added')) return json(res, []);
 
   const episodeMatch = p && (p.match(/^\/api\/episode\/([^/]+)\/(\d+)$/) || p.match(/^\/episode\/([^/]+)\/(\d+)$/));

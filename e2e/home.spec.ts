@@ -2,6 +2,10 @@ import { test, expect } from "@playwright/test";
 import { blockAds } from "./helpers";
 
 test.describe("Homepage & Shelf Navigation", () => {
+  test.beforeEach(async ({ page }) => {
+    await blockAds(page);
+  });
+
   test("restores an httpOnly session after navigation and reload", async ({
     page,
   }) => {
@@ -77,10 +81,53 @@ test.describe("Homepage & Shelf Navigation", () => {
     // Verify accessible h1 tag exists
     const h1 = page.locator("h1");
     await expect(h1).toHaveCount(1);
-    await expect(h1).toContainText("AnimesIce");
+    await expect(h1).toBeVisible();
+    await expect(h1).toContainText("Sua próxima história");
+    const discovery = page.getByRole("navigation", { name: "Descobrir animes" });
+    await expect(discovery.getByRole("link", { name: "Dublados", exact: true })).toHaveAttribute("href", "/buscar?audio=DUBLADO");
+    await expect(discovery.getByRole("link", { name: "Novos episódios" })).toHaveAttribute("href", "/lancamentos");
+    const sections = await page.locator("main h2").allTextContents();
+    const latestIndex = sections.findIndex((text) => text.startsWith("Últimos episódios"));
+    expect(latestIndex).toBeGreaterThanOrEqual(0);
+    expect(latestIndex).toBeLessThan(sections.indexOf("Melhores avaliados"));
 
     // Check main content presence
     await expect(page.locator("body")).toBeVisible();
+  });
+
+  test("carousel selection is accessible and respects reduced motion", async ({ page }) => {
+    await page.setViewportSize({ width: 320, height: 800 });
+    await page.goto("/");
+    const second = page.getByRole("button", { name: "Destaque 2:", exact: false });
+    await second.focus();
+    await page.keyboard.press("Enter");
+    await expect(second).toHaveAttribute("aria-current", "true");
+    await expect(page.locator("#hero-title")).toHaveText("Uma história para descobrir");
+    await expect(page.getByRole("button", { name: "Pausar destaques" })).toHaveCount(0);
+    for (const width of [320, 480, 768]) {
+      await page.setViewportSize({ width, height: 800 });
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+      const slide = await page.locator('[aria-roledescription="slide"]').boundingBox();
+      const action = await page.getByRole("link", { name: "Ver anime", exact: true }).boundingBox();
+      expect(slide!.x + slide!.width).toBeLessThanOrEqual(width);
+      expect(action!.x + action!.width).toBeLessThanOrEqual(width);
+    }
+  });
+
+  test("pausing the carousel survives pointer leave and focus changes", async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: "no-preference" });
+    await page.goto("/");
+    await page.getByRole("button", { name: "Pausar destaques" }).click();
+    await page.getByRole("link", { name: "Explorar catálogo" }).focus();
+    await page.mouse.move(0, 0);
+    await page.clock.install();
+    await page.clock.fastForward(8000);
+    await expect(page.getByRole("button", { name: "Destaque 1:", exact: false })).toHaveAttribute("aria-current", "true");
+    await page.getByRole("button", { name: "Reproduzir destaques automaticamente" }).click();
+    await page.getByRole("link", { name: "Explorar catálogo" }).focus();
+    await page.mouse.move(0, 0);
+    await page.clock.fastForward(8000);
+    await expect(page.getByRole("button", { name: "Destaque 2:", exact: false })).toHaveAttribute("aria-current", "true");
   });
 
   test("should not load the invasive OnClick tag", async ({ page }) => {
@@ -93,7 +140,6 @@ test.describe("Homepage & Shelf Navigation", () => {
   test("renders the AdSense slot and injects the loader on demand", async ({
     page,
   }) => {
-    await blockAds(page);
     await page.goto("/");
 
     // NEXT_PUBLIC_ADSENSE_SLOT=0000000001 no build do e2e (playwright.config).

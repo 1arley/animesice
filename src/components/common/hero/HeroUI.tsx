@@ -52,7 +52,7 @@ export function HeroUI({ anime, label, isMobile, bloodWar = false }: HeroUIProps
   const onAir = isOnAir(anime.status);
 
   return (
-    <div className="absolute inset-0 flex flex-col justify-end p-4 pb-16 sm:p-6 sm:pb-6 lg:p-8">
+    <div className="absolute inset-0 flex flex-col justify-end p-5 sm:p-6 lg:p-8">
       {/* Left-side legibility gradient (desktop/tablet) */}
       <div
         className="absolute inset-0 sm:block"
@@ -89,7 +89,7 @@ export function HeroUI({ anime, label, isMobile, bloodWar = false }: HeroUIProps
         {/* Title */}
         <h2
           id="hero-title"
-          className="max-w-xl font-display text-xl font-bold tracking-tight text-snow sm:text-3xl lg:text-4xl"
+          className="max-w-xl text-balance font-display text-3xl font-bold leading-tight tracking-tight text-snow sm:text-4xl lg:text-5xl"
         >
           {anime.title}
         </h2>
@@ -97,7 +97,7 @@ export function HeroUI({ anime, label, isMobile, bloodWar = false }: HeroUIProps
         {/* Synopsis — sempre no SSR (SEO/desktop); o CSS `hidden sm:block`
             cuida da visibilidade no mobile, sem depender do estado cliente. */}
         {anime.synopsis && (
-          <p className="mt-2 hidden max-w-xl text-body-sm text-mist sm:line-clamp-2 sm:block lg:line-clamp-3">
+          <p className="mt-2 hidden max-w-xl text-body-sm text-mist md:line-clamp-2">
             {anime.synopsis}
           </p>
         )}
