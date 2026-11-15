@@ -309,11 +309,16 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
   const refresh = useCallback(async () => {
     if (!user) return null;
     try {
-      const wallet = await api.gachaEconomyInventory();
+      // Carteira e conteúdo da aba são independentes: em paralelo a página
+      // pinta com uma ida ao servidor em vez de duas em série.
+      const [wallet, shopOffers] = await Promise.all([
+        api.gachaEconomyInventory(),
+        mode === "shop" ? api.gachaEconomyShop() : Promise.resolve(null),
+      ]);
       setInventory(wallet);
-      if (mode === "shop") {
-        setOffers(await api.gachaEconomyShop());
-      } else {
+      if (mode === "shop" && shopOffers) {
+        setOffers(shopOffers);
+      } else if (mode === "market") {
         const [myListings, myOrders, missionState, copies] = await Promise.all([
           api.gachaEconomyMyListings(),
           api.gachaEconomyMyOrders(),
@@ -410,8 +415,13 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
           await refresh();
         }
       } else {
-        setOdds(await api.gachaEconomyOdds());
-        if (user) await refresh();
+        // Odds é público e não depende da carteira: dispara junto, senão a
+        // página espera odds + carteira + ofertas em série antes de pintar.
+        const [oddsResult] = await Promise.all([
+          api.gachaEconomyOdds(),
+          user ? refresh() : Promise.resolve(null),
+        ]);
+        setOdds(oddsResult);
       }
     } catch (cause) {
       setError(
