@@ -1779,6 +1779,7 @@ export const api = {
     request(`/gacha/economy/shop/${encodeURIComponent(id)}/buy`, {
       method: "POST",
     }),
+  // O catálogo item a item (40+ MB) é opt-in no backend e nenhuma tela usa.
   gachaEconomyOdds: () => request<GachaEconomyOdds>("/gacha/economy/odds"),
   gachaEconomyOwnedSkins: () =>
     request<GachaOwnedSkinCopy[]>("/gacha/economy/skins/mine"),
