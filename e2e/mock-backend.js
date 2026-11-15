@@ -163,6 +163,17 @@ const server = http.createServer((req, res) => {
   }
 
   if (req.method === 'GET' && (p === '/api/stream/source' || p === '/stream/source')) {
+    // Slug usado pelo spec de prefetch: fonte mp4 (o player não suporta HLS no
+    // headless e o erro trocaria o <video> pelo painel de falha).
+    if (parsed.query.anime === 'prefetch-next') {
+      const episode = parsed.query.episode || '1';
+      return json(res, {
+        animeSlug: 'prefetch-next',
+        episodeNumber: Number(episode) || 1,
+        src: `http://localhost:${process.env.MOCK_BACKEND_PORT || 3001}/__e2e/video/${episode}.mp4`,
+        rawVideoUrl: null, embedUrl: null, reextracted: false, thumbnailUrl: null,
+      });
+    }
     const hasAuth = (req.headers.cookie || '').includes('role=');
     if (parsed.query.refresh === '1' && !hasAuth) {
       return json(res, { message: 'Não autenticado.' }, 400);
