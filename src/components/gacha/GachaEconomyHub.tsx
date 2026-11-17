@@ -2,6 +2,10 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
+import { GachaEssences } from "@/components/gacha/GachaEssences";
+import { GachaItemMarket } from "@/components/gacha/GachaItemMarket";
+import { ItemRewardPicker } from "@/components/gacha/ItemRewardPicker";
+import type { GachaItemAmount } from "@/types";
 import Link from "next/link";
 import { api, ApiError, type User } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
@@ -53,6 +57,7 @@ const BOX_CATEGORY_LABEL: Record<string, string> = {
   CARD_BACK: "Verso de carta",
   CRYSTAL: "Cristais",
   ITEM: "Itens",
+  ESSENCE: "Essências",
   KEY: "Chave",
   KEY_PREMIUM_BOX: "Caixa premium + chave",
   KEY_RARE_BOX: "Caixa rara + chave",
@@ -255,9 +260,7 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
   const [orderPrice, setOrderPrice] = useState("");
   const [offerTarget, setOfferTarget] =
     useState<GachaEconomyListingItem | null>(null);
-  const [offerMethod, setOfferMethod] = useState<"crystals" | "cards">(
-    "crystals",
-  );
+  const [offerItems, setOfferItems] = useState<GachaItemAmount[]>([]);
   const [offerCrystals, setOfferCrystals] = useState("");
   const [offerCardIds, setOfferCardIds] = useState<string[]>([]);
   const [offerCardCopies, setOfferCardCopies] = useState<GachaPull[]>([]);
@@ -319,13 +322,19 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
       if (mode === "shop" && shopOffers) {
         setOffers(shopOffers);
       } else if (mode === "market") {
-        const [myListings, myOrders, missionState, copies] = await Promise.all([
+        const [myListings, myItemListings, myOrders, missionState, copies] = await Promise.all([
           api.gachaEconomyMyListings(),
+          api.gachaEconomyMyListings(1, "ITEM"),
           api.gachaEconomyMyOrders(),
           api.gachaEconomyMission(),
           api.gachaEconomyOwnedSkins(),
         ]);
-        setMine(myListings.items);
+        setMine(
+          [...myListings.items, ...myItemListings.items].sort(
+            (a, b) =>
+              new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+          ),
+        );
         setOrders(myOrders.items);
         setMission(missionState);
         setOwnedSkins(copies.filter((copy) => copy.status === "ACTIVE"));
@@ -547,7 +556,7 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
 
   async function createOrder(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!orderTarget) return;
+    if (!orderTarget || orderTarget.itemType === "ITEM") return;
     const price = Number(orderPrice);
     if (!Number.isSafeInteger(price) || price < 1) {
       setError("Informe uma oferta inteira em Cristais.");
@@ -557,7 +566,7 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
       `order-${orderTarget.id}`,
       () =>
         api.gachaEconomyCreateOrder({
-          itemType: orderTarget.itemType,
+          itemType: orderTarget.itemType === "CARD" ? "CARD" : "SKIN",
           itemId:
             orderTarget.itemType === "CARD"
               ? (orderTarget.item.cardId ?? orderTarget.item.id)
@@ -575,19 +584,16 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
   async function createMarketOffer(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!offerTarget) return;
-    const crystals = offerMethod === "crystals" ? Number(offerCrystals) : 0;
+    const crystals = Number(offerCrystals || "0");
     if (
-      (offerMethod === "crystals" &&
-        (!Number.isSafeInteger(crystals) ||
-          crystals < 1 ||
-          crystals > (inventory?.available ?? 0))) ||
-      (offerMethod === "cards" &&
-        (offerCardIds.length < 1 || offerCardIds.length > 5))
+      !Number.isSafeInteger(crystals) ||
+      crystals < 0 ||
+      crystals > (inventory?.available ?? 0) ||
+      offerCardIds.length > 5 ||
+      (crystals === 0 && offerCardIds.length === 0 && offerItems.length === 0)
     ) {
       setError(
-        offerMethod === "crystals"
-          ? "Informe uma oferta em Cristais dentro do seu saldo disponível."
-          : "Escolha de 1 a 5 cartas para a proposta.",
+        "Ofereça itens, até 5 cartas e/ou Cristais dentro do saldo disponível.",
       );
       return;
     }
@@ -597,9 +603,9 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
         api.gachaEconomyCreateMarketOffer({
           itemType: offerTarget.itemType,
           listingId: offerTarget.id,
-          ...(offerMethod === "crystals"
-            ? { crystals }
-            : { offeredUserCardIds: offerCardIds }),
+          crystals,
+          items: offerItems,
+          offeredUserCardIds: offerCardIds,
         }),
       "Proposta enviada. Os itens ficam reservados até a resposta.",
     );
@@ -608,6 +614,7 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
       setOfferCrystals("");
       setOfferCardIds([]);
       setOfferCardCopies([]);
+      setOfferItems([]);
       setOfferRefreshKey((key) => key + 1);
     }
   }
@@ -1275,7 +1282,7 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
               onOffer={(listing) => {
                 setError("");
                 setOfferTarget(listing);
-                setOfferMethod("crystals");
+                setOfferItems([]);
                 setOfferCrystals("");
                 setOfferCardIds([]);
                 setOfferCardCopies([]);
@@ -1322,7 +1329,7 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
               onOffer={(listing) => {
                 setError("");
                 setOfferTarget(listing);
-                setOfferMethod("crystals");
+                setOfferItems([]);
                 setOfferCrystals("");
                 setOfferCardIds([]);
                 setOfferCardCopies([]);
@@ -1338,10 +1345,36 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
             />
           )}
 
+          {mode === "market" && (
+            <GachaItemMarket
+              inventory={inventory}
+              marketReady={marketReady}
+              refresh={async () => {
+                await refresh();
+                setOfferRefreshKey((key) => key + 1);
+              }}
+              refreshKey={offerRefreshKey}
+              onOffer={(listing) => {
+                setError("");
+                setOfferTarget(listing);
+                setOfferItems([]);
+                setOfferCrystals("");
+                setOfferCardIds([]);
+                setOfferCardCopies([]);
+                setCardCopySearch("");
+                setOwnedCardPage(1);
+              }}
+            />
+          )}
+
           {mode === "market" && user && (
             <GachaMarketOfferHub
               refreshKey={offerRefreshKey}
               canAccept={marketReady}
+              onSettled={async () => {
+                await refresh();
+                setOfferRefreshKey((key) => key + 1);
+              }}
             />
           )}
 
@@ -1516,155 +1549,144 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
             >
               <form onSubmit={(event) => void createMarketOffer(event)}>
                 <p className="text-body-sm text-mist">
-                  Sua proposta vai diretamente para quem anunciou. O valor ou as
-                  cartas escolhidas ficam reservados até a resposta.
+                  Sua proposta vai diretamente para quem anunciou. Os itens,
+                  cartas e Cristais escolhidos ficam reservados até a resposta.
                 </p>
-                <fieldset className="mt-5 grid gap-3 sm:grid-cols-2">
-                  <legend className="mb-2 text-body-sm text-snow">
-                    O que você oferece?
+                <label className="mt-4 block text-body-sm text-snow">
+                  Cristais na proposta (opcional)
+                  <input
+                    type="number"
+                    min={0}
+                    max={inventory?.available ?? 0}
+                    step={1}
+                    inputMode="numeric"
+                    autoComplete="off"
+                    value={offerCrystals}
+                    onChange={(event) => setOfferCrystals(event.target.value)}
+                    className="field mt-2 min-h-11 w-full"
+                  />
+                </label>
+                <fieldset className="mt-4">
+                  <legend className="text-body-sm text-snow">
+                    Escolha até 5 cartas
                   </legend>
-                  <label className="flex min-h-14 cursor-pointer items-center gap-3 border border-hairline p-3 text-body-sm text-snow">
-                    <input
-                      type="radio"
-                      name="offer-method"
-                      value="crystals"
-                      checked={offerMethod === "crystals"}
-                      onChange={() => setOfferMethod("crystals")}
-                    />
-                    Cristais · disponível{" "}
-                    {(inventory?.available ?? 0).toLocaleString("pt-BR")}
-                  </label>
-                  <label className="flex min-h-14 cursor-pointer items-center gap-3 border border-hairline p-3 text-body-sm text-snow">
-                    <input
-                      type="radio"
-                      name="offer-method"
-                      value="cards"
-                      checked={offerMethod === "cards"}
-                      onChange={() => setOfferMethod("cards")}
-                    />
-                    Cartas da minha coleção
-                  </label>
-                </fieldset>
-
-                {offerMethod === "crystals" ? (
-                  <label className="mt-4 block text-body-sm text-snow">
-                    Sua proposta em Cristais
-                    <input
-                      type="number"
-                      min={1}
-                      max={inventory?.available ?? 0}
-                      step={1}
-                      inputMode="numeric"
-                      autoComplete="off"
-                      required
-                      value={offerCrystals}
-                      onChange={(event) => setOfferCrystals(event.target.value)}
-                      className="field mt-2 min-h-11 w-full"
-                    />
-                  </label>
-                ) : (
-                  <fieldset className="mt-4">
-                    <legend className="text-body-sm text-snow">
-                      Escolha até 5 cartas
-                    </legend>
-                    {offerCardCopies.length > 0 && (
-                      <ul
-                        aria-label="Cartas selecionadas para oferecer"
-                        className="mt-3 space-y-2"
-                      >
-                        {offerCardCopies.map((copy) => (
-                          <li
-                            key={copy.id}
-                            className="flex items-center justify-between gap-3 border border-hairline p-2 text-body-sm text-snow"
+                  {offerCardCopies.length > 0 && (
+                    <ul
+                      aria-label="Cartas selecionadas para oferecer"
+                      className="mt-3 space-y-2"
+                    >
+                      {offerCardCopies.map((copy) => (
+                        <li
+                          key={copy.id}
+                          className="flex items-center justify-between gap-3 border border-hairline p-2 text-body-sm text-snow"
+                        >
+                          <span className="truncate">
+                            {copy.card.name} · edição #{copy.edition}
+                          </span>
+                          <button
+                            type="button"
+                            className="min-h-11 px-3 text-ice underline"
+                            aria-label={`Remover ${copy.card.name} da proposta`}
+                            onClick={() => {
+                              setOfferCardIds((current) =>
+                                current.filter((id) => id !== copy.id),
+                              );
+                              setOfferCardCopies((current) =>
+                                current.filter((card) => card.id !== copy.id),
+                              );
+                            }}
                           >
-                            <span className="truncate">
-                              {copy.card.name} · edição #{copy.edition}
-                            </span>
-                            <button
-                              type="button"
-                              className="min-h-11 px-3 text-ice underline"
-                              aria-label={`Remover ${copy.card.name} da proposta`}
-                              onClick={() => {
+                            Remover
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  <div className="mt-2 max-h-72 space-y-2 overflow-y-auto border border-hairline p-3">
+                    {ownedCardTotal === 0 ? (
+                      <p className="text-body-sm text-mist">
+                        Nenhuma carta disponível para oferecer.
+                      </p>
+                    ) : (
+                      visibleOwnedCards.map((copy) => {
+                        const checked = offerCardIds.includes(copy.id);
+                        return (
+                          <label
+                            key={copy.id}
+                            className="flex min-h-12 cursor-pointer items-center gap-3 border-b border-hairline py-2 last:border-0"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              disabled={!checked && offerCardIds.length >= 5}
+                              onChange={() => {
                                 setOfferCardIds((current) =>
-                                  current.filter((id) => id !== copy.id),
+                                  checked
+                                    ? current.filter((id) => id !== copy.id)
+                                    : [...current, copy.id],
                                 );
                                 setOfferCardCopies((current) =>
-                                  current.filter((card) => card.id !== copy.id),
+                                  checked
+                                    ? current.filter(
+                                        (card) => card.id !== copy.id,
+                                      )
+                                    : [...current, copy],
                                 );
                               }}
-                            >
-                              Remover
-                            </button>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                    <div className="mt-2 max-h-72 space-y-2 overflow-y-auto border border-hairline p-3">
-                      {ownedCardTotal === 0 ? (
-                        <p className="text-body-sm text-mist">
-                          Nenhuma carta disponível para oferecer.
-                        </p>
-                      ) : (
-                        visibleOwnedCards.map((copy) => {
-                          const checked = offerCardIds.includes(copy.id);
-                          return (
-                            <label
-                              key={copy.id}
-                              className="flex min-h-12 cursor-pointer items-center gap-3 border-b border-hairline py-2 last:border-0"
-                            >
-                              <input
-                                type="checkbox"
-                                checked={checked}
-                                disabled={!checked && offerCardIds.length >= 5}
-                                onChange={() => {
-                                  setOfferCardIds((current) =>
-                                    checked
-                                      ? current.filter((id) => id !== copy.id)
-                                      : [...current, copy.id],
-                                  );
-                                  setOfferCardCopies((current) =>
-                                    checked
-                                      ? current.filter(
-                                          (card) => card.id !== copy.id,
-                                        )
-                                      : [...current, copy],
-                                  );
-                                }}
-                                aria-label={`Oferecer ${copy.card.name}, edição ${copy.edition}`}
-                              />
-                              <span className="min-w-0 text-body-sm text-snow">
-                                <span className="block truncate">
-                                  {copy.card.name}
-                                </span>
-                                <span className="text-caption text-mist">
-                                  {copy.card.rarity} · {copy.foil} · edição #
-                                  {copy.edition}
-                                </span>
+                              aria-label={`Oferecer ${copy.card.name}, edição ${copy.edition}`}
+                            />
+                            <span className="min-w-0 text-body-sm text-snow">
+                              <span className="block truncate">
+                                {copy.card.name}
                               </span>
-                            </label>
-                          );
-                        })
-                      )}
-                    </div>
-                    <p className="mt-2 text-caption text-mist" role="status">
-                      {offerCardIds.length} de 5 selecionadas
-                    </p>
-                    <p className="mt-2 text-caption text-mist">
-                      Página {ownedCardPage} de {ownedCardTotalPages} ·{" "}
-                      {ownedCardTotal} cartas
-                    </p>
-                    <PaginationControls
-                      page={ownedCardPage}
-                      totalPages={ownedCardTotalPages}
-                      onPageChange={(page) => {
-                        setOwnedCards([]);
-                        setOwnedCardPage(page);
-                      }}
-                      label="Cartas disponíveis para oferecer"
-                    />
-                  </fieldset>
-                )}
+                              <span className="text-caption text-mist">
+                                {copy.card.rarity} · {copy.foil} · edição #
+                                {copy.edition}
+                              </span>
+                            </span>
+                          </label>
+                        );
+                      })
+                    )}
+                  </div>
+                  <p className="mt-2 text-caption text-mist" role="status">
+                    {offerCardIds.length} de 5 selecionadas
+                  </p>
+                  <p className="mt-2 text-caption text-mist">
+                    Página {ownedCardPage} de {ownedCardTotalPages} ·{" "}
+                    {ownedCardTotal} cartas
+                  </p>
+                  <PaginationControls
+                    page={ownedCardPage}
+                    totalPages={ownedCardTotalPages}
+                    onPageChange={(page) => {
+                      setOwnedCards([]);
+                      setOwnedCardPage(page);
+                    }}
+                    label="Cartas disponíveis para oferecer"
+                  />
+                </fieldset>
 
+                {inventory && (
+                  <div className="mt-4">
+                    <ItemRewardPicker
+                      catalog={inventory.itemCatalog ?? []}
+                      value={offerItems}
+                      onChange={setOfferItems}
+                      inventory={inventory}
+                      disabled={busy !== null}
+                    />
+                  </div>
+                )}
+                <p className="mt-4 text-body-sm text-ice" aria-live="polite">
+                  Proposta:{" "}
+                  {Number(offerCrystals || "0").toLocaleString("pt-BR")}{" "}
+                  Cristais + {offerCardIds.length} carta(s) +{" "}
+                  {offerItems
+                    .reduce((sum, row) => sum + row.quantity, 0)
+                    .toLocaleString("pt-BR")}{" "}
+                  item(ns).
+                </p>
                 <p className="mt-4 text-caption text-mist">
                   Cristais são a moeda do mercado. Pontos de ranking não podem
                   ser usados em propostas.
@@ -2063,6 +2085,8 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
             </section>
           )}
 
+          {mode === "shop" && user && inventory && <GachaEssences inventory={inventory} refresh={refresh} disabled={busy !== null} />}
+
           {mode === "shop" && user && (
             <GachaCosmeticShop
               balance={inventory?.available ?? null}
@@ -2098,6 +2122,10 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
                     0,
                   );
                   const itemDrops = itemDropProbabilities(odds, tier);
+                  const essenceWeights = odds.essenceKindWeights?.[tier];
+                  const essenceTotal = Object.values(
+                    essenceWeights ?? {},
+                  ).reduce((sum, weight) => sum + weight, 0);
                   return (
                     <div key={tier}>
                       <h3 className="font-display text-body-sm text-ice">
@@ -2148,6 +2176,45 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
                               </dd>
                             </div>
                           ))}
+                        </dl>
+                      )}
+                      <h4 className="mt-4 font-display text-body-sm text-ice">
+                        Essências · por abertura
+                      </h4>
+                      {(categoryWeights.ESSENCE ?? 0) <= 0 ? (
+                        <p className="mt-2 text-caption text-mist">
+                          Esta caixa não concede Essências na configuração
+                          ativa.
+                        </p>
+                      ) : !essenceWeights || essenceTotal <= 0 ? (
+                        <p className="mt-2 text-caption text-mist">
+                          Detalhamento indisponível.
+                        </p>
+                      ) : (
+                        <dl className="mt-2 space-y-1 text-caption text-mist">
+                          {Object.entries(essenceWeights)
+                            .filter(([, weight]) => weight > 0)
+                            .map(([kind, weight]) => (
+                              <div
+                                key={kind}
+                                className="flex justify-between gap-4"
+                              >
+                                <dt>
+                                  {inventory?.itemCatalog?.find(
+                                    (item) => item.id === kind,
+                                  )?.name ??
+                                    `Essência ${kind.replace("ESSENCIA_", "").toLowerCase()}`}
+                                </dt>
+                                <dd className="tabular-nums">
+                                  {formatChance(
+                                    (((categoryWeights.ESSENCE ?? 0) /
+                                      categoryTotal) *
+                                      weight) /
+                                      essenceTotal,
+                                  )}
+                                </dd>
+                              </div>
+                            ))}
                         </dl>
                       )}
                     </div>

@@ -5,6 +5,7 @@ const BOX_REWARD_CATEGORIES = [
   "KEY",
   "SPIN_RESET",
   "ITEM",
+  "ESSENCE",
   "RARE_BOX",
   "KEY_RARE_BOX",
   "KEY_PREMIUM_BOX",
@@ -22,7 +23,8 @@ export const ITEM_KIND_LABEL: Record<GachaItemKind, string> = {
   PROTECAO: "Proteção de reroll",
 };
 
-const RARITY_LABEL: Record<string, string> = {
+/** Rótulos pt-BR das raridades — reutilizado pelo banner de evento e pelo admin. */
+export const RARITY_LABEL: Record<string, string> = {
   COMUM: "Comum",
   COMMON: "Comum",
   INCOMUM: "Incomum",
@@ -84,20 +86,33 @@ export function boxRewardDisplay(
     case "KEY":
       return { title: quantity(reward.amount, "chave", "chaves") };
     case "SPIN_RESET":
-      return { title: quantity(reward.amount, "reset de giro", "resets de giro") };
+      return {
+        title: quantity(reward.amount, "reset de giro", "resets de giro"),
+      };
+    case "ESSENCE":
+      return {
+        title: name(reward.name, "Essência"),
+        details: ["Guardada no inventário. Use para revelar uma carta."],
+      };
     case "ITEM": {
       const kind = String(reward.kind ?? "");
       const label =
         ITEM_KIND_LABEL[kind as GachaItemKind] ?? "Item de loot box";
       const amount = count(reward.quantity);
-      return { title: amount === null ? label : `${amount.toLocaleString("pt-BR")}× ${label}` };
+      return {
+        title:
+          amount === null
+            ? label
+            : `${amount.toLocaleString("pt-BR")}× ${label}`,
+      };
     }
     case "RARE_BOX":
       return { title: quantity(reward.amount, "caixa rara", "caixas raras") };
     case "KEY_RARE_BOX":
     case "KEY_PREMIUM_BOX": {
       const tier = reward.category === "KEY_RARE_BOX" ? "rara" : "premium";
-      const boxField = reward.category === "KEY_RARE_BOX" ? "rareBoxes" : "premiumBoxes";
+      const boxField =
+        reward.category === "KEY_RARE_BOX" ? "rareBoxes" : "premiumBoxes";
       const singularBox = `caixa ${tier}`;
       const pluralBox = tier === "rara" ? "caixas raras" : "caixas premium";
       return {
@@ -113,12 +128,17 @@ export function boxRewardDisplay(
         typeof reward.foil === "string"
           ? `Acabamento: ${FOIL_LABEL[reward.foil] ?? reward.foil}`
           : null,
-        typeof reward.condition === "number" && Number.isFinite(reward.condition)
+        typeof reward.condition === "number" &&
+        Number.isFinite(reward.condition)
           ? `Desgaste ${reward.condition.toLocaleString("pt-BR", { maximumFractionDigits: 4 })}`
           : null,
-      ].filter((value): value is string => typeof value === "string" && !!value);
+      ].filter(
+        (value): value is string => typeof value === "string" && !!value,
+      );
       return {
-        title: hidden ? "Carta misteriosa" : `Carta: ${name(reward.name, "Carta recebida")}`,
+        title: hidden
+          ? "Carta misteriosa"
+          : `Carta: ${name(reward.name, "Carta recebida")}`,
         details: details.length ? details : undefined,
       };
     }
@@ -130,20 +150,20 @@ export function boxRewardDisplay(
           )
         : [];
       if (skins.length) {
-        const details = skins
-          .map((skin) =>
-            [
-              name(skin.name, "Skin recebida"),
-              typeof skin.rarity === "string"
-                ? `Raridade: ${RARITY_LABEL[skin.rarity] ?? skin.rarity}`
-                : null,
-            ]
-              .filter((value): value is string => !!value)
-              .join(" · "),
-          );
+        const details = skins.map((skin) =>
+          [
+            name(skin.name, "Skin recebida"),
+            typeof skin.rarity === "string"
+              ? `Raridade: ${RARITY_LABEL[skin.rarity] ?? skin.rarity}`
+              : null,
+          ]
+            .filter((value): value is string => !!value)
+            .join(" · "),
+        );
         return { title: `${skins.length} skins recebidas`, details };
       }
-      const rarity = typeof reward.rarity === "string" ? reward.rarity : undefined;
+      const rarity =
+        typeof reward.rarity === "string" ? reward.rarity : undefined;
       return {
         title: `Skin: ${name(reward.name, "Skin recebida")}`,
         details: rarity
@@ -160,7 +180,10 @@ export function boxRewardDisplay(
             crystals === null
               ? ["Valor da compensação indisponível"]
               : crystals > 0
-                ? [quantity(crystals, "cristal", "cristais") + " de compensação"]
+                ? [
+                    quantity(crystals, "cristal", "cristais") +
+                      " de compensação",
+                  ]
                 : ["Nenhum cristal recebido como compensação"],
         };
       }
@@ -173,7 +196,9 @@ export function boxRewardDisplay(
       };
     }
     default:
-      return { title: name(reward.name, "Detalhes da recompensa indisponíveis") };
+      return {
+        title: name(reward.name, "Detalhes da recompensa indisponíveis"),
+      };
   }
 }
 

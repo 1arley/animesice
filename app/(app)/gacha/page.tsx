@@ -19,6 +19,7 @@ import {
   gachaConditionLabel,
 } from "@/components/gacha/GachaCard";
 import { gachaRerollCost } from "@/lib/gacha-reroll";
+import { RARITY_LABEL } from "@/lib/gacha-box-reward";
 import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import { useToast } from "@/components/common/ToastProvider";
 import { SectionLabel } from "@/components/common/SectionLabel";
@@ -1097,6 +1098,26 @@ function GachaPageContent() {
                     {claiming ? "Guardando…" : "Pegar carta"}
                   </button>
                 </div>
+
+                {status?.claimEvent && (
+                  <div
+                    role="status"
+                    className="mx-auto mt-4 max-w-2xl border border-ice/40 bg-ice/10 p-3 text-left"
+                  >
+                    <p className="text-body-sm text-ice">
+                      <span className="font-display">
+                        {status.claimEvent.name || "Evento"}
+                      </span>{" "}
+                      — guarda sem cooldown
+                      {status.claimEvent.tiers.length > 0
+                        ? ` para ${status.claimEvent.tiers
+                            .map((tier) => RARITY_LABEL[tier] ?? tier)
+                            .join(", ")}`
+                        : ""}
+                      .
+                    </p>
+                  </div>
+                )}
 
                 {status?.claimWarning && (
                   <div className="mx-auto mt-4 max-w-2xl border border-hairline bg-ink/60 p-3 text-left">

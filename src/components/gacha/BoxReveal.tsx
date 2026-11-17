@@ -28,6 +28,7 @@ const KIND_LABEL: Record<string, string> = {
   KEY: "Chave",
   SPIN_RESET: "Reset de giro",
   ITEM: "Item",
+  ESSENCE: "Essência",
   RARE_BOX: "Caixa rara",
   KEY_RARE_BOX: "Caixa rara + chave",
   KEY_PREMIUM_BOX: "Caixa premium + chave",
@@ -132,7 +133,8 @@ export function BoxReveal({
     reward?.category === "CARD" &&
     (reward.imageHidden === true || reward.name === "???");
   const knownReward = !!reward && isKnownBoxRewardCategory(reward.category);
-  const art = reward &&
+  const art =
+    reward &&
     knownReward &&
     !hiddenCard &&
     safeImageSrc(String(reward.imageUrl ?? reward.image ?? ""));
