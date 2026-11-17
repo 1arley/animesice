@@ -8,6 +8,7 @@ import {
   useState,
 } from "react";
 import Link from "next/link";
+import { GachaEssences } from "@/components/gacha/GachaEssences";
 import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import { useAuth } from "@/lib/auth-context";
 import { api, ApiError } from "@/lib/api";
@@ -765,6 +766,11 @@ export function GachaInventory() {
         </p>
       </header>
 
+      <GachaEssences
+        inventory={inventory}
+        refresh={refreshInventory}
+        disabled={!!busy || reconcileNeeded}
+      />
       <section
         className="mb-8 border border-hairline bg-panel p-4 sm:p-6"
         aria-labelledby="foil-gems-heading"
