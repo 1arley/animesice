@@ -1,3 +1,10 @@
+## [1.3.1](https://github.com/1arley/animesice/compare/v1.3.0...v1.3.1) (2026-11-18)
+
+
+### Bug Fixes
+
+* **gacha:** show festival cooldown immediately ([734f186](https://github.com/1arley/animesice/commit/734f186d7562576fbfbf432339fc6f0c3de43b51))
+
 # [1.3.0](https://github.com/1arley/animesice/compare/v1.2.0...v1.3.0) (2026-11-18)
 
 
