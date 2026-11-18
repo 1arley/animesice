@@ -235,6 +235,7 @@ const nextConfig: NextConfig = {
     ];
   },
   experimental: {
+    agentUpgrade: "security",
     webpackBuildWorker: false,
     optimizePackageImports: ["react", "react-dom", "socket.io-client"],
   },
