@@ -560,6 +560,72 @@ test.describe("Gacha", () => {
     await expect(page.getByRole("dialog", { name: "Invocação" })).toBeVisible();
   });
 
+  test("Festival das Cartas bloqueia o próximo resgate imediatamente", async ({
+    page,
+  }) => {
+    await blockAds(page);
+    await mockGeneric(page);
+    await loginAs(page);
+    const spinPreview = {
+      id: "spin-festival",
+      hour: new Date().toISOString(),
+      slot: 0,
+      condition: 0.04,
+      conditionLabel: "MINT",
+      foil: "GOLD",
+      value: 9500,
+      claimedAt: null,
+      expiresAt: new Date(Date.now() + 3600000).toISOString(),
+      createdAt: new Date().toISOString(),
+      pityDue: false,
+      card: {
+        id: "w-festival",
+        name: "Waifu Festival",
+        image: null,
+        rarity: "EPICA",
+        favourites: 5000,
+        animeId: null,
+        animeTitle: "Anime E2E",
+        anime: null,
+      },
+    };
+    await page.route("**/gacha/status", async (route) => {
+      const response = await route.fetch();
+      const status = await response.json();
+      await route.fulfill({
+        response,
+        json: {
+          ...status,
+          canClaim: true,
+          nextClaimAt: null,
+          claimEvent: { name: "Festival das Cartas", tiers: [] },
+        },
+      });
+    });
+    await page.route("**/gacha/spins", (route) =>
+      route.fulfill({ json: [spinPreview] }),
+    );
+    await page.goto("/gacha");
+    await expect(
+      page.getByRole("button", { name: "Pegar carta" }),
+    ).toBeEnabled();
+    await page.getByRole("button", { name: "Pegar carta" }).click();
+    const confirm = page.getByRole("dialog", { name: "Guardar carta?" });
+    await confirm.getByRole("button", { name: "Pegar carta" }).click();
+
+    await expect(
+      page.getByText(
+        "Festival das Cartas — cooldown de 1 hora para todas as raridades.",
+      ),
+    ).toBeVisible();
+    await expect(
+      page.getByText(/Próxima carta guardável em \d+m/),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Pegar carta" }),
+    ).toBeDisabled();
+  });
+
   test("em lock: aviso anti-frustração e botão de desbloqueio", async ({
     page,
   }) => {

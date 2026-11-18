@@ -19,7 +19,6 @@ import {
   gachaConditionLabel,
 } from "@/components/gacha/GachaCard";
 import { gachaRerollCost } from "@/lib/gacha-reroll";
-import { RARITY_LABEL } from "@/lib/gacha-box-reward";
 import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import { useToast } from "@/components/common/ToastProvider";
 import { SectionLabel } from "@/components/common/SectionLabel";
@@ -169,8 +168,13 @@ function GachaPageContent() {
   const [odds, setOdds] = useState<GachaEconomyOdds | null>(null);
   const [rollAnimation, setRollAnimation] = useState<Partial<RollAnimConfig>>();
   const refreshSerial = useRef(0);
+  const festivalClaimLockUntil = useRef<number | null>(null);
   const previewUserId = user?.id;
   const previewCardId = preview?.id;
+
+  useEffect(() => {
+    festivalClaimLockUntil.current = null;
+  }, [user?.id]);
 
   // Endpoint público: a linha de odds aparece para visitante anônimo também.
   useEffect(() => {
@@ -349,7 +353,21 @@ function GachaPageContent() {
       api.gachaEconomyInventory().catch(() => null),
     ]);
     if (serial !== refreshSerial.current) return;
-    if (s) setStatus(s);
+    if (s) {
+      const localLockUntil = festivalClaimLockUntil.current;
+      if (localLockUntil !== null && localLockUntil > Date.now()) {
+        const serverLockUntil = s.nextClaimAt
+          ? new Date(s.nextClaimAt).getTime()
+          : 0;
+        const nextClaimAt = new Date(
+          Math.max(localLockUntil, serverLockUntil),
+        ).toISOString();
+        setStatus({ ...s, canClaim: false, nextClaimAt });
+      } else {
+        festivalClaimLockUntil.current = null;
+        setStatus(s);
+      }
+    }
     if (r) setRecent(r);
     if (sp) setSpins(sp);
     if (economy) {
@@ -432,8 +450,23 @@ function GachaPageContent() {
             : spin,
         ),
       );
-      setStatus((prev) => (prev ? { ...prev, canClaim: false } : prev));
-      void refresh();
+      const eventLockUntil = status?.claimEvent
+        ? Date.now() + 60 * 60 * 1000
+        : null;
+      if (eventLockUntil !== null)
+        festivalClaimLockUntil.current = eventLockUntil;
+      setStatus((prev) =>
+        prev
+          ? {
+              ...prev,
+              canClaim: false,
+              ...(eventLockUntil !== null
+                ? { nextClaimAt: new Date(eventLockUntil).toISOString() }
+                : {}),
+            }
+          : prev,
+      );
+      await refresh();
     } catch (err) {
       const message =
         err instanceof ApiError ? err.message : "Erro ao guardar.";
@@ -1108,13 +1141,7 @@ function GachaPageContent() {
                       <span className="font-display">
                         {status.claimEvent.name || "Evento"}
                       </span>{" "}
-                      — guarda sem cooldown
-                      {status.claimEvent.tiers.length > 0
-                        ? ` para ${status.claimEvent.tiers
-                            .map((tier) => RARITY_LABEL[tier] ?? tier)
-                            .join(", ")}`
-                        : ""}
-                      .
+                      — cooldown de 1 hora para todas as raridades.
                     </p>
                   </div>
                 )}
