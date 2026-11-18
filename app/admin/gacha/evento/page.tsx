@@ -10,25 +10,11 @@ import {
   SensitiveWriteDialog,
   useSensitiveWrite,
 } from "@/components/admin/SensitiveWrite";
-import { RARITY_LABEL } from "@/lib/gacha-box-reward";
-
-/** Espelha GACHA_TIERS do backend (gacha-config.service.ts). */
-const TIERS = [
-  "COMUM",
-  "INCOMUM",
-  "RARA",
-  "EPICA",
-  "LENDARIA",
-  "MITICA",
-  "GALACTICA",
-] as const;
-
 interface ClaimEvent {
   active: boolean;
   name: string;
   startsAt: string | null;
   endsAt: string | null;
-  tiers: string[];
   spinsPerHour: number | null;
 }
 
@@ -37,7 +23,6 @@ const EMPTY_EVENT: ClaimEvent = {
   name: "",
   startsAt: null,
   endsAt: null,
-  tiers: [],
   spinsPerHour: null,
 };
 
@@ -137,16 +122,6 @@ export default function AdminGachaEventoPage() {
     setEvent((prev) => (prev ? { ...prev, ...partial } : prev));
   }
 
-  function toggleTier(tier: string) {
-    setEvent((prev) => {
-      if (!prev) return prev;
-      const tiers = prev.tiers.includes(tier)
-        ? prev.tiers.filter((item) => item !== tier)
-        : [...prev.tiers, tier];
-      return { ...prev, tiers };
-    });
-  }
-
   /** Atalho: janela de 7 dias começando agora (o evento desliga sozinho no fim). */
   function presetSemana() {
     const start = new Date();
@@ -173,10 +148,6 @@ export default function AdminGachaEventoPage() {
       setFieldError("Encerramento deve ser depois do início.");
       return;
     }
-    if (event.active && event.tiers.length === 0) {
-      setFieldError("Selecione ao menos uma raridade para o evento valer.");
-      return;
-    }
     if (motivoError) {
       setFieldError(motivoError);
       return;
@@ -195,7 +166,6 @@ export default function AdminGachaEventoPage() {
           name: event.name,
           startsAt: event.startsAt,
           endsAt: event.endsAt,
-          tiers: event.tiers,
           spinsPerHour: event.spinsPerHour,
         },
         motivo.trim(),
@@ -229,9 +199,9 @@ export default function AdminGachaEventoPage() {
         <GachaAdminTabs current="/admin/gacha/evento" />
       </div>
       <p className="mt-2 max-w-2xl text-body-sm text-mist">
-        Evento temporário: durante a janela, resgatar preview não cria cooldown
-        (e ignora cooldown já ativo). Desliga sozinho no fim da janela — não
-        depende de ninguém lembrar.
+        Durante a janela, cada resgate aplica cooldown de 1 hora,
+        independente da raridade. Um cooldown que já esteja ativo continua
+        valendo. O evento desliga sozinho no fim da janela.
       </p>
 
       {loadError && (
@@ -323,28 +293,6 @@ export default function AdminGachaEventoPage() {
               </button>
             )}
 
-            <fieldset className="grid gap-2">
-              <legend className="font-sans text-caption uppercase tracking-wider text-mist">
-                Raridades sem cooldown
-              </legend>
-              {TIERS.map((tier) => (
-                <label
-                  key={tier}
-                  className="flex min-h-11 cursor-pointer items-center gap-3"
-                >
-                  <input
-                    type="checkbox"
-                    className="h-4 w-4 accent-ice"
-                    checked={event.tiers.includes(tier)}
-                    disabled={!canEdit}
-                    onChange={() => toggleTier(tier)}
-                  />
-                  <span className="text-body-sm text-snow">
-                    {RARITY_LABEL[tier] ?? tier}
-                  </span>
-                </label>
-              ))}
-            </fieldset>
 
             <label className="grid gap-1.5 sm:max-w-xs" htmlFor="evento-spins">
               <span className="font-sans text-caption uppercase tracking-wider text-mist">
