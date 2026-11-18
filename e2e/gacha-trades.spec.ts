@@ -132,14 +132,14 @@ test.describe("Gacha trading — fluxo de propostas", () => {
       .filter({ hasText: "Satoru Gojo" });
     await gojoRow.getByRole("button", { name: "Recusar" }).click();
 
-    await expect(page.getByRole("heading", { name: /Recebidas \(0\)/ })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /Recebidas \(0\)/, level: 2 })).toBeVisible();
     await expect(page.getByText("Troca concluída")).toBeVisible();
     await expect(page.getByText("Troca cancelada").first()).toBeVisible();
 
     const outRow = page.locator("li", { hasText: /Você quer trocar \d+ cartas? pela\(s\) de Zoe/ });
     await outRow.getByRole("button", { name: "Cancelar" }).click();
 
-    await expect(page.getByRole("heading", { name: /Enviadas \(0\)/ })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /Enviadas \(0\)/, level: 2 })).toBeVisible();
     await expect(page.getByText("Troca cancelada").first()).toBeVisible();
     await expect(page.getByRole("heading", { name: /Histórico/ })).toBeVisible();
   });

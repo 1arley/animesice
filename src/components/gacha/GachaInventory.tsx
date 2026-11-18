@@ -177,7 +177,10 @@ export function GachaInventory() {
     currentCardsRequestKeyRef.current = currentCardsRequestKey;
     currentEligibleRequestKeyRef.current = currentEligibleRequestKey;
   }, [currentCardsRequestKey, currentEligibleRequestKey]);
-  const gemCards = cardsResultKey === currentCardsKey ? cards : [];
+  const gemCards =
+    cardsResultKey === currentCardsKey
+      ? cards.filter((card) => card.foil === "NORMAL")
+      : [];
 
   const refreshInventory = useCallback(async () => {
     if (!user) return null;
@@ -978,6 +981,9 @@ export function GachaInventory() {
             </button>
           </span>
         </div>
+        <p className="mt-3 text-xs text-mist">
+          Cartas com foil não aceitam outra gema. O foil atual é permanente.
+        </p>
         {cardsLoadError && (
           <p role="alert" className="mt-3 text-sm text-signal">
             Não foi possível atualizar estas cartas.{" "}

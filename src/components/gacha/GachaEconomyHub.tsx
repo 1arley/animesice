@@ -330,7 +330,10 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
           api.gachaEconomyOwnedSkins(),
         ]);
         setMine(
-          [...myListings.items, ...myItemListings.items].sort(
+          [
+            ...myListings.items,
+            ...myItemListings.items.filter((item) => item.itemType === "ITEM"),
+          ].sort(
             (a, b) =>
               new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
           ),
@@ -1553,7 +1556,7 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
                   cartas e Cristais escolhidos ficam reservados até a resposta.
                 </p>
                 <label className="mt-4 block text-body-sm text-snow">
-                  Cristais na proposta (opcional)
+                  Sua proposta em Cristais (opcional)
                   <input
                     type="number"
                     min={0}

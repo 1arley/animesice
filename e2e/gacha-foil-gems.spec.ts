@@ -28,7 +28,7 @@ async function blockExternalNavigation(page: Page) {
   await page.route("**/*", (route) => {
     const url = new URL(route.request().url());
     return url.hostname === "localhost" || url.hostname === "127.0.0.1"
-      ? route.continue()
+      ? route.fallback()
       : route.abort();
   });
 }
