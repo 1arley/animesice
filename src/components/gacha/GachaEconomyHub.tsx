@@ -197,12 +197,16 @@ function timeUntilReset(): string {
   return `${Math.floor(minutes / 60)}h ${minutes % 60}min`;
 }
 
-const MARKET_ACCOUNT_AGE_MS = 7 * 24 * 60 * 60 * 1000;
+const MARKET_ACCOUNT_AGE_DAYS = 7;
 
-function canUseMarket(user: User | null, now: number): boolean {
+function getMarketAccountAgeMs(): number {
+  return MARKET_ACCOUNT_AGE_DAYS * 24 * 60 * 60 * 1000;
+}
+
+function canUseMarket(user: User | null, now: number, ageMs: number): boolean {
   return (
     !!user?.isVerified &&
-    now - new Date(user.createdAt).getTime() >= MARKET_ACCOUNT_AGE_MS
+    now - new Date(user.createdAt).getTime() >= ageMs
   );
 }
 
@@ -284,9 +288,9 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
     useState<GachaCardInspection | null>(null);
   const [resetCountdown, setResetCountdown] = useState(timeUntilReset);
   const [marketClock, setMarketClock] = useState(0);
-  const marketReady = mode === "market" && canUseMarket(user, marketClock);
+  const marketReady = mode === "market" && canUseMarket(user, marketClock, getMarketAccountAgeMs());
   const accountEligibleAt = user
-    ? new Date(new Date(user.createdAt).getTime() + MARKET_ACCOUNT_AGE_MS)
+    ? new Date(new Date(user.createdAt).getTime() + getMarketAccountAgeMs())
     : null;
   const accountAgeReady =
     !!accountEligibleAt && marketClock >= accountEligibleAt.getTime();
