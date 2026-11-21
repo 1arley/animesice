@@ -1,3 +1,15 @@
+# [1.4.0](https://github.com/1arley/animesice/compare/v1.3.1...v1.4.0) (2026-11-21)
+
+
+### Bug Fixes
+
+* **deps:** upgrade Next.js 16.4.3 to 16.4.6 for security ([#46](https://github.com/1arley/animesice/issues/46)) ([5a5e479](https://github.com/1arley/animesice/commit/5a5e479f72c6a998af0987d94fcaf07f7d4c49e3))
+
+
+### Features
+
+* make market account age configurable via gacha config ([b1b2036](https://github.com/1arley/animesice/commit/b1b20368b5d778d46b332a02d768f20869b1a581))
+
 ## [1.3.1](https://github.com/1arley/animesice/compare/v1.3.0...v1.3.1) (2026-11-18)
 
 
