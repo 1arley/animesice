@@ -1,3 +1,11 @@
+# [1.5.0](https://github.com/1arley/animesice/compare/v1.4.0...v1.5.0) (2026-11-25)
+
+
+### Features
+
+* **gacha:** add social group label for gacha config ([d808d84](https://github.com/1arley/animesice/commit/d808d84b253c8a217f417a3abc343481f6e30d07))
+* **home:** refresh gacha promo card ([916a007](https://github.com/1arley/animesice/commit/916a0079864dc95a1d1afc07db1ef644977dabea))
+
 # [1.4.0](https://github.com/1arley/animesice/compare/v1.3.1...v1.4.0) (2026-11-21)
 
 
