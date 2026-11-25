@@ -29,6 +29,7 @@ const GROUP_LABELS: Record<string, string> = {
   rates: "Drop rates",
   valores: "Valores",
   eventos: "Eventos",
+  social: "Feed",
 };
 
 /** Grupos que mexem em dinheiro: precisam de confirmação e motivo antes do PATCH. */
