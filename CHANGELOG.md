@@ -1,3 +1,10 @@
+# [1.6.0](https://github.com/1arley/animesice/compare/v1.5.0...v1.6.0) (2026-11-25)
+
+
+### Features
+
+* **gacha:** add card kind support to box reveal ([66b6c25](https://github.com/1arley/animesice/commit/66b6c25ff908ea829ef444810d5bb75c288d0644))
+
 # [1.5.0](https://github.com/1arley/animesice/compare/v1.4.0...v1.5.0) (2026-11-25)
 
 
