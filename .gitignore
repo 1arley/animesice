@@ -19,6 +19,8 @@ playwright/.cache/
 # Large video files
 *.mov
 .vercel
+/.grill/
+/.jev/
 
 # manim render output + cache
 media/
