@@ -67,13 +67,25 @@ export default function HomePage() {
         )}
         <Link
           href="/gacha"
-          className="flex min-h-11 items-center justify-between gap-4 border-l-2 border-ice/60 bg-panel/60 px-4 py-4 text-snow transition-colors hover:bg-ice/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ice"
+          className="flex min-h-32 items-center justify-between gap-4 overflow-hidden border border-hairline bg-panel/60 px-4 py-5 text-snow transition-colors hover:border-ice/40 hover:bg-ice/5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ice"
         >
-          <span>
+          <span className="min-w-0">
             <span className="block font-mono text-caption uppercase tracking-wider text-ice">Sua coleção começa aqui</span>
-            <span className="mt-1 block text-body-sm">Gire seu gacha diário e colecione cartas.</span>
+            <span className="mt-1 block text-body-sm text-snow">Até 5 giros por hora para revelar cartas e completar sua coleção.</span>
+            <span className="mt-1 block text-caption text-mist">Necessário entrar com uma conta verificada para girar.</span>
+            <span className="mt-3 inline-flex min-h-11 items-center gap-2 text-body-sm font-medium text-ice">
+              Conhecer o gacha <span aria-hidden="true">↗</span>
+            </span>
           </span>
-          <span className="shrink-0 font-mono text-caption text-ice">GIRAR</span>
+          <span aria-hidden="true" className="relative h-20 w-14 shrink-0 border border-ice/40 bg-gradient-to-b from-ice/10 via-panel to-ink p-1.5 shadow-[0_8px_24px_rgba(56,189,248,0.12)] sm:h-32 sm:w-[5.5rem] sm:p-2">
+            <span className="flex h-full items-center justify-center border border-white/10 bg-[radial-gradient(ellipse_at_center,rgba(56,189,248,0.16),transparent_70%)]">
+              <svg viewBox="0 0 40 48" fill="none" className="h-9 w-8 text-ice/80 sm:h-12 sm:w-10">
+                <path d="M20 2 3.5 13.5 6.5 45h27l3-31.5L20 2Z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round" />
+                <path d="m20 2-7 11.5L20 45l7-31.5L20 2Z" fill="currentColor" fillOpacity=".12" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round" />
+                <path d="M3.5 13.5h33M13 13.5 20 45m7-31.5L20 45" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round" opacity=".6" />
+              </svg>
+            </span>
+          </span>
         </Link>
       </div>
       <Suspense fallback={<SectionFallback />}><CatalogSections /></Suspense>
