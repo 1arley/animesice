@@ -144,6 +144,7 @@ export default function AdminGachaConfigPage() {
       toast("Configuração salva.", "success");
       await load();
     } catch (e) {
+      setConfirming(false);
       setFieldError(e instanceof ApiError ? e.message : "Erro ao salvar.");
     } finally {
       setSaving(false);

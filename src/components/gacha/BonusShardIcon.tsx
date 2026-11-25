@@ -2,7 +2,7 @@ import Image from "next/image";
 import type { GachaItemKind } from "@/types";
 
 /**
- * Selo de fragmento bônus: 5% dos giros vêm com um fragmento junto (Titanita
+ * Selo de fragmento bônus: a chance é configurada no admin (Titanita
  * 50% · Magnetita 30% · Titanita Sombria 10% · Magnetita Sombria 10%).
  * Tipos internos "DRACONICA*" são os mesmos fragmentos exibidos como
  * "Magnetita*" em todo o gacha.
