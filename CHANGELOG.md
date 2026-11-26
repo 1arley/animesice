@@ -1,3 +1,15 @@
+# [1.7.0](https://github.com/1arley/animesice/compare/v1.6.0...v1.7.0) (2026-11-26)
+
+
+### Bug Fixes
+
+* **gacha:** profile trade gem/crystal flow and crystal imagery ([#47](https://github.com/1arley/animesice/issues/47)) ([2939aed](https://github.com/1arley/animesice/commit/2939aed4dd8ce345f954282c2e7b482aa799f9fd))
+
+
+### Features
+
+* **gacha:** add item exchange support to trade proposals ([bb8385d](https://github.com/1arley/animesice/commit/bb8385d49a4a00494c6decb1473638538344ad29))
+
 # [1.6.0](https://github.com/1arley/animesice/compare/v1.5.0...v1.6.0) (2026-11-25)
 
 
