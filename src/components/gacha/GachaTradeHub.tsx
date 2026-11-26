@@ -12,7 +12,8 @@ import { SearchField } from "@/components/ui/SearchField";
 import { SectionLabel } from "@/components/common/SectionLabel";
 import { UserProfilePreview } from "@/features/social/identity";
 import { useToast } from "@/components/common/ToastProvider";
-import type { GachaPull, GachaTrade, PublicUserProfile } from "@/types";
+import { inventoryAmount } from "@/components/gacha/ItemRewardPicker";
+import type { GachaPull, GachaTrade, PublicUserProfile, GachaEconomyInventory } from "@/types";
 
 const ACTIVE = "PENDING" as const;
 const STALE_RE =
@@ -684,7 +685,20 @@ function ProposalComposer({
       ? String(counterTrade.crystalsOffered)
       : "0",
   );
+  const [offeredItems, setOfferedItems] = useState<Record<string, number>>(() => {
+    if (!counterTrade) return {};
+    return Object.fromEntries(
+      (counterTrade.itemsRequested ?? []).map((item) => [item.itemId, item.quantity]),
+    );
+  });
+  const [requestedItems, setRequestedItems] = useState<Record<string, number>>(() => {
+    if (!counterTrade) return {};
+    return Object.fromEntries(
+      (counterTrade.itemsOffered ?? []).map((item) => [item.itemId, item.quantity]),
+    );
+  });
   const [available, setAvailable] = useState<number | null>(null);
+  const [inventory, setInventory] = useState<GachaEconomyInventory | null>(null);
   const { toast } = useToast();
   const searchMine = useCallback(
     (query: string) => {
@@ -717,7 +731,10 @@ function ProposalComposer({
     api
       .gachaEconomyInventory()
       .then((wallet) => {
-        if (current) setAvailable(wallet.available);
+        if (current) {
+          setAvailable(wallet.available);
+          setInventory(wallet);
+        }
       })
       .catch(() => {
         // Sem saldo conhecido: o campo de Cristais simplesmente não limita.
@@ -905,6 +922,12 @@ function ProposalComposer({
       setError("Você não tem Cristais disponíveis suficientes para oferecer.");
       return;
     }
+    const itemsOfferedPayload = Object.entries(offeredItems)
+      .filter(([, quantity]) => quantity > 0)
+      .map(([itemId, quantity]) => ({ itemId, quantity }));
+    const itemsRequestedPayload = Object.entries(requestedItems)
+      .filter(([, quantity]) => quantity > 0)
+      .map(([itemId, quantity]) => ({ itemId, quantity }));
     setBusy(true);
     setError("");
     try {
@@ -914,6 +937,8 @@ function ProposalComposer({
           requestedUserCardIds: targetCardIds,
           crystalsOffered: offered,
           crystalsRequested: requested,
+          itemsOffered: itemsOfferedPayload,
+          itemsRequested: itemsRequestedPayload,
         });
         toast("Contraproposta enviada.", "success");
       } else {
@@ -922,6 +947,8 @@ function ProposalComposer({
           requestedUserCardIds: targetCardIds,
           crystalsOffered: offered,
           crystalsRequested: requested,
+          itemsOffered: itemsOfferedPayload,
+          itemsRequested: itemsRequestedPayload,
         });
         toast("Proposta enviada.", "success");
       }
@@ -1102,6 +1129,58 @@ function ProposalComposer({
               onSearch={searchMine}
               emptyText="Sua coleção ainda não tem cartas disponíveis para troca."
             />
+          </div>
+        )}
+
+        {(inventory?.itemCatalog?.length ?? 0) > 0 && (
+          <div className="mt-4 grid gap-4 lg:grid-cols-2">
+            <section className="border border-hairline p-4">
+              <h3 className="font-display text-lg text-snow">Itens que você oferece</h3>
+              <div className="mt-3 space-y-2">
+                {inventory!.itemCatalog!.map((item) => {
+                  const count = inventoryAmount(inventory!, item.field);
+                  if (!count) return null;
+                  return (
+                    <label key={item.id} className="flex items-center justify-between gap-2 text-body-sm">
+                      <span className="min-w-0 truncate text-snow">
+                        {item.name} ({count} disponível{count === 1 ? "" : "is"})
+                      </span>
+                      <input
+                        type="number"
+                        min={0}
+                        max={count}
+                        value={offeredItems[item.id] ?? 0}
+                        onChange={(event) => {
+                          const value = Math.max(0, Math.min(count, Number(event.target.value) || 0));
+                          setOfferedItems((current) => ({ ...current, [item.id]: value }));
+                        }}
+                        className="field min-h-11 w-24"
+                      />
+                    </label>
+                  );
+                })}
+              </div>
+            </section>
+            <section className="border border-hairline p-4">
+              <h3 className="font-display text-lg text-snow">Itens que você pede</h3>
+              <div className="mt-3 space-y-2">
+                {inventory!.itemCatalog!.map((item) => (
+                  <label key={item.id} className="flex items-center justify-between gap-2 text-body-sm">
+                    <span className="min-w-0 truncate text-snow">{item.name}</span>
+                    <input
+                      type="number"
+                      min={0}
+                      value={requestedItems[item.id] ?? 0}
+                      onChange={(event) => {
+                        const value = Math.max(0, Number(event.target.value) || 0);
+                        setRequestedItems((current) => ({ ...current, [item.id]: value }));
+                      }}
+                      className="field min-h-11 w-24"
+                    />
+                  </label>
+                ))}
+              </div>
+            </section>
           </div>
         )}
 
