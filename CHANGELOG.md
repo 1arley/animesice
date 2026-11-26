@@ -1,3 +1,11 @@
+# [1.8.0](https://github.com/1arley/animesice/compare/v1.7.0...v1.8.0) (2026-11-26)
+
+
+### Features
+
+* **gacha:** restyle mercado page with premium editorial layout ([6c5bc1e](https://github.com/1arley/animesice/commit/6c5bc1edb31b104fd722a42014c20d76f0f66b4c))
+* **proxy:** normalize season slug variants to numeric form ([debe6a0](https://github.com/1arley/animesice/commit/debe6a0c73aaf71e4e0c04974509418b840771ae))
+
 # [1.7.0](https://github.com/1arley/animesice/compare/v1.6.0...v1.7.0) (2026-11-26)
 
 
