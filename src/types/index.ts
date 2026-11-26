@@ -1289,10 +1289,10 @@ export interface GachaTrade {
   crystalsOffered: number;
   /** Cristais que o requestedUser reservou enquanto PENDING. */
   crystalsRequested: number;
-  /** Itens do inventário reservados pelo offeredUser enquanto PENDING. */
-  itemsOffered?: GachaItemAmount[] | null;
-  /** Itens do inventário reservados pelo requestedUser enquanto PENDING. */
-  itemsRequested?: GachaItemAmount[] | null;
+  /** Itens reservados pelo offeredUser enquanto PENDING. */
+  itemsOffered?: GachaTradeItemAmount[] | null;
+  /** Itens reservados pelo requestedUser enquanto PENDING. */
+  itemsRequested?: GachaTradeItemAmount[] | null;
   /** Rodada da cadeia de contrapropostas (1 = proposta original). */
   round: number;
   /** Raiz da cadeia de contrapropostas. */
@@ -1300,6 +1300,10 @@ export interface GachaTrade {
   closedBy: string | null;
   /** ACCEPTED, CANCELLED, DECLINED, COUNTERED, EXPIRED, CARD_BLOCKED. */
   closedReason: string | null;
+}
+
+export interface GachaTradeItemAmount extends GachaItemAmount {
+  name: string;
 }
 
 /**
