@@ -62,7 +62,6 @@ function spinToStagePull(spin: GachaSpinPreview): GachaPull {
     value: spin.value,
     // Anúncio do fragmento bônus na prévia do palco; no claim o selo sai.
     bonusShard: spin.claimedAt == null ? (spin.bonusShard ?? null) : null,
-
     obtainedAt: spin.createdAt,
     user: { id: "", name: null, userName: null, avatar: null },
     card: spin.card,
@@ -86,7 +85,7 @@ const TIER_LABEL: Record<string, string> = {
   GALACTICA: "Galáctica",
 };
 
-/** Crystal do gacha — motivo de identidade do hero da sala. */
+/** Cristal do gacha — motivo de identidade do hero da sala. */
 function CrystalIcon({ className }: { className?: string }) {
   return (
     <svg
@@ -1072,11 +1071,11 @@ function GachaPageContent() {
                   )}
                   <span className="px-3 py-3 sm:px-4">
                     <span className="block font-mono text-[10px] uppercase tracking-wider text-mist-soft">
-                      Crystals
+                      Cristais
                     </span>
                     <span className="mt-1 block font-display text-sm text-snow">
                       <Link
-                        href="/gacha/crystals"
+                        href="/gacha/cristais"
                         className="text-ice decoration-hairline underline-offset-4 hover:text-snow hover:underline"
                       >
                         {(

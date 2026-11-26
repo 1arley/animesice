@@ -16,7 +16,7 @@ export function CrystalVideoClean({ size = 288 }: { size?: number }) {
         aria-hidden="true"
       />
       {/* Fundo preto do WebM some no fundo escuro do site via screen blend:
-          o crystal ciano adiciona luz por cima, sem keying e sem artefatos. */}
+          o cristal ciano adiciona luz por cima, sem keying e sem artefatos. */}
       <video
         src={SRC}
         muted

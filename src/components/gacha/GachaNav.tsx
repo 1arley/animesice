@@ -33,7 +33,7 @@ const items = {
     label: "Mercado Noturno",
   },
   shop: { href: "/gacha/loja", label: "Loja", icon: "shop" },
-  crystals: { href: "/gacha/crystals", label: "Crystals" },
+  crystals: { href: "/gacha/cristais", label: "Cristais" },
   inventory: { href: "/gacha/inventario", label: "Inventário" },
 } as const;
 
@@ -153,7 +153,7 @@ export function GachaNav() {
   }, [nightMarketPeriod]);
 
   const currentPath = pathname
-    .replace(/^\/gacha\/crystals(?=\/|$)/, "/gacha/crystals")
+    .replace(/^\/gacha\/crystals(?=\/|$)/, "/gacha/cristais")
     .replace(/^\/gacha\/encyclopedia(?=\/|$)/, "/gacha/enciclopedia");
   const isVisible = (item: { href: string }) =>
     item.href !== NIGHT_MARKET_HREF || nightMarketPeriod !== null;

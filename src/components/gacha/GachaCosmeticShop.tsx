@@ -109,7 +109,7 @@ export function GachaCosmeticShop({
             Capas e cosméticos
           </h2>
           <p className="mt-1 text-body-sm text-mist">
-            Use Crystals para personalizar o verso das suas cartas e o perfil.
+            Use Cristais para personalizar o verso das suas cartas e o perfil.
           </p>
         </div>
         <Link

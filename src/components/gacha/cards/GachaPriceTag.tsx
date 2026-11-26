@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 /** Linha de preço padrão dos cartões de oferta do gacha. */
 export function GachaPriceTag({
   amount,
-  suffix = "crystals",
+  suffix = "cristais",
   note,
   className = "",
 }: {

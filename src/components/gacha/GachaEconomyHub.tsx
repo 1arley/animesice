@@ -55,7 +55,7 @@ type GachaEconomyMode = "market" | "shop";
 const BOX_CATEGORY_LABEL: Record<string, string> = {
   CARD: "Carta",
   CARD_BACK: "Verso de carta",
-  CRYSTAL: "Crystals",
+  CRYSTAL: "Cristais",
   ITEM: "Itens",
   ESSENCE: "Essências",
   KEY: "Chave",
@@ -566,7 +566,7 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
     if (!orderTarget || orderTarget.itemType === "ITEM") return;
     const price = Number(orderPrice);
     if (!Number.isSafeInteger(price) || price < 1) {
-      setError("Informe uma oferta inteira em Crystals.");
+      setError("Informe uma oferta inteira em Cristais.");
       return;
     }
     const completed = await act(
@@ -580,7 +580,7 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
               : (orderTarget.item.skinId ?? orderTarget.item.id),
           price,
         }),
-      "Oferta criada. Crystals reservados.",
+      "Oferta criada. Cristais reservados.",
     );
     if (completed) {
       setOrderTarget(null);
@@ -600,7 +600,7 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
       (crystals === 0 && offerCardIds.length === 0 && offerItems.length === 0)
     ) {
       setError(
-        "Ofereça itens, até 5 cartas e/ou Crystals dentro do saldo disponível.",
+        "Ofereça itens, até 5 cartas e/ou Cristais dentro do saldo disponível.",
       );
       return;
     }
@@ -631,7 +631,7 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
     const price = Number(cardPrice);
     if (!cardCopyId || !Number.isSafeInteger(price) || price < 1) {
       setListingError(
-        "Escolha uma carta e informe um preço inteiro em Crystals.",
+        "Escolha uma carta e informe um preço inteiro em Cristais.",
       );
       return;
     }
@@ -665,7 +665,7 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
     const price = Number(skinPrice);
     if (!skinCopyId || !Number.isSafeInteger(price) || price < 1) {
       setListingError(
-        "Escolha uma skin e informe um preço inteiro em Crystals.",
+        "Escolha uma skin e informe um preço inteiro em Cristais.",
       );
       return;
     }
@@ -761,7 +761,7 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
             </h1>
             <p className="mt-2 max-w-xl text-pretty text-body-sm text-mist">
               {mode === "market"
-                ? "Anuncie cartas e skins, negocie com outros jogadores e envie propostas de troca. Crystals são a moeda do mercado; pontos contam apenas no ranking."
+                ? "Anuncie cartas e skins, negocie com outros jogadores e envie propostas de troca. Cristais são a moeda do mercado; pontos contam apenas no ranking."
                 : "Confira a seleção diária, abra caixas e encontre capas e cosméticos."}
             </p>
           </div>
@@ -772,7 +772,7 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
             <p className="mt-1 font-display text-3xl tabular-nums text-ice">
               {inventory ? inventory.available.toLocaleString("pt-BR") : "—"}
             </p>
-            <p className="text-caption text-mist">Crystals para compras</p>
+            <p className="text-caption text-mist">Cristais para compras</p>
             {inventory && inventory.reserved > 0 && (
               <p className="text-caption tabular-nums text-mist">
                 {inventory.reserved.toLocaleString("pt-BR")} reservado
@@ -780,10 +780,10 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
             )}
             {user && (
               <Link
-                href="/gacha/crystals"
+                href="/gacha/cristais"
                 className="mt-2 inline-flex min-h-11 items-center text-body-sm text-ice hover:underline"
               >
-                Comprar Crystals
+                Comprar Cristais
               </Link>
             )}
           </div>
@@ -1027,7 +1027,7 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
                   >
                     {busy === "key"
                       ? "Comprando…"
-                      : `Comprar chave · ${odds.keyPrice.toLocaleString("pt-BR")} crystals`}
+                      : `Comprar chave · ${odds.keyPrice.toLocaleString("pt-BR")} cristais`}
                   </button>
                 </div>
               </div>
@@ -1072,7 +1072,7 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
                         </span>
                       </div>
                       <p className="mt-4 font-display text-2xl tabular-nums text-ice">
-                        {odds.boxPrices[tier].toLocaleString("pt-BR")} crystals
+                        {odds.boxPrices[tier].toLocaleString("pt-BR")} cristais
                       </p>
                       <p className="mt-2 min-h-10 text-caption text-mist">
                         {canOpen
@@ -1109,7 +1109,7 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
                         )}
                         {!canOpen && shortfall > 0 && (
                           <p role="status" className="text-caption text-mist">
-                            Faltam {shortfall.toLocaleString("pt-BR")} crystals.
+                            Faltam {shortfall.toLocaleString("pt-BR")} cristais.
                           </p>
                         )}
                         <button
@@ -1182,7 +1182,7 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
                   <p className="mt-1 text-body-sm text-mist">
                     Assistindo episódios hoje:{" "}
                     {(inventory?.watchEarnedToday ?? 0).toLocaleString("pt-BR")}{" "}
-                    Crystals
+                    Cristais
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -1193,7 +1193,7 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
                       void act(
                         "daily",
                         api.gachaEconomyDaily,
-                        `+${odds?.dailyBonus ?? 350} Crystals resgatados.`,
+                        `+${odds?.dailyBonus ?? 350} Cristais resgatados.`,
                       )
                     }
                     className="btn-ghost min-h-11 px-4"
@@ -1410,7 +1410,7 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
                 <div className="flex justify-between gap-3">
                   <dt>Preço</dt>
                   <dd className="text-ice">
-                    {purchase.price.toLocaleString("pt-BR")} crystals
+                    {purchase.price.toLocaleString("pt-BR")} cristais
                   </dd>
                 </div>
                 <div className="flex justify-between gap-3">
@@ -1420,7 +1420,7 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
                       0,
                       (inventory?.available ?? 0) - purchase.price,
                     ).toLocaleString("pt-BR")}{" "}
-                    crystals
+                    cristais
                   </dd>
                 </div>
               </dl>
@@ -1464,7 +1464,7 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
                   <dt className="text-mist">Preço mediano</dt>
                   <dd className="tabular-nums text-ice">
                     {history.data.median?.toLocaleString("pt-BR") ?? "—"}{" "}
-                    crystals
+                    cristais
                   </dd>
                 </div>
                 <div className="flex justify-between py-3">
@@ -1499,11 +1499,11 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
               <form onSubmit={(event) => void createOrder(event)}>
                 <p id="order-hint" className="text-body-sm text-mist">
                   Esta ordem vale para qualquer anúncio compatível, não é
-                  enviada diretamente a este vendedor. Os Crystals ficam
+                  enviada diretamente a este vendedor. Os Cristais ficam
                   reservados até uma compra, o cancelamento ou a expiração.
                 </p>
                 <label className="mt-5 block text-body-sm text-snow">
-                  Valor em Crystals
+                  Valor em Cristais
                   <input
                     name="order-price"
                     type="number"
@@ -1529,7 +1529,7 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
                   disabled={busy !== null || !inventory?.available}
                   className="btn-ice mt-4 min-h-11 w-full px-4"
                 >
-                  {busy ? "Reservando…" : "Reservar crystals"}
+                  {busy ? "Reservando…" : "Reservar cristais"}
                 </button>
               </form>
             </Modal>
@@ -1557,10 +1557,10 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
               <form onSubmit={(event) => void createMarketOffer(event)}>
                 <p className="text-body-sm text-mist">
                   Sua proposta vai diretamente para quem anunciou. Os itens,
-                  cartas e Crystals escolhidos ficam reservados até a resposta.
+                  cartas e Cristais escolhidos ficam reservados até a resposta.
                 </p>
                 <label className="mt-4 block text-body-sm text-snow">
-                  Sua proposta em Crystals (opcional)
+                  Sua proposta em Cristais (opcional)
                   <input
                     type="number"
                     min={0}
@@ -1688,14 +1688,14 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
                 <p className="mt-4 text-body-sm text-ice" aria-live="polite">
                   Proposta:{" "}
                   {Number(offerCrystals || "0").toLocaleString("pt-BR")}{" "}
-                  Crystals + {offerCardIds.length} carta(s) +{" "}
+                  Cristais + {offerCardIds.length} carta(s) +{" "}
                   {offerItems
                     .reduce((sum, row) => sum + row.quantity, 0)
                     .toLocaleString("pt-BR")}{" "}
                   item(ns).
                 </p>
                 <p className="mt-4 text-caption text-mist">
-                  Crystals são a moeda do mercado. Pontos de ranking não podem
+                  Cristais são a moeda do mercado. Pontos de ranking não podem
                   ser usados em propostas.
                 </p>
                 {error && (
@@ -1877,7 +1877,7 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
                       )}
                   </fieldset>
                   <label className="text-body-sm text-mist">
-                    Quanto quer receber (Crystals)
+                    Quanto quer receber (Cristais)
                     <input
                       name="card-price"
                       type="number"
@@ -1895,7 +1895,7 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
                       id="card-price-help"
                       className="mt-1 block text-caption text-mist"
                     >
-                      Informe um valor inteiro, a partir de 1 crystal.
+                      Informe um valor inteiro, a partir de 1 cristal.
                     </span>
                   </label>
                   <button
@@ -1990,7 +1990,7 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
                     )}
                   </fieldset>
                   <label className="text-body-sm text-mist">
-                    Quanto quer receber (Crystals)
+                    Quanto quer receber (Cristais)
                     <input
                       name="skin-price"
                       type="number"
@@ -2008,7 +2008,7 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
                       id="skin-price-help"
                       className="mt-1 block text-caption text-mist"
                     >
-                      Informe um valor inteiro, a partir de 1 crystal.
+                      Informe um valor inteiro, a partir de 1 cristal.
                     </span>
                   </label>
                   <button
@@ -2042,7 +2042,7 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
                   items={mine.map((listing) => ({
                     id: listing.id,
                     name: itemName(listing),
-                    detail: `${listing.price.toLocaleString("pt-BR")} crystals · ${timeLeft(listing.expiresAt)}`,
+                    detail: `${listing.price.toLocaleString("pt-BR")} cristais · ${timeLeft(listing.expiresAt)}`,
                     cancel: async () => {
                       if (
                         !window.confirm(
@@ -2071,11 +2071,11 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
                     id: order.id,
                     name:
                       order.card?.name ?? order.skin?.name ?? order.itemType,
-                    detail: `${order.price.toLocaleString("pt-BR")} crystals · ${timeLeft(order.expiresAt)}`,
+                    detail: `${order.price.toLocaleString("pt-BR")} cristais · ${timeLeft(order.expiresAt)}`,
                     cancel: async () => {
                       if (
                         !window.confirm(
-                          "Cancelar esta oferta e liberar os crystals?",
+                          "Cancelar esta oferta e liberar os cristais?",
                         )
                       )
                         return;
@@ -2358,7 +2358,7 @@ function ShopOfferSection({
                 price={
                   <GachaPriceTag
                     amount={offer.price.toLocaleString("pt-BR")}
-                    suffix="Crystals"
+                    suffix="Cristais"
                   />
                 }
                 notes={
@@ -2366,7 +2366,7 @@ function ShopOfferSection({
                     {offer.purchasedAt
                       ? "Esta oferta já foi comprada."
                       : shortfall > 0
-                        ? `Faltam ${shortfall.toLocaleString("pt-BR")} Crystals.`
+                        ? `Faltam ${shortfall.toLocaleString("pt-BR")} Cristais.`
                         : "Disponível · 1 compra por oferta"}
                   </p>
                 }
@@ -2617,7 +2617,7 @@ function MarketSection({
               {marketReady && available < listing.price && (
                 <p className="mt-2 text-caption text-mist">
                   Faltam {(listing.price - available).toLocaleString("pt-BR")}{" "}
-                  crystals.
+                  cristais.
                 </p>
               )}
               <p className="mt-2 text-caption text-mist">

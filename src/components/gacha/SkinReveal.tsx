@@ -816,7 +816,7 @@ export function SkinReveal({ skin, onClose }: SkinRevealProps) {
             className="relative aspect-square"
             style={{ transformStyle: flat ? "flat" : "preserve-3d", transform: flat ? "none" : undefined }}
           >
-            {/* Frente: crystal de invocação */}
+            {/* Frente: cristal de invocação */}
             <div
               data-card-front
               aria-hidden="true"

@@ -725,7 +725,7 @@ export function GachaInventory() {
     buyPrice <= 0
       ? "Este item não está disponível para compra."
       : inventory.available < buyPrice * quantity
-        ? "Saldo de crystals insuficiente."
+        ? "Saldo de cristais insuficiente."
         : "";
   const convertReason =
     inventory[stone.shards] < quantity
@@ -743,7 +743,7 @@ export function GachaInventory() {
     protectionPrice <= 0
       ? "Proteção indisponível para compra."
       : inventory.available < protectionPrice * protectionQuantity
-        ? "Saldo de crystals insuficiente."
+        ? "Saldo de cristais insuficiente."
         : "";
   const shopEnabled = config.item_shop_enabled?.[selectedKind] ?? buyPrice > 0;
   const protectionShopEnabled =
@@ -921,7 +921,7 @@ export function GachaInventory() {
                 setGemCardId("");
                 setGemCard(null);
                 setGemStatus(
-                  `Gema ${gemType.label} aplicada a ${updatedCard.card.name}. A carta agora tem foil ${updatedCard.foil} e valor de ${updatedCard.value.toLocaleString("pt-BR")} crystals.`,
+                  `Gema ${gemType.label} aplicada a ${updatedCard.card.name}. A carta agora tem foil ${updatedCard.foil} e valor de ${updatedCard.value.toLocaleString("pt-BR")} cristais.`,
                 );
                 try {
                   await refresh();
@@ -1018,8 +1018,8 @@ export function GachaInventory() {
         className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-4 xl:grid-cols-8"
       >
         {[
-          { label: "Crystals disponíveis", value: inventory.available },
-          { label: "Crystals reservados", value: inventory.reserved },
+          { label: "Cristais disponíveis", value: inventory.available },
+          { label: "Cristais reservados", value: inventory.reserved },
           {
             label: "Caixas",
             value:
@@ -1199,7 +1199,7 @@ export function GachaInventory() {
                 </button>
                 <p className="mt-1 min-h-10 text-xs text-mist">
                   {buyReason ||
-                    `${(buyPrice * quantity).toLocaleString("pt-BR")} crystals · ${buyPrice.toLocaleString("pt-BR")} cada`}
+                    `${(buyPrice * quantity).toLocaleString("pt-BR")} cristais · ${buyPrice.toLocaleString("pt-BR")} cada`}
                 </p>
               </div>
             )}
@@ -1221,7 +1221,7 @@ export function GachaInventory() {
               </button>
               <p className="mt-1 min-h-10 text-xs text-mist">
                 {convertReason ||
-                  `Recebe ${(convertValue * quantity).toLocaleString("pt-BR")} crystals`}
+                  `Recebe ${(convertValue * quantity).toLocaleString("pt-BR")} cristais`}
               </p>
             </div>
             <div>
@@ -1362,7 +1362,7 @@ export function GachaInventory() {
               </button>
               <p className="mt-1 text-xs text-mist">
                 {protectionReason ||
-                  `${(protectionPrice * protectionQuantity).toLocaleString("pt-BR")} crystals · ${protectionPrice.toLocaleString("pt-BR")} cada`}
+                  `${(protectionPrice * protectionQuantity).toLocaleString("pt-BR")} cristais · ${protectionPrice.toLocaleString("pt-BR")} cada`}
               </p>
             </div>
           ) : config.item_drop_available?.PROTECAO === true ? (
@@ -1534,7 +1534,7 @@ export function GachaInventory() {
               </p>
               <p className="mt-1 text-sm text-mist">
                 Valor: {selectedCard.value.toLocaleString("pt-BR")} →{" "}
-                {afterValue?.toLocaleString("pt-BR") ?? "indisponível"} crystals
+                {afterValue?.toLocaleString("pt-BR") ?? "indisponível"} cristais
               </p>
               <p className="mt-1 text-sm text-mist">
                 Foil mantido: {selectedCard.foil}

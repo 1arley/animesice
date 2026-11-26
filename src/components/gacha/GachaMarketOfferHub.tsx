@@ -35,7 +35,7 @@ function OfferCard({
   const name = personName(counterparty);
   const amounts = [
     offer.crystals > 0
-      ? `${offer.crystals.toLocaleString("pt-BR")} Crystals`
+      ? `${offer.crystals.toLocaleString("pt-BR")} Cristais`
       : null,
     offer.offeredCards.length > 0
       ? `${offer.offeredCards.length} carta${offer.offeredCards.length > 1 ? "s" : ""}`
@@ -83,7 +83,7 @@ function OfferCard({
                   ? `${offer.listing.item.quantity ?? 1} itens`
                   : "Skin"}{" "}
               · preço pedido {offer.listing.price.toLocaleString("pt-BR")}{" "}
-              Crystals
+              Cristais
             </p>
           )}
         </div>
@@ -241,7 +241,7 @@ export function GachaMarketOfferHub({
             Propostas do mercado
           </h2>
           <p className="mt-1 max-w-2xl text-body-sm text-mist">
-            Negocie um anúncio por Crystals, cartas ou uma combinação dos dois.
+            Negocie um anúncio por Cristais, cartas ou uma combinação dos dois.
             Os itens ficam reservados até a resposta.
           </p>
         </div>

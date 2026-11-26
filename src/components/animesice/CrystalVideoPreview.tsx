@@ -28,7 +28,7 @@ void main() {
     return;
   }
   // distância do branco (0..1) + chave suave + despill contra o branco:
-  // recupera a cor pura do crystal nas bordas, sem anel acinzentado.
+  // recupera a cor pura do cristal nas bordas, sem anel acinzentado.
   float d = 1.0 - min(min(c.r, c.g), c.b);
   float a = smoothstep(${KEY_A0.toFixed(4)}, ${KEY_A1.toFixed(4)}, d);
   vec3 col = (c.rgb - (1.0 - a)) / max(a, ${DESPILL_FLOOR.toFixed(2)});

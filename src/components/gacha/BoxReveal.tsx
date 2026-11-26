@@ -24,7 +24,7 @@ const NO_METADATA_GRACE_MS = 4000;
 const ENDED_GRACE_MS = 1200;
 
 const KIND_LABEL: Record<string, string> = {
-  CRYSTAL: "Crystals",
+  CRYSTAL: "Cristais",
   KEY: "Chave",
   SPIN_RESET: "Reset de giro",
   ITEM: "Item",
@@ -159,8 +159,8 @@ export function BoxReveal({
   const stackableTitle =
     reward?.category === "CRYSTAL"
       ? amount === 1
-        ? "Crystal"
-        : "Crystals"
+        ? "Cristal"
+        : "Cristais"
       : reward?.category === "KEY"
         ? amount === 1
           ? "Chave"

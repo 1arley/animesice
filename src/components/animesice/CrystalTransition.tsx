@@ -10,7 +10,7 @@ const WIPE_MS = 550;
 
 /**
  * Transição de tela (identidade de motion): o wipe de 0.55s entre rotas —
- * o crystal vem de um foco curto e direcional enquanto o conteúdo troca.
+ * o cristal vem de um foco curto e direcional enquanto o conteúdo troca.
  * Não bloqueia navegação: pointer-events none e sobreposição em fade rápido.
  */
 export function CrystalTransition() {

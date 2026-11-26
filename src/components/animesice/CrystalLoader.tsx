@@ -3,13 +3,13 @@ import { CrystalMotion } from "@/components/animesice/CrystalMotion";
 interface CrystalLoaderProps {
   /** Label do estado de carregamento (voz do canal). */
   label?: string;
-  /** Lado do crystal em px. */
+  /** Lado do cristal em px. */
   size?: number;
   className?: string;
 }
 
 /**
- * Estado de loading com a identidade de motion: o crystal já nítido,
+ * Estado de loading com a identidade de motion: o cristal já nítido,
  * respirando — glow pulsando a cada ~2,6s.
  * Baixo contraste para não cansar em esperas longas.
  */

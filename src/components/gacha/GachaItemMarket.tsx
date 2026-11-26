@@ -111,7 +111,7 @@ export function GachaItemMarket({
       amount > 2147483647
     ) {
       setError(
-        "Escolha um item disponível, quantidade válida e preço inteiro em Crystals.",
+        "Escolha um item disponível, quantidade válida e preço inteiro em Cristais.",
       );
       return;
     }
@@ -194,7 +194,7 @@ export function GachaItemMarket({
                 </h3>
                 <p className="mt-2 text-body-sm text-mist">
                   {units.toLocaleString("pt-BR")} unidades ·{" "}
-                  {listing.price.toLocaleString("pt-BR")} Crystals pelo lote
+                  {listing.price.toLocaleString("pt-BR")} Cristais pelo lote
                 </p>
                 <p className="mt-1 text-caption text-mist">
                   {listing.user?.name ??
@@ -237,7 +237,7 @@ export function GachaItemMarket({
                         onClick={() => {
                           if (
                             window.confirm(
-                              `Comprar ${units}× ${listing.item.name ?? "item"} por ${listing.price} Crystals?`,
+                              `Comprar ${units}× ${listing.item.name ?? "item"} por ${listing.price} Cristais?`,
                             )
                           )
                             void transact(
@@ -273,7 +273,7 @@ export function GachaItemMarket({
                           setHistory(
                             result.median === null
                               ? "Ainda não há vendas deste item."
-                              : `${listing.item.name}: mediana de ${result.median.toLocaleString("pt-BR")} Crystals por unidade em ${result.volume} venda(s).`,
+                              : `${listing.item.name}: mediana de ${result.median.toLocaleString("pt-BR")} Cristais por unidade em ${result.volume} venda(s).`,
                           ),
                         )
                         .catch(() =>
@@ -369,7 +369,7 @@ export function GachaItemMarket({
               />
             </label>
             <label className="text-body-sm text-snow">
-              Preço total em Crystals
+              Preço total em Cristais
               <input
                 type="number"
                 min={1}

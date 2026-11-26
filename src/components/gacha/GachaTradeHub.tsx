@@ -12,6 +12,7 @@ import { SearchField } from "@/components/ui/SearchField";
 import { SectionLabel } from "@/components/common/SectionLabel";
 import { UserProfilePreview } from "@/features/social/identity";
 import { useToast } from "@/components/common/ToastProvider";
+import { inventoryAmount } from "@/components/gacha/ItemRewardPicker";
 import type { GachaPull, GachaTrade, PublicUserProfile, GachaEconomyInventory } from "@/types";
 
 const ACTIVE = "PENDING" as const;
@@ -736,7 +737,7 @@ function ProposalComposer({
         }
       })
       .catch(() => {
-        // Sem saldo conhecido: o campo de Crystals simplesmente não limita.
+        // Sem saldo conhecido: o campo de Cristais simplesmente não limita.
         if (current) setAvailable(null);
       });
 
@@ -918,7 +919,7 @@ function ProposalComposer({
     const offered = parseCrystals(crystalsOffered);
     const requested = parseCrystals(crystalsRequested);
     if (maxAvailable !== null && offered > maxAvailable) {
-      setError("Você não tem Crystals disponíveis suficientes para oferecer.");
+      setError("Você não tem Cristais disponíveis suficientes para oferecer.");
       return;
     }
     const itemsOfferedPayload = Object.entries(offeredItems)
@@ -1006,7 +1007,7 @@ function ProposalComposer({
       >
         <p className="text-body-sm text-mist">
           {counterTrade
-            ? `Ajuste as cartas e Crystals para contra-propor a troca para ${counterpartyName}. Ao enviar, a proposta anterior será cancelada e substituída por esta nova rodada.`
+            ? `Ajuste as cartas e Cristais para contra-propor a troca para ${counterpartyName}. Ao enviar, a proposta anterior será cancelada e substituída por esta nova rodada.`
             : "Primeiro escolha a pessoa e as cartas que quer receber. Depois selecione as cartas da sua coleção que vai oferecer."}
         </p>
 
@@ -1137,7 +1138,7 @@ function ProposalComposer({
               <h3 className="font-display text-lg text-snow">Itens que você oferece</h3>
               <div className="mt-3 space-y-2">
                 {inventory!.itemCatalog!.map((item) => {
-                  const count = Number((inventory as unknown as Record<string, unknown>)[item.field] ?? 0);
+                  const count = inventoryAmount(inventory!, item.field);
                   if (!count) return null;
                   return (
                     <label key={item.id} className="flex items-center justify-between gap-2 text-body-sm">
@@ -1185,7 +1186,7 @@ function ProposalComposer({
 
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
           <label className="text-body-sm text-snow">
-            Crystals que você oferece
+            Cristais que você oferece
             <input
               type="number"
               min={0}
@@ -1199,7 +1200,7 @@ function ProposalComposer({
             />
           </label>
           <label className="text-body-sm text-snow">
-            Crystals que você pede
+            Cristais que você pede
             <input
               type="number"
               min={0}
@@ -1217,7 +1218,7 @@ function ProposalComposer({
           {maxAvailable !== null && (
             <span className="block mb-2">
               Disponíveis para esta troca:{" "}
-              {maxAvailable.toLocaleString("pt-BR")} Crystals.
+              {maxAvailable.toLocaleString("pt-BR")} Cristais.
             </span>
           )}
           {counterTrade ? "Sua contraproposta" : "Sua proposta"}:{" "}
@@ -1226,10 +1227,10 @@ function ProposalComposer({
           {targetCardIds.length === 1 ? "" : "s"} solicitada
           {targetCardIds.length === 1 ? "" : "s"}
           {parseCrystals(crystalsOffered) > 0
-            ? ` · ${parseCrystals(crystalsOffered).toLocaleString("pt-BR")} Crystals oferecidos`
+            ? ` · ${parseCrystals(crystalsOffered).toLocaleString("pt-BR")} Cristais oferecidos`
             : ""}
           {parseCrystals(crystalsRequested) > 0
-            ? ` · ${parseCrystals(crystalsRequested).toLocaleString("pt-BR")} Crystals pedidos`
+            ? ` · ${parseCrystals(crystalsRequested).toLocaleString("pt-BR")} Cristais pedidos`
             : ""}
         </p>
         {parseCrystals(crystalsOffered) > 0 && (
@@ -1238,7 +1239,7 @@ function ProposalComposer({
             className="mt-2 border border-ice/30 bg-ice/5 p-3 text-body-sm text-ice"
           >
             Atenção: {parseCrystals(crystalsOffered).toLocaleString("pt-BR")}{" "}
-            Crystals ficarão bloqueados assim que você enviar esta proposta.
+            Cristais ficarão bloqueados assim que você enviar esta proposta.
           </p>
         )}
 
@@ -1252,7 +1253,7 @@ function ProposalComposer({
         )}
 
         <p className="mt-4 text-caption text-mist">
-          Os Crystals oferecidos ficam reservados assim que a proposta é
+          Os Cristais oferecidos ficam reservados assim que a proposta é
           enviada. Eles só serão transferidos se a troca for aceita; cancelar,
           recusar ou expirar libera a reserva.
         </p>

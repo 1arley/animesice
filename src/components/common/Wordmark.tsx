@@ -6,10 +6,10 @@ import { GradientText } from "@/components/core/GradientText";
 
 /**
  * Wordmark autoral AnimesIce.
- * O crystal de gelo do mascote (mesma arte do favicon em /images) é a marca;
+ * O cristal de gelo do mascote (mesma arte do favicon em /images) é a marca;
  * "Animes" em snow (branco frio) para não sumir no fundo — antes usava ink,
  * que desaparecia.
- * Microinteração da identidade de motion: no toque/hover, o crystal pulsa a
+ * Microinteração da identidade de motion: no toque/hover, o cristal pulsa a
  * 1.035x — o mesmo gesto do resto da marca.
  * A pulso usa a Web Animations API (WAAPI), que não força reflow síncrono
  * (o antigo `void el.offsetWidth` era lido em todo toque no wordmark).

@@ -49,7 +49,7 @@ export default function AdminCrystalCodesPage() {
   const rewardLabel = (code: Pick<GachaRewardCode, "crystals" | "items">) =>
     [
       code.crystals > 0
-        ? `${code.crystals.toLocaleString("pt-BR")} Crystals`
+        ? `${code.crystals.toLocaleString("pt-BR")} Cristais`
         : "",
       ...(code.items ?? []).map(
         (item) =>
@@ -229,7 +229,7 @@ export default function AdminCrystalCodesPage() {
         <GachaAdminTabs current="/admin/gacha/codigos" />
       </div>
       <p className="mt-2 max-w-2xl text-mist">
-        Distribua Crystals e itens do inventário em um único pacote. Cada pessoa
+        Distribua Cristais e itens do inventário em um único pacote. Cada pessoa
         pode resgatar cada código uma vez.
       </p>
       {error && (
@@ -271,7 +271,7 @@ export default function AdminCrystalCodesPage() {
             />
           </label>
           <label className="text-body-sm text-snow">
-            Crystals
+            Cristais
             <input
               className="field mt-2 min-h-11 w-full"
               type="number"
