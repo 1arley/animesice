@@ -80,7 +80,7 @@ export default function GachaCrystalsPage() {
         : [];
       const rewards = [
         result.crystals > 0
-          ? `${result.crystals.toLocaleString("pt-BR")} Cristais`
+          ? `${result.crystals.toLocaleString("pt-BR")} Crystals`
           : "",
         ...(result.items ?? []).map(
           (item) =>
@@ -133,7 +133,7 @@ export default function GachaCrystalsPage() {
       setEvents((prev) => (append ? [...prev, ...data.events] : data.events));
       setPage(target);
     } catch {
-      setError("Não foi possível carregar seus cristais.");
+      setError("Não foi possível carregar seus crystals.");
     } finally {
       setLoading(false);
     }
@@ -182,7 +182,7 @@ export default function GachaCrystalsPage() {
     return (
       <main className="mx-auto max-w-shelf px-4 py-16">
         <Link href="/login" className="text-ice">
-          Entre para ver seus cristais.
+          Entre para ver seus crystals.
         </Link>
       </main>
     );
@@ -193,10 +193,10 @@ export default function GachaCrystalsPage() {
         <div>
           <p className="shelf-label">Gacha / Sua carteira</p>
           <h1 className="font-display text-3xl text-snow sm:text-4xl">
-            Cristais
+            Crystals
           </h1>
           <p className="mt-2 max-w-xl text-body-sm text-mist">
-            Compre Cristais e acompanhe seu saldo e extrato. Ofertas e
+            Compre Crystals e acompanhe seu saldo e extrato. Ofertas e
             recompensas diárias ficam na Loja.
           </p>
         </div>
@@ -218,7 +218,7 @@ export default function GachaCrystalsPage() {
               href="#crystal-packages"
               className="inline-flex min-h-11 items-center text-body-sm text-ice hover:underline"
             >
-              Adicionar cristais
+              Adicionar crystals
             </a>
           </div>
           <p
@@ -248,7 +248,7 @@ export default function GachaCrystalsPage() {
             Tem um código?
           </label>
           <p id="crystal-code-hint" className="mt-2 text-body-sm text-mist">
-            Resgate aqui os cristais de um código promocional.
+            Resgate aqui os crystals de um código promocional.
           </p>
           <div className="mt-5 flex flex-wrap gap-2">
             <input
@@ -277,7 +277,7 @@ export default function GachaCrystalsPage() {
         className="mt-6 flex flex-wrap gap-2 border-b border-hairline pb-4"
       >
         <a href="#crystal-packages" className="btn-ghost min-h-11 px-4">
-          Comprar cristais
+          Comprar crystals
         </a>
         <Link href="/gacha/loja#cosmetics" className="btn-ghost min-h-11 px-4">
           Capas e cosméticos
@@ -318,7 +318,7 @@ export default function GachaCrystalsPage() {
               tabIndex={-1}
               className="font-display text-2xl text-snow"
             >
-              Comprar cristais
+              Comprar crystals
             </h2>
             <p className="mt-1 text-body-sm text-mist">
               Escolha um pacote e pague via Pix. O saldo é atualizado após a
@@ -335,7 +335,7 @@ export default function GachaCrystalsPage() {
               as="li"
               key={pack.id}
               caption={<span className="text-mist">Pacote</span>}
-              title={`${pack.crystals.toLocaleString("pt-BR")} cristais`}
+              title={`${pack.crystals.toLocaleString("pt-BR")} crystals`}
               price={
                 <p className="font-sans text-lg tabular-nums text-snow">
                   {(pack.cents / 100).toLocaleString("pt-BR", {
@@ -416,7 +416,7 @@ export default function GachaCrystalsPage() {
       {loading ? (
         <GachaRowsSkeleton
           count={5}
-          label="Carregando extrato de cristais"
+          label="Carregando extrato de crystals"
           className="mt-3"
         />
       ) : events.length === 0 ? (
@@ -455,7 +455,7 @@ export default function GachaCrystalsPage() {
                 }`}
               >
                 {event.delta >= 0 ? "+" : ""}
-                {event.delta.toLocaleString("pt-BR")} cristais
+                {event.delta.toLocaleString("pt-BR")} crystals
               </span>
             </li>
           ))}

@@ -559,7 +559,7 @@ export function RollStage({ pull, onClose, preview = false, config }: RollStageP
     const stopAtImpact: Killable[] = [];
     const isMobile = window.matchMedia("(max-width: 480px)").matches;
     // ponytail: o brilho de raridade só entra depois que o giro central acaba de fato.
-    // O max espelha a duração real do tween do cristal (Math.max(0.75, ...)), senão
+    // O max espelha a duração real do tween do crystal (Math.max(0.75, ...)), senão
     // crystalSpinDuration curto deixa a troca de cor atropelar o giro de novo.
     const spinEnd = cfg.crystalSpinAt + Math.max(0.75, cfg.crystalSpinDuration);
     const invocationEnd = Math.max(1.1, cfg.revealAt, spinEnd);
@@ -868,11 +868,11 @@ export function RollStage({ pull, onClose, preview = false, config }: RollStageP
       if (stage && epicUp) resultTl.to(stage, { scale: 1, duration: impactDur + 0.1, ease: "power3.out" }, impactAt);
       if (auras.length) resultTl.to(auras, { opacity: 0, scale: 1.5, duration: 0.4, ease: "power2.out" }, impactAt + 0.05);
       if (crystal) resultTl.to(crystal, { scale: 1.9, opacity: 0, duration: impactDur, ease: "power2.out" }, impactAt);
-      // Mítica: fragmentos do cristal explodem em direções opostas.
+      // Mítica: fragmentos do crystal explodem em direções opostas.
       if (resultIndex === IDX_MYTHIC && !compact) {
         const frags = all<HTMLElement>("[data-crystal-frag]");
         if (frags.length) {
-          // Torna os fragmentos visíveis junto com o cristal principal saindo.
+          // Torna os fragmentos visíveis junto com o crystal principal saindo.
           resultTl.set(frags, { opacity: 1, x: 0, y: 0, scale: 1, rotation: 0 }, impactAt);
           const angles = [0, 72, 144, 216, 288];
           frags.forEach((frag, fi) => {
@@ -1357,7 +1357,7 @@ export function RollStage({ pull, onClose, preview = false, config }: RollStageP
                 <span className="absolute inset-7 border border-ice/25" />
               </div>
               {showCrystalFragments && (
-                // 5 fragmentos do cristal — escondidos até o impacto de Mítica,
+                // 5 fragmentos do crystal — escondidos até o impacto de Mítica,
                 // quando explodem em direções radiais pela timeline.
                 <div aria-hidden="true" className="pointer-events-none absolute inset-0 flex items-center justify-center">
                   {[0, 72, 144, 216, 288].map((deg, fi) => (

@@ -151,7 +151,7 @@ function CardInspectionPreview({
           )}
           {inspection.price != null && (
             <p className="mt-5 border-t border-hairline pt-4 font-display text-xl tabular-nums text-ice">
-              {inspection.price.toLocaleString("pt-BR")} Cristais
+              {inspection.price.toLocaleString("pt-BR")} Crystals
             </p>
           )}
         </div>

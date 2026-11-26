@@ -7,7 +7,7 @@ import { useFinePointer } from "@/lib/use-fine-pointer";
 import { usePrefersReducedMotion } from "@/lib/use-prefers-reduced-motion";
 
 /**
- * IceBeamDivider — "feixe de sinal" que separa o hero do momento de cristal.
+ * IceBeamDivider — "feixe de sinal" que separa o hero do momento de crystal.
  *
  * O feixe "liga" ao entrar na viewport: o núcleo cresce a partir do centro e
  * os fragmentos de gelo entram pelas laterais.

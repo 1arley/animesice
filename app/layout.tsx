@@ -160,7 +160,7 @@ export default function RootLayout({
           <ToastProvider>{children}</ToastProvider>
           <CompensationModal />
         </AuthProvider>
-        {/* Abertura da identidade de motion: cristal em foco puxado, uma vez
+        {/* Abertura da identidade de motion: crystal em foco puxado, uma vez
             por sessão, dispensável a qualquer toque/tecla. Nunca bloqueia. */}
         <CrystalSplash />
         <Script src="/popunder.js" strategy="afterInteractive" />

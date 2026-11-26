@@ -294,7 +294,7 @@ export function GachaEssences({
                       })
                     }
                   >
-                    Comprar · {price.toLocaleString("pt-BR")} Cristais
+                    Comprar · {price.toLocaleString("pt-BR")} Crystals
                   </button>
                 )}
               </div>

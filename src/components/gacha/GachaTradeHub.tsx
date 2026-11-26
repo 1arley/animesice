@@ -12,7 +12,7 @@ import { SearchField } from "@/components/ui/SearchField";
 import { SectionLabel } from "@/components/common/SectionLabel";
 import { UserProfilePreview } from "@/features/social/identity";
 import { useToast } from "@/components/common/ToastProvider";
-import type { GachaPull, GachaTrade, PublicUserProfile } from "@/types";
+import type { GachaPull, GachaTrade, PublicUserProfile, GachaEconomyInventory } from "@/types";
 
 const ACTIVE = "PENDING" as const;
 const STALE_RE =
@@ -684,7 +684,20 @@ function ProposalComposer({
       ? String(counterTrade.crystalsOffered)
       : "0",
   );
+  const [offeredItems, setOfferedItems] = useState<Record<string, number>>(() => {
+    if (!counterTrade) return {};
+    return Object.fromEntries(
+      (counterTrade.itemsRequested ?? []).map((item) => [item.itemId, item.quantity]),
+    );
+  });
+  const [requestedItems, setRequestedItems] = useState<Record<string, number>>(() => {
+    if (!counterTrade) return {};
+    return Object.fromEntries(
+      (counterTrade.itemsOffered ?? []).map((item) => [item.itemId, item.quantity]),
+    );
+  });
   const [available, setAvailable] = useState<number | null>(null);
+  const [inventory, setInventory] = useState<GachaEconomyInventory | null>(null);
   const { toast } = useToast();
   const searchMine = useCallback(
     (query: string) => {
@@ -717,10 +730,13 @@ function ProposalComposer({
     api
       .gachaEconomyInventory()
       .then((wallet) => {
-        if (current) setAvailable(wallet.available);
+        if (current) {
+          setAvailable(wallet.available);
+          setInventory(wallet);
+        }
       })
       .catch(() => {
-        // Sem saldo conhecido: o campo de Cristais simplesmente não limita.
+        // Sem saldo conhecido: o campo de Crystals simplesmente não limita.
         if (current) setAvailable(null);
       });
 
@@ -902,9 +918,15 @@ function ProposalComposer({
     const offered = parseCrystals(crystalsOffered);
     const requested = parseCrystals(crystalsRequested);
     if (maxAvailable !== null && offered > maxAvailable) {
-      setError("Você não tem Cristais disponíveis suficientes para oferecer.");
+      setError("Você não tem Crystals disponíveis suficientes para oferecer.");
       return;
     }
+    const itemsOfferedPayload = Object.entries(offeredItems)
+      .filter(([, quantity]) => quantity > 0)
+      .map(([itemId, quantity]) => ({ itemId, quantity }));
+    const itemsRequestedPayload = Object.entries(requestedItems)
+      .filter(([, quantity]) => quantity > 0)
+      .map(([itemId, quantity]) => ({ itemId, quantity }));
     setBusy(true);
     setError("");
     try {
@@ -914,6 +936,8 @@ function ProposalComposer({
           requestedUserCardIds: targetCardIds,
           crystalsOffered: offered,
           crystalsRequested: requested,
+          itemsOffered: itemsOfferedPayload,
+          itemsRequested: itemsRequestedPayload,
         });
         toast("Contraproposta enviada.", "success");
       } else {
@@ -922,6 +946,8 @@ function ProposalComposer({
           requestedUserCardIds: targetCardIds,
           crystalsOffered: offered,
           crystalsRequested: requested,
+          itemsOffered: itemsOfferedPayload,
+          itemsRequested: itemsRequestedPayload,
         });
         toast("Proposta enviada.", "success");
       }
@@ -980,7 +1006,7 @@ function ProposalComposer({
       >
         <p className="text-body-sm text-mist">
           {counterTrade
-            ? `Ajuste as cartas e Cristais para contra-propor a troca para ${counterpartyName}. Ao enviar, a proposta anterior será cancelada e substituída por esta nova rodada.`
+            ? `Ajuste as cartas e Crystals para contra-propor a troca para ${counterpartyName}. Ao enviar, a proposta anterior será cancelada e substituída por esta nova rodada.`
             : "Primeiro escolha a pessoa e as cartas que quer receber. Depois selecione as cartas da sua coleção que vai oferecer."}
         </p>
 
@@ -1105,9 +1131,61 @@ function ProposalComposer({
           </div>
         )}
 
+        {(inventory?.itemCatalog?.length ?? 0) > 0 && (
+          <div className="mt-4 grid gap-4 lg:grid-cols-2">
+            <section className="border border-hairline p-4">
+              <h3 className="font-display text-lg text-snow">Itens que você oferece</h3>
+              <div className="mt-3 space-y-2">
+                {inventory!.itemCatalog!.map((item) => {
+                  const count = Number((inventory as unknown as Record<string, unknown>)[item.field] ?? 0);
+                  if (!count) return null;
+                  return (
+                    <label key={item.id} className="flex items-center justify-between gap-2 text-body-sm">
+                      <span className="min-w-0 truncate text-snow">
+                        {item.name} ({count} disponível{count === 1 ? "" : "is"})
+                      </span>
+                      <input
+                        type="number"
+                        min={0}
+                        max={count}
+                        value={offeredItems[item.id] ?? 0}
+                        onChange={(event) => {
+                          const value = Math.max(0, Math.min(count, Number(event.target.value) || 0));
+                          setOfferedItems((current) => ({ ...current, [item.id]: value }));
+                        }}
+                        className="field min-h-11 w-24"
+                      />
+                    </label>
+                  );
+                })}
+              </div>
+            </section>
+            <section className="border border-hairline p-4">
+              <h3 className="font-display text-lg text-snow">Itens que você pede</h3>
+              <div className="mt-3 space-y-2">
+                {inventory!.itemCatalog!.map((item) => (
+                  <label key={item.id} className="flex items-center justify-between gap-2 text-body-sm">
+                    <span className="min-w-0 truncate text-snow">{item.name}</span>
+                    <input
+                      type="number"
+                      min={0}
+                      value={requestedItems[item.id] ?? 0}
+                      onChange={(event) => {
+                        const value = Math.max(0, Number(event.target.value) || 0);
+                        setRequestedItems((current) => ({ ...current, [item.id]: value }));
+                      }}
+                      className="field min-h-11 w-24"
+                    />
+                  </label>
+                ))}
+              </div>
+            </section>
+          </div>
+        )}
+
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
           <label className="text-body-sm text-snow">
-            Cristais que você oferece
+            Crystals que você oferece
             <input
               type="number"
               min={0}
@@ -1121,7 +1199,7 @@ function ProposalComposer({
             />
           </label>
           <label className="text-body-sm text-snow">
-            Cristais que você pede
+            Crystals que você pede
             <input
               type="number"
               min={0}
@@ -1139,7 +1217,7 @@ function ProposalComposer({
           {maxAvailable !== null && (
             <span className="block mb-2">
               Disponíveis para esta troca:{" "}
-              {maxAvailable.toLocaleString("pt-BR")} Cristais.
+              {maxAvailable.toLocaleString("pt-BR")} Crystals.
             </span>
           )}
           {counterTrade ? "Sua contraproposta" : "Sua proposta"}:{" "}
@@ -1148,10 +1226,10 @@ function ProposalComposer({
           {targetCardIds.length === 1 ? "" : "s"} solicitada
           {targetCardIds.length === 1 ? "" : "s"}
           {parseCrystals(crystalsOffered) > 0
-            ? ` · ${parseCrystals(crystalsOffered).toLocaleString("pt-BR")} Cristais oferecidos`
+            ? ` · ${parseCrystals(crystalsOffered).toLocaleString("pt-BR")} Crystals oferecidos`
             : ""}
           {parseCrystals(crystalsRequested) > 0
-            ? ` · ${parseCrystals(crystalsRequested).toLocaleString("pt-BR")} Cristais pedidos`
+            ? ` · ${parseCrystals(crystalsRequested).toLocaleString("pt-BR")} Crystals pedidos`
             : ""}
         </p>
         {parseCrystals(crystalsOffered) > 0 && (
@@ -1160,7 +1238,7 @@ function ProposalComposer({
             className="mt-2 border border-ice/30 bg-ice/5 p-3 text-body-sm text-ice"
           >
             Atenção: {parseCrystals(crystalsOffered).toLocaleString("pt-BR")}{" "}
-            Cristais ficarão bloqueados assim que você enviar esta proposta.
+            Crystals ficarão bloqueados assim que você enviar esta proposta.
           </p>
         )}
 
@@ -1174,7 +1252,7 @@ function ProposalComposer({
         )}
 
         <p className="mt-4 text-caption text-mist">
-          Os Cristais oferecidos ficam reservados assim que a proposta é
+          Os Crystals oferecidos ficam reservados assim que a proposta é
           enviada. Eles só serão transferidos se a troca for aceita; cancelar,
           recusar ou expirar libera a reserva.
         </p>

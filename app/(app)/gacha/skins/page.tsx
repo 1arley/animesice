@@ -103,7 +103,7 @@ export default function GachaSkinsPage() {
         </div>
         <div className="text-right">
           <p className="text-xs uppercase tracking-widest text-mist">
-            Cristais
+            Crystals
           </p>
           <p className="font-display text-2xl text-ice">
             {(data.crystalBalance - data.crystalReserved).toLocaleString(

@@ -226,9 +226,9 @@ export default function AdminGachaPage() {
   const pilotAlerts = pilot
     ? [
         pilot.economy.pause &&
-          `o piloto emite mais cristal do que o grupo gasta (${pilot.economy.emitted} emitidos contra ${pilot.economy.sinks} gastos; o alerta dispara acima de 120%).`,
+          `o piloto emite mais crystal do que o grupo gasta (${pilot.economy.emitted} emitidos contra ${pilot.economy.sinks} gastos; o alerta dispara acima de 120%).`,
         pilot.behavior.rewardOnlyRate > 0.3 &&
-          `${(pilot.behavior.rewardOnlyRate * 100).toFixed(0)}% de quem ganhou cristais só volta pela recompensa, sem girar ou descobrir carta (alerta acima de 30%).`,
+          `${(pilot.behavior.rewardOnlyRate * 100).toFixed(0)}% de quem ganhou crystals só volta pela recompensa, sem girar ou descobrir carta (alerta acima de 30%).`,
         pilot.behavior.sharedCards > pilot.cohort.assigned * 0.1 &&
           `${pilot.behavior.sharedCards} carta(s) estão com três ou mais contas do piloto (alerta acima de 10% da coorte).`,
       ].filter(Boolean)
@@ -788,7 +788,7 @@ export default function AdminGachaPage() {
             </div>
             <div className="border border-hairline p-3">
               <dt className="font-mono text-caption text-mist">
-                Cristais emitidos / gastos
+                Crystals emitidos / gastos
               </dt>
               <dd className="mt-1 text-title text-snow">
                 {pilot.economy.emitted} / {pilot.economy.sinks}

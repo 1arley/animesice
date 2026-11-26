@@ -82,7 +82,7 @@ export function boxRewardDisplay(
 
   switch (reward.category) {
     case "CRYSTAL":
-      return { title: quantity(reward.amount, "cristal", "cristais") };
+      return { title: quantity(reward.amount, "crystal", "crystals") };
     case "KEY":
       return { title: quantity(reward.amount, "chave", "chaves") };
     case "SPIN_RESET":
@@ -181,10 +181,10 @@ export function boxRewardDisplay(
               ? ["Valor da compensação indisponível"]
               : crystals > 0
                 ? [
-                    quantity(crystals, "cristal", "cristais") +
+                    quantity(crystals, "crystal", "crystals") +
                       " de compensação",
                   ]
-                : ["Nenhum cristal recebido como compensação"],
+                : ["Nenhum crystal recebido como compensação"],
         };
       }
       return {
@@ -212,7 +212,7 @@ export function boxRewardStatus(reward: Record<string, unknown>) {
     return "A abertura foi confirmada, mas os detalhes dessa recompensa não estão disponíveis.";
   }
   if (reward.category === "CRYSTAL") {
-    return "Cristais já entram no seu saldo disponível.";
+    return "Crystals já entram no seu saldo disponível.";
   }
   if (reward.category === "SPIN_RESET") {
     return "Reset guardado. Use após esgotar os previews da hora.";
@@ -223,8 +223,8 @@ export function boxRewardStatus(reward: Record<string, unknown>) {
       return "A capa já estava na sua coleção. Confira o saldo para ver a compensação.";
     }
     return crystals > 0
-      ? `A capa já estava na sua coleção. ${quantity(crystals, "cristal", "cristais")} foram creditados como compensação.`
-      : "A capa já estava na sua coleção. Nenhum cristal foi creditado como compensação.";
+      ? `A capa já estava na sua coleção. ${quantity(crystals, "crystal", "crystals")} foram creditados como compensação.`
+      : "A capa já estava na sua coleção. Nenhum crystal foi creditado como compensação.";
   }
   return "Recompensa adicionada ao seu inventário.";
 }

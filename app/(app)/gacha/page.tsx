@@ -86,7 +86,7 @@ const TIER_LABEL: Record<string, string> = {
   GALACTICA: "Galáctica",
 };
 
-/** Cristal do gacha — motivo de identidade do hero da sala. */
+/** Crystal do gacha — motivo de identidade do hero da sala. */
 function CrystalIcon({ className }: { className?: string }) {
   return (
     <svg
@@ -1072,11 +1072,11 @@ function GachaPageContent() {
                   )}
                   <span className="px-3 py-3 sm:px-4">
                     <span className="block font-mono text-[10px] uppercase tracking-wider text-mist-soft">
-                      Cristais
+                      Crystals
                     </span>
                     <span className="mt-1 block font-display text-sm text-snow">
                       <Link
-                        href="/gacha/cristais"
+                        href="/gacha/crystals"
                         className="text-ice decoration-hairline underline-offset-4 hover:text-snow hover:underline"
                       >
                         {(

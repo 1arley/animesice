@@ -331,7 +331,7 @@ export function NightMarket() {
             <div className="border border-hairline bg-panel px-4 py-3">
               <p className="text-caption text-mist">Saldo disponível</p>
               <p className="font-display text-xl tabular-nums text-ice">
-                {available.toLocaleString("pt-BR")} cristais
+                {available.toLocaleString("pt-BR")} crystals
               </p>
             </div>
           )}
@@ -414,7 +414,7 @@ export function NightMarket() {
                           <span className="mt-4 flex items-baseline justify-between gap-3 border-t border-hairline pt-3">
                             <span className="text-caption text-mist">Preço da oferta</span>
                             <span className="font-display text-lg tabular-nums text-snow">
-                              {offer.price.toLocaleString("pt-BR")} cristais
+                              {offer.price.toLocaleString("pt-BR")} crystals
                             </span>
                           </span>
                           <span className="mt-4 block text-center text-body-sm text-ice">
@@ -480,7 +480,7 @@ export function NightMarket() {
                                 −{offer.discount}%
                               </span>
                               <span className="font-display text-base tabular-nums text-snow">
-                                {offer.price.toLocaleString("pt-BR")} cristais
+                                {offer.price.toLocaleString("pt-BR")} crystals
                               </span>
                             </div>
                             <h3
@@ -603,7 +603,7 @@ export function NightMarket() {
             <div className="flex justify-between gap-3">
               <dt>Preço com desconto</dt>
               <dd className="text-ice">
-                {purchaseOffer.price.toLocaleString("pt-BR")} cristais
+                {purchaseOffer.price.toLocaleString("pt-BR")} crystals
               </dd>
             </div>
             <div className="flex justify-between gap-3">
@@ -613,7 +613,7 @@ export function NightMarket() {
             <div className="flex justify-between gap-3">
               <dt>Saldo após a compra</dt>
               <dd>
-                {Math.max(0, (available ?? 0) - purchaseOffer.price).toLocaleString("pt-BR")} cristais
+                {Math.max(0, (available ?? 0) - purchaseOffer.price).toLocaleString("pt-BR")} crystals
               </dd>
             </div>
           </dl>

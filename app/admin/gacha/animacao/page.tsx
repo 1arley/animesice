@@ -406,8 +406,8 @@ export default function AdminGachaAnimacaoPage() {
         label: "Entrada & Fundo",
         keys: [
           { key: "enterDuration", label: "Duração entrada carta", step: 0.01, min: 0, max: 2 },
-          { key: "crystalSpinAt", label: "Início giro cristal", step: 0.01, min: 0, max: 3 },
-          { key: "crystalSpinDuration", label: "Duração giro cristal", step: 0.01, min: 0.1, max: 3 },
+          { key: "crystalSpinAt", label: "Início giro crystal", step: 0.01, min: 0, max: 3 },
+          { key: "crystalSpinDuration", label: "Duração giro crystal", step: 0.01, min: 0.1, max: 3 },
         ],
       },
       {
@@ -425,7 +425,7 @@ export default function AdminGachaAnimacaoPage() {
             ],
           },
           { key: "maxDrop", label: "Queda máx. de tiers (só no aleatório)", step: 1, min: 0, max: 6 },
-          { key: "crystalOutDuration", label: "Saída do cristal", step: 0.01, min: 0.05, max: 1 },
+          { key: "crystalOutDuration", label: "Saída do crystal", step: 0.01, min: 0.05, max: 1 },
           { key: "ringSlots", label: "Slots de anéis (máx)", step: 1, min: 1, max: 3 },
           { key: "ringDuration", label: "Duração anéis", step: 0.01, min: 0.1, max: 2 },
           { key: "ringStagger", label: "Stagger anéis", step: 0.01, min: 0, max: 0.5 },

@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 
 /**
- * Casca comum dos cartões de oferta do gacha (loja, mercado, cosméticos, cristais).
+ * Casca comum dos cartões de oferta do gacha (loja, mercado, cosméticos, crystals).
  * A faixa de arte é full-bleed e o corpo recebe o padding; os demais blocos
  * (legenda, título, preço, status e ações) são encaixes opcionais alinhados
  * à base, para que cartões de páginas diferentes usem a mesma anatomia.
@@ -19,7 +19,7 @@ export type GachaOfferCardProps = {
   description?: ReactNode;
   /** Conteúdo extra entre a descrição e o rodapé. */
   children?: ReactNode;
-  /** Destaque do rodapé: preço, BRL, contagem de cristais… */
+  /** Destaque do rodapé: preço, BRL, contagem de crystals… */
   price?: ReactNode;
   /** Linhas auxiliares do rodapé (status, vendedor, expiração…). */
   notes?: ReactNode;

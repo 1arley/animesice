@@ -3,7 +3,7 @@
 
 /* AnimesIce — Identidade Cinematográfica Premium.
    Profundidade de estúdio, grafite profundo / preto obsidiana,
-   branco gelo cristalino e accent de gelo cirúrgico. */
+   branco gelo crystalino e accent de gelo cirúrgico. */
 
 @layer base {
   :root {
@@ -164,7 +164,7 @@
     }
   }
 
-  /* Hierarquia tipográfica com contraste cristalino */
+  /* Hierarquia tipográfica com contraste crystalino */
   h1,
   h2,
   h3,
@@ -865,7 +865,7 @@
     }
   }
 
-  /* Contra-reflexo de profundidade cristalina em ângulo invertido para PRISM */
+  /* Contra-reflexo de profundidade crystalina em ângulo invertido para PRISM */
   @keyframes prism-cross-shine {
     0%,
     48% {
@@ -902,7 +902,7 @@
     );
   }
 
-  /* Contra-reflexo secundário para conferir tridimensionalidade óptica de cristal */
+  /* Contra-reflexo secundário para conferir tridimensionalidade óptica de crystal */
   .prism-sheen-secondary {
     background: linear-gradient(
       72deg,
@@ -1017,7 +1017,7 @@
   /* PRISM: dispersao de prisma lapidado em diamante. A arte do anime NAO e
      tocada — nao entra em --foil-art (o foil NEGATIVE invertia a arte e foi
      rejeitado pelo usuario). Quatro camadas harmonicas empilhadas sob color-dodge:
-     1. `--diamond-facets`: malha de refracao cristalina em angulo duplo cruzado (56deg e -56deg).
+     1. `--diamond-facets`: malha de refracao crystalina em angulo duplo cruzado (56deg e -56deg).
      2. `--spectrum`: dispersao espectral saturada com transicoes de arco-iris completas.
      3. `--sheen-caustic`: reflexos opticos diagonais simulando prismas de vidro lapidado.
      4. `--radial-depth`: reflexao interna de luz no topo e base da carta. */
@@ -1112,7 +1112,7 @@
     transition: box-shadow 350ms ease;
   }
 
-  /* Estrelas de difracao de 4 pontas e micro-brilhos de cristal lapidado. */
+  /* Estrelas de difracao de 4 pontas e micro-brilhos de crystal lapidado. */
   .prism-foil-overlay::after {
     background:
       /* Estrela 1 (horizontal + vertical + nucleo ciano) */
@@ -1764,12 +1764,12 @@
   }
 }
 
-/* ===== Identidade de Motion: o cristal =====
+/* ===== Identidade de Motion: o crystal =====
    "Luz que atravessa gelo, não luz que explode na tela."
    Porta o sistema do artefato docs/animesice-motion-identity.html para a app:
    o mesmo gesto de varredura de luz recortado em 4 modos (reveal, loop,
    transition, micro) via data-mode. Cores em tokens `motion.*` do tailwind;
-   a máscara da varredura é a alpha do próprio logo (cristal transparente). */
+   a máscara da varredura é a alpha do próprio logo (crystal transparente). */
 
 .crystal-motion {
   position: relative;
@@ -2043,7 +2043,7 @@
   }
 }
 
-/* --- Splash de abertura: o cristal em "foco puxado" sobre o void. --- */
+/* --- Splash de abertura: o crystal em "foco puxado" sobre o void. --- */
 .crystal-splash {
   animation: crystal-splash-fade 300ms ease both;
 }
@@ -2087,7 +2087,7 @@
   }
 }
 
-/* --- Microinteração do wordmark: o cristal do header pulsa no mesmo gesto,
+/* --- Microinteração do wordmark: o crystal do header pulsa no mesmo gesto,
    mantendo a arte atual (badge com anel). O pulso vem da WAAPI no Wordmark. --- */
 .crystal-micro {
   position: relative;
@@ -2600,7 +2600,7 @@
    - backdrop-blur-sm some: os badges já têm bg-ink/85 quase opaco, então o
      chip continua legível e some o maior custo de scroll (dezenas de regiões
      de backdrop-filter por grid).
-   - metade dos motes do cristal: 7 pontos ainda parecem "poeira de gelo". */
+   - metade dos motes do crystal: 7 pontos ainda parecem "poeira de gelo". */
 @media (pointer: coarse) {
   .backdrop-blur-sm {
     backdrop-filter: none;

@@ -16,7 +16,7 @@ const labels: Record<GachaSkeletonKind, string> = {
   economy: "Carregando ofertas",
   "night-market": "Carregando Mercado Noturno",
   skins: "Carregando skins",
-  crystals: "Carregando cristais",
+  crystals: "Carregando crystals",
   wishlist: "Carregando wishlist",
   encyclopedia: "Carregando enciclopédia",
 };
