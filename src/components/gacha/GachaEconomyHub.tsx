@@ -747,14 +747,14 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
   }
 
   return (
-    <main id="body-content" className="mx-auto max-w-shelf px-4 pb-20 pt-8">
+    <main id="body-content" className={`mx-auto max-w-shelf px-4 pb-20 pt-8 ${mode === "market" ? "gacha-market-page" : ""}`}>
       <header
-        className={`relative overflow-hidden border border-hairline bg-panel px-5 py-6 sm:px-8 sm:py-8 ${mode === "shop" ? "border-ice/20 bg-[radial-gradient(ellipse_at_top_right,rgba(56,232,218,0.12),transparent_55%)]" : "border-b"}`}
+        className={`relative overflow-hidden border border-hairline bg-panel px-5 py-6 sm:px-8 sm:py-8 ${mode === "shop" ? "border-ice/20 bg-[radial-gradient(ellipse_at_top_right,rgba(56,232,218,0.12),transparent_55%)]" : "gacha-market-hero border-b"}`}
       >
         <div className="flex flex-wrap items-end justify-between gap-5">
           <div className="max-w-2xl">
             <p className="shelf-label">
-              Gacha / {mode === "market" ? "Mercado entre jogadores" : "Loja"}
+              {mode === "market" ? "Gacha / Mercado" : "Gacha / Loja"}
             </p>
             <h1 className="text-balance font-display text-3xl text-snow sm:text-4xl">
               {mode === "market" ? "Mercado entre jogadores" : "Loja do Gacha"}
@@ -791,7 +791,7 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
       </header>
       <nav
         aria-label={mode === "market" ? "Seções do mercado" : "Seções da loja"}
-        className="sticky top-0 z-10 -mx-4 mt-4 flex flex-wrap gap-2 border-b border-hairline bg-ink/95 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-ink/80"
+        className={`sticky top-0 z-10 -mx-4 mt-4 flex flex-wrap gap-2 border-b border-hairline bg-ink/95 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-ink/80 ${mode === "market" ? "gacha-market-nav" : ""}`}
       >
         {mode === "market" ? (
           <>
@@ -854,7 +854,7 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
       {mode === "market" && user && (
         <section
           aria-labelledby="market-eligibility-title"
-          className="mt-5 border border-hairline bg-panel p-4 sm:flex sm:items-center sm:justify-between sm:gap-6"
+          className="gacha-market-eligibility mt-5 border border-hairline bg-panel p-4 sm:flex sm:items-center sm:justify-between sm:gap-6"
         >
           <div>
             <h2
@@ -1222,7 +1222,7 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
           )}
 
           {mode === "market" && user && mission && (
-            <section className="mt-10 border border-hairline bg-panel p-5">
+            <section className="gacha-market-mission mt-10 border border-hairline bg-panel p-5">
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <div>
                   <h2 className="font-display text-xl text-snow">
@@ -2442,7 +2442,7 @@ function MarketSection({
     : listings;
 
   return (
-    <section className="mt-10" aria-labelledby={`market-${title}`}>
+    <section className="gacha-market-listings mt-10" aria-labelledby={`market-${title}`}>
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h2
