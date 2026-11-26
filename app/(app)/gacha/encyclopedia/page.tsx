@@ -12,7 +12,7 @@ import { WishlistButton } from "@/components/gacha/WishlistButton";
 import { Modal } from "@/components/common/Modal";
 import { PaginationControls } from "@/components/ui/PaginationControls";
 import { SearchField } from "@/components/ui/SearchField";
-import { UserProfilePreview } from "@/components/social/UserProfilePreview";
+import { UserProfilePreview } from "@/features/social/identity";
 import {
   GachaCardGridSkeleton,
   GachaPageSkeleton,
@@ -127,6 +127,7 @@ function CardEncyclopedia() {
   const { user, loading: authLoading } = useAuth();
   const view = params.get("view") === "sets" ? "sets" : "cards";
   const animeId = params.get("animeId") ?? "";
+  const animeTitle = params.get("animeTitle") ?? "";
   const isSets = view === "sets" && !animeId;
   const rawPage = Number(params.get("page") ?? 1);
   const page =
@@ -144,6 +145,7 @@ function CardEncyclopedia() {
   });
   if (search) query.set("search", search);
   if (isSets) {
+    query.set("summary", "1");
     if (["complete", "near"].includes(progress))
       query.set("progress", progress);
   } else {
@@ -152,6 +154,7 @@ function CardEncyclopedia() {
     if (["owned", "missing"].includes(ownership))
       query.set("ownership", ownership);
     if (animeId) query.set("animeId", animeId);
+    if (animeId === "orphan" && animeTitle) query.set("animeTitle", animeTitle);
   }
   const queryString = query.toString();
   const requestKey = `${user?.id ?? "guest"}:${queryString}`;
@@ -419,10 +422,11 @@ function CardEncyclopedia() {
           ) : isSets ? (
             <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {data.sets.map((set) => (
-                <article key={set.animeId ?? "orphan"}>
+                <article key={set.animeId ?? `orphan:${set.animeTitle}`}>
                   <Link
                     href={href({
                       animeId: set.animeId ?? "orphan",
+                      animeTitle: set.animeId ? "" : set.animeTitle,
                       title: set.animeTitle,
                       search: "",
                       rarity: "",
@@ -506,7 +510,9 @@ function CardEncyclopedia() {
           <PaginationControls
             page={page}
             totalPages={data.meta.totalPages}
-            onPageChange={(target) => router.push(href({ page: String(target) }))}
+            onPageChange={(target) =>
+              router.push(href({ page: String(target) }))
+            }
             label="Paginação da enciclopédia"
           />
           {data.meta.total > 0 &&
@@ -547,7 +553,7 @@ function SkinCatalog() {
   useEffect(() => {
     let cancelled = false;
     setResult(null);
-    void api.gachaSkins(page, 48, search).then(
+    void api.gachaSkins(page, 48, search, "none").then(
       (data) => {
         if (!cancelled) setResult({ key: requestKey, data });
       },
@@ -593,10 +599,16 @@ function SkinCatalog() {
         aria-label="Visão da enciclopédia"
         className="mt-8 flex flex-wrap gap-3"
       >
-        <Link href="/gacha/enciclopedia?view=cards" className="btn-ghost px-4 py-3">
+        <Link
+          href="/gacha/enciclopedia?view=cards"
+          className="btn-ghost px-4 py-3"
+        >
           Explorar cartas
         </Link>
-        <Link href="/gacha/enciclopedia?view=sets" className="btn-ghost px-4 py-3">
+        <Link
+          href="/gacha/enciclopedia?view=sets"
+          className="btn-ghost px-4 py-3"
+        >
           Completar conjuntos
         </Link>
         <Link
@@ -693,7 +705,9 @@ function SkinCatalog() {
           <PaginationControls
             page={page}
             totalPages={data.meta.totalPages}
-            onPageChange={(target) => router.push(href({ page: String(target) }))}
+            onPageChange={(target) =>
+              router.push(href({ page: String(target) }))
+            }
             label="Paginação do catálogo de skins"
           />
         </>
@@ -704,7 +718,11 @@ function SkinCatalog() {
 
 function Encyclopedia() {
   const params = useSearchParams();
-  return params.get("view") === "skins" ? <SkinCatalog /> : <CardEncyclopedia />;
+  return params.get("view") === "skins" ? (
+    <SkinCatalog />
+  ) : (
+    <CardEncyclopedia />
+  );
 }
 
 export default function EncyclopediaPage() {

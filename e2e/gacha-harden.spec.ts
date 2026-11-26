@@ -126,15 +126,15 @@ test.describe("Gacha harden — cerimônia", () => {
     await expect(page.getByText(/Pity ÉPICA\+ em 14d/)).toBeVisible();
     await expect(page.getByRole("button", { name: /^Girar \(5\)$/ })).toBeEnabled();
     await expect(page.getByRole("button", { name: "Pegar carta" })).toBeEnabled();
-    // A nav virou acordeão de grupos: em /gacha só "Jogar" nasce aberto, os
-    // links de "Colecionar" ficam dentro de <details> fechado. Abre o grupo
-    // antes de checar os links.
-    const nav = page.getByRole("navigation", { name: "Áreas do gacha" });
-    await nav.getByText("Cartas e progresso").click();
-    // Âncora no início: o nome acessível inclui a descrição, e
-    // "Loja — Ofertas e cosméticos" também conteria o termo.
+    const desktopNav = page.getByRole("navigation", { name: "Áreas do Gacha" });
+    if (!(await desktopNav.isVisible())) {
+      await page
+        .getByRole("navigation", { name: "Navegação do Gacha" })
+        .getByRole("button", { name: "Mais" })
+        .click();
+    }
     await expect(page.getByRole("link", { name: /^Minhas cartas/ })).toBeVisible();
-    await expect(page.getByRole("link", { name: /^Cosméticos/ })).toBeVisible();
+    await expect(page.getByRole("link", { name: /^Skins e cosméticos/ })).toBeVisible();
     await expect(page.getByText("Previews desta hora (2/5)")).toBeVisible();
     await expect(page.getByText(/Selecionada: Cha Hae-In/)).toBeVisible();
     await noHorizontalOverflow(page);

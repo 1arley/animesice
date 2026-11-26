@@ -7,6 +7,7 @@ const TABS = [
   { href: "/admin/gacha", label: "Cartas" },
   { href: "/admin/gacha/jogadores", label: "Jogadores" },
   { href: "/admin/gacha/cosmeticos", label: "Cosméticos" },
+  { href: "/admin/gacha/evento", label: "Evento" },
   { href: "/admin/gacha/config", label: "Configuração" },
   { href: "/admin/gacha/codigos", label: "Códigos" },
   { href: "/admin/gacha/animacao", label: "Animação" },

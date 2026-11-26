@@ -76,6 +76,8 @@ async function mockReroll(page: Page, collectionCards = [card]) {
         spinResets: 0,
         itemConfig: {
           card_floors: { RARA: 1000 },
+          base_value: { RARA: 1000 },
+          foil_mult: { NORMAL: 1, HOLO: 1.5 },
           reroll_cost_pct: 0.15,
           reroll_protection_mint_block: true,
         },
@@ -147,14 +149,13 @@ for (const surface of ["home", "collection"] as const) {
     await page
       .getByRole("button", { name: "Repetir operação anterior" })
       .click();
+    await expect(page.getByRole("dialog")).toHaveCount(0);
     const key = `animesice:gacha-reroll-uncertain:${VIEWER.id}:${card.id}`;
     const saved = await page.evaluate(
       (storageKey) => localStorage.getItem(storageKey),
       key,
     );
     expect(saved).toBeNull();
-
-    await expect(page.getByRole("dialog")).toHaveCount(0);
     if (surface === "collection") {
       await expect(
         page.getByRole("button", { name: /Carta do reroll/ }),

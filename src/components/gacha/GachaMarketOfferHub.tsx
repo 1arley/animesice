@@ -5,7 +5,7 @@ import { api, ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { useToast } from "@/components/common/ToastProvider";
 import { GachaRowsSkeleton } from "@/components/gacha/GachaPageSkeleton";
-import { UserProfilePreview } from "@/components/social/UserProfilePreview";
+import { UserProfilePreview } from "@/features/social/identity";
 import { EmptyState } from "@/components/ui/EmptyState";
 import type { GachaMarketOffer } from "@/types";
 
@@ -40,6 +40,9 @@ function OfferCard({
     offer.offeredCards.length > 0
       ? `${offer.offeredCards.length} carta${offer.offeredCards.length > 1 ? "s" : ""}`
       : null,
+    ...(offer.offeredItems ?? []).map(
+      (row) => `${row.quantity.toLocaleString("pt-BR")}× ${row.name}`,
+    ),
   ].filter(Boolean);
 
   return (
@@ -74,8 +77,13 @@ function OfferCard({
           </h3>
           {offer.listing && (
             <p className="mt-1 text-caption text-mist">
-              {offer.listing.itemType === "CARD" ? "Carta" : "Skin"} · preço
-              pedido {offer.listing.price.toLocaleString("pt-BR")} Cristais
+              {offer.listing.itemType === "CARD"
+                ? "Carta"
+                : offer.listing.itemType === "ITEM"
+                  ? `${offer.listing.item.quantity ?? 1} itens`
+                  : "Skin"}{" "}
+              · preço pedido {offer.listing.price.toLocaleString("pt-BR")}{" "}
+              Cristais
             </p>
           )}
         </div>
@@ -153,9 +161,11 @@ function OfferCard({
 export function GachaMarketOfferHub({
   refreshKey = 0,
   canAccept,
+  onSettled,
 }: {
   refreshKey?: number;
   canAccept: boolean;
+  onSettled?: () => Promise<unknown>;
 }) {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -195,6 +205,7 @@ export function GachaMarketOfferHub({
       await action();
       toast(message, "success");
       await load();
+      await onSettled?.();
     } catch (cause) {
       setError(
         cause instanceof ApiError

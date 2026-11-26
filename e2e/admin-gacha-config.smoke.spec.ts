@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { blockAds } from "./helpers";
 
 const BASE = "http://localhost:3000";
 
@@ -7,8 +8,9 @@ const CONFIG = [
   { key: "skins.precoBase", value: 4500, label: "Preço base", group: "skins" },
 ];
 
-function mockConfig(page: import("@playwright/test").Page, role: string, patches: unknown[] = []) {
-  return Promise.all([
+async function mockConfig(page: import("@playwright/test").Page, role: string, patches: unknown[] = []) {
+  await blockAds(page);
+  await Promise.all([
     page.context().addCookies([{ name: "role", value: "ADMIN", url: BASE }]),
     page.route("**/user/me", (route) =>
       route.fulfill({

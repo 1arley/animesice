@@ -9,7 +9,7 @@ import {
   boxRewardStatus,
   isKnownBoxRewardCategory,
 } from "@/lib/gacha-box-reward";
-import { safeImageSrc } from "@/lib/url";
+import { isOptimizableImageUrl, safeImageSrc } from "@/lib/url";
 import type { GachaBoxTier } from "@/types";
 
 export const BOX_LABEL: Record<GachaBoxTier, string> = {
@@ -28,6 +28,7 @@ const KIND_LABEL: Record<string, string> = {
   KEY: "Chave",
   SPIN_RESET: "Reset de giro",
   ITEM: "Item",
+  ESSENCE: "Essência",
   RARE_BOX: "Caixa rara",
   KEY_RARE_BOX: "Caixa rara + chave",
   KEY_PREMIUM_BOX: "Caixa premium + chave",
@@ -132,7 +133,8 @@ export function BoxReveal({
     reward?.category === "CARD" &&
     (reward.imageHidden === true || reward.name === "???");
   const knownReward = !!reward && isKnownBoxRewardCategory(reward.category);
-  const art = reward &&
+  const art =
+    reward &&
     knownReward &&
     !hiddenCard &&
     safeImageSrc(String(reward.imageUrl ?? reward.image ?? ""));
@@ -344,12 +346,19 @@ export function BoxReveal({
               </div>
               <div
                 className="box-reveal-art"
-                data-kind={stackable ? "stack" : "item"}
+                data-kind={
+                  stackable
+                    ? "stack"
+                    : reward.category === "CARD"
+                      ? "card"
+                      : "item"
+                }
                 style={{ "--i": 1 } as React.CSSProperties}
               >
                 {art && !imageFailed ? (
                   <Image
                     src={art}
+                    unoptimized={!isOptimizableImageUrl(art)}
                     alt={
                       hiddenCard
                         ? "Carta misteriosa"

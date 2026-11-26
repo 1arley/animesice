@@ -10,7 +10,7 @@ import { blur } from "@/lib/blur";
 import { serverFetchJson } from "@/lib/api-server";
 
 import { isOnAir } from "@/lib/status";
-import { CommentSection } from "@/components/common/CommentSection";
+import { CommentSection } from "@/features/social/comments";
 import { FavoriteButton } from "@/components/common/FavoriteButton";
 import { AnimeListButton } from "@/components/common/AnimeListButton";
 import { RatingStars, AnimeStatsDisplay } from "@/components/common/RatingStars";

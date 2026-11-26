@@ -320,7 +320,7 @@ test("arte e nome longo cabem na cena; teclado permanece no diálogo", async ({
           category: "CARD",
           name,
           rarity: "LENDARIA",
-          image: "https://cdn.myanimelist.net/test-box-art.png",
+          image: "/aeliana/Aeliana.png",
           foil: "HOLO",
         },
       },
@@ -352,6 +352,40 @@ test("arte e nome longo cabem na cena; teclado permanece no diálogo", async ({
     true,
   );
   await page.screenshot({ path: info.outputPath("box-card-reward.png") });
+});
+
+test("carrega arte HTTPS fora da allowlist diretamente no reveal", async ({
+  page,
+}) => {
+  const imageUrl = "https://art.example.test/reward-card.png";
+  await page.route(imageUrl, (route) =>
+    route.fulfill({
+      path: "public/aeliana/Aeliana.png",
+      contentType: "image/png",
+    }),
+  );
+  await page.route("**/boxes/open", (route) =>
+    route.fulfill({
+      json: {
+        reward: {
+          category: "CARD",
+          name: "Carta de teste",
+          rarity: "EPICA",
+          image: imageUrl,
+        },
+      },
+    }),
+  );
+
+  await page.goto("/gacha/loja");
+  await openButton(page, "Rara").click();
+
+  const dialog = page.getByRole("dialog");
+  const art = dialog.getByRole("img", { name: "Carta de teste" });
+  await expect(art).toHaveAttribute("src", imageUrl);
+  await expect
+    .poll(() => art.evaluate((el: HTMLImageElement) => el.naturalWidth))
+    .toBeGreaterThan(0);
 });
 
 test("abrir outra caixa toca o filme de novo, sem reaproveitar estado antigo", async ({

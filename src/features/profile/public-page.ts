@@ -1,0 +1,14 @@
+export { ProfileAbout } from "./components/ProfileAbout";
+export { ProfileActivity } from "./components/ProfileActivity";
+export { ProfileCollection } from "./components/ProfileCollection";
+export { ProfileCurrentlyWatching } from "./components/ProfileCurrentlyWatching";
+export { ProfileFavorites } from "./components/ProfileFavorites";
+export { ProfileFollowList } from "./components/ProfileFollowList";
+export { ProfileGacha } from "./components/ProfileGacha";
+export { ProfileHero } from "./components/ProfileHero";
+export { ProfileNav, type ProfileTab } from "./components/ProfileNav";
+export { ProfileRatings } from "./components/ProfileRatings";
+export { ProfileShowcase } from "./components/ProfileShowcase";
+export { ProfileStats } from "./components/ProfileStats";
+export { ProfileTaste } from "./components/ProfileTaste";
+export { ProfileWishlist } from "./components/ProfileWishlist";

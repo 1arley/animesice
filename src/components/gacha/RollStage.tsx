@@ -1107,8 +1107,13 @@ export function RollStage({ pull, onClose, preview = false, config }: RollStageP
       data-flat={flat ? "true" : "false"}
       className="roll-stage-dialog fixed inset-0 m-0 h-[100dvh] min-h-[100dvh] max-h-none w-screen max-w-none overflow-x-hidden overflow-y-auto border-0 bg-ink-deep/95 p-4 text-snow backdrop:bg-ink-deep/95"
       style={{ "--roll-accent": accent } as CSSProperties}
-      onCancel={(event) => { event.preventDefault(); onClose(); }}
-      onClick={(event) => { if (event.target === event.currentTarget) onClose(); }}
+      onCancel={(event) => {
+        event.preventDefault();
+        skipOrClose();
+      }}
+      onClick={(event) => {
+        if (event.target === event.currentTarget) skipOrClose();
+      }}
       onKeyDown={(event) => {
         if ((event.key === "Enter" || event.key === " ") && event.target === event.currentTarget) {
           event.preventDefault();

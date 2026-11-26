@@ -6,20 +6,13 @@ import { api, ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { SectionLabel } from "@/components/common/SectionLabel";
-import {
-  GachaOfferCard,
-  GachaOfferGrid,
-} from "@/components/gacha/cards";
+import { GachaOfferCard, GachaOfferGrid } from "@/components/gacha/cards";
 import {
   GachaPanelGridSkeleton,
   GachaRowsSkeleton,
 } from "@/components/gacha/GachaPageSkeleton";
 import { useToast } from "@/components/common/ToastProvider";
-import type {
-  CrystalEvent,
-  CrystalEventType,
-  GachaFeatured,
-} from "@/types";
+import type { CrystalEvent, CrystalEventType, GachaFeatured } from "@/types";
 
 const PAGE_SIZE = 20;
 
@@ -62,6 +55,7 @@ export default function GachaCrystalsPage() {
   >([...CRYSTAL_PACKAGES]);
   const [redeemCode, setRedeemCode] = useState("");
   const [redeeming, setRedeeming] = useState(false);
+  const [redeemResult, setRedeemResult] = useState("");
   const [featured, setFeatured] = useState<GachaFeatured | null>(null);
   const purchaseKeys = useRef<Record<string, string>>({});
   const { toast } = useToast();
@@ -81,10 +75,20 @@ export default function GachaCrystalsPage() {
       const result = await api.gachaRedeemCode(redeemCode);
       setRedeemCode("");
       setBalance(result.balance);
-      toast(
-        `Código resgatado: +${result.crystals.toLocaleString("pt-BR")} cristais.`,
-        "success",
-      );
+      const catalog = result.items?.length
+        ? await api.gachaItemCatalog().catch(() => [])
+        : [];
+      const rewards = [
+        result.crystals > 0
+          ? `${result.crystals.toLocaleString("pt-BR")} Cristais`
+          : "",
+        ...(result.items ?? []).map(
+          (item) =>
+            `${item.quantity}× ${catalog.find((entry) => entry.id === item.itemId)?.name ?? item.itemId}`,
+        ),
+      ].filter(Boolean);
+      setRedeemResult(rewards.join(" + "));
+      toast(`Código resgatado: ${rewards.join(" + ")}.`, "success");
       await load(1, false);
     } catch (e) {
       setError(
@@ -283,6 +287,20 @@ export default function GachaCrystalsPage() {
         </a>
       </nav>
 
+      {redeemResult && (
+        <p
+          role="status"
+          className="mt-4 border border-hairline bg-panel p-4 text-ice"
+        >
+          Recebido: {redeemResult}.{" "}
+          <Link
+            href="/gacha/inventario"
+            className="inline-flex min-h-11 items-center underline"
+          >
+            Ver inventário
+          </Link>
+        </p>
+      )}
       {error && (
         <div
           role="alert"
@@ -371,7 +389,8 @@ export default function GachaCrystalsPage() {
           <p className="-mt-4 max-w-prose text-caption text-mist">
             Sua carta em destaque gera{" "}
             <span className="text-snow">
-              {featured.featured.ratePercentPerTwoHours}% do valor dela a cada 2h
+              {featured.featured.ratePercentPerTwoHours}% do valor dela a cada
+              2h
             </span>
             {featured.featured.medal
               ? ` (a medalha ${featured.featured.medal.name} já está contabilizada nesse valor)`
@@ -384,8 +403,8 @@ export default function GachaCrystalsPage() {
             <span className="text-snow">
               {featured.featured.accumulationDays} dias
             </span>
-            . A renda entra aqui como <strong>Carta em destaque</strong> quando o
-            saldo é liquidado —{" "}
+            . A renda entra aqui como <strong>Carta em destaque</strong> quando
+            o saldo é liquidado —{" "}
             <Link href="/gacha/cartas" className="text-ice underline">
               veja qual carta está em destaque
             </Link>

@@ -8,24 +8,89 @@ import { blur } from "@/lib/blur";
 import { timeAgo } from "@/lib/time";
 import { useAuth } from "@/lib/auth-context";
 import { api } from "@/lib/api";
-import { Stars } from "@/components/profile/Stars";
-import { UserProfilePreview } from "@/components/social/UserProfilePreview";
-import type { PublicActivityEvent, SocialUser } from "@/types";
+import type { PublicActivityEvent } from "@/types";
+import { SectionLabel } from "@/components/common/SectionLabel";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { Stars } from "@/components/ui/Stars";
+
+interface ProfileActivityProps {
+  events: PublicActivityEvent[];
+  userName: string;
+  /** Cabeçalho da seção — "Atividade recente" na overview, "Atividade" na tab. */
+  title?: string;
+  /** Total real (servidor) — exibido no rótulo da seção. Default: carregados. */
+  total?: number;
+  /** Loading da primeira carga da tab (não confundir com vazio real). */
+  loading?: boolean;
+  /** Conteúdo extra abaixo da lista (ex.: botão "Carregar mais"). */
+  children?: React.ReactNode;
+}
 
 /**
- * FeedActivityItem — evento de atividade pública no feed social (watch,
- * rating, favorite, comment) com o autor em destaque, no padrão do
- * ProfileActivity, mas com o usuário próprio de cada evento.
+ * ProfileActivity — o que a pessoa fez, em ordem cronológica.
+ * Cada evento indica a ação, o anime relacionado e quando aconteceu.
+ * Comentários mantêm o like (funcionalidade existente preservada).
  */
-export function FeedActivityItem({
+export function ProfileActivity({
+  events,
+  userName,
+  title = "Atividade recente",
+  total,
+  loading = false,
+  children,
+}: ProfileActivityProps) {
+  if (loading) {
+    return (
+      <section>
+        <SectionLabel level={2}>{title}</SectionLabel>
+        <div className="space-y-3" aria-busy="true">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="skeleton h-14" />
+          ))}
+        </div>
+      </section>
+    );
+  }
+
+  if (events.length === 0) {
+    return (
+      <section>
+        <SectionLabel level={2}>{title}</SectionLabel>
+        <EmptyState
+          text="Nenhuma atividade recente ainda."
+          variant="compact"
+        />
+      </section>
+    );
+  }
+
+  return (
+    <section>
+      <SectionLabel level={2}>
+        {title}{" "}
+        <span className="shelf-label-data">{total ?? events.length}</span>
+      </SectionLabel>
+      <ol className="divide-y divide-hairline border-y border-hairline">
+        {events.map((ev) => (
+          <ActivityRow
+            key={`${ev.type}-${ev.createdAt}`}
+            event={ev}
+            userName={userName}
+          />
+        ))}
+      </ol>
+      {children}
+    </section>
+  );
+}
+
+function ActivityRow({
   event,
-  user,
+  userName,
 }: {
   event: PublicActivityEvent;
-  user: SocialUser;
+  userName: string;
 }) {
-  const authorName = user.name?.trim() || user.userName || "Usuário";
-
   const cover =
     event.type === "comment"
       ? null
@@ -34,12 +99,14 @@ export function FeedActivityItem({
     event.type === "comment"
       ? (event.anime?.title ?? "um anime")
       : event.anime.title;
-  const animeSlug =
-    event.type === "comment" ? event.anime?.slug : event.anime.slug;
+  const animeSlug = event.type === "comment" ? event.anime?.slug : event.anime.slug;
 
   return (
-    <div className="flex items-center gap-3 py-3">
-      <div className="card-scan relative w-10 shrink-0 overflow-hidden bg-hairline" style={{ aspectRatio: "2 / 3" }}>
+    <li className="flex items-center gap-3 py-3">
+      <div
+        className="card-scan relative w-10 shrink-0 overflow-hidden bg-hairline"
+        style={{ aspectRatio: "2 / 3" }}
+      >
         {cover ? (
           <Image src={cover} alt={animeTitle} fill sizes="40px" placeholder="blur" blurDataURL={blur.portrait} className="object-cover" quality={80} />
         ) : event.type === "comment" ? (
@@ -47,31 +114,39 @@ export function FeedActivityItem({
             <CommentGlyph />
           </span>
         ) : (
-          <span className="absolute inset-0 flex items-center justify-center font-mono text-caption text-mist">—</span>
+          <span className="absolute inset-0 flex items-center justify-center font-mono text-caption text-mist">
+            —
+          </span>
         )}
       </div>
 
       <div className="min-w-0 flex-1">
         <p className="text-body-sm leading-snug text-mist">
-          <UserProfilePreview user={user} className="font-medium text-snow transition-colors hover:text-ice">
-            {authorName}
-          </UserProfilePreview>{" "}
+          <span className="font-medium text-snow">{userName}</span>{" "}
           <EventVerb event={event} />{" "}
           {animeSlug ? (
-            <Link href={`/animes/${animeSlug}`} className="font-medium text-ice transition-colors hover:text-snow">
+            <Link
+              href={`/animes/${animeSlug}`}
+              className="font-medium text-ice transition-colors hover:text-snow"
+            >
               {animeTitle}
             </Link>
           ) : (
             <span className="text-mist">{animeTitle}</span>
           )}
           {event.type === "watch" && (
-            <span className="font-mono text-caption text-mist-soft"> — EP {event.episodeNumber}</span>
+            <span className="font-mono text-caption text-mist-soft">
+              {" "}
+              — EP {event.episodeNumber}
+            </span>
           )}
         </p>
         {event.type === "comment" && event.content && (
           <p className="mt-0.5 line-clamp-2 text-body-sm text-mist-soft">
             “{event.content}”
-            {event.edited && <span className="ml-1 text-caption text-mist-soft">(editado)</span>}
+            {event.edited && (
+              <span className="ml-1 text-caption text-mist-soft">(editado)</span>
+            )}
           </p>
         )}
       </div>
@@ -85,11 +160,11 @@ export function FeedActivityItem({
           {timeAgo(event.createdAt)}
         </span>
       </div>
-    </div>
+    </li>
   );
 }
 
-/** Like de comentário — mesma funcionalidade do ProfileActivity. */
+/** Like de comentário — funcionalidade existente preservada no feed. */
 function CommentLike({
   commentId,
   initial,

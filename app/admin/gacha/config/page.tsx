@@ -28,10 +28,12 @@ const GROUP_LABELS: Record<string, string> = {
   destaque: "Carta destaque",
   rates: "Drop rates",
   valores: "Valores",
+  eventos: "Eventos",
+  social: "Feed",
 };
 
 /** Grupos que mexem em dinheiro: precisam de confirmação e motivo antes do PATCH. */
-const SENSITIVE_GROUPS = new Set(["economia", "bypass", "mercado", "trocas", "rates"]);
+const SENSITIVE_GROUPS = new Set(["economia", "bypass", "mercado", "trocas", "rates", "eventos"]);
 const PREVIEW_MAX = 120;
 
 function groupTitle(group: string) {
@@ -142,6 +144,7 @@ export default function AdminGachaConfigPage() {
       toast("Configuração salva.", "success");
       await load();
     } catch (e) {
+      setConfirming(false);
       setFieldError(e instanceof ApiError ? e.message : "Erro ao salvar.");
     } finally {
       setSaving(false);

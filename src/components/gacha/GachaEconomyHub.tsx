@@ -2,6 +2,10 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
+import { GachaEssences } from "@/components/gacha/GachaEssences";
+import { GachaItemMarket } from "@/components/gacha/GachaItemMarket";
+import { ItemRewardPicker } from "@/components/gacha/ItemRewardPicker";
+import type { GachaItemAmount } from "@/types";
 import Link from "next/link";
 import { api, ApiError, type User } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
@@ -13,22 +17,17 @@ import {
   GachaOfferGrid,
   GachaPriceTag,
 } from "@/components/gacha/cards";
-import {
-  BoxReveal,
-  BOX_LABEL,
-} from "@/components/gacha/BoxReveal";
-import {
-  boxRewardLabel,
-  ITEM_KIND_LABEL,
-} from "@/lib/gacha-box-reward";
+import { BoxReveal, BOX_LABEL } from "@/components/gacha/BoxReveal";
+import { boxRewardLabel, ITEM_KIND_LABEL } from "@/lib/gacha-box-reward";
 import { Modal } from "@/components/common/Modal";
 import { KeyVault } from "@/components/gacha/KeyVault";
 import { SearchField } from "@/components/ui/SearchField";
+import { PaginationControls } from "@/components/ui/PaginationControls";
 import { useToast } from "@/components/common/ToastProvider";
 import { GachaTradeHub } from "@/components/gacha/GachaTradeHub";
 import { GachaMarketOfferHub } from "@/components/gacha/GachaMarketOfferHub";
 import { GachaCosmeticShop } from "@/components/gacha/GachaCosmeticShop";
-import { UserProfilePreview } from "@/components/social/UserProfilePreview";
+import { UserProfilePreview } from "@/features/social/identity";
 import {
   CardPreview,
   type GachaCardInspection,
@@ -58,6 +57,7 @@ const BOX_CATEGORY_LABEL: Record<string, string> = {
   CARD_BACK: "Verso de carta",
   CRYSTAL: "Cristais",
   ITEM: "Itens",
+  ESSENCE: "Essências",
   KEY: "Chave",
   KEY_PREMIUM_BOX: "Caixa premium + chave",
   KEY_RARE_BOX: "Caixa rara + chave",
@@ -197,12 +197,16 @@ function timeUntilReset(): string {
   return `${Math.floor(minutes / 60)}h ${minutes % 60}min`;
 }
 
-const MARKET_ACCOUNT_AGE_MS = 7 * 24 * 60 * 60 * 1000;
+const MARKET_ACCOUNT_AGE_DAYS = 7;
 
-function canUseMarket(user: User | null, now: number): boolean {
+function getMarketAccountAgeMs(): number {
+  return MARKET_ACCOUNT_AGE_DAYS * 24 * 60 * 60 * 1000;
+}
+
+function canUseMarket(user: User | null, now: number, ageMs: number): boolean {
   return (
     !!user?.isVerified &&
-    now - new Date(user.createdAt).getTime() >= MARKET_ACCOUNT_AGE_MS
+    now - new Date(user.createdAt).getTime() >= ageMs
   );
 }
 
@@ -222,6 +226,16 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
   const [orders, setOrders] = useState<GachaEconomyOrder[]>([]);
   const [offers, setOffers] = useState<GachaEconomyOffer[]>([]);
   const [ownedCards, setOwnedCards] = useState<GachaPull[]>([]);
+  const [ownedCardPage, setOwnedCardPage] = useState(1);
+  const [ownedCardTotalPages, setOwnedCardTotalPages] = useState(1);
+  const [ownedCardTotal, setOwnedCardTotal] = useState(0);
+  const [ownedCardResultKey, setOwnedCardResultKey] = useState("");
+  const [ownedCardLoadErrorKey, setOwnedCardLoadErrorKey] = useState("");
+  const [ownedCardRetry, setOwnedCardRetry] = useState(0);
+  const [cardCopySearchDebounced, setCardCopySearchDebounced] = useState("");
+  const [selectedCardCopy, setSelectedCardCopy] = useState<GachaPull | null>(
+    null,
+  );
   const [ownedSkins, setOwnedSkins] = useState<GachaOwnedSkinCopy[]>([]);
   const [mission, setMission] = useState<GachaMarketMission | null>(null);
   const [odds, setOdds] = useState<GachaEconomyOdds | null>(null);
@@ -250,11 +264,10 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
   const [orderPrice, setOrderPrice] = useState("");
   const [offerTarget, setOfferTarget] =
     useState<GachaEconomyListingItem | null>(null);
-  const [offerMethod, setOfferMethod] = useState<"crystals" | "cards">(
-    "crystals",
-  );
+  const [offerItems, setOfferItems] = useState<GachaItemAmount[]>([]);
   const [offerCrystals, setOfferCrystals] = useState("");
   const [offerCardIds, setOfferCardIds] = useState<string[]>([]);
+  const [offerCardCopies, setOfferCardCopies] = useState<GachaPull[]>([]);
   const [offerRefreshKey, setOfferRefreshKey] = useState(0);
   const [cardCopyId, setCardCopyId] = useState("");
   const [cardCopySearch, setCardCopySearch] = useState("");
@@ -275,27 +288,23 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
     useState<GachaCardInspection | null>(null);
   const [resetCountdown, setResetCountdown] = useState(timeUntilReset);
   const [marketClock, setMarketClock] = useState(0);
-  const marketReady = mode === "market" && canUseMarket(user, marketClock);
+  const marketReady = mode === "market" && canUseMarket(user, marketClock, getMarketAccountAgeMs());
   const accountEligibleAt = user
-    ? new Date(new Date(user.createdAt).getTime() + MARKET_ACCOUNT_AGE_MS)
+    ? new Date(new Date(user.createdAt).getTime() + getMarketAccountAgeMs())
     : null;
   const accountAgeReady =
     !!accountEligibleAt && marketClock >= accountEligibleAt.getTime();
-  const cardSearchTerm = cardCopySearch.trim().toLocaleLowerCase("pt-BR");
-  const filteredCardCopies = ownedCards.filter((copy) =>
-    [
-      copy.card.imageHidden ? "carta misteriosa" : copy.card.name,
-      copy.card.imageHidden ? null : copy.card.animeTitle,
-      copy.card.rarity,
-      copy.foil,
-      `edição ${copy.edition}`,
-    ]
-      .filter(Boolean)
-      .join(" ")
-      .toLocaleLowerCase("pt-BR")
-      .includes(cardSearchTerm),
-  );
-  const selectedCardCopy = ownedCards.find((copy) => copy.id === cardCopyId);
+  const filteredCardCopies = ownedCards;
+  const ownedCardQueryKey = `${user?.id ?? ""}:${ownedCardPage}:${cardCopySearchDebounced}:${ownedCardRetry}`;
+  const visibleOwnedCards =
+    ownedCardResultKey === ownedCardQueryKey &&
+    cardCopySearch === cardCopySearchDebounced
+      ? filteredCardCopies
+      : [];
+  const ownedCardLoadError = ownedCardLoadErrorKey === ownedCardQueryKey;
+  const ownedCardsLoading =
+    cardCopySearch !== cardCopySearchDebounced ||
+    (ownedCardResultKey !== ownedCardQueryKey && !ownedCardLoadError);
   const skinSearchTerm = skinCopySearch.trim().toLocaleLowerCase("pt-BR");
   const filteredSkinCopies = ownedSkins.filter((copy) =>
     `${copy.name} ${copy.rarity}`
@@ -307,24 +316,36 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
   const refresh = useCallback(async () => {
     if (!user) return null;
     try {
-      const wallet = await api.gachaEconomyInventory();
+      // Carteira e conteúdo da aba são independentes: em paralelo a página
+      // pinta com uma ida ao servidor em vez de duas em série.
+      const [wallet, shopOffers] = await Promise.all([
+        api.gachaEconomyInventory(),
+        mode === "shop" ? api.gachaEconomyShop() : Promise.resolve(null),
+      ]);
       setInventory(wallet);
-      if (mode === "shop") {
-        setOffers(await api.gachaEconomyShop());
-      } else {
-        const [myListings, myOrders, missionState, copies, collection] =
-          await Promise.all([
-            api.gachaEconomyMyListings(),
-            api.gachaEconomyMyOrders(),
-            api.gachaEconomyMission(),
-            api.gachaEconomyOwnedSkins(),
-            api.gachaCollection(user.id, 1, 100),
-          ]);
-        setMine(myListings.items);
+      if (mode === "shop" && shopOffers) {
+        setOffers(shopOffers);
+      } else if (mode === "market") {
+        const [myListings, myItemListings, myOrders, missionState, copies] = await Promise.all([
+          api.gachaEconomyMyListings(),
+          api.gachaEconomyMyListings(1, "ITEM"),
+          api.gachaEconomyMyOrders(),
+          api.gachaEconomyMission(),
+          api.gachaEconomyOwnedSkins(),
+        ]);
+        setMine(
+          [
+            ...myListings.items,
+            ...myItemListings.items.filter((item) => item.itemType === "ITEM"),
+          ].sort(
+            (a, b) =>
+              new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+          ),
+        );
         setOrders(myOrders.items);
         setMission(missionState);
         setOwnedSkins(copies.filter((copy) => copy.status === "ACTIVE"));
-        setOwnedCards(collection.data);
+        setOwnedCardRetry((retry) => retry + 1);
       }
       return wallet;
     } catch (cause) {
@@ -336,6 +357,59 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
       return null;
     }
   }, [mode, user]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(
+      () => setCardCopySearchDebounced(cardCopySearch),
+      250,
+    );
+    return () => window.clearTimeout(timer);
+  }, [cardCopySearch]);
+
+  useEffect(() => {
+    if (!user || mode !== "market") return;
+    let active = true;
+    void api
+      .gachaCollection(
+        user.id,
+        ownedCardPage,
+        48,
+        "value",
+        "",
+        "",
+        cardCopySearchDebounced,
+      )
+      .then((collection) => {
+        if (!active) return;
+        setOwnedCards(collection.data);
+        setOwnedCardResultKey(ownedCardQueryKey);
+        setOwnedCardLoadErrorKey("");
+        setOwnedCardTotal(collection.meta.total);
+        const totalPages = Math.max(1, collection.meta.totalPages);
+        setOwnedCardTotalPages(totalPages);
+        setOwnedCardPage((page) => Math.min(page, totalPages));
+      })
+      .catch((cause: unknown) => {
+        if (active) {
+          setOwnedCardLoadErrorKey(ownedCardQueryKey);
+          setListingError(
+            cause instanceof ApiError
+              ? cause.message
+              : "Não foi possível carregar suas cartas.",
+          );
+        }
+      });
+    return () => {
+      active = false;
+    };
+  }, [
+    user,
+    mode,
+    ownedCardPage,
+    cardCopySearchDebounced,
+    ownedCardRetry,
+    ownedCardQueryKey,
+  ]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -357,8 +431,13 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
           await refresh();
         }
       } else {
-        setOdds(await api.gachaEconomyOdds());
-        if (user) await refresh();
+        // Odds é público e não depende da carteira: dispara junto, senão a
+        // página espera odds + carteira + ofertas em série antes de pintar.
+        const [oddsResult] = await Promise.all([
+          api.gachaEconomyOdds(),
+          user ? refresh() : Promise.resolve(null),
+        ]);
+        setOdds(oddsResult);
       }
     } catch (cause) {
       setError(
@@ -484,7 +563,7 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
 
   async function createOrder(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!orderTarget) return;
+    if (!orderTarget || orderTarget.itemType === "ITEM") return;
     const price = Number(orderPrice);
     if (!Number.isSafeInteger(price) || price < 1) {
       setError("Informe uma oferta inteira em Cristais.");
@@ -494,7 +573,7 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
       `order-${orderTarget.id}`,
       () =>
         api.gachaEconomyCreateOrder({
-          itemType: orderTarget.itemType,
+          itemType: orderTarget.itemType === "CARD" ? "CARD" : "SKIN",
           itemId:
             orderTarget.itemType === "CARD"
               ? (orderTarget.item.cardId ?? orderTarget.item.id)
@@ -512,19 +591,16 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
   async function createMarketOffer(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!offerTarget) return;
-    const crystals = offerMethod === "crystals" ? Number(offerCrystals) : 0;
+    const crystals = Number(offerCrystals || "0");
     if (
-      (offerMethod === "crystals" &&
-        (!Number.isSafeInteger(crystals) ||
-          crystals < 1 ||
-          crystals > (inventory?.available ?? 0))) ||
-      (offerMethod === "cards" &&
-        (offerCardIds.length < 1 || offerCardIds.length > 5))
+      !Number.isSafeInteger(crystals) ||
+      crystals < 0 ||
+      crystals > (inventory?.available ?? 0) ||
+      offerCardIds.length > 5 ||
+      (crystals === 0 && offerCardIds.length === 0 && offerItems.length === 0)
     ) {
       setError(
-        offerMethod === "crystals"
-          ? "Informe uma oferta em Cristais dentro do seu saldo disponível."
-          : "Escolha de 1 a 5 cartas para a proposta.",
+        "Ofereça itens, até 5 cartas e/ou Cristais dentro do saldo disponível.",
       );
       return;
     }
@@ -534,9 +610,9 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
         api.gachaEconomyCreateMarketOffer({
           itemType: offerTarget.itemType,
           listingId: offerTarget.id,
-          ...(offerMethod === "crystals"
-            ? { crystals }
-            : { offeredUserCardIds: offerCardIds }),
+          crystals,
+          items: offerItems,
+          offeredUserCardIds: offerCardIds,
         }),
       "Proposta enviada. Os itens ficam reservados até a resposta.",
     );
@@ -544,6 +620,8 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
       setOfferTarget(null);
       setOfferCrystals("");
       setOfferCardIds([]);
+      setOfferCardCopies([]);
+      setOfferItems([]);
       setOfferRefreshKey((key) => key + 1);
     }
   }
@@ -566,6 +644,7 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
     );
     if (completed) {
       setCardCopyId("");
+      setSelectedCardCopy(null);
       setCardPrice("");
     }
   }
@@ -1210,9 +1289,12 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
               onOffer={(listing) => {
                 setError("");
                 setOfferTarget(listing);
-                setOfferMethod("crystals");
+                setOfferItems([]);
                 setOfferCrystals("");
                 setOfferCardIds([]);
+                setOfferCardCopies([]);
+                setCardCopySearch("");
+                setOwnedCardPage(1);
               }}
               onHistory={(listing) => void showHistory(listing)}
               onCancel={(listing) => void cancelMarketListing(listing)}
@@ -1254,9 +1336,12 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
               onOffer={(listing) => {
                 setError("");
                 setOfferTarget(listing);
-                setOfferMethod("crystals");
+                setOfferItems([]);
                 setOfferCrystals("");
                 setOfferCardIds([]);
+                setOfferCardCopies([]);
+                setCardCopySearch("");
+                setOwnedCardPage(1);
               }}
               onHistory={(listing) => void showHistory(listing)}
               onCancel={(listing) => void cancelMarketListing(listing)}
@@ -1267,10 +1352,36 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
             />
           )}
 
+          {mode === "market" && (
+            <GachaItemMarket
+              inventory={inventory}
+              marketReady={marketReady}
+              refresh={async () => {
+                await refresh();
+                setOfferRefreshKey((key) => key + 1);
+              }}
+              refreshKey={offerRefreshKey}
+              onOffer={(listing) => {
+                setError("");
+                setOfferTarget(listing);
+                setOfferItems([]);
+                setOfferCrystals("");
+                setOfferCardIds([]);
+                setOfferCardCopies([]);
+                setCardCopySearch("");
+                setOwnedCardPage(1);
+              }}
+            />
+          )}
+
           {mode === "market" && user && (
             <GachaMarketOfferHub
               refreshKey={offerRefreshKey}
               canAccept={marketReady}
+              onSettled={async () => {
+                await refresh();
+                setOfferRefreshKey((key) => key + 1);
+              }}
             />
           )}
 
@@ -1445,103 +1556,144 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
             >
               <form onSubmit={(event) => void createMarketOffer(event)}>
                 <p className="text-body-sm text-mist">
-                  Sua proposta vai diretamente para quem anunciou. O valor ou as
-                  cartas escolhidas ficam reservados até a resposta.
+                  Sua proposta vai diretamente para quem anunciou. Os itens,
+                  cartas e Cristais escolhidos ficam reservados até a resposta.
                 </p>
-                <fieldset className="mt-5 grid gap-3 sm:grid-cols-2">
-                  <legend className="mb-2 text-body-sm text-snow">
-                    O que você oferece?
+                <label className="mt-4 block text-body-sm text-snow">
+                  Sua proposta em Cristais (opcional)
+                  <input
+                    type="number"
+                    min={0}
+                    max={inventory?.available ?? 0}
+                    step={1}
+                    inputMode="numeric"
+                    autoComplete="off"
+                    value={offerCrystals}
+                    onChange={(event) => setOfferCrystals(event.target.value)}
+                    className="field mt-2 min-h-11 w-full"
+                  />
+                </label>
+                <fieldset className="mt-4">
+                  <legend className="text-body-sm text-snow">
+                    Escolha até 5 cartas
                   </legend>
-                  <label className="flex min-h-14 cursor-pointer items-center gap-3 border border-hairline p-3 text-body-sm text-snow">
-                    <input
-                      type="radio"
-                      name="offer-method"
-                      value="crystals"
-                      checked={offerMethod === "crystals"}
-                      onChange={() => setOfferMethod("crystals")}
-                    />
-                    Cristais · disponível{" "}
-                    {(inventory?.available ?? 0).toLocaleString("pt-BR")}
-                  </label>
-                  <label className="flex min-h-14 cursor-pointer items-center gap-3 border border-hairline p-3 text-body-sm text-snow">
-                    <input
-                      type="radio"
-                      name="offer-method"
-                      value="cards"
-                      checked={offerMethod === "cards"}
-                      onChange={() => setOfferMethod("cards")}
-                    />
-                    Cartas da minha coleção
-                  </label>
+                  {offerCardCopies.length > 0 && (
+                    <ul
+                      aria-label="Cartas selecionadas para oferecer"
+                      className="mt-3 space-y-2"
+                    >
+                      {offerCardCopies.map((copy) => (
+                        <li
+                          key={copy.id}
+                          className="flex items-center justify-between gap-3 border border-hairline p-2 text-body-sm text-snow"
+                        >
+                          <span className="truncate">
+                            {copy.card.name} · edição #{copy.edition}
+                          </span>
+                          <button
+                            type="button"
+                            className="min-h-11 px-3 text-ice underline"
+                            aria-label={`Remover ${copy.card.name} da proposta`}
+                            onClick={() => {
+                              setOfferCardIds((current) =>
+                                current.filter((id) => id !== copy.id),
+                              );
+                              setOfferCardCopies((current) =>
+                                current.filter((card) => card.id !== copy.id),
+                              );
+                            }}
+                          >
+                            Remover
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  <div className="mt-2 max-h-72 space-y-2 overflow-y-auto border border-hairline p-3">
+                    {ownedCardTotal === 0 ? (
+                      <p className="text-body-sm text-mist">
+                        Nenhuma carta disponível para oferecer.
+                      </p>
+                    ) : (
+                      visibleOwnedCards.map((copy) => {
+                        const checked = offerCardIds.includes(copy.id);
+                        return (
+                          <label
+                            key={copy.id}
+                            className="flex min-h-12 cursor-pointer items-center gap-3 border-b border-hairline py-2 last:border-0"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              disabled={!checked && offerCardIds.length >= 5}
+                              onChange={() => {
+                                setOfferCardIds((current) =>
+                                  checked
+                                    ? current.filter((id) => id !== copy.id)
+                                    : [...current, copy.id],
+                                );
+                                setOfferCardCopies((current) =>
+                                  checked
+                                    ? current.filter(
+                                        (card) => card.id !== copy.id,
+                                      )
+                                    : [...current, copy],
+                                );
+                              }}
+                              aria-label={`Oferecer ${copy.card.name}, edição ${copy.edition}`}
+                            />
+                            <span className="min-w-0 text-body-sm text-snow">
+                              <span className="block truncate">
+                                {copy.card.name}
+                              </span>
+                              <span className="text-caption text-mist">
+                                {copy.card.rarity} · {copy.foil} · edição #
+                                {copy.edition}
+                              </span>
+                            </span>
+                          </label>
+                        );
+                      })
+                    )}
+                  </div>
+                  <p className="mt-2 text-caption text-mist" role="status">
+                    {offerCardIds.length} de 5 selecionadas
+                  </p>
+                  <p className="mt-2 text-caption text-mist">
+                    Página {ownedCardPage} de {ownedCardTotalPages} ·{" "}
+                    {ownedCardTotal} cartas
+                  </p>
+                  <PaginationControls
+                    page={ownedCardPage}
+                    totalPages={ownedCardTotalPages}
+                    onPageChange={(page) => {
+                      setOwnedCards([]);
+                      setOwnedCardPage(page);
+                    }}
+                    label="Cartas disponíveis para oferecer"
+                  />
                 </fieldset>
 
-                {offerMethod === "crystals" ? (
-                  <label className="mt-4 block text-body-sm text-snow">
-                    Sua proposta em Cristais
-                    <input
-                      type="number"
-                      min={1}
-                      max={inventory?.available ?? 0}
-                      step={1}
-                      inputMode="numeric"
-                      autoComplete="off"
-                      required
-                      value={offerCrystals}
-                      onChange={(event) => setOfferCrystals(event.target.value)}
-                      className="field mt-2 min-h-11 w-full"
+                {inventory && (
+                  <div className="mt-4">
+                    <ItemRewardPicker
+                      catalog={inventory.itemCatalog ?? []}
+                      value={offerItems}
+                      onChange={setOfferItems}
+                      inventory={inventory}
+                      disabled={busy !== null}
                     />
-                  </label>
-                ) : (
-                  <fieldset className="mt-4">
-                    <legend className="text-body-sm text-snow">
-                      Escolha até 5 cartas
-                    </legend>
-                    <div className="mt-2 max-h-72 space-y-2 overflow-y-auto border border-hairline p-3">
-                      {ownedCards.length === 0 ? (
-                        <p className="text-body-sm text-mist">
-                          Nenhuma carta disponível para oferecer.
-                        </p>
-                      ) : (
-                        ownedCards.map((copy) => {
-                          const checked = offerCardIds.includes(copy.id);
-                          return (
-                            <label
-                              key={copy.id}
-                              className="flex min-h-12 cursor-pointer items-center gap-3 border-b border-hairline py-2 last:border-0"
-                            >
-                              <input
-                                type="checkbox"
-                                checked={checked}
-                                disabled={!checked && offerCardIds.length >= 5}
-                                onChange={() =>
-                                  setOfferCardIds((current) =>
-                                    checked
-                                      ? current.filter((id) => id !== copy.id)
-                                      : [...current, copy.id],
-                                  )
-                                }
-                                aria-label={`Oferecer ${copy.card.name}, edição ${copy.edition}`}
-                              />
-                              <span className="min-w-0 text-body-sm text-snow">
-                                <span className="block truncate">
-                                  {copy.card.name}
-                                </span>
-                                <span className="text-caption text-mist">
-                                  {copy.card.rarity} · {copy.foil} · edição #
-                                  {copy.edition}
-                                </span>
-                              </span>
-                            </label>
-                          );
-                        })
-                      )}
-                    </div>
-                    <p className="mt-2 text-caption text-mist" role="status">
-                      {offerCardIds.length} de 5 selecionadas
-                    </p>
-                  </fieldset>
+                  </div>
                 )}
-
+                <p className="mt-4 text-body-sm text-ice" aria-live="polite">
+                  Proposta:{" "}
+                  {Number(offerCrystals || "0").toLocaleString("pt-BR")}{" "}
+                  Cristais + {offerCardIds.length} carta(s) +{" "}
+                  {offerItems
+                    .reduce((sum, row) => sum + row.quantity, 0)
+                    .toLocaleString("pt-BR")}{" "}
+                  item(ns).
+                </p>
                 <p className="mt-4 text-caption text-mist">
                   Cristais são a moeda do mercado. Pontos de ranking não podem
                   ser usados em propostas.
@@ -1594,21 +1746,21 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
                     <legend className="text-body-sm text-mist">
                       Escolha uma carta
                     </legend>
-                    {ownedCards.length > 0 && (
-                      <SearchField
-                        name="card-copy-search"
-                        value={cardCopySearch}
-                        onChange={(event) =>
-                          setCardCopySearch(event.target.value)
-                        }
-                        placeholder="Buscar por nome, anime ou edição…"
-                        autoComplete="off"
-                        aria-label="Buscar carta da coleção"
-                        className="mt-2 w-full"
-                      />
-                    )}
+                    <SearchField
+                      name="card-copy-search"
+                      value={cardCopySearch}
+                      onChange={(event) => {
+                        setOwnedCards([]);
+                        setOwnedCardPage(1);
+                        setCardCopySearch(event.target.value);
+                      }}
+                      placeholder="Buscar por nome ou anime…"
+                      autoComplete="off"
+                      aria-label="Buscar carta da coleção"
+                      className="mt-2 w-full"
+                    />
                     <p className="mt-2 text-caption text-mist" role="status">
-                      {filteredCardCopies.length} de {ownedCards.length} cartas
+                      {visibleOwnedCards.length} de {ownedCardTotal} cartas
                       {cardCopyId ? " · 1 selecionada" : " disponíveis"}
                     </p>
                     {cardCopyId && (
@@ -1623,7 +1775,7 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
                       aria-label="Cartas disponíveis para anúncio"
                       className="mt-2 grid max-h-72 grid-cols-1 gap-2 overflow-y-auto pr-1 sm:grid-cols-2"
                     >
-                      {filteredCardCopies.map((copy) => {
+                      {visibleOwnedCards.map((copy) => {
                         const selected = cardCopyId === copy.id;
                         const name = copy.card.imageHidden
                           ? "Carta misteriosa"
@@ -1633,7 +1785,10 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
                             <button
                               type="button"
                               aria-pressed={selected}
-                              onClick={() => setCardCopyId(copy.id)}
+                              onClick={() => {
+                                setCardCopyId(copy.id);
+                                setSelectedCardCopy(copy);
+                              }}
                               className={`flex min-h-24 w-full items-center gap-3 border p-2 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-ice ${selected ? "border-ice bg-ice/10" : "border-hairline bg-ink hover:border-ice/50"}`}
                             >
                               <GachaItemThumbnail
@@ -1658,24 +1813,68 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
                         );
                       })}
                     </ul>
-                    {ownedCards.length > 0 &&
-                      filteredCardCopies.length === 0 && (
+                    {ownedCardsLoading && (
+                      <p role="status" className="mt-3 text-body-sm text-mist">
+                        Carregando cartas…
+                      </p>
+                    )}
+                    {ownedCardLoadError && (
+                      <p role="alert" className="mt-3 text-body-sm text-signal">
+                        Não foi possível carregar esta página.{" "}
+                        <button
+                          type="button"
+                          className="underline"
+                          onClick={() =>
+                            setOwnedCardRetry((retry) => retry + 1)
+                          }
+                        >
+                          Tentar novamente
+                        </button>
+                      </p>
+                    )}
+                    {!ownedCardsLoading &&
+                      !ownedCardLoadError &&
+                      ownedCardTotal === 0 &&
+                      cardCopySearch && (
                         <p className="mt-3 text-body-sm text-mist">
                           Nenhuma carta corresponde à busca.
                         </p>
                       )}
-                    {ownedCards.length === 0 && (
-                      <p className="mt-2 text-caption text-mist">
-                        Sem cópias disponíveis? Veja sua{" "}
-                        <Link
-                          href="/gacha/colecao"
-                          className="text-ice underline underline-offset-4"
-                        >
-                          coleção de cartas
-                        </Link>
-                        .
-                      </p>
-                    )}
+                    {!ownedCardsLoading &&
+                      !ownedCardLoadError &&
+                      ownedCardTotal > 0 &&
+                      visibleOwnedCards.length === 0 && (
+                        <p className="mt-3 text-body-sm text-mist">
+                          Nenhuma carta disponível nesta página.
+                        </p>
+                      )}
+                    <p className="mt-2 text-caption text-mist">
+                      Página {ownedCardPage} de {ownedCardTotalPages}
+                    </p>
+                    <PaginationControls
+                      page={ownedCardPage}
+                      totalPages={ownedCardTotalPages}
+                      onPageChange={(page) => {
+                        setOwnedCards([]);
+                        setOwnedCardPage(page);
+                      }}
+                      label="Cartas da coleção para anúncio"
+                    />
+                    {!ownedCardsLoading &&
+                      !ownedCardLoadError &&
+                      ownedCardTotal === 0 &&
+                      !cardCopySearch && (
+                        <p className="mt-2 text-caption text-mist">
+                          Sem cópias disponíveis? Veja sua{" "}
+                          <Link
+                            href="/gacha/colecao"
+                            className="text-ice underline underline-offset-4"
+                          >
+                            coleção de cartas
+                          </Link>
+                          .
+                        </p>
+                      )}
                   </fieldset>
                   <label className="text-body-sm text-mist">
                     Quanto quer receber (Cristais)
@@ -1893,6 +2092,8 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
             </section>
           )}
 
+          {mode === "shop" && user && inventory && <GachaEssences inventory={inventory} refresh={refresh} disabled={busy !== null} />}
+
           {mode === "shop" && user && (
             <GachaCosmeticShop
               balance={inventory?.available ?? null}
@@ -1928,6 +2129,10 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
                     0,
                   );
                   const itemDrops = itemDropProbabilities(odds, tier);
+                  const essenceWeights = odds.essenceKindWeights?.[tier];
+                  const essenceTotal = Object.values(
+                    essenceWeights ?? {},
+                  ).reduce((sum, weight) => sum + weight, 0);
                   return (
                     <div key={tier}>
                       <h3 className="font-display text-body-sm text-ice">
@@ -1978,6 +2183,45 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
                               </dd>
                             </div>
                           ))}
+                        </dl>
+                      )}
+                      <h4 className="mt-4 font-display text-body-sm text-ice">
+                        Essências · por abertura
+                      </h4>
+                      {(categoryWeights.ESSENCE ?? 0) <= 0 ? (
+                        <p className="mt-2 text-caption text-mist">
+                          Esta caixa não concede Essências na configuração
+                          ativa.
+                        </p>
+                      ) : !essenceWeights || essenceTotal <= 0 ? (
+                        <p className="mt-2 text-caption text-mist">
+                          Detalhamento indisponível.
+                        </p>
+                      ) : (
+                        <dl className="mt-2 space-y-1 text-caption text-mist">
+                          {Object.entries(essenceWeights)
+                            .filter(([, weight]) => weight > 0)
+                            .map(([kind, weight]) => (
+                              <div
+                                key={kind}
+                                className="flex justify-between gap-4"
+                              >
+                                <dt>
+                                  {inventory?.itemCatalog?.find(
+                                    (item) => item.id === kind,
+                                  )?.name ??
+                                    `Essência ${kind.replace("ESSENCIA_", "").toLowerCase()}`}
+                                </dt>
+                                <dd className="tabular-nums">
+                                  {formatChance(
+                                    (((categoryWeights.ESSENCE ?? 0) /
+                                      categoryTotal) *
+                                      weight) /
+                                      essenceTotal,
+                                  )}
+                                </dd>
+                              </div>
+                            ))}
                         </dl>
                       )}
                     </div>
@@ -2285,8 +2529,7 @@ function MarketSection({
                   {[
                     listing.item.rarity ?? listing.item.card?.rarity,
                     listing.item.foil,
-                    listing.item.animeTitle ??
-                      listing.item.card?.animeTitle,
+                    listing.item.animeTitle ?? listing.item.card?.animeTitle,
                   ]
                     .filter(Boolean)
                     .join(" · ") || listing.itemType}
@@ -2294,9 +2537,7 @@ function MarketSection({
               }
               title={itemName(listing)}
               price={
-                <GachaPriceTag
-                  amount={listing.price.toLocaleString("pt-BR")}
-                />
+                <GachaPriceTag amount={listing.price.toLocaleString("pt-BR")} />
               }
               actions={
                 <div className="grid grid-cols-2 gap-2">

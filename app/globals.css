@@ -841,21 +841,6 @@
     }
   }
 
-  /* Fragmento bônus resgatado: brilho de pulso discreto no selo. Só a
-     drop-shadow anima (composited), reduzido-por-prefers-reduced-motion. */
-  .shard-bonus-glow {
-    filter: drop-shadow(0 0 3px rgba(56, 189, 248, 0.55));
-  }
-  @keyframes shard-bonus-glow {
-    0%,
-    100% {
-      filter: drop-shadow(0 0 2px rgba(56, 189, 248, 0.35));
-    }
-    50% {
-      filter: drop-shadow(0 0 6px rgba(56, 189, 248, 0.75));
-    }
-  }
-
   @media (prefers-reduced-motion: reduce) {
     .skeleton::after {
       display: none;
@@ -2835,7 +2820,8 @@
   );
 }
 
-.box-reveal-art[data-kind="item"] img {
+.box-reveal-art[data-kind="item"] img,
+.box-reveal-art[data-kind="card"] img {
   border: 1px solid color-mix(in srgb, var(--prize-accent) 55%, transparent);
   border-radius: 0.6rem;
   box-shadow:
@@ -2843,8 +2829,18 @@
     0 18px 60px #000a;
 }
 
+.box-reveal-art[data-kind="card"] img {
+  max-height: min(38dvh, 25rem);
+  border-radius: 0.85rem;
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--prize-accent) 28%, transparent),
+    0 0 42px color-mix(in srgb, var(--prize-accent) 24%, transparent),
+    0 24px 72px #000c;
+}
+
 /* One shine sweep across the artwork after it lands. */
-.box-reveal-art[data-kind="item"]::after {
+.box-reveal-art[data-kind="item"]::after,
+.box-reveal-art[data-kind="card"]::after {
   content: "";
   position: absolute;
   inset: 0;

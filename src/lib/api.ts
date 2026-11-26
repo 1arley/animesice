@@ -1,4 +1,11 @@
 import type {
+  GachaCatalogItem,
+  GachaItemAmount,
+  GachaEssenceKind,
+  GachaRewardCode,
+  GachaRewardCodeInput,
+} from "@/types";
+import type {
   Anime,
   Episode,
   Genre,
@@ -1565,34 +1572,31 @@ export const api = {
   gachaCrystals: (page = 1, limit = 20) =>
     request<CrystalPage>(`/gacha/crystals?page=${page}&limit=${limit}`),
   gachaRedeemCode: (code: string) =>
-    request<{ crystals: number; balance: number }>(`/gacha/crystals/redeem`, {
-      method: "POST",
-      body: JSON.stringify({ code }),
-    }),
-  adminCrystalCodes: () => request(`/gacha/admin/crystal-codes`),
+    request<{ crystals: number; balance: number; items?: GachaItemAmount[] }>(
+      `/gacha/crystals/redeem`,
+      {
+        method: "POST",
+        body: JSON.stringify({ code }),
+      },
+    ),
+  adminCrystalCodes: () =>
+    request<GachaRewardCode[]>(`/gacha/admin/crystal-codes`),
   adminGetCrystalCode: (id: string) =>
     request(`/gacha/admin/crystal-codes/${id}`),
-  adminCreateCrystalCode: (body: {
-    code?: string;
-    crystals: number;
-    maxUses?: number;
-    expiresAt?: string;
-  }) =>
-    request(`/gacha/admin/crystal-codes`, {
+  adminCreateCrystalCode: (body: GachaRewardCodeInput) =>
+    request<GachaRewardCode>("/gacha/admin/crystal-codes", {
       method: "POST",
       body: JSON.stringify(body),
     }),
-  adminUpdateCrystalCode: (
-    id: string,
-    body: {
-      code?: string;
-      crystals?: number;
-      maxUses?: number;
-      active?: boolean;
-      expiresAt?: string;
-    },
+  adminCreateCrystalCodeBatch: (
+    body: GachaRewardCodeInput & { count: number },
   ) =>
-    request(`/gacha/admin/crystal-codes/${id}`, {
+    request<GachaRewardCode[]>("/gacha/admin/crystal-codes/batch", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  adminUpdateCrystalCode: (id: string, body: GachaRewardCodeInput) =>
+    request<GachaRewardCode>(`/gacha/admin/crystal-codes/${id}`, {
       method: "PUT",
       body: JSON.stringify(body),
     }),
@@ -1610,6 +1614,22 @@ export const api = {
       body: JSON.stringify({}),
     }),
 
+  gachaItemCatalog: () =>
+    request<GachaCatalogItem[]>("/gacha/economy/items/catalog"),
+  gachaBuyEssence: (body: {
+    operationId: string;
+    itemId: GachaEssenceKind;
+    quantity?: number;
+  }) =>
+    request("/gacha/economy/essences/buy", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  gachaUseEssence: (body: { operationId: string; itemId: GachaEssenceKind }) =>
+    request<{ pull: GachaPull }>("/gacha/essences/use", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
   gachaEconomyInventory: () => request<GachaEconomyInventory>("/gacha/economy"),
   gachaEconomyCraftGem: (body: { foil: GachaFoil }) =>
     request<GachaEconomyInventory>("/gacha/economy/gems/craft", {
@@ -1681,13 +1701,16 @@ export const api = {
     }),
   gachaEconomyUseReset: () =>
     request("/gacha/economy/spin-reset", { method: "POST" }),
-  gachaEconomyListings: (itemType: "CARD" | "SKIN", page = 1) =>
+  gachaEconomyListings: (itemType: "CARD" | "SKIN" | "ITEM", page = 1) =>
     request<GachaEconomyPage<GachaEconomyListingItem>>(
       `/gacha/economy/market/listings?itemType=${itemType}&page=${page}&limit=24`,
     ),
-  gachaEconomyMyListings: (page = 1) =>
+  gachaEconomyMyListings: (
+    page = 1,
+    itemType?: "CARD" | "SKIN" | "ITEM",
+  ) =>
     request<GachaEconomyPage<GachaEconomyListingItem>>(
-      `/gacha/economy/market/listings/mine?page=${page}&limit=50`,
+      `/gacha/economy/market/listings/mine?page=${page}&limit=50${itemType ? `&itemType=${itemType}` : ""}`,
     ),
   gachaEconomyMyOrders: (page = 1) =>
     request<GachaEconomyPage<GachaEconomyOrder>>(
@@ -1696,7 +1719,8 @@ export const api = {
   gachaEconomyMyMarketOffers: () =>
     request<GachaMarketOffer[]>("/gacha/economy/market/offers/mine"),
   gachaEconomyCreateMarketOffer: (body: {
-    itemType: "CARD" | "SKIN";
+    itemType: "CARD" | "SKIN" | "ITEM";
+    items?: GachaItemAmount[];
     listingId: string;
     crystals?: number;
     offeredUserCardIds?: string[];
@@ -1743,17 +1767,30 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ userCardId, price }),
     }),
-  gachaEconomyBuyListing: (itemType: "CARD" | "SKIN", id: string) =>
+  gachaEconomyCreateItemListing: (body: {
+    itemId: string;
+    quantity: number;
+    price: number;
+  }) =>
+    request("/gacha/economy/market/items", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  gachaEconomyBuyListing: (itemType: "CARD" | "SKIN" | "ITEM", id: string) =>
     request(
-      `/gacha/economy/market/${itemType === "CARD" ? "cards" : "skins"}/listings/${encodeURIComponent(id)}/buy`,
+      itemType === "ITEM"
+        ? `/gacha/economy/market/items/${encodeURIComponent(id)}/buy`
+        : `/gacha/economy/market/${itemType === "CARD" ? "cards" : "skins"}/listings/${encodeURIComponent(id)}/buy`,
       { method: "POST" },
     ),
-  gachaEconomyCancelListing: (itemType: "CARD" | "SKIN", id: string) =>
+  gachaEconomyCancelListing: (itemType: "CARD" | "SKIN" | "ITEM", id: string) =>
     request(
-      `/gacha/economy/market/${itemType === "CARD" ? "cards" : "skins"}/listings/${encodeURIComponent(id)}/cancel`,
+      itemType === "ITEM"
+        ? `/gacha/economy/market/items/${encodeURIComponent(id)}/cancel`
+        : `/gacha/economy/market/${itemType === "CARD" ? "cards" : "skins"}/listings/${encodeURIComponent(id)}/cancel`,
       { method: "POST" },
     ),
-  gachaEconomyHistory: (itemType: "CARD" | "SKIN", itemId: string) =>
+  gachaEconomyHistory: (itemType: "CARD" | "SKIN" | "ITEM", itemId: string) =>
     request<GachaMarketHistory>(
       `/gacha/economy/market/history?type=${itemType}&itemId=${encodeURIComponent(itemId)}`,
     ),
@@ -1779,6 +1816,7 @@ export const api = {
     request(`/gacha/economy/shop/${encodeURIComponent(id)}/buy`, {
       method: "POST",
     }),
+  // O catálogo item a item (40+ MB) é opt-in no backend e nenhuma tela usa.
   gachaEconomyOdds: () => request<GachaEconomyOdds>("/gacha/economy/odds"),
   gachaEconomyOwnedSkins: () =>
     request<GachaOwnedSkinCopy[]>("/gacha/economy/skins/mine"),
@@ -1954,10 +1992,26 @@ export const api = {
   gachaSpin: (signal?: AbortSignal) =>
     request<GachaSpinPreview>(`/gacha/spin`, { method: "POST", signal }),
 
-  gachaSkins: (page = 1, limit = 48, search = "") =>
-    request<GachaSkinsResponse>(
-      `/gacha/skins?page=${page}&limit=${limit}&search=${encodeURIComponent(search)}`,
-    ),
+  gachaSkins: (
+    page = 1,
+    limit = 48,
+    search = "",
+    includeOwned: "all" | "count" | "none" = "all",
+    ownedPage?: number,
+    ownedLimit = 48,
+  ) => {
+    const query = new URLSearchParams({
+      page: String(page),
+      limit: String(limit),
+      search,
+    });
+    if (includeOwned !== "all") query.set("includeOwned", includeOwned);
+    if (ownedPage !== undefined) {
+      query.set("ownedPage", String(ownedPage));
+      query.set("ownedLimit", String(ownedLimit));
+    }
+    return request<GachaSkinsResponse>(`/gacha/skins?${query}`);
+  },
   gachaRecentSkinSpins: () =>
     request<GachaSkinSpinActivity[]>(`/gacha/skins/recent`),
   gachaSkinSpin: () =>
@@ -2017,11 +2071,13 @@ export const api = {
     sort = "value",
     rarity = "",
     foil = "",
+    search = "",
+    eligibleKind = "",
   ) =>
     request<
       Omit<GachaCollectionResponse, "data"> & { data: GachaPullResponse[] }
     >(
-      `/gacha/collection?userId=${encodeURIComponent(userId)}&page=${page}&limit=${limit}&sort=${sort}&rarity=${rarity}&foil=${foil}`,
+      `/gacha/collection?userId=${encodeURIComponent(userId)}&page=${page}&limit=${limit}&sort=${sort}&rarity=${rarity}&foil=${foil}&search=${encodeURIComponent(search)}&eligibleKind=${encodeURIComponent(eligibleKind)}`,
     ),
   gachaOwnedCard: (userCardId: string) =>
     request<{ card: GachaPullResponse | null }>(

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
-import { UserCard } from "@/components/social/UserCard";
+import { UserCard } from "@/features/social/identity";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { PageTitle } from "@/components/ui/PageTitle";
 import { SearchField } from "@/components/ui/SearchField";

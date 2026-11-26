@@ -1,11 +1,11 @@
 "use client";
 
 import { Avatar } from "@/components/common/Avatar";
-import { FollowButton } from "@/components/social/FollowButton";
+import { FollowButton } from "./FollowButton";
 import { SpotlightCard } from "@/components/core/SpotlightCard";
 import { formatDate } from "@/lib/time";
 import type { UserSearchResult } from "@/types";
-import { UserProfilePreview } from "@/components/social/UserProfilePreview";
+import { UserProfilePreview } from "./UserProfilePreview";
 
 /**
  * UserCard — cartão compacto do diretório de usuários: avatar, nome,

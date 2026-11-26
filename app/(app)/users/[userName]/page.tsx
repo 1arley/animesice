@@ -15,20 +15,24 @@ import type {
   UserSearchResult,
   WatchStatus,
 } from "@/types";
-import { ProfileHero } from "@/components/profile/ProfileHero";
-import { ProfileStats } from "@/components/profile/ProfileStats";
-import { ProfileNav, type ProfileTab } from "@/components/profile/ProfileNav";
-import { ProfileAbout } from "@/components/profile/ProfileAbout";
-import { ProfileCurrentlyWatching } from "@/components/profile/ProfileCurrentlyWatching";
-import { ProfileTaste, buildTaste } from "@/components/profile/ProfileTaste";
-import { ProfileActivity } from "@/components/profile/ProfileActivity";
-import { ProfileFavorites } from "@/components/profile/ProfileFavorites";
-import { ProfileRatings } from "@/components/profile/ProfileRatings";
-import { ProfileCollection } from "@/components/profile/ProfileCollection";
-import { ProfileGacha } from "@/components/profile/ProfileGacha";
-import { ProfileFollowList } from "@/components/profile/ProfileFollowList";
-import { ProfileWishlist } from "@/components/profile/ProfileWishlist";
-import { ProfileShowcase } from "@/components/profile/ProfileShowcase";
+import {
+  ProfileAbout,
+  ProfileActivity,
+  ProfileCollection,
+  ProfileCurrentlyWatching,
+  ProfileFavorites,
+  ProfileFollowList,
+  ProfileGacha,
+  ProfileHero,
+  ProfileNav,
+  ProfileRatings,
+  ProfileShowcase,
+  ProfileStats,
+  ProfileTaste,
+  ProfileWishlist,
+  type ProfileTab,
+} from "@/features/profile/public-page";
+import { buildTaste } from "@/features/profile";
 
 const LIMIT = 24;
 
@@ -207,7 +211,23 @@ export default function PublicProfilePage({
   // sincronização para ?tab= legado não sobrescrever a aba escolhida.
   const lastHandledSearch = useRef<string | null>(null);
   useEffect(() => {
+    function syncTabFromHistory() {
+      const tab = new URLSearchParams(window.location.search).get("tab");
+      setActiveTab(
+        tab && Object.prototype.hasOwnProperty.call(TAB_ALIASES, tab)
+          ? TAB_ALIASES[tab]
+          : "overview",
+      );
+    }
+    window.addEventListener("popstate", syncTabFromHistory);
+    return () => window.removeEventListener("popstate", syncTabFromHistory);
+  }, []);
+
+  useEffect(() => {
     const query = searchParams.toString();
+    // Next updates useSearchParams after the native history event; ignore its
+    // previous snapshot until it matches the current browser URL.
+    if (query !== new URLSearchParams(window.location.search).toString()) return;
     const searchKey = `${profile?.id ?? ""}\u0000${query}`;
     if (lastHandledSearch.current === searchKey) return;
     lastHandledSearch.current = searchKey;

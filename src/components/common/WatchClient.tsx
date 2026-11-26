@@ -8,7 +8,7 @@ import { api, ApiError, type StreamSource } from "@/lib/api";
 import { safeImageSrc } from "@/lib/url";
 import { resolveAsyncSource } from "@/lib/resolve-async-source";
 import type { Episode, Anime } from "@/types";
-import { CommentSection } from "@/components/common/CommentSection";
+import { CommentSection } from "@/features/social/comments";
 import { CreateRoomButton } from "@/components/common/CreateRoomButton";
 import { AdSlot } from "@/components/ads/AdSlot";
 
@@ -63,6 +63,9 @@ export function WatchClient({
   const recoveryAttempts = useRef(0);
   const resumeAt = useRef(0);
   const asyncAbortRef = useRef<AbortController | null>(null);
+  // Episódios já aquecidos nesta visita — evita repetir a requisição.
+  const warmedEpisodes = useRef(new Set<number>());
+  const [playbackStarted, setPlaybackStarted] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -221,11 +224,24 @@ export function WatchClient({
   useEffect(() => {
     recoveryAttempts.current = 0;
     resumeAt.current = 0;
+    setPlaybackStarted(false);
+    // Retoma de onde o usuário parou de assistir (minutagem salva)
+    api
+      .getContinueWatching(20)
+      .then((items) => {
+        const item = items.find(
+          (i) => i.anime.slug === slug && i.episode.number === number,
+        );
+        if (item && !item.completed && item.progress > 0) {
+          resumeAt.current = item.progress;
+        }
+      })
+      .catch(() => {});
     void loadSourceAsync();
     return () => {
       asyncAbortRef.current?.abort();
     };
-  }, [loadSourceAsync]);
+  }, [loadSourceAsync, slug, number]);
 
   useEffect(() => {
     const navigation = performance.getEntriesByType("navigation")[0] as
@@ -244,6 +260,29 @@ export function WatchClient({
     performance.mark("episode:source-ready");
     requestAnimationFrame(() => performance.mark("episode:player-mounted"));
   }, [source]);
+
+  /**
+   * Aquece o próximo episódio enquanto o atual roda. A extração no backend é a
+   * parte lenta; enfileirando-a agora, quando o usuário avança (ou o
+   * auto-advance dispara) o SSR do próximo episódio já acha a fonte pronta e
+   * carrega de imediato. A fonte resolvida também vai para o cache de sessão,
+   * que é o caminho usado quando o shell SSR vem sem `initialSource`.
+   */
+  useEffect(() => {
+    const next = adjacent?.next;
+    if (!playbackStarted || next == null) return;
+    if (warmedEpisodes.current.has(next)) return;
+    warmedEpisodes.current.add(next);
+    if (api._sourceCache.get(slug, next)) return;
+    void api
+      .streamSourceAsync(slug, next)
+      .then((res) => {
+        if ("src" in res) {
+          api._sourceCache.set(slug, next, res as StreamSource);
+        }
+      })
+      .catch(() => undefined);
+  }, [playbackStarted, adjacent?.next, slug]);
 
   if (!episode) {
     return <p className="text-body-sm text-mist">Carregando...</p>;
@@ -336,6 +375,13 @@ export function WatchClient({
             onPlaybackError={recoverPlayback}
             onTimeUpdate={(currentTime) => {
               resumeAt.current = currentTime;
+              if (!playbackStarted && currentTime > 0) setPlaybackStarted(true);
+              // Salva a minutagem periodicamente para "continuar assistindo"
+              if (Math.floor(currentTime) % 10 === 0) {
+                api
+                  .updateProgress(slug, episode.number, currentTime, undefined, false)
+                  .catch(() => {});
+              }
             }}
           />
         ) : (
@@ -415,8 +461,16 @@ function EpisodeNavigation({
     (episodeNumber: number) => {
       if (prefetched.current.has(episodeNumber)) return;
       prefetched.current.add(episodeNumber);
-      // Fire-and-forget: não bloqueia o UI, só aquece o cache do backend
-      api.streamSourceAsync(slug, episodeNumber).catch(() => undefined);
+      // Fire-and-forget: não bloqueia o UI. Guardar a fonte resolvida deixa o
+      // clique instantâneo, em vez de apenas aquecer o backend.
+      api
+        .streamSourceAsync(slug, episodeNumber)
+        .then((res) => {
+          if ("src" in res) {
+            api._sourceCache.set(slug, episodeNumber, res as StreamSource);
+          }
+        })
+        .catch(() => undefined);
     },
     [slug],
   );

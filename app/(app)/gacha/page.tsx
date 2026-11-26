@@ -23,7 +23,7 @@ import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import { useToast } from "@/components/common/ToastProvider";
 import { SectionLabel } from "@/components/common/SectionLabel";
 import { Avatar } from "@/components/common/Avatar";
-import { UserProfilePreview } from "@/components/social/UserProfilePreview";
+import { UserProfilePreview } from "@/features/social/identity";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { CardPreview } from "@/components/gacha/CardPreview";
 import type {
@@ -61,7 +61,8 @@ function spinToStagePull(spin: GachaSpinPreview): GachaPull {
     edition: 0,
     value: spin.value,
     // Anúncio do fragmento bônus na prévia do palco; no claim o selo sai.
-    bonusShard: spin.bonusShard ?? null,
+    bonusShard: spin.claimedAt == null ? (spin.bonusShard ?? null) : null,
+
     obtainedAt: spin.createdAt,
     user: { id: "", name: null, userName: null, avatar: null },
     card: spin.card,
@@ -168,8 +169,13 @@ function GachaPageContent() {
   const [odds, setOdds] = useState<GachaEconomyOdds | null>(null);
   const [rollAnimation, setRollAnimation] = useState<Partial<RollAnimConfig>>();
   const refreshSerial = useRef(0);
+  const festivalClaimLockUntil = useRef<number | null>(null);
   const previewUserId = user?.id;
   const previewCardId = preview?.id;
+
+  useEffect(() => {
+    festivalClaimLockUntil.current = null;
+  }, [user?.id]);
 
   // Endpoint público: a linha de odds aparece para visitante anônimo também.
   useEffect(() => {
@@ -348,7 +354,21 @@ function GachaPageContent() {
       api.gachaEconomyInventory().catch(() => null),
     ]);
     if (serial !== refreshSerial.current) return;
-    if (s) setStatus(s);
+    if (s) {
+      const localLockUntil = festivalClaimLockUntil.current;
+      if (localLockUntil !== null && localLockUntil > Date.now()) {
+        const serverLockUntil = s.nextClaimAt
+          ? new Date(s.nextClaimAt).getTime()
+          : 0;
+        const nextClaimAt = new Date(
+          Math.max(localLockUntil, serverLockUntil),
+        ).toISOString();
+        setStatus({ ...s, canClaim: false, nextClaimAt });
+      } else {
+        festivalClaimLockUntil.current = null;
+        setStatus(s);
+      }
+    }
     if (r) setRecent(r);
     if (sp) setSpins(sp);
     if (economy) {
@@ -363,13 +383,13 @@ function GachaPageContent() {
     setSpinning(true);
     setSpinResult(null);
     setClaimResult(null);
+    setStagePreview(true);
+    setStageOpen(true);
     try {
       const previewSpin = await api.gachaSpin(AbortSignal.timeout(15_000));
       setSpins((prev) => [...prev, previewSpin]);
       setSelectedSpinId(previewSpin.id);
       setSpinResult(previewSpin);
-      setStagePreview(true);
-      setStageOpen(true);
       setStatus((prev) =>
         prev && prev.spinsLeft != null
           ? {
@@ -382,6 +402,7 @@ function GachaPageContent() {
       void refresh();
     } catch (err) {
       setStageOpen(false);
+      setStagePreview(false);
       setSpinResult(null);
       setError(
         err instanceof Error && err.name === "TimeoutError"
@@ -430,8 +451,23 @@ function GachaPageContent() {
             : spin,
         ),
       );
-      setStatus((prev) => (prev ? { ...prev, canClaim: false } : prev));
-      void refresh();
+      const eventLockUntil = status?.claimEvent
+        ? Date.now() + 60 * 60 * 1000
+        : null;
+      if (eventLockUntil !== null)
+        festivalClaimLockUntil.current = eventLockUntil;
+      setStatus((prev) =>
+        prev
+          ? {
+              ...prev,
+              canClaim: false,
+              ...(eventLockUntil !== null
+                ? { nextClaimAt: new Date(eventLockUntil).toISOString() }
+                : {}),
+            }
+          : prev,
+      );
+      await refresh();
     } catch (err) {
       const message =
         err instanceof ApiError ? err.message : "Erro ao guardar.";
@@ -1096,6 +1132,20 @@ function GachaPageContent() {
                     {claiming ? "Guardando…" : "Pegar carta"}
                   </button>
                 </div>
+
+                {status?.claimEvent && (
+                  <div
+                    role="status"
+                    className="mx-auto mt-4 max-w-2xl border border-ice/40 bg-ice/10 p-3 text-left"
+                  >
+                    <p className="text-body-sm text-ice">
+                      <span className="font-display">
+                        {status.claimEvent.name || "Evento"}
+                      </span>{" "}
+                      — cooldown de 1 hora para todas as raridades.
+                    </p>
+                  </div>
+                )}
 
                 {status?.claimWarning && (
                   <div className="mx-auto mt-4 max-w-2xl border border-hairline bg-ink/60 p-3 text-left">

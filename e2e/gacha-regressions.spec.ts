@@ -110,20 +110,20 @@ test("admin descarta cartas e respostas da seleção anterior", async ({ page })
     await pending;
     await route.fulfill({ json: { data: [{ ...card, id: "owned-b", card: { ...card.card, name: "Carta B" } }], meta } });
   });
-  await page.goto("/admin/gacha");
-  await page.getByPlaceholder("Buscar usuário").fill("Usuario");
+  await page.goto("/admin/gacha/jogadores");
+  await page.getByLabel("Buscar usuário").fill("Usuario");
   await page.getByRole("button", { name: "Usuario A", exact: true }).click();
-  await expect(page.getByText("Carta A · RARA")).toBeVisible();
+  await expect(page.getByText("Carta A", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Usuario B", exact: true }).click();
   await started;
   await expect(page.getByRole("button", { name: "Excluir", exact: true })).toHaveCount(0);
   await page.getByRole("button", { name: "Usuario A", exact: true }).click();
-  await expect(page.getByText("Carta A · RARA")).toBeVisible();
+  await expect(page.getByText("Carta A", { exact: true })).toBeVisible();
   const response = page.waitForResponse(url => url.url().includes("/users/b/cards"));
   release();
   await response;
-  await expect(page.getByText("Carta B · RARA")).toHaveCount(0);
-  await expect(page.getByText("Carta A · RARA")).toBeVisible();
+  await expect(page.getByText("Carta B", { exact: true })).toHaveCount(0);
+  await expect(page.getByText("Carta A", { exact: true })).toBeVisible();
 });
 
 test("admin edita carta sem refazer a busca do anime", async ({ page }) => {
@@ -148,11 +148,10 @@ test("admin edita carta sem refazer a busca do anime", async ({ page }) => {
   await page.getByRole("button", { name: "Editar", exact: true }).click();
 
   // O anime da carta já vem selecionado: salvar não pode exigir nova busca.
-  const select = page.getByLabel("Anime da carta");
+  const select = page.getByLabel("Anime Selecionado");
   await expect(select).toHaveValue(anime.id);
-  await expect(page.getByLabel("Buscar anime", { exact: true })).toHaveValue("");
-  await page.getByLabel("Motivo da alteração (obrigatório)").waitFor({ state: "detached" });
-  await page.getByRole("button", { name: "Salvar", exact: true }).click();
+  await expect(page.getByLabel("Buscar Anime no Catálogo", { exact: true })).toHaveValue("");
+  await page.getByRole("button", { name: "Salvar Alterações", exact: true }).click();
 
   await expect.poll(() => patches.length).toBe(1);
   expect(patches[0]).toMatchObject({ name: "Personagem A", animeId: anime.id });
@@ -178,9 +177,10 @@ test("busca de anime ignora resposta antiga e mantém a seleção", async ({ pag
   });
 
   await page.goto("/admin/gacha");
-  const search = page.getByLabel("Buscar anime", { exact: true });
+  await page.getByRole("button", { name: /Criar Carta/ }).click();
+  const search = page.getByLabel("Buscar Anime no Catálogo", { exact: true });
   await search.fill("Anime A");
-  await page.getByLabel("Anime da carta").selectOption(animeA.id);
+  await page.getByLabel("Anime Selecionado").selectOption(animeA.id);
   await search.fill("Anime");
   await started;
   await search.fill("Anime B");
@@ -189,7 +189,7 @@ test("busca de anime ignora resposta antiga e mantém a seleção", async ({ pag
   await settled;
 
   // A resposta antiga não pode trocar o anime escolhido.
-  await expect(page.getByLabel("Anime da carta")).toHaveValue(animeA.id);
+  await expect(page.getByLabel("Anime Selecionado")).toHaveValue(animeA.id);
   await expect(page.getByRole("option", { name: /^Anime A/ })).toHaveCount(1);
   await expect(page.locator('span:text-is("Anime A")')).toBeVisible();
 });

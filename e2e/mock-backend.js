@@ -79,7 +79,10 @@ const server = http.createServer((req, res) => {
     ]);
   }
   if (req.method === 'GET' && (p === '/api/episode/latest' || p === '/episode/latest')) return json(res, []);
-  if (req.method === 'GET' && (p === '/api/anime/trending' || p === '/anime/trending')) return json(res, []);
+  if (req.method === 'GET' && (p === '/api/anime/trending' || p === '/anime/trending')) return json(res, [
+    { id: 'home-1', slug: 'destaque-da-semana', title: 'Destaque da semana', coverImage: '/images/logo.png', status: 'LANCAMENTO', audio: 'LEGENDADO', rating: 8.5 },
+    { id: 'home-2', slug: 'uma-historia-para-descobrir', title: 'Uma história para descobrir', coverImage: '/images/logo.png', status: 'FINALIZADO', audio: 'DUBLADO', rating: 9 },
+  ]);
   if (req.method === 'GET' && (p === '/api/recently-added' || p === '/anime/recently-added')) return json(res, []);
 
   const episodeMatch = p && (p.match(/^\/api\/episode\/([^/]+)\/(\d+)$/) || p.match(/^\/episode\/([^/]+)\/(\d+)$/));
@@ -160,6 +163,17 @@ const server = http.createServer((req, res) => {
   }
 
   if (req.method === 'GET' && (p === '/api/stream/source' || p === '/stream/source')) {
+    // Slug usado pelo spec de prefetch: fonte mp4 (o player não suporta HLS no
+    // headless e o erro trocaria o <video> pelo painel de falha).
+    if (parsed.query.anime === 'prefetch-next') {
+      const episode = parsed.query.episode || '1';
+      return json(res, {
+        animeSlug: 'prefetch-next',
+        episodeNumber: Number(episode) || 1,
+        src: `http://localhost:${process.env.MOCK_BACKEND_PORT || 3001}/__e2e/video/${episode}.mp4`,
+        rawVideoUrl: null, embedUrl: null, reextracted: false, thumbnailUrl: null,
+      });
+    }
     const hasAuth = (req.headers.cookie || '').includes('role=');
     if (parsed.query.refresh === '1' && !hasAuth) {
       return json(res, { message: 'Não autenticado.' }, 400);

@@ -1,4 +1,4 @@
-import type { Locator, Page } from "@playwright/test";
+import type { BrowserContext, Locator, Page } from "@playwright/test";
 
 /**
  * Helpers compartilhados dos specs e2e — rede de anúncios, mocks genéricos
@@ -8,12 +8,14 @@ import type { Locator, Page } from "@playwright/test";
 const mockBackendPort = process.env.MOCK_BACKEND_PORT || "3001";
 const appPort = process.env.E2E_APP_PORT || "3000";
 const appOrigin = new URL(process.env.PLAYWRIGHT_TEST_BASE_URL || `http://localhost:${appPort}`).origin;
+const contextsWithAdBlocking = new WeakSet<BrowserContext>();
 
 // Redes de anúncio bloqueadas para iframes não interceptarem cliques
 // ("<div></div> intercepts pointer events") e tornarem o teste flaky.
 // AdSense (pagead2/googlesyndication) e Monetag (n6wxm) são abortados; sem
 // AdBlockNotice não há sonda de rede a responder.
 const AD_PATTERNS = [
+  "**/popunder.js*",
   "**/pagead2.googlesyndication.com/**",
   "**/*.doubleclick.net/**",
   "**/fundingchoicesmessages.google.com/**",
@@ -31,9 +33,25 @@ const AD_PATTERNS = [
  * ("<div></div> intercepts pointer events") e tornam o teste flaky.
  */
 export async function blockAds(page: Page) {
+  const context = page.context();
+  if (contextsWithAdBlocking.has(context)) return;
+
+  // Page-only routes miss popups opened by an ad iframe. Keep navigation in
+  // the app origin while allowing external media and image requests.
+  await context.route("**/*", (route) => {
+    const request = route.request();
+    if (!request.isNavigationRequest()) return route.continue();
+    const url = new URL(request.url());
+    if ((url.protocol === "http:" || url.protocol === "https:") && url.origin !== appOrigin) {
+      return route.abort();
+    }
+    return route.continue();
+  });
+
   for (const pattern of AD_PATTERNS) {
-    await page.route(pattern, (route) => route.abort());
+    await context.route(pattern, (route) => route.abort());
   }
+  contextsWithAdBlocking.add(context);
 }
 
 /** Mocks genéricos para chamadas que o layout/servidor possa fazer. */

@@ -306,7 +306,7 @@ export const GachaCard = memo(function GachaCard({ pull, preview = false, linkAn
           {label === "MINT" && pull.foil === "NORMAL" && (
             <div aria-hidden className="condition-mint-glare pointer-events-none absolute inset-0" />
           )}
-          {/* Fragmento bônus (5% dos giros): do lado esquerdo da arte. Só
+          {/* Fragmento bônus do lado esquerdo da arte. Só
               existe na prévia de giro ainda não resgatada; no resgate o
               fragmento vai direto pro inventário e o selo sai da carta. */}
           {pull.bonusShard && (

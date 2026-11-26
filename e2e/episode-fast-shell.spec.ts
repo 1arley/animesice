@@ -1,4 +1,7 @@
 import { expect, test } from "@playwright/test";
+import { blockAds } from "./helpers";
+
+test.beforeEach(async ({ page }) => blockAds(page));
 
 for (const failure of ["error", "timeout"] as const) {
   test(`playback ${failure} refreshes a cached source once and shows a terminal error`, async ({ page }) => {
@@ -11,7 +14,7 @@ for (const failure of ["error", "timeout"] as const) {
     });
     await page.route("**/*-video.mp4", () => {});
     const refreshes: string[] = [];
-    await page.route(/\/api\/stream\/source\?/, (route) => {
+    await page.route(/\/api\/stream-source\?/, (route) => {
       refreshes.push(route.request().url());
       return route.fulfill({
         contentType: "application/json",
@@ -51,6 +54,17 @@ test("episode shell is visible while the stream source is still resolving", asyn
 
 test("viewer can retry after stream resolution fails", async ({ page }) => {
   let attempts = 0;
+  let refreshAttempts = 0;
+  await page.context().addCookies([
+    { name: "role", value: "USER", url: "http://localhost:3000" },
+    { name: "access_token", value: "e2e-token", url: "http://localhost:3000" },
+  ]);
+  await page.route(/\/api\/stream-source\?/, (route) => {
+    if (new URL(route.request().url()).searchParams.get("refresh") === "1") {
+      refreshAttempts++;
+    }
+    return route.continue();
+  });
   await page.route(/\/api\/stream\/source\/sse\?/, async (route) => {
     attempts += 1;
     await route.fulfill({
@@ -72,5 +86,7 @@ test("viewer can retry after stream resolution fails", async ({ page }) => {
   await expect(page.getByTestId("episode-player-error")).toBeVisible();
 
   await page.getByRole("button", { name: "Tentar novamente" }).click();
-  await expect.poll(() => attempts).toBe(2);
+  await expect.poll(() => refreshAttempts).toBe(1);
+  await expect(page.getByTestId("episode-player-error")).toHaveCount(0);
+  expect(attempts).toBe(1);
 });

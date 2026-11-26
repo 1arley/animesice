@@ -12,7 +12,7 @@ import { timeAgo } from "@/lib/time";
 import { safeImageSrc, isOptimizableImageUrl } from "@/lib/url";
 import { blur } from "@/lib/blur";
 import type { PostCommentItem, SocialPost } from "@/types";
-import { UserProfilePreview } from "@/components/social/UserProfilePreview";
+import { UserProfilePreview } from "./UserProfilePreview";
 
 /**
  * FeedPost — card de um post do feed: autor, texto, anime referenciado e

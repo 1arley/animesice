@@ -79,30 +79,7 @@ export interface Paginated<T> {
   };
 }
 
-/** Artigo editorial do blog. O conteúdo é HTML sanitizado antes da renderização. */
-export interface BlogPost {
-  id: string;
-  slug: string;
-  title: string;
-  description: string;
-  content: string;
-  category: string;
-  published: boolean;
-  publishedAt: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
-
-/** Payload compartilhado pelas operações de criação e edição do CMS. */
-export interface BlogPostInput {
-  slug: string;
-  title: string;
-  description: string;
-  content: string;
-  category: string;
-  published: boolean;
-  publishedAt: string | null;
-}
+export type { BlogPost, BlogPostInput } from "@/features/blog/types";
 
 export interface Rating {
   userId: string;
@@ -643,6 +620,7 @@ export interface GachaStatus {
   nextClaimAt?: string | null;
   claimWarning?: string | null;
   bypassPriceCents?: number | null;
+  claimEvent?: { name: string; tiers: string[] } | null;
   pointsBalance?: number;
   pointsCosmetics?: string[];
   crystalBalance?: number;
@@ -663,6 +641,13 @@ export interface GachaSkin {
 export interface GachaSkinsResponse {
   skins: GachaSkin[];
   owned: GachaSkin[];
+  equippedSkin?: GachaSkin | null;
+  ownedMeta?: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
   equippedSkinId: string | null;
   crystalBalance: number;
   crystalReserved: number;
@@ -794,7 +779,39 @@ export type GachaItemKind =
   | "SOMBRIA_DRACONICA"
   | "PROTECAO";
 
+export type GachaEssenceKind =
+  `ESSENCIA_${"COMUM" | "INCOMUM" | "RARA" | "EPICA" | "LENDARIA" | "MITICA" | "GALACTICA"}`;
+export interface GachaCatalogItem {
+  id: string;
+  name: string;
+  field: string;
+}
+export interface GachaItemAmount {
+  itemId: string;
+  quantity: number;
+}
+export interface GachaRewardCode {
+  id: string;
+  code: string;
+  crystals: number;
+  items: GachaItemAmount[];
+  maxUses: number | null;
+  uses: number;
+  active: boolean;
+  expiresAt: string | null;
+  _count?: { redemptions: number };
+}
+export interface GachaRewardCodeInput {
+  code?: string;
+  crystals?: number;
+  items?: GachaItemAmount[];
+  maxUses?: number;
+  expiresAt?: string;
+}
 export interface GachaItemConfig {
+  essence_shop_price?: Record<GachaEssenceKind, number>;
+  essence_shop_enabled?: Record<GachaEssenceKind, boolean>;
+  essence_kind_weights?: Record<GachaBoxTier, Record<GachaEssenceKind, number>>;
   item_shop_price: Record<GachaItemKind, number>;
   item_shop_enabled?: Record<GachaItemKind, boolean>;
   item_drop_available?: Record<GachaItemKind, boolean>;
@@ -821,6 +838,14 @@ export interface GachaItemConfig {
 }
 
 export interface GachaEconomyInventory {
+  itemCatalog?: GachaCatalogItem[];
+  essenciaComum?: number;
+  essenciaIncomum?: number;
+  essenciaRara?: number;
+  essenciaEpica?: number;
+  essenciaLendaria?: number;
+  essenciaMitica?: number;
+  essenciaGalactica?: number;
   commonBoxes: number;
   rareBoxes: number;
   premiumBoxes: number;
@@ -858,13 +883,16 @@ export interface GachaEconomyListingItem {
   id: string;
   userId: string;
   user: { id: string; name: string | null; userName: string | null };
-  itemType: "CARD" | "SKIN";
+  itemType: "CARD" | "SKIN" | "ITEM";
+  quantity?: number;
   price: number;
   status: "ACTIVE" | "SOLD" | "FILLED" | "CANCELLED" | "EXPIRED";
   createdAt: string;
   expiresAt: string;
   item: {
     id: string;
+    quantity?: number;
+    itemId?: string;
     cardId?: string;
     skinId?: string;
     name?: string;
@@ -900,6 +928,7 @@ export interface GachaMarketOffer {
   id: string;
   offeredUserId: string;
   requestedUserId: string;
+  offeredItems?: (GachaItemAmount & { name: string })[];
   crystals: number;
   status: "PENDING" | "ACCEPTED" | "DECLINED" | "CANCELLED" | "EXPIRED";
   expiresAt: string;
@@ -909,9 +938,10 @@ export interface GachaMarketOffer {
   requestedUser: { id: string; name: string | null; userName: string | null };
   listing: {
     id: string;
-    itemType: "CARD" | "SKIN";
+    itemType: "CARD" | "SKIN" | "ITEM";
     price: number;
     item: {
+      quantity?: number;
       id: string;
       name: string;
       image: string | null;
@@ -987,6 +1017,7 @@ export interface GachaEconomyOdds {
   categories: Record<GachaBoxTier, Record<string, number>>;
   qualities: Record<GachaBoxTier, Record<string, number>>;
   itemKindWeights?: Record<GachaBoxTier, Record<GachaItemKind, number>>;
+  essenceKindWeights?: Record<GachaBoxTier, Record<GachaEssenceKind, number>>;
   itemQtyPerQuality?: Record<string, number>;
   foilWeights: Record<string, number>;
   // Pesos de raridade e pity vêm do GachaConfig do admin (fonte do sorteio).
@@ -1099,6 +1130,7 @@ export interface GachaEncyclopediaCard {
   id: string;
   name: string;
   image: string | null;
+  imageHidden: boolean;
   rarity: string;
   animeId: string | null;
   animeTitle: string | null;
