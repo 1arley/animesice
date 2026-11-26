@@ -2197,6 +2197,8 @@ export const api = {
     requestedUserCardIds: string[];
     crystalsOffered?: number;
     crystalsRequested?: number;
+    itemsOffered?: GachaItemAmount[];
+    itemsRequested?: GachaItemAmount[];
   }) =>
     request<GachaTrade>(`/gacha/trades`, {
       method: "POST",
@@ -2210,6 +2212,8 @@ export const api = {
       requestedUserCardIds?: string[];
       crystalsOffered?: number;
       crystalsRequested?: number;
+      itemsOffered?: GachaItemAmount[];
+      itemsRequested?: GachaItemAmount[];
     },
   ) =>
     request<GachaTrade>(`/gacha/trades/${encodeURIComponent(id)}/counter`, {

@@ -1289,6 +1289,10 @@ export interface GachaTrade {
   crystalsOffered: number;
   /** Cristais que o requestedUser reservou enquanto PENDING. */
   crystalsRequested: number;
+  /** Itens do inventário reservados pelo offeredUser enquanto PENDING. */
+  itemsOffered?: GachaItemAmount[] | null;
+  /** Itens do inventário reservados pelo requestedUser enquanto PENDING. */
+  itemsRequested?: GachaItemAmount[] | null;
   /** Rodada da cadeia de contrapropostas (1 = proposta original). */
   round: number;
   /** Raiz da cadeia de contrapropostas. */
