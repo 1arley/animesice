@@ -1705,10 +1705,7 @@ export const api = {
     request<GachaEconomyPage<GachaEconomyListingItem>>(
       `/gacha/economy/market/listings?itemType=${itemType}&page=${page}&limit=24`,
     ),
-  gachaEconomyMyListings: (
-    page = 1,
-    itemType?: "CARD" | "SKIN" | "ITEM",
-  ) =>
+  gachaEconomyMyListings: (page = 1, itemType?: "CARD" | "SKIN" | "ITEM") =>
     request<GachaEconomyPage<GachaEconomyListingItem>>(
       `/gacha/economy/market/listings/mine?page=${page}&limit=50${itemType ? `&itemType=${itemType}` : ""}`,
     ),

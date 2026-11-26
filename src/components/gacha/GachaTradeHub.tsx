@@ -13,7 +13,12 @@ import { SectionLabel } from "@/components/common/SectionLabel";
 import { UserProfilePreview } from "@/features/social/identity";
 import { useToast } from "@/components/common/ToastProvider";
 import { inventoryAmount } from "@/components/gacha/ItemRewardPicker";
-import type { GachaPull, GachaTrade, PublicUserProfile, GachaEconomyInventory } from "@/types";
+import type {
+  GachaEconomyInventory,
+  GachaPull,
+  GachaTrade,
+  PublicUserProfile,
+} from "@/types";
 
 const ACTIVE = "PENDING" as const;
 const STALE_RE =
@@ -43,6 +48,22 @@ function CrystalAmount({
   return (
     <p className="font-mono text-caption text-ice">
       {label}: {amount.toLocaleString("pt-BR")}
+    </p>
+  );
+}
+
+function TradeItemSummary({
+  label,
+  items,
+}: {
+  label: string;
+  items: GachaTrade["itemsOffered"];
+}) {
+  if (!items?.length) return null;
+  return (
+    <p className="text-caption text-ice">
+      {label}:{" "}
+      {items.map((item) => `${item.quantity} ${item.name}`).join(" · ")}
     </p>
   );
 }
@@ -219,6 +240,14 @@ function TradeRow({
           <CrystalAmount
             label="Você recebe"
             amount={incoming ? trade.crystalsOffered : trade.crystalsRequested}
+          />
+          <TradeItemSummary
+            label="Itens que você envia"
+            items={incoming ? trade.itemsRequested : trade.itemsOffered}
+          />
+          <TradeItemSummary
+            label="Itens que você recebe"
+            items={incoming ? trade.itemsOffered : trade.itemsRequested}
           />
         </div>
         <div className="mt-3 flex flex-wrap gap-3">
@@ -685,20 +714,27 @@ function ProposalComposer({
       ? String(counterTrade.crystalsOffered)
       : "0",
   );
-  const [offeredItems, setOfferedItems] = useState<Record<string, number>>(() => {
-    if (!counterTrade) return {};
-    return Object.fromEntries(
-      (counterTrade.itemsRequested ?? []).map((item) => [item.itemId, item.quantity]),
-    );
-  });
-  const [requestedItems, setRequestedItems] = useState<Record<string, number>>(() => {
-    if (!counterTrade) return {};
-    return Object.fromEntries(
-      (counterTrade.itemsOffered ?? []).map((item) => [item.itemId, item.quantity]),
-    );
-  });
+  const [offeredItems, setOfferedItems] = useState<Record<string, number>>(() =>
+    Object.fromEntries(
+      (counterTrade?.itemsRequested ?? []).map((item) => [
+        item.itemId,
+        item.quantity,
+      ]),
+    ),
+  );
+  const [requestedItems, setRequestedItems] = useState<Record<string, number>>(
+    () =>
+      Object.fromEntries(
+        (counterTrade?.itemsOffered ?? []).map((item) => [
+          item.itemId,
+          item.quantity,
+        ]),
+      ),
+  );
   const [available, setAvailable] = useState<number | null>(null);
-  const [inventory, setInventory] = useState<GachaEconomyInventory | null>(null);
+  const [inventory, setInventory] = useState<GachaEconomyInventory | null>(
+    null,
+  );
   const { toast } = useToast();
   const searchMine = useCallback(
     (query: string) => {
@@ -1139,20 +1175,34 @@ function ProposalComposer({
               <div className="mt-3 space-y-2">
                 {inventory!.itemCatalog!.map((item) => {
                   const count = inventoryAmount(inventory!, item.field);
-                  if (!count) return null;
+                  const releasedByCounter =
+                    counterTrade?.itemsRequested?.find(
+                      (reserved) => reserved.itemId === item.id,
+                    )?.quantity ?? 0;
+                  const max = count + releasedByCounter;
+                  if (!max) return null;
                   return (
                     <label key={item.id} className="flex items-center justify-between gap-2 text-body-sm">
                       <span className="min-w-0 truncate text-snow">
-                        {item.name} ({count} disponível{count === 1 ? "" : "is"})
+                        {item.name} ({max} disponível{max === 1 ? "" : "is"})
                       </span>
                       <input
                         type="number"
                         min={0}
-                        max={count}
+                        max={max}
+                        step={1}
                         value={offeredItems[item.id] ?? 0}
                         onChange={(event) => {
-                          const value = Math.max(0, Math.min(count, Number(event.target.value) || 0));
-                          setOfferedItems((current) => ({ ...current, [item.id]: value }));
+                          const value = Math.max(
+                            0,
+                            Math.floor(
+                              Math.min(max, Number(event.target.value) || 0),
+                            ),
+                          );
+                          setOfferedItems((current) => ({
+                            ...current,
+                            [item.id]: value,
+                          }));
                         }}
                         className="field min-h-11 w-24"
                       />
@@ -1170,10 +1220,17 @@ function ProposalComposer({
                     <input
                       type="number"
                       min={0}
+                      step={1}
                       value={requestedItems[item.id] ?? 0}
                       onChange={(event) => {
-                        const value = Math.max(0, Number(event.target.value) || 0);
-                        setRequestedItems((current) => ({ ...current, [item.id]: value }));
+                        const value = Math.max(
+                          0,
+                          Math.floor(Number(event.target.value) || 0),
+                        );
+                        setRequestedItems((current) => ({
+                          ...current,
+                          [item.id]: value,
+                        }));
                       }}
                       className="field min-h-11 w-24"
                     />
@@ -1183,7 +1240,6 @@ function ProposalComposer({
             </section>
           </div>
         )}
-
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
           <label className="text-body-sm text-snow">
             Cristais que você oferece
