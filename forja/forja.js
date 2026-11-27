@@ -1,5 +1,6 @@
 // forja.js — animação de confecção de item (Three.js)
 import * as THREE from 'three';
+import { resolveStoneForgeVariant } from './stone-forge-variants.mjs';
 
 // Linha do tempo (segundos)
 const T = { carga: 2.7, impacto: 4.3, fim: 6.2 };
@@ -111,13 +112,13 @@ void main(){
   gl_FragColor=vec4(c,t.a*uAlpha);
 }`;
 
-const FRAG_ITEM = `${COMUM} uniform float uBranco, uPulso, uVarre, uAlpha;
+const FRAG_ITEM = `${COMUM} uniform float uBranco, uPulso, uVarre, uAlpha; uniform vec3 uHighlight;
 void main(){
   vec4 t=texture2D(map,vUv); if(t.a<.01) discard;
   vec3 c=t.rgb+cor*cristal(t.rgb)*uPulso;
   float faixaLuz=exp(-pow((vUv.x*.7+(1.-vUv.y)*.7-uVarre)*11.,2.));
-  c+=vec3(.75,1.,.92)*faixaLuz*.75;
-  c=mix(c,vec3(.92,1.,.97),uBranco);
+  c+=uHighlight*faixaLuz*.75;
+  c=mix(c,uHighlight,uBranco);
   gl_FragColor=vec4(c,t.a*uAlpha);
 }`;
 
@@ -136,10 +137,11 @@ void main(){
 }`;
 
 export async function criarForja(container, opcoes = {}) {
+  const perfil = resolveStoneForgeVariant(opcoes.tipo ?? 'TITANITA');
   const {
-    imagem = 'titanita.png',
-    cor = '#2ef2ad',
-    fundo = '#070b0e', // use null para fundo transparente
+    imagem = perfil.image,
+    cor = perfil.energy,
+    fundo = perfil.atmosphere,
     autoplay = true,
     loop = false,
     aoImpactar = null,
@@ -171,7 +173,7 @@ export async function criarForja(container, opcoes = {}) {
 
   const halo = sprite(0);
   const clarao = sprite(20);
-  clarao.material.color.set('#e8fff6');
+  clarao.material.color.set(perfil.highlight);
 
   // círculo de forja
   const circulo = new THREE.Mesh(
@@ -208,13 +210,13 @@ export async function criarForja(container, opcoes = {}) {
     vertexShader: VERT, fragmentShader: frag, transparent: true, depthWrite: false, depthTest: false, ...mais,
   });
   const aura = new THREE.Mesh(
-    new THREE.PlaneGeometry(TAM * 1.3, TAM * 1.3),
+    new THREE.PlaneGeometry(TAM * perfil.auraScale, TAM * perfil.auraScale),
     matShader(FRAG_AURA, { uAlpha: { value: 0 }, uTempo: { value: 0 } }, { blending: THREE.AdditiveBlending }),
   );
   aura.renderOrder = 3;
   const inteiro = new THREE.Mesh(
     new THREE.PlaneGeometry(TAM, TAM),
-    matShader(FRAG_ITEM, { uBranco: { value: 0 }, uPulso: { value: 0 }, uVarre: { value: -1 }, uAlpha: { value: 0 } }),
+    matShader(FRAG_ITEM, { uBranco: { value: 0 }, uPulso: { value: 0 }, uVarre: { value: -1 }, uAlpha: { value: 0 }, uHighlight: { value: new THREE.Color(perfil.highlight) } }),
   );
   inteiro.renderOrder = 5;
   item.add(aura, inteiro);
@@ -262,15 +264,15 @@ export async function criarForja(container, opcoes = {}) {
   }
 
   // pedras e cristais 3D sugados para o centro
-  cena.add(new THREE.AmbientLight('#8fa6b5', 1.2));
-  const sol = new THREE.DirectionalLight('#ffffff', 2);
+  cena.add(new THREE.AmbientLight(perfil.ambient, perfil.ambientIntensity));
+  const sol = new THREE.DirectionalLight(perfil.keyLight, perfil.keyIntensity);
   sol.position.set(-3, 4, 5);
   const luzCentro = new THREE.PointLight(cor, 0, 14, 1.5);
   cena.add(sol, luzCentro);
   const geoPedra = new THREE.DodecahedronGeometry(1, 0);
   const geoCristal = new THREE.OctahedronGeometry(1, 0).scale(0.45, 1.5, 0.45);
-  const matPedra = new THREE.MeshStandardMaterial({ color: '#4a555c', roughness: 0.85, flatShading: true });
-  const matCristal = new THREE.MeshStandardMaterial({ color: '#7dffd2', emissive: cor, emissiveIntensity: 0.7, roughness: 0.2, flatShading: true });
+  const matPedra = new THREE.MeshStandardMaterial({ color: perfil.rock, roughness: perfil.rockRoughness, flatShading: true });
+  const matCristal = new THREE.MeshStandardMaterial({ color: perfil.crystal, emissive: cor, emissiveIntensity: perfil.crystalGlow, roughness: perfil.crystalRoughness, flatShading: true });
   const detritos = Array.from({ length: 34 }, (_, i) => {
     const m = new THREE.Mesh(i % 3 ? geoPedra : geoCristal, i % 3 ? matPedra : matCristal);
     m.userData = { ang: rnd() * 6.283, raio: 2.8 + rnd() * 2.6, y: (rnd() - 0.5) * 4, tam: 0.06 + rnd() * 0.12, atraso: rnd() * 2, vel: 0.8 + rnd() };
@@ -279,7 +281,12 @@ export async function criarForja(container, opcoes = {}) {
   });
 
   // partículas calculadas na GPU: modo 0 = energia entrando, 1 = explosão, 2 = brasas
-  const uni = { uT: { value: -1 }, uEscala: { value: 1 }, cor: { value: corV }, uImpacto: { value: T.impacto } };
+  const uni = {
+    uT: { value: -1 }, uEscala: { value: 1 }, cor: { value: corV },
+    uImpacto: { value: T.impacto }, uStyle: { value: perfil.motionStyle },
+    uChargeSpeed: { value: perfil.chargeSpeed }, uBurstSpeed: { value: perfil.burstSpeed },
+    uGravity: { value: perfil.gravity },
+  };
   function particulas(qtd, modo) {
     const semP = new Float32Array(qtd * 4);
     for (let i = 0; i < semP.length; i++) semP[i] = rnd();
@@ -288,21 +295,25 @@ export async function criarForja(container, opcoes = {}) {
     geo.setAttribute('s', new THREE.BufferAttribute(semP, 4));
     const p = new THREE.Points(geo, new THREE.ShaderMaterial({
       uniforms: uni, defines: { MODO: modo }, depthTest: false, ...aditivo,
-      vertexShader: `uniform float uT,uEscala,uImpacto; attribute vec4 s; varying float vA;
+      vertexShader: `uniform float uT,uEscala,uImpacto,uStyle,uChargeSpeed,uBurstSpeed,uGravity; attribute vec4 s; varying float vA;
       void main(){
         vec3 p=vec3(0.); float a=0., tam=.1; float ang=s.x*6.2832;
         #if MODO==0
-          float f=fract(s.y+uT*(.35+s.z*.45)+uT*uT*.03);
+          float f=fract(s.y+uT*(.35+s.z*.45)*uChargeSpeed+uT*uT*.03*uChargeSpeed);
           float r=(1.-f*f)*(3.+s.w*3.);
-          float g=ang+f*3.5;
-          p=vec3(cos(g)*r, sin(g)*r*.75+(s.z-.5)*(1.-f)*2., sin(g*1.7)*r*.3);
+          float g=ang+f*mix(3.5, -5., step(2.5,uStyle));
+          float zigzag=step(1.5,uStyle)*step(uStyle,2.5)*sin(f*24.+s.x*19.)*.18;
+          float spiral=step(.5,uStyle)*step(uStyle,1.5)*sin(f*9.+s.x*12.)*.3;
+          p=vec3(cos(g)*r+zigzag, sin(g)*r*.75+(s.z-.5)*(1.-f)*2.+spiral, sin(g*1.7)*r*.3);
           a=smoothstep(0.,.25,f)*smoothstep(0.,.5,uT)*(1.-smoothstep(uImpacto-.35,uImpacto,uT));
           tam=.05+s.w*.11;
         #elif MODO==1
           float d=uT-uImpacto;
-          float v=3.+s.y*s.y*11.; float z=(s.z-.5)*2.;
+          float v=(3.+s.y*s.y*11.)*uBurstSpeed; float z=(s.z-.5)*2.;
           float dist=v*(1.-exp(-d*2.6))/2.6;
-          p=vec3(cos(ang)*dist, sin(ang)*dist-d*d*.9, z*dist*.5);
+          float arc=step(1.5,uStyle)*step(uStyle,2.5)*sin(d*22.+s.x*18.)*.28;
+          float curl=step(2.5,uStyle)*sin(d*4.+ang)*.38;
+          p=vec3(cos(ang+curl)*dist+arc, sin(ang+curl)*dist-d*d*uGravity, z*dist*.5);
           a=step(0.,d)*max(0.,1.-d/(.7+s.w*1.2));
           tam=.07+s.w*.2;
         #else
@@ -323,9 +334,7 @@ export async function criarForja(container, opcoes = {}) {
     p.renderOrder = 10;
     cena.add(p);
   }
-  particulas(420, 0);
-  particulas(380, 1);
-  particulas(70, 2);
+  perfil.particleCounts.forEach((quantidade, modo) => particulas(quantidade, modo));
 
   // ondas de choque
   const ondas = [0, 0.14].map((atraso) => {
@@ -342,7 +351,7 @@ export async function criarForja(container, opcoes = {}) {
   // cintilâncias sobre os cristais
   const cintilas = [[-0.1, 0.24], [0.2, 0.2], [0.17, -0.15], [-0.07, -0.02], [0.27, -0.12]].map(([x, y], i) => {
     const s = sprite(12);
-    s.material.color.set('#eafff7');
+    s.material.color.set(perfil.highlight);
     s.userData = { fase: i * 1.37 };
     s.position.set(x * TAM, y * TAM, 0.05);
     item.add(s);
@@ -370,7 +379,7 @@ export async function criarForja(container, opcoes = {}) {
     uni.uT.value = t;
 
     // câmera: aproxima durante a carga e treme no impacto
-    const tremor = depois ? 0.22 * Math.exp(-d * 6) : 0.05 * carga * carga;
+    const tremor = depois ? perfil.impactShake * Math.exp(-d * 6) : 0.05 * carga * carga;
     const zoom = 1 - 0.1 * suave(carga) * (depois ? Math.exp(-d * 4) : 1);
     camera.position.set(Math.sin(t * 91) * tremor, -0.25 + Math.cos(t * 77) * tremor, distancia * zoom);
     camera.lookAt(0, -0.75, 0);
@@ -410,7 +419,7 @@ export async function criarForja(container, opcoes = {}) {
     ui.uBranco.value = 1 - suave(faixa(d, 0.05, 0.85));
     ui.uPulso.value = 0.12 + 0.12 * Math.sin(t * 3);
     ui.uVarre.value = d < 0.9 ? -1 : -0.3 + (((d - 0.9) % 3.2) / 1.1) * 1.9;
-    aura.material.uniforms.uAlpha.value = faixa(d, 0, 0.5) * (0.75 + 0.15 * Math.sin(t * 2.4));
+    aura.material.uniforms.uAlpha.value = perfil.auraIntensity * faixa(d, 0, 0.5) * (0.75 + 0.15 * Math.sin(t * 2.4));
     aura.material.uniforms.uTempo.value = t;
 
     for (const s of cintilas) {
@@ -434,26 +443,26 @@ export async function criarForja(container, opcoes = {}) {
     // luzes e efeitos
     const entrada = faixa(t, 0, 0.8);
     circulo.rotation.z = vida * 0.35 + carga * carga * 3;
-    circulo.material.opacity = !ativo ? 0.22 : depois ? 0.3 + 0.7 * Math.exp(-d * 2) : 0.22 + 0.4 * entrada + 0.38 * carga;
+    circulo.material.opacity = perfil.runeOpacity * (!ativo ? 0.22 : depois ? 0.3 + 0.7 * Math.exp(-d * 2) : 0.22 + 0.4 * entrada + 0.38 * carga);
     circulo.scale.setScalar(depois ? 1 + 0.12 * Math.exp(-d * 4) : 0.92 + 0.08 * entrada);
 
     halo.scale.setScalar(depois ? 6.5 + 4 * Math.exp(-d * 3) : 1.5 + 5 * carga);
-    halo.material.opacity = !ativo ? 0.07 : depois ? 0.2 + 0.6 * Math.exp(-d * 2.5) : 0.1 + 0.15 * entrada + 0.35 * carga;
+    halo.material.opacity = perfil.auraIntensity * (!ativo ? 0.07 : depois ? 0.2 + 0.6 * Math.exp(-d * 2.5) : 0.1 + 0.15 * entrada + 0.35 * carga);
     halo.position.z = -1;
 
     const antes = faixa(t, T.impacto - 0.18, T.impacto);
     const flash = depois ? Math.exp(-d * 6) : antes ** 3;
-    clarao.scale.setScalar(2 + flash * 14);
+    clarao.scale.setScalar(2 + flash * 14 * perfil.impactScale);
     clarao.material.opacity = flash;
     clarao.visible = flash > 0.01;
 
-    coluna.material.uniforms.uAlpha.value = depois ? 0.18 + 0.8 * Math.exp(-d * 2) : 0.55 * carga ** 2;
-    luzCentro.intensity = ativo && !depois ? 4 + 30 * carga : 0;
+    coluna.material.uniforms.uAlpha.value = perfil.beamIntensity * (depois ? 0.18 + 0.8 * Math.exp(-d * 2) : 0.55 * carga ** 2);
+    luzCentro.intensity = ativo && !depois ? (4 + 30 * carga) * perfil.beamIntensity : 0;
 
     for (const o of ondas) {
       const f = faixa(d, o.userData.atraso, o.userData.atraso + 0.9);
       o.visible = f > 0 && f < 1;
-      o.scale.setScalar(0.3 + saiCubic(f) * 6.5);
+      o.scale.setScalar((0.3 + saiCubic(f) * 6.5) * perfil.impactScale);
       o.material.opacity = (1 - f) ** 2;
     }
 

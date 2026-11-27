@@ -9,6 +9,7 @@
     "check:common-box-reward": "node scripts/check-common-box-reward.mjs",
     "check:tier-boxes": "node scripts/check-tier-boxes.mjs",
     "check:event-theme": "node scripts/check-event-theme.mjs",
+    "check:stone-forge": "node scripts/check-stone-forge-variants.mjs",
     "check:gacha-foils": "node scripts/check-gacha-foils.mjs",
     "check:roll-anim-config": "node scripts/check-roll-anim-config.mjs",
     "check:roll-anim-source": "node scripts/check-roll-anim-source.mjs",
