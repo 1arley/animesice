@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Forja de Titanita</title>
+<style>
+  :root { color-scheme: dark; }
+  body { margin:0; background:#070b0e; color:#dffff3; font:16px/1.4 system-ui, sans-serif; }
+  main { position:relative; height:100vh; height:100dvh; overflow:hidden; }
+  #forja { position:absolute; inset:0; }
+  .painel { position:absolute; left:0; right:0; bottom:24px; display:flex; flex-direction:column; align-items:center; gap:12px; padding:0 16px; }
+  h1 { margin:0; font:600 26px Georgia, serif; letter-spacing:.12em; text-transform:uppercase; opacity:0; transform:translateY(8px); transition:.6s; text-shadow:0 0 16px #2ef2ad; }
+  h1.visivel { opacity:1; transform:none; }
+  button { font:600 15px system-ui; color:#04140e; background:#2ef2ad; border:0; border-radius:6px; padding:12px 32px; cursor:pointer; }
+  button:disabled { opacity:.35; cursor:default; }
+  button:focus-visible { outline:2px solid #fff; outline-offset:3px; }
+</style>
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js" } }
+</script>
+</head>
+<body>
+<main>
+  <div id="forja"></div>
+  <div class="painel">
+    <h1 id="nome" aria-live="polite">Titanita</h1>
+    <button id="botao" disabled>Forjar</button>
+  </div>
+</main>
+<script type="module">
+  import { criarForja } from './forja.js';
+
+  const botao = document.getElementById('botao');
+  const nome = document.getElementById('nome');
+
+  try {
+    const forja = await criarForja(document.getElementById('forja'), {
+      imagem: './titanita.png',
+      autoplay: false,
+      aoImpactar: () => setTimeout(() => nome.classList.add('visivel'), 500),
+      aoConcluir: () => { botao.disabled = false; botao.textContent = 'Forjar novamente'; },
+    });
+    botao.disabled = false;
+    botao.onclick = () => {
+      botao.disabled = true;
+      nome.classList.remove('visivel');
+      forja.tocar();
+    };
+    window.forja = forja;
+    botao.click();
+  } catch (erro) {
+    console.error(erro);
+    botao.textContent = 'Não foi possível carregar a forja';
+  }
+</script>
+</body>
+</html>

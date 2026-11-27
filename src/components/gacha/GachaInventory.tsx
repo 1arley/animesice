@@ -14,6 +14,7 @@ import { useAuth } from "@/lib/auth-context";
 import { api, ApiError } from "@/lib/api";
 import { gachaConditionLabel } from "@/components/gacha/GachaCard";
 import { BonusShardIcon, SHARD_ICONS } from "@/components/gacha/BonusShardIcon";
+import { GachaStoneForge } from "@/components/gacha/GachaStoneForge";
 import type {
   GachaEconomyInventory,
   GachaFoil,
@@ -154,6 +155,12 @@ export function GachaInventory() {
   const [gemStatus, setGemStatus] = useState("");
   const [gemError, setGemError] = useState("");
   const [reconcileNeeded, setReconcileNeeded] = useState(false);
+  const [forge, setForge] = useState<{
+    kind: StoneKind;
+    result?: { kind: StoneKind; quantity: number };
+    error?: string;
+    canDismiss?: boolean;
+  } | null>(null);
   const [pendingRetry, setPendingRetry] = useState<{
     operation: Operation;
     kind: GachaItemKind;
@@ -531,8 +538,10 @@ export function GachaInventory() {
       return;
     busyRef.current = true;
     const key = `${operation}:${kind}:${retryQuantity}`;
+    const showForge = operation === "craft" && kind !== "PROTECAO";
     const { operationId, storageKey } = operationIdFor(key);
     setBusy(key);
+    if (showForge) setForge({ kind });
     setError("");
     setStatus("");
     const body = { operationId, kind, quantity: retryQuantity };
@@ -540,8 +549,12 @@ export function GachaInventory() {
       if (operation === "buy") await api.gachaEconomyBuyItem(body);
       else if (operation === "convert" && kind !== "PROTECAO")
         await api.gachaEconomyConvertItem({ ...body, kind });
-      else if (operation === "craft" && kind !== "PROTECAO")
-        await api.gachaEconomyCraftItem({ ...body, kind });
+      else if (operation === "craft" && kind !== "PROTECAO") {
+        const result = await api.gachaEconomyCraftItem({ ...body, kind });
+        setForge({
+          result: { kind: result.kind, quantity: result.quantity },
+        });
+      }
       else throw new Error("Essa operação não aceita proteção.");
       clearOperation(key, storageKey);
       setPendingRetry(null);
@@ -555,6 +568,10 @@ export function GachaInventory() {
           );
         });
     } catch (cause) {
+      if (showForge)
+        setForge({
+          error: cause instanceof Error ? cause.message : "Falha na fabricação.",
+        });
       setError(
         `${cause instanceof Error ? cause.message : "Falha na operação."} Se houve timeout, tente novamente sem alterar o tipo ou a quantidade.`,
       );
@@ -570,8 +587,12 @@ export function GachaInventory() {
         setPendingRetry(null);
       }
     } finally {
-      setBusy("");
-      busyRef.current = false;
+      if (showForge) {
+        setForge((current) => current && { ...current, canDismiss: true });
+      } else {
+        setBusy("");
+        busyRef.current = false;
+      }
     }
   }
 
@@ -1666,6 +1687,19 @@ export function GachaInventory() {
         >
           Repetir a mesma melhoria com segurança
         </button>
+      )}
+      {forge && (
+        <GachaStoneForge
+          result={forge.result}
+          kind={forge.kind}
+          error={forge.error}
+          canDismiss={forge.canDismiss}
+          onDismiss={() => {
+            setForge(null);
+            setBusy("");
+            busyRef.current = false;
+          }}
+        />
       )}
     </main>
   );
