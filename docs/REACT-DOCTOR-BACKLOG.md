@@ -193,7 +193,7 @@ Context value recriado em todo render — re-renderiza todos os consumers.
 | nextjs-no-img-element | 5 | `images.unoptimized: true` (config deliberada no next.config.ts); <img> ≈ next/image sem otimização. Room/CrystalMotion/Avatar/TiltedCard — decorativos ou CSS-animados. |
 | no-create-object-url-without-revoke | 3 | .html estático com revoke imediato após click; settings tem cleanup no useEffect. Rule não rastreia. |
 | no-loading-flag-reset-outside-finally | 2 | auditoria/watchtower — setLoading(false) em finally existe, rule não reconhece guardas de stale. |
-| unused-dev-dependency | 3 | @semantic-release/* plugins configurados em .releaserc; rule não escaneia configs de runtime. |
+| unused-dev-dependency | 3 | Ferramentas Conventional Changelog usadas pela CLI em `scripts/release.mjs`; a rule não rastreia execuções via `child_process`. |
 | no-derived-useState | 1 | FeedPost — pai remonta com `key={post-${id}}`, estado sempre fresco. |
 | no-array-index-as-key | 1 | BlurText — split de letras/palavras sem id estável; index é key correta pra animação. |
 | no-fetch-response-used-without-status-check | 1 | .html estático, fora do React. |
