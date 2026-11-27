@@ -80,7 +80,7 @@ export function Modal({ open, onClose, title, children, footer, size = "default"
   return (
     <div className="fixed inset-0 z-[100] flex items-end justify-center px-0 pt-8 sm:items-center sm:px-4 sm:py-6">
       <div
-        className="absolute inset-0 bg-black/50"
+        className="absolute inset-0 bg-black/75"
         role="button"
         aria-label="Fechar"
         tabIndex={-1}
@@ -92,7 +92,7 @@ export function Modal({ open, onClose, title, children, footer, size = "default"
           }
         }}
       />
-      <div role="dialog" aria-modal="true" aria-label={title ?? "Diálogo"} ref={dialogRef} style={{ maxWidth: size === "wide" ? "64rem" : undefined, animation: open ? "modalEnter 220ms cubic-bezier(0.23, 1, 0.32, 1) forwards" : "modalExit 140ms cubic-bezier(0.23, 1, 0.32, 1) forwards" }} className="relative z-10 max-h-[calc(100dvh-2rem)] w-full max-w-md origin-center overflow-y-auto overscroll-contain border border-hairline bg-panel p-4 pb-[max(1rem,env(safe-area-inset-bottom))] transition-opacity duration-200 sm:rounded sm:p-6">
+      <div role="dialog" aria-modal="true" aria-label={title ?? "Diálogo"} ref={dialogRef} style={{ maxWidth: size === "wide" ? "64rem" : undefined, animation: open ? "modalEnter 220ms cubic-bezier(0.23, 1, 0.32, 1) forwards" : "modalExit 140ms cubic-bezier(0.23, 1, 0.32, 1) forwards" }} className="relative z-10 max-h-[calc(100dvh-2rem)] w-full max-w-md origin-center overflow-y-auto overscroll-contain border border-hairline bg-panel p-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:rounded sm:p-6">
         {title && <h3 className="font-display text-lg text-ice mb-3">{title}</h3>}
         <div>{children}</div>
         <div className="mt-4 flex justify-end gap-2">

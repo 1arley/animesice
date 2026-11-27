@@ -214,6 +214,10 @@ test("exibe cofre com 6 monÃ³litos, revela carta sem cobrir arte, compra e mantÃ
   expect(buyBox!.y).toBeGreaterThanOrEqual(stageBox!.y + stageBox!.height - 1);
   expect(buyBox!.height).toBeGreaterThanOrEqual(44);
 
+  await page.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" }));
+  await expect
+    .poll(() => page.evaluate(() => window.scrollY))
+    .toBe(0);
   await page.screenshot({
     path: testInfo.outputPath("night-market-desktop-revealed.png"),
     fullPage: true,
@@ -236,6 +240,7 @@ test("exibe cofre com 6 monÃ³litos, revela carta sem cobrir arte, compra e mantÃ
     name: "Comprar Aeliana, GuardiÃ£ Boreal",
   });
   await expect(purchaseDialog).toBeVisible();
+  await expect(purchaseDialog).toHaveCSS("opacity", "1");
   await expect(purchaseDialog.getByText("1.120 cristais")).toBeVisible();
   await expect(purchaseDialog.getByText("1.280 cristais")).toBeVisible();
 
@@ -258,6 +263,14 @@ test("exibe cofre com 6 monÃ³litos, revela carta sem cobrir arte, compra e mantÃ
   // Captura em viewport mobile 390Ã—844
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(firstCard).toBeVisible();
+  await page.evaluate(() => window.scrollTo(0, 0));
+  const heroBox = await page.locator(".nm-hero").boundingBox();
+  const trayBox = await page.locator(".nm-tray").boundingBox();
+  expect(heroBox).not.toBeNull();
+  expect(trayBox).not.toBeNull();
+  expect(heroBox!.x).toBeGreaterThanOrEqual(0);
+  expect(heroBox!.x + heroBox!.width).toBeLessThanOrEqual(390.5);
+  expect(trayBox!.x + trayBox!.width).toBeLessThanOrEqual(390.5);
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= window.innerWidth,
