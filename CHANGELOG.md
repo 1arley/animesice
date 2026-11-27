@@ -1,3 +1,10 @@
+# [1.13.0](https://github.com/1arley/animesice/compare/v1.12.1...v1.13.0) (2026-11-27)
+
+### Features
+
+* **ads:** switch provider to Monetag ([04b5dce](https://github.com/1arley/animesice/commit/04b5dcef51c92dead39e941020b369ea93fb3a1f))
+* **gacha:** redesign night market experience ([d203966](https://github.com/1arley/animesice/commit/d203966f1567b64e61fc642989770facf8e9ef3d))
+
 ## [1.12.1](https://github.com/1arley/animesice/compare/v1.12.0...v1.12.1) (2026-11-27)
 
 ### Bug Fixes
