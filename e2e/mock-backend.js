@@ -98,6 +98,24 @@ const MOCK_BOX_REWARDS = [
   { category: 'CARD_BACK', name: 'Selo Cryo-Core', rarity: 'RARA', duplicate: false },
 ];
 
+const MOCK_RARE_REWARDS = [
+  { category: 'CARD', name: 'Aeliana, Fenda Violeta', rarity: 'EPICA', foil: 'HOLO', condition: 0.06, image: '/aeliana/Aeliana.png' },
+  { category: 'CRYSTAL', amount: 1450 },
+  { category: 'SKIN', name: 'Manto Ametista', rarity: 'EPIC' },
+  { category: 'KEY_PREMIUM_BOX', keys: 1, premiumBoxes: 1 },
+  { category: 'ITEM', kind: 'TITANITA_SOMBRIA', quantity: 3, rarity: 'EPICA' },
+  { category: 'SPIN_RESET', amount: 1 },
+];
+
+const MOCK_PREMIUM_REWARDS = [
+  { category: 'CARD', name: 'Aeliana, Soberana Áurea', rarity: 'LENDARIA', foil: 'GOLD', condition: 0.02, image: '/aeliana/Aeliana.png' },
+  { category: 'SKIN', skins: [{ name: 'Aura Solar', rarity: 'LEGENDARY' }, { name: 'Velo Obsidian', rarity: 'EPIC' }] },
+  { category: 'CRYSTAL', amount: 4800 },
+  { category: 'ITEM', kind: 'DRACONICA', quantity: 5, rarity: 'LENDARIA' },
+  { category: 'CARD', name: 'Aeliana, Eclipse Galáctico', rarity: 'GALACTICA', foil: 'PRISM', condition: 0.01, image: '/aeliana/Aeliana.png' },
+  { category: 'CARD_BACK', name: 'Brasão Real', rarity: 'LEGENDARY', duplicate: false },
+];
+
 function readJsonBody(req, res, onParsed) {
   let body = '';
   req.on('data', (c) => (body += c));
@@ -111,7 +129,7 @@ function readJsonBody(req, res, onParsed) {
   });
 }
 
-function pickMockBoxReward() {
+function pickMockBoxReward(tier = 'COMMON') {
   const override = (process.env.MOCK_BOX_REWARD || '').trim().toUpperCase();
   if (override === 'ERROR') {
     return { errorStatus: 500, errorMessage: 'Falha simulada ao abrir caixa.' };
@@ -119,11 +137,19 @@ function pickMockBoxReward() {
   if (override === 'INVALID') {
     return { reward: {} };
   }
+  const pool =
+    tier === 'PREMIUM'
+      ? MOCK_PREMIUM_REWARDS
+      : tier === 'RARE'
+        ? MOCK_RARE_REWARDS
+        : MOCK_BOX_REWARDS;
   if (override) {
-    const matched = MOCK_BOX_REWARDS.find((entry) => entry.category === override);
+    const matched =
+      pool.find((entry) => entry.category === override) ||
+      MOCK_BOX_REWARDS.find((entry) => entry.category === override);
     if (matched) return { reward: { ...matched } };
   }
-  const reward = MOCK_BOX_REWARDS[mockOpenIndex % MOCK_BOX_REWARDS.length];
+  const reward = pool[mockOpenIndex % pool.length];
   mockOpenIndex += 1;
   return { reward: { ...reward } };
 }
@@ -662,7 +688,7 @@ const server = http.createServer((req, res) => {
       }
       const delayMs = Math.max(0, Number(process.env.MOCK_OPEN_DELAY_MS) || 0);
       const completeOpen = () => {
-        const picked = pickMockBoxReward();
+        const picked = pickMockBoxReward(tier);
         if (picked.errorStatus) {
           return json(res, { message: picked.errorMessage }, picked.errorStatus);
         }
@@ -682,6 +708,13 @@ const server = http.createServer((req, res) => {
             } else if (reward.category === 'RARE_BOX') {
               mockEconomy.rareBoxes += amount;
             }
+          }
+          if (reward.category === 'KEY_RARE_BOX') {
+            mockEconomy.rareBoxes += Number(reward.rareBoxes) || 1;
+            mockEconomy.keys += Number(reward.keys) || 1;
+          } else if (reward.category === 'KEY_PREMIUM_BOX') {
+            mockEconomy.premiumBoxes += Number(reward.premiumBoxes) || 1;
+            mockEconomy.keys += Number(reward.keys) || 1;
           }
         }
         return json(res, { reward, inventory: mockEconomy });
