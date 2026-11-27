@@ -237,6 +237,98 @@ test("só permite abrir outra caixa depois de confirmar o inventário atualizado
   ).toBeEnabled();
 });
 
+test("ignora refresh atrasado de uma abertura anterior", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.setViewportSize({ width: 390, height: 300 });
+  let inventory = {
+    balance: 4000,
+    available: 4000,
+    reserved: 0,
+    commonBoxes: 3,
+    rareBoxes: 2,
+    premiumBoxes: 2,
+    keys: 3,
+    spinResets: 0,
+    loyaltyDays: 1,
+  };
+  let openCalls = 0;
+  let holdNextRefresh = false;
+  let releaseOpen!: () => void;
+  let releaseStaleRefresh!: () => void;
+  let markStaleRefreshStarted!: () => void;
+  const openGate = new Promise<void>((resolve) => {
+    releaseOpen = resolve;
+  });
+  const staleRefreshGate = new Promise<void>((resolve) => {
+    releaseStaleRefresh = resolve;
+  });
+  const staleRefreshStarted = new Promise<void>((resolve) => {
+    markStaleRefreshStarted = resolve;
+  });
+
+  await page.route("**/gacha/economy**", async (route) => {
+    const path = new URL(route.request().url()).pathname;
+    if (path.endsWith("/economy")) {
+      const snapshot = { ...inventory };
+      if (holdNextRefresh) {
+        holdNextRefresh = false;
+        markStaleRefreshStarted();
+        await staleRefreshGate;
+      }
+      return route.fulfill({ json: snapshot });
+    }
+    if (path.endsWith("/boxes/open")) {
+      const opening = ++openCalls;
+      if (opening === 1) await openGate;
+      inventory = {
+        ...inventory,
+        commonBoxes: inventory.commonBoxes - 1,
+        keys: inventory.keys - 1,
+      };
+      if (opening === 1) holdNextRefresh = true;
+      return route.fulfill({
+        json: { reward: { category: "CRYSTAL", amount: 50 } },
+      });
+    }
+    return route.fallback();
+  });
+
+  await page.goto("/gacha/loja");
+  await openButton(page, "Comum").click();
+  const dialog = page.getByRole("dialog");
+  const liveStatus = dialog.locator("#box-status");
+  await expect(liveStatus).toHaveAttribute("aria-live", "polite");
+  const liveRegion = await liveStatus.elementHandle();
+  expect(liveRegion).not.toBeNull();
+  const openingMessage = await liveRegion!.textContent();
+  releaseOpen();
+  await expect(dialog.getByText("+50", { exact: true })).toBeVisible();
+  await expect(liveStatus).toContainText("Cristais");
+  expect(await liveRegion!.evaluate((node) => node.isConnected)).toBe(true);
+  expect(await liveRegion!.textContent()).not.toBe(openingMessage);
+  const continueButton = dialog.getByRole("button", { name: "Continuar" });
+  await expect(continueButton).toBeFocused();
+  await expect
+    .poll(() =>
+      continueButton.evaluate((el) => {
+        const bounds = el.getBoundingClientRect();
+        return bounds.top >= 0 && bounds.bottom <= window.innerHeight;
+      }),
+    )
+    .toBe(true);
+
+  await staleRefreshStarted;
+  await continueButton.click();
+  await openButton(page, "Comum").click();
+  const nextDialog = page.getByRole("dialog");
+  const openAgain = nextDialog.getByRole("button", {
+    name: "Abrir outra comum",
+  });
+  await expect(openAgain).toBeEnabled();
+  releaseStaleRefresh();
+  await expect(openAgain).toBeVisible();
+});
+
 test("compra caixa e chave antes de abrir", async ({ page }) => {
   const calls = await mockPurchaseFlow(page);
   await page.emulateMedia({ reducedMotion: "reduce" });
