@@ -1,3 +1,16 @@
+# [1.9.0](https://github.com/1arley/animesice/compare/v1.8.1...v1.9.0) (2026-11-27)
+
+### Bug Fixes
+
+* **gacha:** allow deleting redeemed reward codes ([5817c99](https://github.com/1arley/animesice/commit/5817c9935aa7dd33061eacc96a34ab0494044081))
+* **gacha:** make gem craft/apply idempotent across retries ([07b383d](https://github.com/1arley/animesice/commit/07b383dd7e4af4cad84f02f9b7b00c035a4c91c9))
+* **gacha:** preserve box reveal state and announcements ([1974abb](https://github.com/1arley/animesice/commit/1974abbd314d8064c7d1a2df82cd46922670cb6f))
+
+### Features
+
+* **gacha:** add common box reveal flow ([167ca0a](https://github.com/1arley/animesice/commit/167ca0a6de78bd457c258d4642134097b043a495))
+* **gacha:** redesign tier box reveal flow ([c31c068](https://github.com/1arley/animesice/commit/c31c06843545d0d1b712d3d6cc7b4b7bf1fb8c63))
+
 ## [1.8.1](https://github.com/1arley/animesice/compare/v1.8.0...v1.8.1) (2026-11-27)
 
 # [1.8.0](https://github.com/1arley/animesice/compare/v1.7.0...v1.8.0) (2026-11-26)
