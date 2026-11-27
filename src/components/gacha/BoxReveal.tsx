@@ -354,7 +354,7 @@ export function BoxReveal({
       ? (el.querySelector<HTMLElement>(".common-box-action") ??
         el.querySelector<HTMLElement>(FOCUSABLE))
       : el.querySelector<HTMLElement>(FOCUSABLE);
-    target?.focus({ preventScroll: true });
+    target?.focus();
   }, [ready, error, finished]);
 
   // Fallback timing when WebGL is unavailable (only after reward confirms)
@@ -414,6 +414,10 @@ export function BoxReveal({
         : scenePhase === "revealing"
           ? "Revelando recompensa…"
           : metaCopy.openingStatus;
+  const liveStatusMessage =
+    ready && reward
+      ? `${boxRewardLabel(reward)}. ${statusMessage}`
+      : statusMessage;
 
   return (
     <dialog
@@ -437,6 +441,10 @@ export function BoxReveal({
       }}
     >
       <div className="common-box-cinema">
+        <p id="box-status" role="status" aria-live="polite" className="sr-only">
+          {liveStatusMessage}
+        </p>
+
         {motion === true &&
           !webglFallback &&
           !error &&
@@ -600,10 +608,8 @@ export function BoxReveal({
               )}
 
               <p
-                id="box-status"
-                role="status"
-                aria-live="polite"
                 className="common-reward-status text-body-sm"
+                aria-hidden="true"
               >
                 <span className="sr-only">{boxRewardLabel(reward)}. </span>
                 {statusMessage}
@@ -647,10 +653,8 @@ export function BoxReveal({
                 </p>
               </div>
               <p
-                id="box-status"
-                role="status"
-                aria-live="polite"
                 className="common-reward-status text-body-sm"
+                aria-hidden="true"
               >
                 {statusMessage}
               </p>
@@ -670,10 +674,8 @@ export function BoxReveal({
         {!ready && !error && (
           <footer className="common-box-footer">
             <p
-              id="box-status"
-              role="status"
-              aria-live="polite"
               className="common-box-live text-body-sm"
+              aria-hidden="true"
             >
               {statusMessage}
             </p>

@@ -265,6 +265,7 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
   const buyAndOpenLockRef = useRef(false);
   const mountedRef = useRef(true);
   const revealSeq = useRef(0);
+  const refreshSeq = useRef(0);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -328,6 +329,7 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
 
   const refresh = useCallback(async () => {
     if (!user) return null;
+    const request = ++refreshSeq.current;
     try {
       // Carteira e conteúdo da aba são independentes: em paralelo a página
       // pinta com uma ida ao servidor em vez de duas em série.
@@ -335,6 +337,7 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
         api.gachaEconomyInventory(),
         mode === "shop" ? api.gachaEconomyShop() : Promise.resolve(null),
       ]);
+      if (!mountedRef.current || request !== refreshSeq.current) return null;
       setInventory(wallet);
       if (mode === "shop" && shopOffers) {
         setOffers(shopOffers);
@@ -346,6 +349,7 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
           api.gachaEconomyMission(),
           api.gachaEconomyOwnedSkins(),
         ]);
+        if (!mountedRef.current || request !== refreshSeq.current) return null;
         setMine(
           [
             ...myListings.items,
@@ -362,6 +366,7 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
       }
       return wallet;
     } catch (cause) {
+      if (!mountedRef.current || request !== refreshSeq.current) return null;
       setError(
         cause instanceof ApiError
           ? cause.message
@@ -524,6 +529,7 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
       return;
     }
     openingRequest.current = true;
+    refreshSeq.current += 1;
     setBusy(`open-${tier}`);
     setError("");
     const seq = ++revealSeq.current;
@@ -550,7 +556,11 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
       );
       // Refresh is independent of the reveal and cannot turn a granted prize into an error.
       void refresh().then((updatedInventory) => {
-        if (mountedRef.current && updatedInventory) {
+        if (
+          mountedRef.current &&
+          seq === revealSeq.current &&
+          updatedInventory
+        ) {
           setRefreshedBoxInventory({ seq, inventory: updatedInventory });
         }
       });
