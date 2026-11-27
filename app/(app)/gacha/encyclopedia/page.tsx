@@ -453,12 +453,11 @@ function CardEncyclopedia() {
                       Ver cartas
                     </span>
                   </Link>
-                  {set.animeId && (
-                    <WishlistButton
-                      animeId={set.animeId}
-                      initialWishlisted={set.wishlisted}
-                    />
-                  )}
+                  <WishlistButton
+                    animeId={set.animeId}
+                    animeTitle={set.animeId ? null : set.animeTitle}
+                    initialWishlisted={set.wishlisted}
+                  />
                 </article>
               ))}
             </div>

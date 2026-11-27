@@ -8,6 +8,7 @@ import { useAuth } from "@/lib/auth-context";
 interface WishlistButtonProps {
   cardId?: string;
   animeId?: string | null;
+  animeTitle?: string | null;
   initialWishlisted: boolean;
   disabled?: boolean;
   compact?: boolean;
@@ -16,6 +17,7 @@ interface WishlistButtonProps {
 export function WishlistButton({
   cardId,
   animeId,
+  animeTitle,
   initialWishlisted,
   disabled = false,
   compact = false,
@@ -26,12 +28,14 @@ export function WishlistButton({
 
   // Bug #4 fix: if neither id is provided, render nothing — a silent no-op
   // button gives no feedback and confuses users. We bail out early instead.
-  if (!cardId && !animeId) return null;
+  if (!cardId && !animeId && !animeTitle) return null;
 
   if (!user) {
     return (
-      <Link href="/login" className="btn-ghost px-3 py-2 text-caption">
-        Quero obter
+      <Link href="/login" className="btn-ghost min-h-11 px-3 py-2 text-caption">
+        {animeId || animeTitle
+          ? "Adicionar conjunto à wishlist"
+          : "Quero obter"}
       </Link>
     );
   }
@@ -54,6 +58,9 @@ export function WishlistButton({
       } else if (animeId) {
         if (next) await api.gachaWishlistSet(animeId);
         else await api.gachaWishlistSetDelete(animeId);
+      } else if (animeTitle) {
+        if (next) await api.gachaWishlistOrphanSet(animeTitle);
+        else await api.gachaWishlistOrphanSetDelete(animeTitle);
       }
     } catch {
       setWishlisted(!next);
@@ -68,9 +75,17 @@ export function WishlistButton({
       onClick={() => void toggle()}
       disabled={loading || effectivelyDisabled}
       aria-pressed={wishlisted}
-      className={`${wishlisted ? "btn-ice" : "btn-ghost"} px-3 py-2 text-caption ${compact ? "" : "mt-3 w-full"}`}
+      className={`${wishlisted ? "btn-ice" : "btn-ghost"} min-h-11 px-3 py-2 text-caption ${compact ? "" : "mt-3 w-full"}`}
     >
-      {loading ? "..." : wishlisted ? "Na wishlist" : "Quero obter"}
+      {loading
+        ? "..."
+        : animeId || animeTitle
+          ? wishlisted
+            ? "Conjunto na wishlist"
+            : "Adicionar conjunto à wishlist"
+          : wishlisted
+            ? "Na wishlist"
+            : "Quero obter"}
     </button>
   );
 }

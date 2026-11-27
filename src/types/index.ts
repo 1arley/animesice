@@ -1184,12 +1184,18 @@ export interface GachaWishlistCard {
 
 export interface GachaWishlistSet {
   id: string;
-  animeId: string;
+  animeId: string | null;
+  animeTitle: string;
   priority: WishlistPriority;
   total: number;
   owned: number;
   complete: boolean;
-  anime: { id: string; slug: string; title: string; coverImage: string | null };
+  anime: {
+    id: string;
+    slug: string;
+    title: string;
+    coverImage: string | null;
+  } | null;
 }
 
 export interface GachaWishlistResponse {

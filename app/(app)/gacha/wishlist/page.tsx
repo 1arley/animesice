@@ -119,7 +119,9 @@ function GachaWishlistContent() {
         </p>
       )}
       {!data ? (
-        loadError ? null : <div className="skeleton mt-8 h-64" />
+        loadError ? null : (
+          <div className="skeleton mt-8 h-64" />
+        )
       ) : data.private ? (
         <p className="mt-8 text-mist">Wishlist privada.</p>
       ) : (
@@ -136,9 +138,7 @@ function GachaWishlistContent() {
             {data.meta.sets === 0 ? (
               <p className="mt-3 text-mist">Nenhum conjunto desejado.</p>
             ) : data.sets.length === 0 ? (
-              <p className="mt-3 text-mist">
-                Nenhum conjunto nesta página.
-              </p>
+              <p className="mt-3 text-mist">Nenhum conjunto nesta página.</p>
             ) : (
               <div
                 aria-busy={loading}
@@ -149,11 +149,15 @@ function GachaWishlistContent() {
                 {data.sets.map((set) => (
                   <Link
                     key={set.id}
-                    href={`/gacha/enciclopedia?view=sets&animeId=${set.animeId}`}
+                    href={
+                      set.animeId
+                        ? `/gacha/enciclopedia?view=sets&animeId=${set.animeId}`
+                        : `/gacha/enciclopedia?view=sets&animeId=orphan&animeTitle=${encodeURIComponent(set.animeTitle)}&title=${encodeURIComponent(set.animeTitle)}`
+                    }
                     className="border border-hairline bg-panel p-4 hover:border-ice"
                   >
                     <h3 className="text-body-md text-snow">
-                      {set.anime.title}
+                      {set.anime?.title ?? set.animeTitle}
                     </h3>
                     <p className="mt-2 text-body-sm text-mist">
                       {set.owned}/{set.total} cartas ·{" "}
