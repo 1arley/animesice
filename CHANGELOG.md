@@ -1,3 +1,9 @@
+## [1.13.1](https://github.com/1arley/animesice/compare/v1.13.0...v1.13.1) (2026-11-27)
+
+### Bug Fixes
+
+* **gacha:** polish night market layout and modal overlay ([cc7e107](https://github.com/1arley/animesice/commit/cc7e10743033f85e2e410244a95efc887253695d))
+
 # [1.13.0](https://github.com/1arley/animesice/compare/v1.12.1...v1.13.0) (2026-11-27)
 
 ### Features
