@@ -26,6 +26,7 @@ import {
   isCardEligibleForStone,
   isStoneKind,
   nextConditionLabel,
+  pendingOperationRoute,
   readPendingOperationKeys,
   STONE_FRAGMENTS,
   upgradedValue,
@@ -71,6 +72,8 @@ export function GachaInventory() {
   const [pendingProtectionRetry, setPendingProtectionRetry] = useState<{
     quantity: number;
   } | null>(null);
+  const [pendingFragmentsOperation, setPendingFragmentsOperation] =
+    useState(false);
   const [pendingUseRetry, setPendingUseRetry] = useState<{
     kind: StoneKind;
     userCardId: string;
@@ -158,6 +161,7 @@ export function GachaInventory() {
       setLoadedUserId(null);
       setPendingProtectionRetry(null);
       setPendingUseRetry(null);
+      setPendingFragmentsOperation(false);
       setReconcileNeeded(false);
       pendingOperations.current.clear();
       setLoading(false);
@@ -178,6 +182,7 @@ export function GachaInventory() {
     setStatus("");
     setPendingProtectionRetry(null);
     setPendingUseRetry(null);
+    setPendingFragmentsOperation(false);
     setReconcileNeeded(false);
     pendingOperations.current.clear();
     setLoading(true);
@@ -189,8 +194,12 @@ export function GachaInventory() {
         setInventory(current);
         setLoadedUserId(user.id);
 
+        const pendingKeys = readPendingOperationKeys(user.id);
+        setPendingFragmentsOperation(
+          pendingKeys.some((key) => pendingOperationRoute(key) === "fragments"),
+        );
         let pendingUseFound = false;
-        for (const suffix of readPendingOperationKeys(user.id)) {
+        for (const suffix of pendingKeys) {
           const action = suffix.split(":");
           if (action[0] === "use" && isStoneKind(action[1])) {
             const kind = action[1];
@@ -301,11 +310,13 @@ export function GachaInventory() {
   ]);
 
   async function buyProtection(retryQuantity = protectionQuantity) {
+    const retrying = pendingProtectionRetry?.quantity === retryQuantity;
     if (
       !user ||
       !inventory ||
       busyRef.current ||
       reconcileNeeded ||
+      (pendingFragmentsOperation && !retrying) ||
       pendingUseRetry ||
       (pendingProtectionRetry &&
         retryQuantity !== pendingProtectionRetry.quantity) ||
@@ -373,6 +384,7 @@ export function GachaInventory() {
       !action ||
       busyRef.current ||
       reconcileNeeded ||
+      (pendingFragmentsOperation && !retry) ||
       pendingProtectionRetry ||
       (pendingUseRetry && !retry)
     )
@@ -536,6 +548,22 @@ export function GachaInventory() {
     >
       <GachaInventorySubnav active="inventory" stats={stats} />
 
+      {pendingFragmentsOperation && (
+        <p
+          role="status"
+          className="mb-4 border border-ice/30 bg-panel p-3 text-body-sm text-mist"
+        >
+          Há uma operação de fragmentos pendente. Resolva-a antes de iniciar
+          outra ação.{" "}
+          <Link
+            className="font-medium text-ice underline"
+            href="/gacha/inventario/fragmentos"
+          >
+            Abrir fragmentos
+          </Link>
+        </p>
+      )}
+
       <header className="gacha-inventory-hero mb-8 p-5 sm:p-8">
         <div className="flex flex-wrap items-end justify-between gap-5">
           <div className="max-w-2xl">
@@ -686,7 +714,7 @@ export function GachaInventory() {
       <GachaEssences
         inventory={inventory}
         refresh={refreshInventory}
-        disabled={!!busy || reconcileNeeded}
+        disabled={!!busy || reconcileNeeded || pendingFragmentsOperation}
       />
 
       <div className="mt-8 grid gap-6 lg:grid-cols-[1.35fr_1fr]">
@@ -920,6 +948,7 @@ export function GachaInventory() {
               !!busy ||
               afterValue == null ||
               reconcileNeeded ||
+              (pendingFragmentsOperation && !pendingUseRetry) ||
               !!pendingProtectionRetry
             }
             onClick={() => setStatus("confirm-upgrade")}
@@ -1006,7 +1035,11 @@ export function GachaInventory() {
                 min={1}
                 max={2_147_483_647}
                 step={1}
-                disabled={!!pendingProtectionRetry || !!pendingUseRetry}
+                disabled={
+                  !!pendingProtectionRetry ||
+                  !!pendingUseRetry ||
+                  (pendingFragmentsOperation && !pendingProtectionRetry)
+                }
                 value={protectionQuantity}
                 onChange={(event) =>
                   setProtectionQuantity(
@@ -1027,7 +1060,8 @@ export function GachaInventory() {
                   !!protectionReason ||
                   reconcileNeeded ||
                   !!pendingProtectionRetry ||
-                  !!pendingUseRetry
+                  !!pendingUseRetry ||
+                  (pendingFragmentsOperation && !pendingProtectionRetry)
                 }
                 className="btn-ghost gacha-fragment-action mt-3 min-h-11 w-full px-3 disabled:opacity-50"
               >

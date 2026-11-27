@@ -2,10 +2,12 @@ import assert from "node:assert/strict";
 import {
   FOIL_FRAGMENTS,
   STONE_FRAGMENTS,
+  getOwnedStoneSelection,
   getInventoryFragmentStats,
   isCardEligibleForStone,
   isStoneKind,
   nextConditionLabel,
+  pendingOperationRoute,
   upgradedValue,
 } from "../src/lib/gacha-inventory.ts";
 
@@ -95,6 +97,22 @@ assert.equal(isStoneKind("TITANITA"), true);
 assert.equal(isStoneKind("DRACONICA"), true);
 assert.equal(isStoneKind("PROTECAO"), false);
 assert.equal(isStoneKind(null), false);
+assert.equal(pendingOperationRoute("craft:TITANITA:2"), "fragments");
+assert.equal(pendingOperationRoute("gem-apply:HOLO:card-1"), "fragments");
+assert.equal(pendingOperationRoute("buy:PROTECAO:1"), "inventory");
+assert.equal(pendingOperationRoute("use:TITANITA:card-1"), "inventory");
+assert.equal(pendingOperationRoute("unknown:1"), null);
+assert.equal(
+  getOwnedStoneSelection(
+    "TITANITA",
+    makeInventory({ titanitaShards: 0, draconicaShards: 1 }),
+  ),
+  "DRACONICA",
+);
+assert.equal(
+  getOwnedStoneSelection("TITANITA", makeInventory()),
+  "TITANITA",
+);
 
 // 2. Zero inventory stats
 const zeroStats = getInventoryFragmentStats(makeInventory());

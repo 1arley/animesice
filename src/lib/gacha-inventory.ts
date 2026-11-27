@@ -39,6 +39,26 @@ export type StoneKind =
 
 export type ItemOperation = "buy" | "convert" | "craft";
 
+export function pendingOperationRoute(
+  key: string,
+): "inventory" | "fragments" | null {
+  const [operation, kind] = key.split(":");
+  if (operation === "use" && isStoneKind(kind)) return "inventory";
+  if (operation === "buy" && kind === "PROTECAO") return "inventory";
+  if (
+    (operation === "buy" ||
+      operation === "convert" ||
+      operation === "craft") &&
+    isStoneKind(kind)
+  ) {
+    return "fragments";
+  }
+  if (operation === "gem-craft" || operation === "gem-apply") {
+    return "fragments";
+  }
+  return null;
+}
+
 export interface FoilFragmentMeta {
   foil: GachaFoil;
   label: string;
@@ -131,6 +151,22 @@ export const STONE_FRAGMENTS: readonly StoneFragmentMeta[] = [
 
 export function isStoneKind(value: string | null | undefined): value is StoneKind {
   return STONE_FRAGMENTS.some((entry) => entry.kind === value);
+}
+
+export function getOwnedStoneSelection(
+  selectedKind: StoneKind,
+  inventory: GachaEconomyInventory,
+): StoneKind {
+  const owns = (entry: StoneFragmentMeta) =>
+    inventory[entry.shards] > 0 || inventory[entry.items] > 0;
+  if (
+    STONE_FRAGMENTS.some(
+      (entry) => entry.kind === selectedKind && owns(entry),
+    )
+  ) {
+    return selectedKind;
+  }
+  return STONE_FRAGMENTS.find(owns)?.kind ?? selectedKind;
 }
 
 export function gachaConditionLabel(condition: number): string {
