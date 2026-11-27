@@ -1668,7 +1668,11 @@ export const api = {
     kind: Exclude<GachaItemKind, "PROTECAO">;
     quantity: number;
   }) =>
-    request("/gacha/economy/items/craft", {
+    request<{
+      kind: Exclude<GachaItemKind, "PROTECAO">;
+      quantity: number;
+      shards: number;
+    }>("/gacha/economy/items/craft", {
       method: "POST",
       body: JSON.stringify(body),
     }),
