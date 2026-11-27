@@ -100,7 +100,7 @@ assert.equal(isStoneKind(null), false);
 assert.equal(pendingOperationRoute("craft:TITANITA:2"), "fragments");
 assert.equal(pendingOperationRoute("gem-apply:HOLO:card-1"), "fragments");
 assert.equal(pendingOperationRoute("buy:PROTECAO:1"), "inventory");
-assert.equal(pendingOperationRoute("use:TITANITA:card-1"), "inventory");
+assert.equal(pendingOperationRoute("use:TITANITA:card-1"), "fragments");
 assert.equal(pendingOperationRoute("unknown:1"), null);
 assert.equal(
   getOwnedStoneSelection(

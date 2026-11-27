@@ -43,10 +43,10 @@ export function pendingOperationRoute(
   key: string,
 ): "inventory" | "fragments" | null {
   const [operation, kind] = key.split(":");
-  if (operation === "use" && isStoneKind(kind)) return "inventory";
   if (operation === "buy" && kind === "PROTECAO") return "inventory";
   if (
-    (operation === "buy" ||
+    (operation === "use" ||
+      operation === "buy" ||
       operation === "convert" ||
       operation === "craft") &&
     isStoneKind(kind)
