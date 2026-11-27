@@ -3342,3 +3342,375 @@
     transition: none;
   }
 }
+
+/* Fullscreen Common Box Cinematic Flow & Holographic Final Reward Showcase */
+.box-reveal-dialog--cinematic {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  max-width: none;
+  height: 100dvh;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: #02070b;
+  color: #d3f1fc;
+  box-shadow: none;
+  overflow-x: hidden;
+  overflow-y: auto;
+  animation: common-box-curtain-in 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.box-reveal-dialog--cinematic::backdrop {
+  background: #02070b;
+  backdrop-filter: none;
+}
+
+.common-box-cinema {
+  position: relative;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  min-height: 100dvh;
+  width: 100%;
+  isolation: isolate;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
+}
+
+.common-box-webgl-stage {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: #02070b;
+}
+
+.common-box-fallback {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  background:
+    radial-gradient(
+      circle at 50% 48%,
+      rgba(159, 220, 245, 0.08),
+      rgba(2, 7, 11, 0.96) 62%,
+      #02070b 100%
+    );
+}
+
+.common-box-fallback-ring {
+  position: absolute;
+  width: min(76vw, 24rem);
+  aspect-ratio: 1;
+  border: 1px solid rgba(159, 220, 245, 0.22);
+  border-radius: 50%;
+  box-shadow: 0 0 42px rgba(159, 220, 245, 0.1);
+}
+
+.common-box-fallback-frame {
+  position: relative;
+  width: min(68vw, 19rem);
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+}
+
+.common-box-fallback-frame img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  mix-blend-mode: screen;
+  transition: transform 600ms cubic-bezier(0.16, 1, 0.3, 1), filter 600ms ease;
+}
+
+.common-box-fallback[data-confirmed="true"] .common-box-fallback-frame img {
+  transform: scale(1.06);
+  filter: drop-shadow(0 0 28px rgba(159, 220, 245, 0.42));
+}
+
+.common-box-topbar {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.9rem 1.25rem;
+}
+
+.common-box-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  color: #8ab7cc;
+}
+
+.common-box-reticle {
+  width: 8px;
+  height: 8px;
+  flex: none;
+  background: #9fdcf5;
+  transform: rotate(45deg);
+  box-shadow: 0 0 12px rgba(159, 220, 245, 0.75);
+}
+
+.common-box-close {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid rgba(159, 220, 245, 0.26);
+  border-radius: 2px;
+  background: rgba(5, 17, 25, 0.68);
+  color: #d3f1fc;
+  backdrop-filter: blur(8px);
+  transition: border-color 150ms, background-color 150ms, color 150ms;
+}
+
+.common-box-close:hover {
+  border-color: #9fdcf5;
+  background: rgba(159, 220, 245, 0.12);
+  color: #ffffff;
+}
+
+.common-box-center {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  padding: 0.5rem 1rem 1.5rem;
+}
+
+.common-box-footer {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.85rem 1.25rem;
+  padding: 0.75rem 1.25rem 1.5rem;
+}
+
+.common-box-live {
+  color: #9bc4d8;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+}
+
+.common-box-skip {
+  min-height: 44px;
+  padding: 0.55rem 1.15rem;
+  border: 1px solid rgba(159, 220, 245, 0.28);
+  border-radius: 2px;
+  background: rgba(5, 17, 25, 0.7);
+  color: #d3f1fc;
+  font-size: 0.8125rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  backdrop-filter: blur(8px);
+  transition: border-color 150ms, background-color 150ms;
+}
+
+.common-box-skip:hover:not(:disabled) {
+  border-color: #9fdcf5;
+  background: rgba(159, 220, 245, 0.14);
+}
+
+.common-box-skip:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.common-reward-panel {
+  --panel-accent: var(--prize-accent, #9fdcf5);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  width: min(100%, 34rem);
+  padding: 1.15rem 1.35rem 1.1rem;
+  border: 1px solid color-mix(in srgb, var(--panel-accent) 32%, rgba(159, 220, 245, 0.16));
+  border-radius: 2px;
+  background:
+    radial-gradient(
+      ellipse at 50% 0%,
+      color-mix(in srgb, var(--panel-accent) 12%, transparent),
+      transparent 62%
+    ),
+    rgba(4, 13, 22, 0.82);
+  backdrop-filter: blur(14px);
+  box-shadow:
+    0 28px 96px rgba(0, 0, 0, 0.78),
+    inset 0 1px 0 color-mix(in srgb, var(--panel-accent) 35%, transparent);
+  text-align: center;
+  animation: common-reward-resolve 360ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.common-reward-panel .box-reveal-chips,
+.common-reward-panel .box-reveal-art,
+.common-reward-panel .box-reveal-step {
+  animation-duration: 300ms;
+  animation-delay: calc(var(--i, 0) * 40ms + 40ms);
+}
+
+.common-reward-panel .box-reveal-art {
+  min-height: 6.75rem;
+}
+
+.common-reward-panel .box-reveal-art[data-kind="card"] img,
+.common-reward-panel .box-reveal-art[data-kind="item"] img {
+  max-height: min(26dvh, 14.5rem);
+}
+
+.common-reward-panel--error {
+  --panel-accent: #ff6b4a;
+}
+
+.common-reward-corners {
+  position: absolute;
+  inset: -1px;
+  pointer-events: none;
+  background:
+    linear-gradient(to right, var(--panel-accent), var(--panel-accent)) 0 0 / 16px 2px no-repeat,
+    linear-gradient(to bottom, var(--panel-accent), var(--panel-accent)) 0 0 / 2px 16px no-repeat,
+    linear-gradient(to left, var(--panel-accent), var(--panel-accent)) 100% 0 / 16px 2px no-repeat,
+    linear-gradient(to bottom, var(--panel-accent), var(--panel-accent)) 100% 0 / 2px 16px no-repeat,
+    linear-gradient(to right, var(--panel-accent), var(--panel-accent)) 0 100% / 16px 2px no-repeat,
+    linear-gradient(to top, var(--panel-accent), var(--panel-accent)) 0 100% / 2px 16px no-repeat,
+    linear-gradient(to left, var(--panel-accent), var(--panel-accent)) 100% 100% / 16px 2px no-repeat,
+    linear-gradient(to top, var(--panel-accent), var(--panel-accent)) 100% 100% / 2px 16px no-repeat;
+}
+
+.common-reward-eyebrow {
+  font-size: 0.6875rem;
+  color: var(--panel-accent);
+  opacity: 0.9;
+}
+
+.common-reward-heading {
+  font-size: clamp(1.75rem, 4.5vw, 2.35rem);
+  line-height: 1.05;
+  color: #e6faff;
+  letter-spacing: 0.01em;
+}
+
+.common-reward-art {
+  margin-top: 0.2rem;
+}
+
+.common-reward-caption {
+  color: var(--panel-accent);
+}
+
+.common-reward-name {
+  color: #f4fbff;
+}
+
+.common-reward-details {
+  color: #b7d2e0;
+}
+
+.common-reward-status {
+  color: #9bc4d8;
+  max-width: 28rem;
+}
+
+.common-reward-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.55rem;
+  width: 100%;
+  margin-top: 0.35rem;
+}
+
+.common-box-action {
+  min-height: 48px;
+  width: min(100%, 20rem);
+  padding: 0.75rem 1.5rem;
+  border: 1px solid color-mix(in srgb, var(--panel-accent, #9fdcf5) 68%, transparent);
+  border-radius: 2px;
+  color: #e6faff;
+  background: color-mix(in srgb, var(--panel-accent, #9fdcf5) 14%, rgba(5, 17, 25, 0.85));
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-size: 0.875rem;
+  transition: background-color 160ms, border-color 160ms;
+}
+
+.common-box-action:hover {
+  border-color: var(--panel-accent, #9fdcf5);
+  background: color-mix(in srgb, var(--panel-accent, #9fdcf5) 26%, rgba(5, 17, 25, 0.92));
+}
+
+.common-box-again {
+  min-height: 44px;
+  padding: 0.5rem 1rem;
+  color: #a9c8d8;
+  font-size: 0.875rem;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.common-box-again:hover {
+  color: #e6faff;
+}
+
+.box-reveal-dialog--cinematic button:focus-visible {
+  outline: 2px solid #9fdcf5;
+  outline-offset: 3px;
+}
+
+@keyframes common-box-curtain-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes common-reward-resolve {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .common-box-topbar {
+    padding: 0.75rem 0.9rem;
+  }
+  .common-reward-panel {
+    padding: 1.25rem 1rem;
+    gap: 0.55rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .box-reveal-dialog--cinematic,
+  .common-reward-panel {
+    animation: none !important;
+  }
+  .common-box-fallback-frame img,
+  .common-box-close,
+  .common-box-skip,
+  .common-box-action {
+    transition: none;
+  }
+}
