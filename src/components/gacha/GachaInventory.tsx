@@ -551,9 +551,12 @@ export function GachaInventory() {
         await api.gachaEconomyConvertItem({ ...body, kind });
       else if (operation === "craft" && kind !== "PROTECAO") {
         const result = await api.gachaEconomyCraftItem({ ...body, kind });
-        setForge({
-          result: { kind: result.kind, quantity: result.quantity },
-        });
+        setForge((current) =>
+          current && {
+            ...current,
+            result: { kind: result.kind, quantity: result.quantity },
+          },
+        );
       }
       else throw new Error("Essa operação não aceita proteção.");
       clearOperation(key, storageKey);
@@ -569,9 +572,12 @@ export function GachaInventory() {
         });
     } catch (cause) {
       if (showForge)
-        setForge({
-          error: cause instanceof Error ? cause.message : "Falha na fabricação.",
-        });
+        setForge((current) =>
+          current && {
+            ...current,
+            error: cause instanceof Error ? cause.message : "Falha na fabricação.",
+          },
+        );
       setError(
         `${cause instanceof Error ? cause.message : "Falha na operação."} Se houve timeout, tente novamente sem alterar o tipo ou a quantidade.`,
       );

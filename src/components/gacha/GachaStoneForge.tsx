@@ -110,7 +110,7 @@ export function GachaStoneForge({
           {settled && result
             ? `${result.quantity} ${STONE_LABELS[result.kind]}${result.quantity === 1 ? " fabricada" : " fabricadas"}.`
             : settled && error
-              ? `A fabricação falhou: ${error}`
+              ? `Não foi possível confirmar a fabricação: ${error}`
               : visualError
                 ? "A animação não pôde ser carregada. A fabricação continua em segurança."
                 : complete
