@@ -1,3 +1,9 @@
+# [1.11.0](https://github.com/1arley/animesice/compare/v1.10.0...v1.11.0) (2026-11-27)
+
+### Features
+
+* **gacha:** add per-stone forge variants ([7fa5c38](https://github.com/1arley/animesice/commit/7fa5c38ffd77b0fb934485bc313541374b7f53be))
+
 # [1.10.0](https://github.com/1arley/animesice/compare/v1.9.0...v1.10.0) (2026-11-27)
 
 ### Bug Fixes
