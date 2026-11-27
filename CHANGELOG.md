@@ -1,3 +1,9 @@
+## [1.12.1](https://github.com/1arley/animesice/compare/v1.12.0...v1.12.1) (2026-11-27)
+
+### Bug Fixes
+
+* **gacha:** expand stone forge scene ([9054064](https://github.com/1arley/animesice/commit/90540648ef3f757bda24f7c5f191d178ca6fc141))
+
 # [1.12.0](https://github.com/1arley/animesice/compare/v1.11.0...v1.12.0) (2026-11-27)
 
 ### Bug Fixes
