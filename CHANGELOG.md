@@ -1,3 +1,9 @@
+## [1.14.1](https://github.com/1arley/animesice/compare/v1.14.0...v1.14.1) (2026-11-27)
+
+### Bug Fixes
+
+* **ads:** expose zone script in initial HTML ([d1b3a09](https://github.com/1arley/animesice/commit/d1b3a090aafd9dcce2b318282487d320ecff5f24))
+
 # [1.14.0](https://github.com/1arley/animesice/compare/v1.13.1...v1.14.0) (2026-11-27)
 
 ### Features
