@@ -33,7 +33,7 @@ async function blockExternalNavigation(page: Page) {
   });
 }
 
-async function openInventory(page: Page, inventory = emptyEconomy) {
+async function openFragments(page: Page, inventory = emptyEconomy) {
   await blockAds(page);
   await blockExternalNavigation(page);
   await loginAs(page);
@@ -41,7 +41,7 @@ async function openInventory(page: Page, inventory = emptyEconomy) {
   await page.route("**/gacha/collection?**", (route: Route) => route.fulfill({ json: {
     data: cards, meta: { page: 1, limit: 100, total: cards.length, totalPages: 1 },
   } }));
-  await page.goto("/gacha/inventario");
+  await page.goto("/gacha/inventario/fragmentos");
   await expect(page.getByRole("heading", { name: "Fragmentos e gemas de foil" })).toBeVisible();
 }
 
@@ -58,7 +58,7 @@ test("crafta gema pelo retorno atualizado do inventário", async ({ page }) => {
     current = { ...current, holoShards: 0, holoGems: 1 };
     await route.fulfill({ json: current });
   });
-  await page.goto("/gacha/inventario");
+  await page.goto("/gacha/inventario/fragmentos");
   const button = page.getByRole("button", { name: "Fabricar gema · 20 fragmentos" }).first();
   await button.click();
   await expect(page.getByRole("status").filter({ hasText: "Gema Holo fabricada. Restam 0 fragmentos e você tem 1 gema." })).toBeVisible();
@@ -69,7 +69,7 @@ test("crafta gema pelo retorno atualizado do inventário", async ({ page }) => {
 });
 
 test("retries gem craft with the same operation id after a lost response", async ({ page }) => {
-  await openInventory(page, { ...emptyEconomy, holoShards: 20 });
+  await openFragments(page, { ...emptyEconomy, holoShards: 20 });
   const bodies: { foil: string; operationId: string }[] = [];
   let attempts = 0;
   await page.route("**/gacha/economy/gems/craft", async (route) => {
@@ -87,7 +87,7 @@ test("retries gem craft with the same operation id after a lost response", async
 });
 
 test("mostra erro autoritativo do backend ao craftar sem saldo", async ({ page }) => {
-  await openInventory(page);
+  await openFragments(page);
   await page.route("**/gacha/economy/gems/craft", (route) => route.fulfill({
     status: 400,
     json: { message: "Fragmentos insuficientes para fabricar esta gema." },
@@ -97,7 +97,7 @@ test("mostra erro autoritativo do backend ao craftar sem saldo", async ({ page }
 });
 
 test("desabilita craft sem saldo e aplicação sem gema; oculta carta com foil", async ({ page }) => {
-  await openInventory(page, { ...emptyEconomy, holoShards: 19 });
+  await openFragments(page, { ...emptyEconomy, holoShards: 19 });
   await expect(page.getByRole("button", { name: "Fabricar gema · 20 fragmentos" }).first()).toBeDisabled();
   await expect(page.getByRole("option", { name: /Carta Holo/ })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Aplicar gema" })).toBeDisabled();
@@ -106,7 +106,7 @@ test("desabilita craft sem saldo e aplicação sem gema; oculta carta com foil",
 
 test("aplica gema e atualiza foil e valor com a resposta do backend", async ({ page }) => {
   const inventory = { ...emptyEconomy, holoShards: 0, holoGems: 1 };
-  await openInventory(page, inventory);
+  await openFragments(page, inventory);
   let economyRequests = 0;
   await page.route("**/gacha/economy/gems/apply", async (route) => {
     expect(route.request().postDataJSON()).toMatchObject({ foil: "HOLO", userCardId: "normal-card" });
@@ -122,6 +122,168 @@ test("aplica gema e atualiza foil e valor com a resposta do backend", async ({ p
   await expect(page.getByRole("region", { name: "Fragmentos e gemas de foil" }).getByRole("status")).toContainText("foil HOLO e valor de 777 cristais");
   await expect(page.getByText("Gemas:").first()).toHaveText("Gemas: 0");
   expect(economyRequests).toBe(1);
+});
+
+test("separa fragmentos do inventário principal com navegação bidirecional", async ({ page }) => {
+  const richEconomy = {
+    ...emptyEconomy,
+    available: 1200,
+    holoShards: 22,
+    titanitaShards: 15,
+    titanitaItems: 2,
+    protecao: 1,
+    itemConfig: {
+      ...emptyEconomy.itemConfig,
+      item_recipes: { TITANITA: 10, DRACONICA: 12 },
+      item_convert_value: { TITANITA: 5, DRACONICA: 8 },
+      item_shop_price: { TITANITA: 25, PROTECAO: 150 },
+      item_shop_enabled: { TITANITA: true, PROTECAO: true },
+      item_drop_available: { TITANITA: true, PROTECAO: true },
+    },
+  };
+  await blockAds(page);
+  await blockExternalNavigation(page);
+  await loginAs(page);
+  await page.route("**/gacha/economy", (route) => route.fulfill({ json: richEconomy }));
+  await page.route("**/gacha/collection?**", (route) => route.fulfill({ json: {
+    data: cards, meta: { page: 1, limit: 100, total: cards.length, totalPages: 1 },
+  } }));
+
+  await page.goto("/gacha/inventario");
+  await expect(page.getByRole("heading", { name: "Inventário", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Oficina de Fragmentos" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Fragmentos e gemas de foil" })).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Pedras e fragmentos" })).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Melhorar uma carta" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Proteção de reroll" })).toBeVisible();
+
+  await page.getByRole("link", { name: "Abrir oficina de fragmentos" }).click();
+  await expect(page).toHaveURL(/\/gacha\/inventario\/fragmentos$/);
+  await expect(page.getByRole("heading", { name: "Fragmentos", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Fragmentos e gemas de foil" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Fragmentos de pedras" })).toBeVisible();
+
+  await page.getByRole("link", { name: "← Voltar ao inventário" }).click();
+  await expect(page).toHaveURL(/\/gacha\/inventario$/);
+});
+
+test("gerencia fragmentos de pedras, filtra categorias, trata erro/vazio e evita overflow", async ({ page }) => {
+  let current = {
+    ...emptyEconomy,
+    holoShards: 0,
+    titanitaShards: 12,
+    titanitaItems: 0,
+    draconicaShards: 14,
+    draconicaItems: 1,
+    itemConfig: {
+      ...emptyEconomy.itemConfig,
+      item_recipes: { TITANITA: 10, DRACONICA: 12 },
+      item_convert_value: { TITANITA: 5, DRACONICA: 8 },
+      item_shop_price: { TITANITA: 25, DRACONICA: 40 },
+      item_shop_enabled: { TITANITA: true, DRACONICA: true },
+      item_drop_available: { TITANITA: true, DRACONICA: true },
+    },
+  };
+  await blockAds(page);
+  await blockExternalNavigation(page);
+  await loginAs(page);
+
+  let failFirst = true;
+  await page.route("**/gacha/economy", (route) => {
+    if (failFirst) {
+      failFirst = false;
+      return route.fulfill({ status: 500, json: { message: "Erro temporário" } });
+    }
+    return route.fulfill({ json: current });
+  });
+  await page.route("**/gacha/collection?**", (route) => route.fulfill({ json: {
+    data: cards, meta: { page: 1, limit: 100, total: cards.length, totalPages: 1 },
+  } }));
+  await page.route("**/gacha/economy/items/craft", async (route) => {
+    const body = route.request().postDataJSON() as { kind: string; quantity: number; operationId: string };
+    expect(body.kind).toBe("DRACONICA");
+    expect(body.quantity).toBe(1);
+    expect(body.operationId).toMatch(/^[0-9a-f-]{36}$/i);
+    current = { ...current, draconicaShards: 2, draconicaItems: 2 };
+    await route.fulfill({ json: { kind: "DRACONICA", quantity: 1, shards: 2 } });
+  });
+  await page.route("**/gacha/economy/items/convert", async (route) => {
+    const body = route.request().postDataJSON() as { kind: string; quantity: number; operationId: string };
+    expect(body.kind).toBe("DRACONICA");
+    expect(body.quantity).toBe(1);
+    expect(body.operationId).toMatch(/^[0-9a-f-]{36}$/i);
+    current = { ...current, draconicaShards: 1 };
+    await route.fulfill({ json: { ok: true } });
+  });
+
+  await page.goto("/gacha/inventario/fragmentos");
+  await expect(page.locator('p[role="alert"]')).toContainText("Não foi possível carregar seus fragmentos");
+  await page.getByRole("button", { name: "Tentar novamente" }).click();
+
+  await expect(page.getByRole("heading", { name: "Fragmentos de pedras" })).toBeVisible();
+  await page.getByRole("button", { name: "Pedras", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Fragmentos e gemas de foil" })).toHaveCount(0);
+
+  await expect(page.getByRole("button", { name: /^Titanita Sombria/ })).toBeVisible();
+  await page.getByRole("button", { name: "Somente com saldo" }).click();
+  await expect(page.getByRole("button", { name: /^Titanita Sombria/ })).toHaveCount(0);
+  await page.getByRole("button", { name: "Somente com saldo" }).click();
+  await expect(page.getByRole("button", { name: /^Titanita Sombria/ })).toBeVisible();
+
+  await page.getByRole("button", { name: /^Magnetita 14/ }).click();
+  await page.getByRole("button", { name: "Fabricar pedra" }).click();
+  const forgeDialog = page.locator("dialog[open]");
+  await expect(forgeDialog.getByRole("heading", { name: "Forja de pedras" })).toBeVisible();
+  await expect(forgeDialog.getByText("1 Magnetita fabricada.")).toBeVisible();
+  await forgeDialog.getByRole("button", { name: "Continuar" }).click();
+  await expect(forgeDialog).toHaveCount(0);
+  await expect(page.getByText(/Fabricação concluída: \+1 pedra\(s\) de Magnetita/)).toBeVisible();
+  await page.getByRole("button", { name: "Converter", exact: true }).click();
+  await expect(page.getByText("Fragmentos convertidos em cristais.")).toBeVisible();
+
+  await page.getByRole("link", { name: /Melhorar carta com Magnetita no inventário/ }).click();
+  await expect(page).toHaveURL(/\/gacha\/inventario\?pedra=DRACONICA#melhorar-carta$/);
+  await expect(page.getByRole("button", { name: /Magnetita \d+ prontas$/ })).toHaveAttribute("aria-pressed", "true");
+
+  // Layout sem overflow no desktop e mobile
+  await page.goto("/gacha/inventario/fragmentos");
+  await page.setViewportSize({ width: 1280, height: 800 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+});
+
+test("exibe erro na página e fecha o diálogo da forja ao falhar", async ({ page }) => {
+  const economy = {
+    ...emptyEconomy,
+    titanitaShards: 12,
+    itemConfig: {
+      ...emptyEconomy.itemConfig,
+      item_recipes: { TITANITA: 10 },
+      item_convert_value: { TITANITA: 5 },
+      item_shop_price: { TITANITA: 25 },
+      item_shop_enabled: { TITANITA: true },
+      item_drop_available: { TITANITA: true },
+    },
+  };
+  await openFragments(page, economy);
+  await page.route("**/gacha/economy/items/craft", (route) =>
+    route.fulfill({
+      status: 400,
+      json: { message: "Fragmentos insuficientes para fabricar esta pedra." },
+    }),
+  );
+
+  await page.getByRole("button", { name: "Fabricar pedra" }).click();
+  await expect(page.locator("dialog[open]")).toHaveCount(0);
+  await expect(page.locator('p[role="alert"]')).toContainText("Fragmentos insuficientes para fabricar esta pedra.");
+  await expect(page.getByRole("button", { name: "Fabricar pedra" })).toBeEnabled();
+});
+
+test("exibe orientação quando não há fragmentos no inventário", async ({ page }) => {
+  await openFragments(page, { ...emptyEconomy, holoShards: 0 });
+  await expect(page.getByText("Você ainda não possui fragmentos no estoque")).toBeVisible();
+  await expect(page.getByRole("link", { name: "Girar agora" })).toBeVisible();
 });
 
 test("não estima payout de Crystal antes de confirmar o burn", async ({ page }) => {

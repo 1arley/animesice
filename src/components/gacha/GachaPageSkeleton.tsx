@@ -7,7 +7,9 @@ type GachaSkeletonKind =
   | "skins"
   | "crystals"
   | "wishlist"
-  | "encyclopedia";
+  | "encyclopedia"
+  | "inventory"
+  | "fragments";
 
 const labels: Record<GachaSkeletonKind, string> = {
   spin: "Carregando Gacha",
@@ -19,6 +21,8 @@ const labels: Record<GachaSkeletonKind, string> = {
   crystals: "Carregando cristais",
   wishlist: "Carregando wishlist",
   encyclopedia: "Carregando enciclopédia",
+  inventory: "Carregando inventário",
+  fragments: "Carregando fragmentos",
 };
 
 function Block({ className = "" }: { className?: string }) {
@@ -226,6 +230,45 @@ export function GachaPageSkeleton({
             {Array.from({ length: 5 }, (_, index) => (
               <Block key={index} className="h-14" />
             ))}
+          </div>
+        </>
+      )}
+
+      {kind === "inventory" && (
+        <>
+          <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4 xl:grid-cols-8">
+            {Array.from({ length: 8 }, (_, index) => (
+              <Block key={index} className="h-24" />
+            ))}
+          </div>
+          <Block className="mt-6 h-32" />
+          <div className="mt-6 grid gap-6 lg:grid-cols-[1.35fr_1fr]">
+            <Block className="h-96" />
+            <Block className="h-96" />
+          </div>
+        </>
+      )}
+
+      {kind === "fragments" && (
+        <>
+          <div className="mt-6 flex flex-wrap gap-2">
+            <Block className="h-11 w-28" />
+            <Block className="h-11 w-36" />
+            <Block className="h-11 w-28" />
+          </div>
+          <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {Array.from({ length: 4 }, (_, index) => (
+              <div key={index} className="space-y-3 border border-hairline bg-panel p-4">
+                <Block className="h-24" />
+                <Block className="h-4 w-1/2" />
+                <Block className="h-11 w-full" />
+              </div>
+            ))}
+          </div>
+          <Block className="mt-6 h-36" />
+          <div className="mt-8 grid gap-6 lg:grid-cols-[1.15fr_1fr]">
+            <Block className="h-80" />
+            <Block className="h-80" />
           </div>
         </>
       )}
