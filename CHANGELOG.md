@@ -1,3 +1,13 @@
+# [1.10.0](https://github.com/1arley/animesice/compare/v1.9.0...v1.10.0) (2026-11-27)
+
+### Bug Fixes
+
+* **gacha:** preserve forge state when craft resolves ([72d2f23](https://github.com/1arley/animesice/commit/72d2f237a2eec71d436b1922666138d25b585cee))
+
+### Features
+
+* **gacha:** add stone forge animation to gem crafting ([88d511d](https://github.com/1arley/animesice/commit/88d511dbfd6d2da8454ed9670c1f51d27d2f1232))
+
 # [1.9.0](https://github.com/1arley/animesice/compare/v1.8.1...v1.9.0) (2026-11-27)
 
 ### Bug Fixes
