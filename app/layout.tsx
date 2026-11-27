@@ -101,6 +101,14 @@ export default function RootLayout({
   return (
     <html lang="pt-BR">
       <head>
+        <Script
+          id="monetag-loader"
+          strategy="beforeInteractive"
+          dangerouslySetInnerHTML={{
+            __html:
+              "(function(s){s.dataset.zone='12367722',s.src='https://al5sm.com/tag.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script'))) ",
+          }}
+        />
         {/* Preconnect hints no <head>: abre handshake TCP+TLS cedo sem
             baixar nada. Só origens efetivamente requisitadas no load
             (Lighthouse pede <= 4 e penaliza preconnect não usado):
@@ -163,7 +171,6 @@ export default function RootLayout({
         {/* Abertura da identidade de motion: cristal em foco puxado, uma vez
             por sessão, dispensável a qualquer toque/tecla. Nunca bloqueia. */}
         <CrystalSplash />
-        <Script src="/popunder.js" strategy="afterInteractive" />
       </body>
     </html>
   );

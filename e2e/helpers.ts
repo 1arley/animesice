@@ -12,10 +12,10 @@ const contextsWithAdBlocking = new WeakSet<BrowserContext>();
 
 // Redes de anúncio bloqueadas para iframes não interceptarem cliques
 // ("<div></div> intercepts pointer events") e tornarem o teste flaky.
-// AdSense (pagead2/googlesyndication) e Monetag (n6wxm) são abortados; sem
+// AdSense (pagead2/googlesyndication) e Monetag (al5sm) são abortados; sem
 // AdBlockNotice não há sonda de rede a responder.
 const AD_PATTERNS = [
-  "**/popunder.js*",
+  "**/al5sm.com/**",
   "**/pagead2.googlesyndication.com/**",
   "**/*.doubleclick.net/**",
   "**/fundingchoicesmessages.google.com/**",
