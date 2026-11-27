@@ -1,3 +1,13 @@
+# [1.12.0](https://github.com/1arley/animesice/compare/v1.11.0...v1.12.0) (2026-11-27)
+
+### Bug Fixes
+
+* **gacha:** preserve pending operations across inventory routes ([ddcad90](https://github.com/1arley/animesice/commit/ddcad9064faaf33b24b7fc3948cbb04c580550f7))
+
+### Features
+
+* **gacha:** split fragment workshop into its own inventory route ([e2cf9c6](https://github.com/1arley/animesice/commit/e2cf9c6539f6047e569e5dc1928b988852a0af0d))
+
 # [1.11.0](https://github.com/1arley/animesice/compare/v1.10.0...v1.11.0) (2026-11-27)
 
 ### Features
