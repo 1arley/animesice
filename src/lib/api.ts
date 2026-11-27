@@ -2179,6 +2179,16 @@ export const api = {
     request(`/gacha/wishlist/sets/${encodeURIComponent(animeId)}`, {
       method: "DELETE",
     }),
+  gachaWishlistOrphanSet: (animeTitle: string) =>
+    request(`/gacha/wishlist/orphan-sets`, {
+      method: "PUT",
+      body: JSON.stringify({ animeTitle }),
+    }),
+  gachaWishlistOrphanSetDelete: (animeTitle: string) =>
+    request(`/gacha/wishlist/orphan-sets`, {
+      method: "DELETE",
+      body: JSON.stringify({ animeTitle }),
+    }),
   gachaWishlistPrivacy: (isPublic: boolean) =>
     request<{ gachaWishlistPublic: boolean }>("/gacha/wishlist/privacy", {
       method: "PATCH",

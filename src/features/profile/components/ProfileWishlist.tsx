@@ -99,11 +99,15 @@ export function ProfileWishlist({ userId }: { userId: string }) {
             {wishlist.sets.map((set) => (
               <Link
                 key={set.id}
-                href={`/gacha/enciclopedia?view=sets&animeId=${set.animeId}`}
+                href={
+                  set.animeId
+                    ? `/gacha/enciclopedia?view=sets&animeId=${set.animeId}`
+                    : `/gacha/enciclopedia?view=sets&animeId=orphan&animeTitle=${encodeURIComponent(set.animeTitle)}&title=${encodeURIComponent(set.animeTitle)}`
+                }
                 className="border border-hairline bg-panel p-4 hover:border-ice"
               >
                 <span className="text-body-md text-snow">
-                  {set.anime.title}
+                  {set.anime?.title ?? set.animeTitle}
                 </span>
                 <span className="mt-1 block text-caption text-mist">
                   {set.owned}/{set.total} cartas ·{" "}
