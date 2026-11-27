@@ -14,19 +14,62 @@ import { isOptimizableImageUrl } from "@/lib/url";
 import type { GachaBoxTier } from "@/types";
 import { CommonBoxScene } from "./common-box/CommonBoxScene";
 import type { CommonBoxPhase } from "./common-box/common-box-palette";
+import { TierBoxScene } from "./tier-boxes/TierBoxScene";
 
 export const BOX_LABEL: Record<GachaBoxTier, string> = {
   COMMON: "Comum",
   RARE: "Rara",
   PREMIUM: "Premium",
 };
-const ACCENT = { COMMON: "#9fdcf5", RARE: "#38e8da", PREMIUM: "#f5cb7d" };
-// The clip is decorative: no media event may ever keep a granted prize hidden.
-// Two constants, both measured from real media instead of guessed up front.
-const NO_METADATA_GRACE_MS = 4000;
-const ENDED_GRACE_MS = 1200;
-const COMMON_POST_REWARD_SAFETY_MS = 4800;
-const COMMON_FALLBACK_REVEAL_MS = 900;
+
+const ACCENT: Record<GachaBoxTier, string> = {
+  COMMON: "#9fdcf5",
+  RARE: "#b983ff",
+  PREMIUM: "#f2bf52",
+};
+
+const TIER_COPY: Record<
+  GachaBoxTier,
+  {
+    topbar: string;
+    openingTitle: string;
+    openingStatus: string;
+    rewardEyebrow: string;
+    errorEyebrow: string;
+    safetyTimeoutMs: number;
+    countMs: number;
+  }
+> = {
+  COMMON: {
+    topbar: "AnimeSice // Caixa Comum",
+    openingTitle: "Abrindo caixa comum",
+    openingStatus: "Rompendo o selo…",
+    rewardEyebrow: "Caixa Comum // Protocolo Concluído",
+    errorEyebrow: "Caixa Comum // Falha na Verificação",
+    safetyTimeoutMs: 4800,
+    countMs: 420,
+  },
+  RARE: {
+    topbar: "AnimeSice // Caixa Rara",
+    openingTitle: "Abrindo caixa rara",
+    openingStatus: "Concentrando energia rara…",
+    rewardEyebrow: "Caixa Rara // Energia Liberada",
+    errorEyebrow: "Caixa Rara // Falha na Verificação",
+    safetyTimeoutMs: 5600,
+    countMs: 520,
+  },
+  PREMIUM: {
+    topbar: "AnimeSice // Caixa Premium",
+    openingTitle: "Abrindo caixa premium",
+    openingStatus: "Despertando o relicário…",
+    rewardEyebrow: "Caixa Premium // Relíquia Desvelada",
+    errorEyebrow: "Caixa Premium // Falha na Verificação",
+    safetyTimeoutMs: 6400,
+    countMs: 620,
+  },
+};
+
+const FALLBACK_REVEAL_MS = 900;
 
 const KIND_LABEL: Record<string, string> = {
   CRYSTAL: "Cristais",
@@ -41,21 +84,9 @@ const KIND_LABEL: Record<string, string> = {
   CARD: "Carta",
   CARD_BACK: "Capa de carta",
 };
-const RARITY_COLOR: Record<string, string> = {
-  EPIC: "#c4a1ff",
-  EPICA: "#c4a1ff",
-  MYTHIC: "#e879f9",
-  MITICA: "#e879f9",
-  LEGENDARY: "#f5cb7d",
-  LENDARIA: "#f5cb7d",
-  GALACTIC: "#67e8f9",
-  GALACTICA: "#67e8f9",
-};
-const COUNT_MS = 1100;
-const COMMON_COUNT_MS = 420;
 
 /** Eases a number up from 0 so stackable prizes feel earned; static when motion is off. */
-function useCountUp(target: number, animate: boolean, durationMs = COUNT_MS) {
+function useCountUp(target: number, animate: boolean, durationMs: number) {
   const [value, setValue] = useState(animate ? 0 : target);
   useEffect(() => {
     if (!animate) return;
@@ -75,11 +106,11 @@ function useCountUp(target: number, animate: boolean, durationMs = COUNT_MS) {
 function PrizeAmount({
   amount,
   animate,
-  durationMs = COUNT_MS,
+  durationMs,
 }: {
   amount: number;
   animate: boolean;
-  durationMs?: number;
+  durationMs: number;
 }) {
   const value = useCountUp(amount, animate, durationMs);
   return (
@@ -187,9 +218,7 @@ export function BoxReveal({
   /** Present only when another box and key are available. */
   onOpenAgain?: () => void;
 }) {
-  const isCommonCinematic = tier === "COMMON";
   const dialog = useRef<HTMLDialogElement>(null);
-  const video = useRef<HTMLVideoElement>(null);
   const [previousFocus] = useState(() =>
     typeof document === "undefined"
       ? null
@@ -199,7 +228,6 @@ export function BoxReveal({
   const [motion, setMotion] = useState<boolean | null>(null);
   const [finished, setFinished] = useState(reward !== null);
   const [initialAmbient] = useState(reward !== null);
-  const [duration, setDuration] = useState(0);
   const [imageFailed, setImageFailed] = useState(false);
   const [webglFallback, setWebglFallback] = useState(false);
   const [skipRequested, setSkipRequested] = useState(false);
@@ -207,6 +235,7 @@ export function BoxReveal({
     reward !== null ? "ambient" : "materializing",
   );
 
+  const metaCopy = TIER_COPY[tier];
   const ready = !!reward && (finished || motion === false);
   const asset = `/gacha/box-${tier.toLowerCase()}`;
   const visualMeta = reward ? getBoxRewardVisualMeta(reward) : null;
@@ -215,11 +244,13 @@ export function BoxReveal({
   const art = visualMeta?.imageUrl ?? null;
   const amount = visualMeta?.stackableAmount ?? Number.NaN;
   const stackable = visualMeta !== null && visualMeta.stackableAmount !== null;
-  const rarity = visualMeta?.rarityKey ?? "";
   const rarityLabel = visualMeta?.rarityLabel;
-  const rarityColor = isCommonCinematic
-    ? visualMeta?.accentHex
-    : RARITY_COLOR[rarity];
+  const rarityColor =
+    tier === "COMMON"
+      ? visualMeta?.accentHex
+      : visualMeta && (visualMeta.rarityKey || visualMeta.boxRewardTier)
+        ? visualMeta.accentHex
+        : ACCENT[tier];
   const prize = reward ? boxRewardDisplay(reward) : null;
   const stackableTitle =
     reward?.category === "CRYSTAL"
@@ -307,7 +338,6 @@ export function BoxReveal({
   // Reclaim focus if the focused skip button becomes disabled or unmounts,
   // and hand focus to the primary CTA when the reward/error panel resolves.
   useEffect(() => {
-    if (!isCommonCinematic) return;
     const el = dialog.current;
     if (!el) return;
     const resolved = ready || Boolean(error);
@@ -315,7 +345,9 @@ export function BoxReveal({
     wasResolvedRef.current = resolved;
 
     const active = document.activeElement;
-    const focusInsideDialog = Boolean(active && el.contains(active) && active !== el);
+    const focusInsideDialog = Boolean(
+      active && el.contains(active) && active !== el,
+    );
     if (!justResolved && focusInsideDialog) return;
 
     const target = resolved
@@ -323,63 +355,37 @@ export function BoxReveal({
         el.querySelector<HTMLElement>(FOCUSABLE))
       : el.querySelector<HTMLElement>(FOCUSABLE);
     target?.focus({ preventScroll: true });
-  }, [isCommonCinematic, ready, error, finished]);
+  }, [ready, error, finished]);
 
-  // Video timing for RARE / PREMIUM tiers (preserved unchanged)
+  // Fallback timing when WebGL is unavailable (only after reward confirms)
   useEffect(() => {
-    if (isCommonCinematic || motion !== true || finished || error) return;
-    const element = video.current;
-    if (!element) return;
-    void element.play().catch(() => setFinished(true));
-    const budget =
-      duration > 0 ? duration * 1000 + ENDED_GRACE_MS : NO_METADATA_GRACE_MS;
-    const timeout = window.setTimeout(() => setFinished(true), budget);
-    return () => window.clearTimeout(timeout);
-  }, [isCommonCinematic, motion, finished, error, duration]);
-
-  // Common Box fallback timing when WebGL is unavailable (only after reward confirms)
-  useEffect(() => {
-    if (
-      !isCommonCinematic ||
-      !webglFallback ||
-      motion !== true ||
-      finished ||
-      error ||
-      !reward
-    ) {
+    if (!webglFallback || motion !== true || finished || error || !reward) {
       return;
     }
     const timer = window.setTimeout(
       () => setFinished(true),
-      COMMON_FALLBACK_REVEAL_MS,
+      FALLBACK_REVEAL_MS,
     );
     return () => window.clearTimeout(timer);
-  }, [isCommonCinematic, webglFallback, motion, finished, error, reward]);
+  }, [webglFallback, motion, finished, error, reward]);
 
-  // Belt-and-suspenders: once COMMON reward is confirmed, never allow a WebGL stall to hide it
+  // Belt-and-suspenders: once reward is confirmed, never allow a WebGL stall to hide it
   useEffect(() => {
-    if (
-      !isCommonCinematic ||
-      webglFallback ||
-      motion !== true ||
-      finished ||
-      error ||
-      !reward
-    ) {
+    if (webglFallback || motion !== true || finished || error || !reward) {
       return;
     }
     const timer = window.setTimeout(() => {
       setSkipRequested(true);
       setFinished(true);
-    }, COMMON_POST_REWARD_SAFETY_MS);
+    }, metaCopy.safetyTimeoutMs);
     return () => window.clearTimeout(timer);
-  }, [isCommonCinematic, webglFallback, motion, finished, error, reward]);
+  }, [webglFallback, motion, finished, error, reward, metaCopy.safetyTimeoutMs]);
 
-  const handleCommonComplete = useCallback(() => {
+  const handleSceneComplete = useCallback(() => {
     setFinished(true);
   }, []);
 
-  const handleCommonWebGLUnavailable = useCallback(() => {
+  const handleWebGLUnavailable = useCallback(() => {
     setWebglFallback(true);
   }, []);
 
@@ -388,61 +394,79 @@ export function BoxReveal({
     setFinished(true);
   };
 
-  if (isCommonCinematic) {
-    const stagePhase = error
-      ? "error"
-      : ready
-        ? "reward"
+  const stagePhase = error
+    ? "error"
+    : ready
+      ? "reward"
+      : scenePhase === "revealing"
+        ? "revealing"
+        : "opening";
+  const rendererKind =
+    motion === false ? "reduced" : webglFallback ? "fallback" : "webgl";
+  const statusMessage = error
+    ? "Nenhuma nova tentativa foi enviada."
+    : ready && reward
+      ? boxRewardStatus(reward)
+      : finished ||
+          motion === false ||
+          (!reward && scenePhase === "authenticating")
+        ? "Confirmando a abertura…"
         : scenePhase === "revealing"
-          ? "revealing"
-          : "opening";
-    const rendererKind =
-      motion === false ? "reduced" : webglFallback ? "fallback" : "webgl";
-    const statusMessage = error
-      ? "Nenhuma nova tentativa foi enviada."
-      : ready && reward
-        ? boxRewardStatus(reward)
-        : finished || motion === false || (!reward && scenePhase === "authenticating")
-          ? "Confirmando a abertura…"
-          : scenePhase === "revealing"
-            ? "Revelando recompensa…"
-            : "Rompendo o selo…";
+          ? "Revelando recompensa…"
+          : metaCopy.openingStatus;
 
-    return (
-      <dialog
-        ref={dialog}
-        aria-labelledby="box-title"
-        aria-describedby="box-status"
-        data-tier={tier}
-        data-cinematic="true"
-        data-phase={stagePhase}
-        data-renderer={rendererKind}
-        style={
-          {
-            "--box-accent": ACCENT[tier],
-            "--prize-accent": rarityColor ?? ACCENT[tier],
-          } as React.CSSProperties
-        }
-        className="box-reveal-dialog box-reveal-dialog--cinematic"
-        onCancel={(event) => {
-          event.preventDefault();
-          onClose();
-        }}
-      >
-        <div className="common-box-cinema">
-          {motion === true && !webglFallback && !error && (
+  return (
+    <dialog
+      ref={dialog}
+      aria-labelledby="box-title"
+      aria-describedby="box-status"
+      data-tier={tier}
+      data-cinematic="true"
+      data-phase={stagePhase}
+      data-renderer={rendererKind}
+      style={
+        {
+          "--box-accent": ACCENT[tier],
+          "--prize-accent": rarityColor ?? ACCENT[tier],
+        } as React.CSSProperties
+      }
+      className="box-reveal-dialog box-reveal-dialog--cinematic"
+      onCancel={(event) => {
+        event.preventDefault();
+        onClose();
+      }}
+    >
+      <div className="common-box-cinema">
+        {motion === true &&
+          !webglFallback &&
+          !error &&
+          (tier === "COMMON" ? (
             <CommonBoxScene
               reward={reward}
               error={error}
               skipRequested={skipRequested}
               initialAmbient={initialAmbient}
               onPhaseChange={setScenePhase}
-              onComplete={handleCommonComplete}
-              onWebGLUnavailable={handleCommonWebGLUnavailable}
+              onComplete={handleSceneComplete}
+              onWebGLUnavailable={handleWebGLUnavailable}
             />
-          )}
+          ) : (
+            <TierBoxScene
+              key={tier}
+              tier={tier}
+              reward={reward}
+              error={error}
+              skipRequested={skipRequested}
+              initialAmbient={initialAmbient}
+              onPhaseChange={setScenePhase}
+              onComplete={handleSceneComplete}
+              onWebGLUnavailable={handleWebGLUnavailable}
+            />
+          ))}
 
-          {((motion === true && webglFallback) || motion === false) && !ready && !error && (
+        {((motion === true && webglFallback) || motion === false) &&
+          !ready &&
+          !error && (
             <div
               className="common-box-fallback"
               data-confirmed={reward ? "true" : "false"}
@@ -451,7 +475,7 @@ export function BoxReveal({
               <div className="common-box-fallback-ring" />
               <div className="common-box-fallback-frame">
                 <Image
-                  src="/gacha/box-common.webp"
+                  src={`${asset}.webp`}
                   alt=""
                   width={360}
                   height={360}
@@ -461,308 +485,44 @@ export function BoxReveal({
             </div>
           )}
 
-          <header className="common-box-topbar">
-            <div className="common-box-brand">
-              <span className="common-box-reticle" aria-hidden="true" />
-              <span className="font-mono text-caption uppercase tracking-[0.22em]">
-                AnimeSice // Caixa Comum
-              </span>
-            </div>
-            <button
-              type="button"
-              autoFocus
-              onClick={onClose}
-              aria-label="Voltar à loja"
-              className="common-box-close"
-            >
-              ✕
-            </button>
-          </header>
-
-          {!ready && !error && (
-            <h2 id="box-title" className="sr-only">
-              Abrindo caixa comum
-            </h2>
-          )}
-
-          <div className="common-box-center">
-            {ready && reward && (
-              <section
-                className="common-reward-panel"
-                data-kind={stackable ? "stack" : "item"}
-              >
-                <span className="common-reward-corners" aria-hidden="true" />
-                <p className="common-reward-eyebrow font-mono uppercase tracking-[0.26em]">
-                  Caixa Comum // Protocolo Concluído
-                </p>
-                <h2 id="box-title" className="common-reward-heading font-display">
-                  {BOX_LABEL[tier]} aberta
-                </h2>
-
-                <div
-                  className="box-reveal-chips"
-                  style={{ "--i": 0 } as React.CSSProperties}
-                >
-                  <span className="box-reveal-chip font-mono text-caption uppercase tracking-[0.18em]">
-                    {reward.category === "CARD_BACK" && reward.duplicate === true
-                      ? "Compensação"
-                      : (KIND_LABEL[String(reward.category)] ?? "Recompensa")}
-                  </span>
-                  {rarityLabel && (
-                    <span className="box-reveal-chip box-reveal-chip-rarity font-mono text-caption uppercase tracking-[0.18em]">
-                      {rarityLabel}
-                    </span>
-                  )}
-                </div>
-
-                <div
-                  className="box-reveal-art common-reward-art"
-                  data-kind={
-                    stackable
-                      ? "stack"
-                      : reward.category === "CARD"
-                        ? "card"
-                        : "item"
-                  }
-                  style={{ "--i": 1 } as React.CSSProperties}
-                >
-                  <RewardArtwork
-                    reward={reward}
-                    art={art}
-                    hiddenCard={hiddenCard}
-                    knownReward={knownReward}
-                    imageFailed={imageFailed}
-                    onImageError={() => setImageFailed(true)}
-                  />
-                </div>
-
-                {stackable && (
-                  <div
-                    style={{ "--i": 2 } as React.CSSProperties}
-                    className="box-reveal-step"
-                  >
-                    <PrizeAmount
-                      amount={amount}
-                      animate={motion === true}
-                      durationMs={COMMON_COUNT_MS}
-                    />
-                  </div>
-                )}
-
-                <p
-                  className="box-reveal-step common-reward-caption font-mono text-caption uppercase tracking-[0.26em]"
-                  style={{ "--i": 3 } as React.CSSProperties}
-                >
-                  {reward.category === "CARD_BACK" && reward.duplicate === true
-                    ? "Compensação por duplicata"
-                    : knownReward
-                      ? "Você ganhou"
-                      : "Resultado da abertura"}
-                </p>
-
-                <p
-                  className="box-reveal-name common-reward-name box-reveal-step font-display"
-                  style={{ "--i": 4 } as React.CSSProperties}
-                >
-                  {prizeTitle}
-                </p>
-
-                {prizeDetails && prizeDetails.length > 0 && (
-                  <div className="box-reveal-details common-reward-details">
-                    {prizeDetails.map((detail, index) => (
-                      <p key={index}>{detail}</p>
-                    ))}
-                  </div>
-                )}
-
-                <p
-                  id="box-status"
-                  role="status"
-                  aria-live="polite"
-                  className="common-reward-status text-body-sm"
-                >
-                  <span className="sr-only">{boxRewardLabel(reward)}. </span>
-                  {statusMessage}
-                </p>
-
-                <div className="common-reward-actions">
-                  <button
-                    type="button"
-                    className="common-box-action"
-                    onClick={onClose}
-                  >
-                    Continuar
-                  </button>
-                  {onOpenAgain && (
-                    <button
-                      type="button"
-                      className="common-box-again"
-                      onClick={onOpenAgain}
-                    >
-                      Abrir outra {BOX_LABEL[tier].toLowerCase()}
-                    </button>
-                  )}
-                </div>
-              </section>
-            )}
-
-            {error && (
-              <section className="common-reward-panel common-reward-panel--error">
-                <span className="common-reward-corners" aria-hidden="true" />
-                <p className="common-reward-eyebrow font-mono uppercase tracking-[0.26em]">
-                  Caixa Comum // Falha na Verificação
-                </p>
-                <h2 id="box-title" className="common-reward-heading font-display">
-                  Abertura não confirmada
-                </h2>
-                <div className="box-reveal-error" role="alert">
-                  <span aria-hidden="true">!</span>
-                  <p>{error}</p>
-                  <p className="text-body-sm text-mist">
-                    Confira seu inventário antes de tentar novamente.
-                  </p>
-                </div>
-                <p
-                  id="box-status"
-                  role="status"
-                  aria-live="polite"
-                  className="common-reward-status text-body-sm"
-                >
-                  {statusMessage}
-                </p>
-                <div className="common-reward-actions">
-                  <button
-                    type="button"
-                    className="common-box-action"
-                    onClick={onClose}
-                  >
-                    Voltar à loja
-                  </button>
-                </div>
-              </section>
-            )}
+        <header className="common-box-topbar">
+          <div className="common-box-brand">
+            <span className="common-box-reticle" aria-hidden="true" />
+            <span className="font-mono text-caption uppercase tracking-[0.22em]">
+              {metaCopy.topbar}
+            </span>
           </div>
-
-          {!ready && !error && (
-            <footer className="common-box-footer">
-              <p
-                id="box-status"
-                role="status"
-                aria-live="polite"
-                className="common-box-live text-body-sm"
-              >
-                {statusMessage}
-              </p>
-              <button
-                type="button"
-                className="common-box-skip"
-                onClick={handleSkip}
-                disabled={finished || motion === false}
-              >
-                {finished || motion === false
-                  ? "Aguardando recompensa…"
-                  : "Pular animação"}
-              </button>
-            </footer>
-          )}
-        </div>
-      </dialog>
-    );
-  }
-
-  return (
-    <dialog
-      ref={dialog}
-      aria-labelledby="box-title"
-      aria-describedby="box-status"
-      style={{ "--box-accent": ACCENT[tier] } as React.CSSProperties}
-      className="box-reveal-dialog"
-      onCancel={(event) => {
-        event.preventDefault();
-        onClose();
-      }}
-    >
-      <div className="box-reveal-shell">
-        <header className="box-reveal-header">
-          <span className="font-mono text-caption uppercase tracking-[0.22em]">
-            AnimeSice / Caixas
-          </span>
           <button
             type="button"
             autoFocus
             onClick={onClose}
             aria-label="Voltar à loja"
-            className="box-reveal-close"
+            className="common-box-close"
           >
             ✕
           </button>
         </header>
-        <div className="box-reveal-heading">
-          <p className="font-mono text-caption uppercase tracking-[0.3em]">
-            Caixa {BOX_LABEL[tier]}
-          </p>
-          <h2 id="box-title" className="font-display text-3xl sm:text-4xl">
-            {error
-              ? "Abertura não confirmada"
-              : ready
-                ? `${BOX_LABEL[tier]} aberta`
-                : "O que o gelo guarda?"}
+
+        {!ready && !error && (
+          <h2 id="box-title" className="sr-only">
+            {metaCopy.openingTitle}
           </h2>
-        </div>
-        <div
-          className="box-reveal-stage"
-          data-phase={error ? "error" : ready ? "reward" : "opening"}
-        >
-          <div className="box-reveal-orbit" aria-hidden="true" />
-          {!ready && !error && (
-            <div className="box-reveal-film" aria-hidden="true">
-              {motion === true && !finished ? (
-                <video
-                  ref={video}
-                  src={`${asset}.mp4`}
-                  poster={`${asset}.webp`}
-                  muted
-                  playsInline
-                  preload="auto"
-                  width={720}
-                  height={720}
-                  tabIndex={-1}
-                  onLoadedMetadata={(event) =>
-                    setDuration(event.currentTarget.duration)
-                  }
-                  onEnded={() => setFinished(true)}
-                  onError={() => setFinished(true)}
-                />
-              ) : finished ? (
-                <div className="box-reveal-waiting">
-                  <svg viewBox="0 0 100 100" fill="none">
-                    <path d="m50 12 25 38-25 38-25-38Z" />
-                    <path d="M25 50h50M50 12v76" />
-                  </svg>
-                </div>
-              ) : (
-                <Image
-                  src={`${asset}.webp`}
-                  alt=""
-                  width={720}
-                  height={720}
-                  priority
-                />
-              )}
-            </div>
-          )}
+        )}
+
+        <div className="common-box-center">
           {ready && reward && (
-            <div
-              className="box-reveal-prize"
+            <section
+              className="common-reward-panel"
               data-kind={stackable ? "stack" : "item"}
-              style={
-                rarityColor
-                  ? ({ "--prize-accent": rarityColor } as React.CSSProperties)
-                  : undefined
-              }
             >
-              <span className="box-reveal-flash" aria-hidden="true" />
-              <span className="box-reveal-rays" aria-hidden="true" />
+              <span className="common-reward-corners" aria-hidden="true" />
+              <p className="common-reward-eyebrow font-mono uppercase tracking-[0.26em]">
+                {metaCopy.rewardEyebrow}
+              </p>
+              <h2 id="box-title" className="common-reward-heading font-display">
+                {BOX_LABEL[tier]} aberta
+              </h2>
+
               <div
                 className="box-reveal-chips"
                 style={{ "--i": 0 } as React.CSSProperties}
@@ -778,8 +538,9 @@ export function BoxReveal({
                   </span>
                 )}
               </div>
+
               <div
-                className="box-reveal-art"
+                className="box-reveal-art common-reward-art"
                 data-kind={
                   stackable
                     ? "stack"
@@ -798,16 +559,22 @@ export function BoxReveal({
                   onImageError={() => setImageFailed(true)}
                 />
               </div>
+
               {stackable && (
                 <div
                   style={{ "--i": 2 } as React.CSSProperties}
                   className="box-reveal-step"
                 >
-                  <PrizeAmount amount={amount} animate={motion === true} />
+                  <PrizeAmount
+                    amount={amount}
+                    animate={motion === true}
+                    durationMs={metaCopy.countMs}
+                  />
                 </div>
               )}
+
               <p
-                className="box-reveal-step font-mono text-caption uppercase tracking-[0.26em]"
+                className="box-reveal-step common-reward-caption font-mono text-caption uppercase tracking-[0.26em]"
                 style={{ "--i": 3 } as React.CSSProperties}
               >
                 {reward.category === "CARD_BACK" && reward.duplicate === true
@@ -816,73 +583,112 @@ export function BoxReveal({
                     ? "Você ganhou"
                     : "Resultado da abertura"}
               </p>
+
               <p
-                className="box-reveal-name box-reveal-step font-display"
+                className="box-reveal-name common-reward-name box-reveal-step font-display"
                 style={{ "--i": 4 } as React.CSSProperties}
               >
                 {prizeTitle}
               </p>
+
               {prizeDetails && prizeDetails.length > 0 && (
-                <div className="box-reveal-details">
+                <div className="box-reveal-details common-reward-details">
                   {prizeDetails.map((detail, index) => (
                     <p key={index}>{detail}</p>
                   ))}
                 </div>
               )}
-            </div>
-          )}
-          {error && (
-            <div className="box-reveal-error" role="alert">
-              <span aria-hidden="true">!</span>
-              <p>{error}</p>
-              <p className="text-body-sm text-mist">
-                Confira seu inventário antes de tentar novamente.
+
+              <p
+                id="box-status"
+                role="status"
+                aria-live="polite"
+                className="common-reward-status text-body-sm"
+              >
+                <span className="sr-only">{boxRewardLabel(reward)}. </span>
+                {statusMessage}
               </p>
-            </div>
+
+              <div className="common-reward-actions">
+                <button
+                  type="button"
+                  className="common-box-action"
+                  onClick={onClose}
+                >
+                  Continuar
+                </button>
+                {onOpenAgain && (
+                  <button
+                    type="button"
+                    className="common-box-again"
+                    onClick={onOpenAgain}
+                  >
+                    Abrir outra {BOX_LABEL[tier].toLowerCase()}
+                  </button>
+                )}
+              </div>
+            </section>
+          )}
+
+          {error && (
+            <section className="common-reward-panel common-reward-panel--error">
+              <span className="common-reward-corners" aria-hidden="true" />
+              <p className="common-reward-eyebrow font-mono uppercase tracking-[0.26em]">
+                {metaCopy.errorEyebrow}
+              </p>
+              <h2 id="box-title" className="common-reward-heading font-display">
+                Abertura não confirmada
+              </h2>
+              <div className="box-reveal-error" role="alert">
+                <span aria-hidden="true">!</span>
+                <p>{error}</p>
+                <p className="text-body-sm text-mist">
+                  Confira seu inventário antes de tentar novamente.
+                </p>
+              </div>
+              <p
+                id="box-status"
+                role="status"
+                aria-live="polite"
+                className="common-reward-status text-body-sm"
+              >
+                {statusMessage}
+              </p>
+              <div className="common-reward-actions">
+                <button
+                  type="button"
+                  className="common-box-action"
+                  onClick={onClose}
+                >
+                  Voltar à loja
+                </button>
+              </div>
+            </section>
           )}
         </div>
-        <footer className="box-reveal-footer">
-          <p
-            id="box-status"
-            role="status"
-            aria-live="polite"
-            className="text-body-sm text-mist"
-          >
-            {ready && reward && (
-              <span className="sr-only">{boxRewardLabel(reward)}. </span>
-            )}
-            {error
-              ? "Nenhuma nova tentativa foi enviada."
-              : ready && reward
-                ? boxRewardStatus(reward)
-                : finished || motion === false
-                  ? "Confirmando a abertura…"
-                  : "Rompendo o selo…"}
-          </p>
-          <button
-            type="button"
-            className="box-reveal-action"
-            onClick={ready || error ? onClose : handleSkip}
-            disabled={!ready && !error && (finished || motion === false)}
-          >
-            {error
-              ? "Voltar à loja"
-              : ready
-                ? "Continuar"
-                : finished || motion === false
-                  ? "Aguardando recompensa…"
-                  : "Pular animação"}
-          </button>
-          {ready && reward && onOpenAgain && (
+
+        {!ready && !error && (
+          <footer className="common-box-footer">
+            <p
+              id="box-status"
+              role="status"
+              aria-live="polite"
+              className="common-box-live text-body-sm"
+            >
+              {statusMessage}
+            </p>
             <button
               type="button"
-              className="box-reveal-again"
-              onClick={onOpenAgain}
+              className="common-box-skip"
+              onClick={handleSkip}
+              disabled={finished || motion === false}
             >
-              Abrir outra {BOX_LABEL[tier].toLowerCase()}
+              {finished || motion === false
+                ? "Aguardando recompensa…"
+                : "Pular animação"}
             </button>
-          )}
-        </footer>
+          </footer>
+        )}
       </div>
     </dialog>
   );
