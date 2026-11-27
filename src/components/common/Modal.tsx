@@ -17,7 +17,7 @@ export function Modal({ open, onClose, title, children, footer, size = "default"
       setMounted(true);
       return;
     }
-    const timer = window.setTimeout(() => setMounted(false), 120);
+    const timer = window.setTimeout(() => setMounted(false), 140);
     return () => window.clearTimeout(timer);
   }, [open]);
 
@@ -92,7 +92,7 @@ export function Modal({ open, onClose, title, children, footer, size = "default"
           }
         }}
       />
-      <div role="dialog" aria-modal="true" aria-label={title ?? "Diálogo"} ref={dialogRef} style={{ maxWidth: size === "wide" ? "64rem" : undefined, animation: open ? "fadeIn 160ms" : "fadeOut 120ms" }} className="relative z-10 max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto overscroll-contain border border-hairline bg-panel p-4 pb-[max(1rem,env(safe-area-inset-bottom))] transition-opacity duration-200 sm:rounded sm:p-6">
+      <div role="dialog" aria-modal="true" aria-label={title ?? "Diálogo"} ref={dialogRef} style={{ maxWidth: size === "wide" ? "64rem" : undefined, animation: open ? "modalEnter 220ms cubic-bezier(0.23, 1, 0.32, 1) forwards" : "modalExit 140ms cubic-bezier(0.23, 1, 0.32, 1) forwards" }} className="relative z-10 max-h-[calc(100dvh-2rem)] w-full max-w-md origin-center overflow-y-auto overscroll-contain border border-hairline bg-panel p-4 pb-[max(1rem,env(safe-area-inset-bottom))] transition-opacity duration-200 sm:rounded sm:p-6">
         {title && <h3 className="font-display text-lg text-ice mb-3">{title}</h3>}
         <div>{children}</div>
         <div className="mt-4 flex justify-end gap-2">
@@ -103,7 +103,7 @@ export function Modal({ open, onClose, title, children, footer, size = "default"
           )}
         </div>
       </div>
-      <style>{`@keyframes fadeIn { from { opacity: 0; transform: translateY(8px) } to { opacity: 1; transform: translateY(0) } } @keyframes fadeOut { from { opacity: 1; transform: translateY(0) } to { opacity: 0; transform: translateY(8px) } } @media (prefers-reduced-motion: reduce) { [role="dialog"] { animation: none !important; } }`}</style>
+      <style>{`@keyframes modalEnter { from { opacity: 0; transform: translateY(6px) scale(0.97) } to { opacity: 1; transform: translateY(0) scale(1) } } @keyframes modalExit { from { opacity: 1; transform: translateY(0) scale(1) } to { opacity: 0; transform: translateY(6px) scale(0.97) } } @media (prefers-reduced-motion: reduce) { [role="dialog"] { animation: none !important; } }`}</style>
     </div>
   );
 }

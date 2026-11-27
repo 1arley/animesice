@@ -154,6 +154,59 @@ export function GachaPageSkeleton({
 }: {
   kind: GachaSkeletonKind;
 }) {
+  if (kind === "night-market") {
+    return (
+      <div
+        className="mx-auto max-w-shelf px-4 pb-24 pt-8"
+        role="status"
+        aria-label={labels[kind]}
+        aria-busy="true"
+      >
+        <div className="border border-hairline bg-panel p-6 sm:p-8">
+          <div className="grid gap-8 lg:grid-cols-[minmax(0,1.08fr)_minmax(0,0.92fr)] lg:items-end">
+            <div className="space-y-4">
+              <Block className="h-3 w-40" />
+              <Block className="h-12 w-3/4 sm:h-16" />
+              <Block className="h-4 w-full max-w-md" />
+              <div className="grid grid-cols-1 gap-3 pt-2 sm:grid-cols-3">
+                <Block className="h-20" />
+                <Block className="h-20" />
+                <Block className="h-20" />
+              </div>
+            </div>
+            <div className="border border-hairline bg-ink/70 p-4">
+              <div className="grid grid-cols-6 gap-2.5">
+                {Array.from({ length: 6 }, (_, index) => (
+                  <Block key={index} className="aspect-[3/4]" />
+                ))}
+              </div>
+              <Block className="mt-3 h-4 w-2/3" />
+            </div>
+          </div>
+        </div>
+        <div className="mt-10 flex flex-wrap items-end justify-between gap-4 border-b border-hairline pb-4">
+          <div className="space-y-2">
+            <Block className="h-3 w-36" />
+            <Block className="h-7 w-48" />
+          </div>
+          <Block className="h-4 w-32" />
+        </div>
+        <div className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 6 }, (_, index) => (
+            <div key={index} className="border border-hairline bg-panel">
+              <Block className="aspect-[3/4]" />
+              <div className="space-y-3 border-t border-hairline p-4">
+                <Block className="h-4 w-2/3" />
+                <Block className="h-5 w-1/2" />
+                <Block className="h-11 w-full" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <main
       id="body-content"
@@ -204,7 +257,7 @@ export function GachaPageSkeleton({
         </div>
       )}
 
-      {(kind === "economy" || kind === "night-market" || kind === "skins") && (
+      {(kind === "economy" || kind === "skins") && (
         <>
           <Block className="mt-8 h-14 w-full" />
           <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3">

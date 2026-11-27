@@ -2681,14 +2681,6 @@
   }
 }
 
-.night-market-hero {
-  display: grid;
-  align-items: center;
-  gap: 2rem;
-  border-bottom: 1px solid theme("colors.hairline");
-  padding-bottom: 2rem;
-}
-
 .night-market-nav-new {
   border: 1px solid rgba(251, 191, 36, 0.9);
   animation: night-market-nav-glow 1.8s ease-in-out infinite;
@@ -2715,48 +2707,272 @@
   }
 }
 
-.night-market-hero__copy {
-  position: relative;
-  z-index: 1;
+/* Mercado Noturno — Cofre da Madrugada: design engineering e motion disciplinado. */
+.night-market-page {
+  --nm-ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --nm-ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
 }
 
-.night-market-hero__art {
+.nm-hero {
   position: relative;
-  min-height: 16rem;
   overflow: hidden;
-  border: 1px solid theme("colors.hairline");
-  background: theme("colors.ink-deep");
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.32);
+  isolation: isolate;
+  border: 1px solid rgba(255, 255, 255, 0.085);
+  background:
+    radial-gradient(ellipse 65% 75% at 86% 6%, rgba(56, 232, 218, 0.12), transparent 58%),
+    radial-gradient(ellipse 55% 60% at 10% 100%, rgba(0, 140, 218, 0.07), transparent 55%),
+    linear-gradient(138deg, #0c121b 0%, #070b11 55%, #05080d 100%);
+  box-shadow: 0 24px 60px -28px rgba(0, 0, 0, 0.75);
 }
 
-.night-market-hero__veil {
+.nm-hero::before {
+  content: "";
   position: absolute;
   inset: 0;
+  z-index: -1;
   pointer-events: none;
-  background:
-    linear-gradient(90deg, rgba(5, 7, 11, 0.16), transparent 55%),
-    linear-gradient(0deg, rgba(5, 7, 11, 0.48), transparent 48%);
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.024) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.024) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: radial-gradient(ellipse 90% 85% at 70% 30%, #000 30%, transparent 90%);
+  -webkit-mask-image: radial-gradient(ellipse 90% 85% at 70% 30%, #000 30%, transparent 90%);
 }
 
-.night-offer-card {
-  position: relative;
+.nm-hero .shelf-label {
+  width: fit-content;
+  gap: 0.55rem;
+  margin-bottom: 0;
+  padding: 0;
+  border: 0;
+  color: #9beee6;
+  font-family: theme("fontFamily.mono");
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.nm-hero .shelf-label::before {
+  width: 1.15rem;
+  height: 1px;
+}
+
+.nm-hero__title {
+  font-family: theme("fontFamily.display");
+  font-size: clamp(2.85rem, 6vw, 4.9rem);
+  font-weight: 700;
+  line-height: 0.94;
+  letter-spacing: -0.03em;
+}
+
+.nm-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(8, 12, 18, 0.85);
+  padding: 0.3rem 0.65rem;
+  font-family: theme("fontFamily.mono");
+  font-size: 0.6875rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: theme("colors.mist");
+}
+
+.nm-status-pill[data-open="true"] {
+  border-color: rgba(56, 232, 218, 0.36);
+  background: rgba(56, 232, 218, 0.08);
+  color: theme("colors.ice");
+}
+
+.nm-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 1px;
+  background: currentColor;
+}
+
+.nm-telemetry {
+  display: grid;
+  grid-template-columns: 1fr;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(6, 10, 15, 0.78);
+}
+
+@media (min-width: 480px) {
+  .nm-telemetry {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.nm-telemetry__cell {
   min-width: 0;
+  padding: 0.85rem 1rem;
+}
+
+.nm-telemetry__cell + .nm-telemetry__cell {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+@media (min-width: 480px) {
+  .nm-telemetry__cell + .nm-telemetry__cell {
+    border-top: 0;
+    border-left: 1px solid rgba(255, 255, 255, 0.08);
+  }
+}
+
+.nm-progress-track {
+  position: relative;
+  height: 2px;
+  width: 100%;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.09);
+}
+
+.nm-progress-fill {
+  display: block;
+  height: 100%;
+  width: 100%;
+  background: theme("colors.ice");
+  transform-origin: left center;
+  transition: transform 420ms var(--nm-ease-out);
+  will-change: transform;
+}
+
+/* Bandeja de Monólitos no Hero */
+.nm-tray {
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  background: linear-gradient(165deg, rgba(10, 15, 23, 0.94), rgba(5, 8, 13, 0.98));
+  padding: 1rem;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.nm-monolith {
+  --offer-accent: 148, 163, 184;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  aspect-ratio: 3 / 4;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: linear-gradient(170deg, rgba(15, 22, 33, 0.96), rgba(6, 10, 15, 0.98));
+  padding: 0.45rem;
+  text-align: left;
+  transition:
+    transform 200ms var(--nm-ease-out),
+    border-color 180ms var(--nm-ease-out),
+    opacity 180ms var(--nm-ease-out);
+}
+
+.nm-monolith::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 2px;
+  background: rgb(var(--offer-accent));
+  opacity: 0.85;
+}
+
+.nm-monolith.is-dormant {
+  opacity: 0.45;
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+.nm-monolith:active:not(:disabled) {
+  transform: scale(0.97);
+  transition-duration: 110ms;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .nm-monolith:hover:not(:disabled),
+  .nm-monolith[data-active="true"]:not(:disabled) {
+    transform: translateY(-6px);
+    border-color: rgba(var(--offer-accent), 0.78);
+  }
+}
+
+.nm-tray__readout {
+  min-height: 2.25rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  padding-top: 0.65rem;
+}
+
+/* Tokens de cor por raridade (compartilhados por monólitos e verso da carta) */
+[data-rarity="COMUM"] {
+  --offer-accent: 148, 163, 184;
+}
+
+[data-rarity="INCOMUM"] {
+  --offer-accent: 52, 211, 153;
+}
+
+[data-rarity="RARA"] {
+  --offer-accent: 56, 189, 248;
+}
+
+[data-rarity="EPICA"] {
+  --offer-accent: 192, 132, 252;
+}
+
+[data-rarity="LENDARIA"] {
+  --offer-accent: 251, 191, 36;
+}
+
+[data-rarity="MITICA"] {
+  --offer-accent: 251, 113, 133;
+}
+
+[data-rarity="GALACTICA"] {
+  --offer-accent: 56, 232, 218;
+}
+
+/* Card de Oferta — Anatomia de Zona Dupla (Palco 3:4 + Plinto Externo) */
+.nm-offer {
+  --offer-accent: 148, 163, 184;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  background: theme("colors.panel");
+  box-shadow: 0 18px 36px -22px rgba(0, 0, 0, 0.78);
+  transition:
+    border-color 200ms var(--nm-ease-out),
+    box-shadow 220ms var(--nm-ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .nm-offer:hover {
+    border-color: rgba(var(--offer-accent), 0.45);
+    box-shadow:
+      0 22px 44px -20px rgba(0, 0, 0, 0.88),
+      0 0 0 1px rgba(var(--offer-accent), 0.15);
+  }
+}
+
+.nm-stage {
+  position: relative;
+  width: 100%;
   aspect-ratio: 3 / 4;
   perspective: 1400px;
+  background: #060a10;
 }
 
-.night-offer-card__flipper {
+.nm-flipper {
   position: relative;
   width: 100%;
   height: 100%;
   transform-style: preserve-3d;
 }
 
-.night-offer-card__flipper.is-revealed:not(.is-animating) {
+.nm-flipper.is-revealed:not(.is-animating) {
   transform: rotateY(180deg);
 }
 
-.night-offer-card__face {
+.nm-face {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -2769,69 +2985,46 @@
   -webkit-backface-visibility: hidden;
 }
 
-.night-offer-card__back {
-  --offer-accent: 56, 189, 248;
+.nm-back {
+  isolation: isolate;
   width: 100%;
   height: 100%;
-  isolation: isolate;
-  overflow: hidden;
+  padding: 1rem;
+  text-align: left;
   transform: rotateY(0deg);
   background-image:
     radial-gradient(
-      ellipse at 50% 48%,
-      rgba(var(--offer-accent), 0.2),
-      transparent 54%
+      ellipse 68% 52% at 50% 48%,
+      rgba(var(--offer-accent), 0.16),
+      transparent 60%
     ),
     linear-gradient(
-      145deg,
-      rgba(var(--offer-accent), 0.3),
-      rgba(var(--offer-accent), 0.08) 62%,
-      #0b1018 100%
+      160deg,
+      rgba(16, 23, 34, 0.98) 0%,
+      rgba(9, 14, 21, 0.99) 56%,
+      #06090e 100%
     );
+  box-shadow: inset 0 2px 0 rgba(var(--offer-accent), 0.82);
+  transition: transform 140ms var(--nm-ease-out);
 }
 
-.night-offer-card__back[data-rarity="COMUM"] {
-  --offer-accent: 148, 163, 184;
+.nm-back:active:not(:disabled) {
+  transform: rotateY(0deg) scale(0.985);
 }
 
-.night-offer-card__back[data-rarity="INCOMUM"] {
-  --offer-accent: 52, 211, 153;
-}
-
-.night-offer-card__back[data-rarity="RARA"] {
-  --offer-accent: 56, 189, 248;
-}
-
-.night-offer-card__back[data-rarity="EPICA"] {
-  --offer-accent: 192, 132, 252;
-}
-
-.night-offer-card__back[data-rarity="LENDARIA"] {
-  --offer-accent: 251, 191, 36;
-}
-
-.night-offer-card__back[data-rarity="MITICA"] {
-  --offer-accent: 251, 113, 133;
-}
-
-.night-offer-card__back[data-rarity="GALACTICA"] {
-  --offer-accent: 168, 85, 247;
-}
-
-.night-offer-card__front {
-  width: 100%;
-  height: 100%;
+.nm-front {
   transform: rotateY(180deg);
+  background: #060a10;
 }
 
-.night-offer-card__preview,
-.night-offer-card__preview > div,
-.night-offer-card__preview > div > div {
+.nm-front__media,
+.nm-front__media > div,
+.nm-front__media > div > div {
   width: 100%;
   height: 100%;
 }
 
-.night-offer-card__back-art {
+.nm-back__art {
   position: absolute;
   z-index: 0;
   inset: 0;
@@ -2842,60 +3035,83 @@
   pointer-events: none;
 }
 
-.night-offer-card__frame-lines,
-.night-offer-card__glyph-lines {
+.nm-frame-lines,
+.nm-glyph-lines {
   fill: none;
   stroke: currentColor;
   vector-effect: non-scaling-stroke;
 }
 
-.night-offer-card__frame-lines {
+.nm-frame-lines {
   stroke-width: 0.8;
-  opacity: 0.32;
+  opacity: 0.34;
 }
 
-.night-offer-card__glyph-lines {
+.nm-glyph-lines {
   stroke-width: 1.1;
-  opacity: 0.72;
-  filter: drop-shadow(0 0 4px currentColor);
+  opacity: 0.74;
+  filter: drop-shadow(0 0 4px rgba(var(--offer-accent), 0.45));
+  transition: opacity 220ms var(--nm-ease-out);
 }
 
-.night-offer-card__glyph-core {
+.nm-glyph-core {
   fill: currentColor;
-  filter: drop-shadow(0 0 5px currentColor);
-  transform-box: fill-box;
-  transform-origin: center;
-  animation: night-offer-core 2.8s ease-in-out infinite;
+  opacity: 0.72;
+  filter: drop-shadow(0 0 6px currentColor);
+  transition: opacity 220ms var(--nm-ease-out);
 }
 
-.night-offer-card__glyph-star {
+.nm-glyph-star {
   fill: currentColor;
   opacity: 0.55;
 }
 
-.night-offer-card__content {
+.nm-back:hover:not(:disabled) .nm-glyph-lines,
+.nm-back:focus-visible .nm-glyph-lines,
+.nm-back[data-pending="true"] .nm-glyph-lines {
+  opacity: 0.96;
+}
+
+.nm-back:hover:not(:disabled) .nm-glyph-core,
+.nm-back:focus-visible .nm-glyph-core,
+.nm-back[data-pending="true"] .nm-glyph-core {
+  opacity: 1;
+}
+
+.nm-back__content {
   position: relative;
   z-index: 2;
 }
 
-.night-offer-card__sheen {
+/* Reflexo especular estritamente reativo ao ponteiro (zero loop ocioso) */
+.nm-sheen {
   position: absolute;
   z-index: 1;
-  inset: -35% -55%;
-  background: linear-gradient(
-    112deg,
-    transparent 47%,
-    rgba(255, 255, 255, 0.12) 50%,
-    transparent 53%
-  );
+  top: -35%;
+  left: -35%;
+  width: 170%;
+  height: 170%;
   pointer-events: none;
-  transform: translateX(-72%);
-  animation: night-offer-sheen 6.5s ease-in-out infinite;
+  opacity: 0;
+  background: radial-gradient(
+    circle at 50% 50%,
+    rgba(255, 255, 255, 0.14) 0%,
+    rgba(var(--offer-accent), 0.1) 24%,
+    transparent 55%
+  );
+  transition: opacity 220ms ease;
+  will-change: transform, opacity;
 }
 
-.night-offer-card__burst {
+@media (hover: hover) and (pointer: fine) {
+  .nm-back:hover:not(:disabled) .nm-sheen {
+    opacity: 0.85;
+  }
+}
+
+.nm-burst {
   position: absolute;
-  z-index: 3;
+  z-index: 4;
   inset: 0;
   width: 100%;
   height: 100%;
@@ -2903,70 +3119,144 @@
   opacity: 0;
   mix-blend-mode: screen;
   backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
   pointer-events: none;
   transition: opacity 120ms linear;
 }
 
-.night-offer-card__burst.is-playing {
+.nm-burst.is-playing {
   opacity: 1;
 }
 
+/* Plinto inferior fora da arte */
+.nm-dock {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  justify-content: space-between;
+  border-top: 1px solid rgba(255, 255, 255, 0.085);
+  background: linear-gradient(180deg, rgba(14, 20, 29, 0.98), rgba(9, 13, 20, 0.99));
+  padding: 0.95rem 1rem 1rem;
+}
+
+.nm-dock__swap {
+  animation: nm-dock-reveal 240ms var(--nm-ease-out) both;
+}
+
+@keyframes nm-dock-reveal {
+  from {
+    opacity: 0.15;
+    filter: blur(2px);
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+    transform: translateY(0);
+  }
+}
+
+/* Entradas one-shot da página (compositor-only, nunca bloqueia clique) */
+.nm-enter {
+  animation: nm-enter-in 420ms var(--nm-ease-out) both;
+  animation-delay: var(--nm-delay, 0ms);
+}
+
+.nm-card-enter {
+  animation: nm-card-in 380ms var(--nm-ease-out) both;
+  animation-delay: var(--nm-delay, 0ms);
+}
+
+@keyframes nm-enter-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes nm-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .night-offer-card__burst,
-  .night-offer-card__sheen {
+  .nm-enter,
+  .nm-card-enter {
+    animation: nm-fade-only 200ms ease both;
+    animation-delay: 0ms;
+  }
+
+  .nm-dock__swap {
+    animation: nm-fade-only 180ms ease both;
+  }
+
+  .nm-burst,
+  .nm-sheen {
     display: none;
   }
 
-  .night-offer-card__glyph-core {
-    animation: none;
-  }
-}
-
-@keyframes night-offer-sheen {
-  0% {
-    transform: translateX(-72%);
-    opacity: 0;
+  .nm-flipper,
+  .nm-flipper.is-revealed:not(.is-animating),
+  .nm-back,
+  .nm-front {
+    transform: none !important;
+    backface-visibility: visible;
+    -webkit-backface-visibility: visible;
   }
 
-  8% {
-    opacity: 0.55;
-  }
-
-  26% {
-    transform: translateX(72%);
-    opacity: 0.55;
-  }
-
-  32%,
-  100% {
-    transform: translateX(72%);
-    opacity: 0;
-  }
-}
-
-@keyframes night-offer-core {
-  0%,
-  100% {
-    opacity: 0.45;
-    transform: scale(0.8);
-  }
-
-  50% {
+  .nm-back {
     opacity: 1;
-    transform: scale(1.2);
+    transition: opacity 200ms ease;
+  }
+
+  .nm-front {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 200ms ease;
+  }
+
+  .nm-flipper.is-revealed .nm-back {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .nm-flipper.is-revealed .nm-front {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .nm-monolith,
+  .nm-offer,
+  .nm-progress-fill {
+    transition:
+      border-color 160ms linear,
+      opacity 160ms linear;
+  }
+
+  .nm-monolith:hover:not(:disabled),
+  .nm-monolith[data-active="true"]:not(:disabled),
+  .nm-monolith:active:not(:disabled),
+  .nm-back:active:not(:disabled) {
+    transform: none !important;
   }
 }
 
-@media (min-width: 768px) {
-  .night-market-hero {
-    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
-    gap: 3rem;
-    min-height: 25rem;
-    padding-bottom: 2.5rem;
+@keyframes nm-fade-only {
+  from {
+    opacity: 0;
   }
-
-  .night-market-hero__art {
-    min-height: 21rem;
+  to {
+    opacity: 1;
   }
 }
 
