@@ -25,8 +25,10 @@ import {
   FOIL_GEM_COST,
   gachaConditionLabel,
   getInventoryFragmentStats,
+  getOwnedStoneSelection,
   getOrCreateOperationId,
   isStoneKind,
+  pendingOperationRoute,
   readPendingOperationKeys,
   STONE_FRAGMENTS,
   type ItemOperation,
@@ -87,6 +89,8 @@ export function GachaFragments() {
   const [stoneStatus, setStoneStatus] = useState("");
   const [stoneError, setStoneError] = useState("");
   const [reconcileNeeded, setReconcileNeeded] = useState(false);
+  const [pendingInventoryOperation, setPendingInventoryOperation] =
+    useState(false);
   const [forge, setForge] = useState<{
     result?: { kind: StoneKind; quantity: number };
     canDismiss?: boolean;
@@ -181,6 +185,7 @@ export function GachaFragments() {
       setCardsResultKey("");
       setLoadedUserId(null);
       setPendingRetry(null);
+      setPendingInventoryOperation(false);
       setForge(null);
       setBusy("");
       busyRef.current = false;
@@ -208,6 +213,7 @@ export function GachaFragments() {
     setStoneError("");
     setStoneStatus("");
     setPendingRetry(null);
+    setPendingInventoryOperation(false);
     setForge(null);
     setBusy("");
     busyRef.current = false;
@@ -221,7 +227,11 @@ export function GachaFragments() {
         if (!active) return;
         setInventory(current);
         setLoadedUserId(user.id);
-        for (const suffix of readPendingOperationKeys(user.id)) {
+        const pendingKeys = readPendingOperationKeys(user.id);
+        setPendingInventoryOperation(
+          pendingKeys.some((key) => pendingOperationRoute(key) === "inventory"),
+        );
+        for (const suffix of pendingKeys) {
           const action = suffix.split(":");
           if (
             (action[0] === "buy" ||
@@ -264,6 +274,15 @@ export function GachaFragments() {
     const timer = setTimeout(() => setDebouncedCardSearch(cardSearch), 250);
     return () => clearTimeout(timer);
   }, [cardSearch]);
+
+  useEffect(() => {
+    if (!onlyOwned || pendingRetry || !inventory) return;
+    const nextKind = getOwnedStoneSelection(selectedKind, inventory);
+    if (nextKind !== selectedKind) {
+      setSelectedKind(nextKind);
+      setStoneStatus("");
+    }
+  }, [inventory, onlyOwned, pendingRetry, selectedKind]);
 
   useEffect(() => {
     if (!user || loadedUserId !== user.id) return;
@@ -311,6 +330,8 @@ export function GachaFragments() {
       !user ||
       !inventory ||
       busyRef.current ||
+      pendingInventoryOperation ||
+      !!pendingRetry ||
       inventory[entry.shards] < FOIL_GEM_COST
     )
       return;
@@ -354,7 +375,15 @@ export function GachaFragments() {
   }
 
   async function handleApplyGem() {
-    if (!user || !inventory || busyRef.current) return;
+    if (
+      !user ||
+      !inventory ||
+      busyRef.current ||
+      pendingInventoryOperation ||
+      !!pendingRetry
+    ) {
+      return;
+    }
     const target = gemCard?.id === gemCardId ? gemCard : null;
     if (!target || target.foil !== "NORMAL" || inventory[gemType.gems] < 1) {
       return;
@@ -412,11 +441,16 @@ export function GachaFragments() {
     kind: StoneKind = selectedKind,
     retryQuantity = quantity,
   ) {
+    const retrying =
+      pendingRetry?.operation === operation &&
+      pendingRetry.kind === kind &&
+      pendingRetry.quantity === retryQuantity;
     if (
       !user ||
       !inventory ||
       busyRef.current ||
       reconcileNeeded ||
+      (pendingInventoryOperation && !retrying) ||
       (pendingRetry &&
         (operation !== pendingRetry.operation ||
           kind !== pendingRetry.kind ||
@@ -658,6 +692,22 @@ export function GachaFragments() {
         >
           <GachaInventorySubnav active="fragments" stats={stats} />
 
+          {pendingInventoryOperation && (
+            <p
+              role="status"
+              className="mb-4 border border-ice/30 bg-panel p-3 text-body-sm text-mist"
+            >
+              Há uma operação do inventário pendente. Resolva-a antes de iniciar
+              outra ação.{" "}
+              <Link
+                className="font-medium text-ice underline"
+                href="/gacha/inventario"
+              >
+                Abrir inventário
+              </Link>
+            </p>
+          )}
+
           <header className="gacha-fragments-hero mb-8 p-5 sm:p-8">
             <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
               <div className="max-w-2xl">
@@ -796,23 +846,7 @@ export function GachaFragments() {
             <button
               type="button"
               aria-pressed={onlyOwned}
-              onClick={() => {
-                const nextOnlyOwned = !onlyOwned;
-                setOnlyOwned(nextOnlyOwned);
-                if (nextOnlyOwned && !pendingRetry) {
-                  const ownedStones = STONE_FRAGMENTS.filter(
-                    (entry) =>
-                      inventory[entry.shards] > 0 || inventory[entry.items] > 0,
-                  );
-                  if (
-                    ownedStones.length > 0 &&
-                    !ownedStones.some((entry) => entry.kind === selectedKind)
-                  ) {
-                    setSelectedKind(ownedStones[0]!.kind);
-                    setStoneStatus("");
-                  }
-                }
-              }}
+              onClick={() => setOnlyOwned((value) => !value)}
               className={`min-h-11 border px-4 text-body-sm transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-ice ${
                 onlyOwned
                   ? "border-ice bg-ice/10 text-ice"
@@ -955,7 +989,12 @@ export function GachaFragments() {
                         <button
                           type="button"
                           onClick={() => void handleCraftGem(entry)}
-                          disabled={!!busy || shards < FOIL_GEM_COST}
+                          disabled={
+                            !!busy ||
+                            shards < FOIL_GEM_COST ||
+                            pendingInventoryOperation ||
+                            !!pendingRetry
+                          }
                           className="btn-ice gacha-fragment-action mt-4 min-h-11 w-full px-3 disabled:opacity-50"
                         >
                           {busy === `gem-craft:${entry.foil}`
@@ -1087,7 +1126,11 @@ export function GachaFragments() {
                   <button
                     type="button"
                     disabled={
-                      !gemCardId || inventory[gemType.gems] < 1 || !!busy
+                      !gemCardId ||
+                      inventory[gemType.gems] < 1 ||
+                      !!busy ||
+                      pendingInventoryOperation ||
+                      !!pendingRetry
                     }
                     onClick={() => void handleApplyGem()}
                     className="btn-ice gacha-fragment-action min-h-11 px-4 disabled:opacity-50"
@@ -1183,7 +1226,7 @@ export function GachaFragments() {
                     Não foi possível atualizar estas cartas.{" "}
                     <button
                       type="button"
-                      className="underline"
+                      className="inline-flex min-h-11 items-center px-1 underline"
                       onClick={() => {
                         setCardsLoadError(false);
                         setCollectionRetry((retry) => retry + 1);
@@ -1197,7 +1240,7 @@ export function GachaFragments() {
                 <p
                   role="status"
                   aria-live="polite"
-                  className="mt-3 text-sm text-ice empty:hidden"
+                  className="mt-3 min-h-5 text-sm text-ice"
                 >
                   {gemStatus}
                 </p>
@@ -1428,7 +1471,7 @@ export function GachaFragments() {
                             type="button"
                             disabled={!!pendingRetry}
                             onClick={() => setQuantity(1)}
-                            className="min-h-11 border border-hairline bg-panel px-2.5 font-mono text-caption text-mist hover:border-ice/50 hover:text-snow disabled:opacity-50"
+                            className="min-h-11 min-w-11 border border-hairline bg-panel px-2.5 font-mono text-caption text-mist hover:border-ice/50 hover:text-snow disabled:opacity-50"
                           >
                             1×
                           </button>
@@ -1489,6 +1532,7 @@ export function GachaFragments() {
                               !!busy ||
                               !!buyReason ||
                               reconcileNeeded ||
+                              pendingInventoryOperation ||
                               !!pendingRetry
                             }
                             className="btn-ghost gacha-fragment-action min-h-11 w-full px-3 disabled:opacity-50"
@@ -1510,6 +1554,7 @@ export function GachaFragments() {
                             !!busy ||
                             !!convertReason ||
                             reconcileNeeded ||
+                            pendingInventoryOperation ||
                             !!pendingRetry
                           }
                           className="btn-ghost gacha-fragment-action min-h-11 w-full px-3 disabled:opacity-50"
@@ -1531,6 +1576,7 @@ export function GachaFragments() {
                             !!busy ||
                             !!craftReason ||
                             reconcileNeeded ||
+                            pendingInventoryOperation ||
                             !!pendingRetry
                           }
                           className="btn-ice gacha-fragment-action min-h-11 w-full px-3 disabled:opacity-50"
@@ -1589,7 +1635,7 @@ export function GachaFragments() {
               <p
                 role="status"
                 aria-live="polite"
-                className="mt-4 text-sm text-ice empty:hidden"
+                className="mt-4 min-h-5 text-sm text-ice"
               >
                 {stoneStatus}
               </p>

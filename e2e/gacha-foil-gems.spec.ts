@@ -167,6 +167,80 @@ test("separa fragmentos do inventário principal com navegação bidirecional", 
   await expect(page).toHaveURL(/\/gacha\/inventario$/);
 });
 
+test("blocks cross-route actions while an operation awaits a retry", async ({ page }) => {
+  const inventory = {
+    ...emptyEconomy,
+    available: 1000,
+    titanitaShards: 1,
+    holoShards: 20,
+    itemConfig: {
+      ...emptyEconomy.itemConfig,
+      item_shop_price: { TITANITA: 25, PROTECAO: 150 },
+      item_convert_value: { TITANITA: 5 },
+      item_recipes: { TITANITA: 10 },
+      item_shop_enabled: { TITANITA: true, PROTECAO: true },
+      item_drop_available: { TITANITA: true, PROTECAO: true },
+    },
+  };
+  const pendingCraft = "animesice:gacha-item-op:viewer-1:craft:TITANITA:1";
+  const pendingProtection = "animesice:gacha-item-op:viewer-1:buy:PROTECAO:1";
+  await blockAds(page);
+  await blockExternalNavigation(page);
+  await loginAs(page);
+  await page.route("**/gacha/economy", (route) => route.fulfill({ json: inventory }));
+  await page.route("**/gacha/collection?**", (route) => route.fulfill({ json: {
+    data: cards, meta: { page: 1, limit: 100, total: cards.length, totalPages: 1 },
+  } }));
+
+  await page.goto("/gacha/inventario");
+  await page.evaluate((key) => localStorage.setItem(key, "pending-id"), pendingCraft);
+  await page.reload();
+  await expect(page.getByRole("status").filter({ hasText: "Há uma operação de fragmentos pendente" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Comprar proteção" })).toBeDisabled();
+  await page.getByRole("link", { name: "Abrir fragmentos" }).click();
+  await expect(page.getByRole("button", { name: "Repetir a mesma operação com segurança" })).toBeVisible();
+
+  await page.evaluate(([oldKey, newKey]) => {
+    localStorage.removeItem(oldKey);
+    localStorage.setItem(newKey, "pending-id");
+  }, [pendingCraft, pendingProtection]);
+  await page.goto("/gacha/inventario/fragmentos");
+  await expect(page.getByRole("status").filter({ hasText: "Há uma operação do inventário pendente" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Fabricar gema · 20 fragmentos" }).first()).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Converter", exact: true })).toBeDisabled();
+});
+
+test("moves the selected mineral when the owned filter removes it", async ({ page }) => {
+  let current = {
+    ...emptyEconomy,
+    titanitaShards: 1,
+    draconicaShards: 10,
+    itemConfig: {
+      ...emptyEconomy.itemConfig,
+      item_convert_value: { TITANITA: 5, DRACONICA: 8 },
+      item_recipes: { TITANITA: 10, DRACONICA: 12 },
+    },
+  };
+  await openFragments(page, current);
+  await page.route("**/gacha/economy", (route) => route.fulfill({ json: current }));
+  await page.route("**/gacha/economy/items/convert", async (route) => {
+    current = { ...current, titanitaShards: 0 };
+    await route.fulfill({ json: { ok: true } });
+  });
+
+  await page.getByRole("button", { name: "Somente com saldo" }).click();
+  await page.getByRole("button", { name: /^Titanita/ }).click();
+  const oneButton = page.getByRole("button", { name: "1×" });
+  const oneButtonBox = await oneButton.boundingBox();
+  expect(oneButtonBox?.width).toBeGreaterThanOrEqual(44);
+  expect(oneButtonBox?.height).toBeGreaterThanOrEqual(44);
+  await page.getByRole("button", { name: "Converter", exact: true }).click();
+
+  await expect(page.getByRole("button", { name: /^Titanita/ })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: /^Magnetita/ })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByRole("heading", { name: "Magnetita", exact: true })).toBeVisible();
+});
+
 test("gerencia fragmentos de pedras, filtra categorias, trata erro/vazio e evita overflow", async ({ page }) => {
   let current = {
     ...emptyEconomy,
