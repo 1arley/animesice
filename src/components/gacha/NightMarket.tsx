@@ -881,8 +881,8 @@ export function NightMarket() {
       </p>
 
       <header className="nm-hero p-5 sm:p-8">
-        <div className="grid gap-8 lg:grid-cols-[minmax(0,1.08fr)_minmax(0,0.92fr)] lg:items-end">
-          <div>
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1.02fr)_minmax(0,0.98fr)] lg:items-end">
+          <div className="min-w-0">
             <div className="nm-enter flex flex-wrap items-center gap-3">
               <p className="shelf-label">Gacha / Edição semanal</p>
               <span
@@ -975,14 +975,14 @@ export function NightMarket() {
                   <p className="font-mono text-label uppercase tracking-[0.14em] text-mist-soft">
                     Janela da edição
                   </p>
-                  <p className="mt-1 font-display text-2xl tabular-nums text-snow">
+                  <p className="mt-1 font-display text-xl leading-tight tabular-nums text-snow sm:text-2xl">
                     {windowLabel}
                   </p>
                 </div>
                 <p className="mt-2 font-mono text-caption text-mist">
                   {stats.maxDiscount > 0
                     ? `Descontos até −${stats.maxDiscount}%`
-                    : "Descontos de 10% a 30%"}
+                    : "Descontos: 10% a 30%"}
                 </p>
               </div>
             </div>
@@ -990,10 +990,10 @@ export function NightMarket() {
 
           {/* Ponto focal: Bandeja de Monólitos sincronizada com os 6 slots reais */}
           <div
-            className="nm-tray nm-enter"
+            className="nm-tray nm-enter min-w-0"
             style={{ "--nm-delay": "125ms" } as CSSProperties}
           >
-            <div className="mb-3 flex items-center justify-between gap-2 font-mono text-label uppercase tracking-[0.15em] text-mist-soft">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2 font-mono text-label uppercase tracking-[0.15em] text-mist-soft">
               <span>Arquivo do cofre</span>
               <span className="tabular-nums text-mist">
                 {offers.length > 0
@@ -1002,7 +1002,7 @@ export function NightMarket() {
               </span>
             </div>
 
-            <div className="grid grid-cols-3 gap-2 sm:grid-cols-6 sm:gap-2.5">
+            <div className="grid grid-cols-3 gap-2 sm:grid-cols-6 sm:gap-2">
               {Array.from({ length: 6 }, (_, index) => {
                 const slotOffer = offers[index] ?? null;
                 if (!slotOffer) {
@@ -1012,14 +1012,14 @@ export function NightMarket() {
                       className="nm-monolith is-dormant"
                       aria-hidden="true"
                     >
-                      <span className="font-mono text-caption tabular-nums text-mist-soft">
+                      <span className="font-mono text-[11px] tabular-nums text-mist-soft">
                         {String(index + 1).padStart(2, "0")}
                       </span>
                       <div className="my-auto flex justify-center text-mist-dim">
                         <SealCrestGlyph className="h-5 w-5" />
                       </div>
-                      <span className="font-mono text-label uppercase tracking-[0.1em] text-mist-dim">
-                        Selado
+                      <span className="truncate font-mono text-[10px] uppercase tracking-[0.04em] text-mist-dim">
+                        Selada
                       </span>
                     </div>
                   );
@@ -1072,7 +1072,7 @@ export function NightMarket() {
                       </div>
                     )}
 
-                    <span className="relative z-10 flex items-center justify-between gap-1 font-mono text-caption tabular-nums">
+                    <span className="relative z-10 flex items-center justify-between gap-1 font-mono text-[10px] tabular-nums leading-none">
                       <span className="text-snow">{slotCode}</span>
                       {slotOffer.purchasedAt ? (
                         <span className="text-ice" aria-hidden="true">
@@ -1091,7 +1091,7 @@ export function NightMarket() {
                       </div>
                     )}
 
-                    <span className="relative z-10 mt-auto font-mono text-label uppercase tracking-[0.08em] text-mist">
+                    <span className="relative z-10 mt-auto truncate font-mono text-[10px] uppercase tracking-[0.04em] text-mist">
                       {slotOffer.purchasedAt
                         ? "Sua"
                         : slotRevealed
@@ -1103,9 +1103,9 @@ export function NightMarket() {
               })}
             </div>
 
-            <div className="nm-tray__readout mt-3 flex items-center justify-between gap-3 font-mono text-caption text-mist">
+            <div className="nm-tray__readout mt-3 flex min-w-0 items-center justify-between gap-3 font-mono text-caption text-mist">
               {activeMonolithOffer ? (
-                <p className="truncate tabular-nums">
+                <p className="min-w-0 truncate tabular-nums">
                   <span className="text-ice">
                     {offerSlotCode(
                       activeMonolithOffer.slot,
@@ -1121,11 +1121,11 @@ export function NightMarket() {
                   {activeMonolithOffer.price.toLocaleString("pt-BR")} cristais
                 </p>
               ) : offers.length > 0 ? (
-                <p className="truncate">
+                <p className="min-w-0 truncate">
                   Selecione um monólito para ir direto à oferta abaixo.
                 </p>
               ) : (
-                <p className="truncate">
+                <p className="min-w-0 truncate">
                   Seleção pessoal renovada aos sábados, 00h (BRT).
                 </p>
               )}
