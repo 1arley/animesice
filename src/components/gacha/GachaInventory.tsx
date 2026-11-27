@@ -538,25 +538,31 @@ export function GachaInventory() {
       return;
     busyRef.current = true;
     const key = `${operation}:${kind}:${retryQuantity}`;
-    const showForge = operation === "craft" && kind !== "PROTECAO";
     const { operationId, storageKey } = operationIdFor(key);
     setBusy(key);
-    if (showForge) setForge({ kind });
     setError("");
     setStatus("");
     const body = { operationId, kind, quantity: retryQuantity };
+    let revealStarted = false;
     try {
       if (operation === "buy") await api.gachaEconomyBuyItem(body);
       else if (operation === "convert" && kind !== "PROTECAO")
         await api.gachaEconomyConvertItem({ ...body, kind });
       else if (operation === "craft" && kind !== "PROTECAO") {
         const result = await api.gachaEconomyCraftItem({ ...body, kind });
-        setForge((current) =>
-          current && {
-            ...current,
-            result: { kind: result.kind, quantity: result.quantity },
-          },
-        );
+        if (
+          !result ||
+          typeof result.kind !== "string" ||
+          !result.kind.trim() ||
+          !Number.isSafeInteger(result.quantity) ||
+          result.quantity < 1
+        )
+          throw new Error("Resposta inválida da fabricação.");
+        revealStarted = true;
+        setForge({
+          kind: result.kind,
+          result: { kind: result.kind, quantity: result.quantity },
+        });
       }
       else throw new Error("Essa operação não aceita proteção.");
       clearOperation(key, storageKey);
@@ -571,13 +577,6 @@ export function GachaInventory() {
           );
         });
     } catch (cause) {
-      if (showForge)
-        setForge((current) =>
-          current && {
-            ...current,
-            error: cause instanceof Error ? cause.message : "Falha na fabricação.",
-          },
-        );
       setError(
         `${cause instanceof Error ? cause.message : "Falha na operação."} Se houve timeout, tente novamente sem alterar o tipo ou a quantidade.`,
       );
@@ -593,7 +592,7 @@ export function GachaInventory() {
         setPendingRetry(null);
       }
     } finally {
-      if (showForge) {
+      if (revealStarted) {
         setForge((current) => current && { ...current, canDismiss: true });
       } else {
         setBusy("");
@@ -1285,7 +1284,9 @@ export function GachaInventory() {
                 }
                 className="btn-ice min-h-11 w-full px-3 disabled:opacity-50"
               >
-                Fabricar pedra
+                {busy === `craft:${selectedKind}:${quantity}`
+                  ? "Fabricando…"
+                  : "Fabricar pedra"}
               </button>
               <p className="mt-1 min-h-10 text-xs text-mist">
                 {craftReason ||
@@ -1694,12 +1695,10 @@ export function GachaInventory() {
           Repetir a mesma melhoria com segurança
         </button>
       )}
-      {forge && (
+      {busy.startsWith("craft:") && (
         <GachaStoneForge
-          result={forge.result}
-          kind={forge.kind}
-          error={forge.error}
-          canDismiss={forge.canDismiss}
+          result={forge?.result}
+          canDismiss={forge?.canDismiss}
           onDismiss={() => {
             setForge(null);
             setBusy("");
