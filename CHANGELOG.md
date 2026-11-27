@@ -1,3 +1,10 @@
+# [1.14.0](https://github.com/1arley/animesice/compare/v1.13.1...v1.14.0) (2026-11-27)
+
+### Features
+
+* **gacha:** move card upgrade to fragments workshop ([cdae76c](https://github.com/1arley/animesice/commit/cdae76cd5df4a4cdea498e81b55f0dd8d91cf7ad))
+* **gacha:** support wishlist for orphan sets ([852656f](https://github.com/1arley/animesice/commit/852656f839c688cf3ad4b76a89c246b6f8b6ed0e))
+
 ## [1.13.1](https://github.com/1arley/animesice/compare/v1.13.0...v1.13.1) (2026-11-27)
 
 ### Bug Fixes
