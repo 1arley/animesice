@@ -977,6 +977,10 @@ export interface GachaEconomyOffer {
   discount: number;
   purchasedAt: string | null;
   revealed: boolean;
+  payload?: {
+    foil?: string;
+    condition?: number;
+  } | null;
   card?: {
     id: string;
     name: string;
