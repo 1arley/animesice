@@ -272,7 +272,7 @@ test("vídeo ausente não esconde recompensa e erro da API não celebra sucesso"
         });
   });
   await page.goto("/gacha/loja");
-  await openButton(page, "Comum").click();
+  await openButton(page, "Premium").click();
   const dialog = page.getByRole("dialog");
   await expect(dialog.getByText("+100", { exact: true })).toBeVisible();
   await expect(dialog.locator(".box-reveal-name")).toHaveText("Cristais");
@@ -425,4 +425,320 @@ test("abrir outra caixa toca o filme de novo, sem reaproveitar estado antigo", a
   });
   await expect(dialog.locator(".box-reveal-name")).toHaveText("Cristais");
   expect(calls).toBe(2);
+});
+
+test("caixa comum executa abertura e revelação Three.js em tela cheia com recompensa real", async ({
+  page,
+}, info) => {
+  const pageErrors: string[] = [];
+  page.on("pageerror", (err) => pageErrors.push(err.message));
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  const mp4Requests: string[] = [];
+  page.on("request", (req) => {
+    if (/\/gacha\/box-common\.mp4/.test(req.url())) mp4Requests.push(req.url());
+  });
+  let calls = 0;
+  await page.route("**/boxes/open", (route) => {
+    calls++;
+    return route.fulfill({
+      json: { reward: { category: "CRYSTAL", amount: 640 } },
+    });
+  });
+
+  await page.addInitScript(() => {
+    window.sessionStorage.setItem("animesice:splash-seen", "1");
+  });
+  await page.goto("/gacha/loja");
+  const boxesSection = page.locator("section[aria-labelledby='boxes-title']");
+  await boxesSection.scrollIntoViewIfNeeded();
+  await boxesSection.screenshot({ path: info.outputPath("shop-boxes-grid.png") });
+
+  const trigger = openButton(page, "Comum");
+  await trigger.click();
+
+  const dialog = page.getByRole("dialog");
+  await expect(dialog).toHaveAttribute("data-cinematic", "true");
+  await expect(dialog).toHaveAttribute("data-tier", "COMMON");
+  await expect(dialog.locator("video")).toHaveCount(0);
+  await expect(dialog.locator("canvas")).toHaveCount(1, { timeout: 6000 });
+  await expect(dialog.getByText("+640", { exact: true })).toHaveCount(0);
+
+  await page.waitForTimeout(650);
+  await page.screenshot({ path: info.outputPath("common-box-opening.png") });
+
+  await expect(dialog.getByText("+640", { exact: true })).toBeVisible({
+    timeout: 7000,
+  });
+  await expect(dialog.locator(".box-reveal-name")).toHaveText("Cristais");
+  await expect(dialog).toHaveAccessibleName("Comum aberta");
+  await expect(dialog).toHaveAttribute("data-phase", "reward");
+  await page.screenshot({ path: info.outputPath("common-box-reward.png") });
+
+  expect(calls).toBe(1);
+  expect(mp4Requests).toEqual([]);
+  expect(pageErrors).toEqual([]);
+  expect(await dialog.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(
+    true,
+  );
+
+  await dialog.getByRole("button", { name: "Continuar", exact: true }).click();
+  await expect(dialog).toHaveCount(0);
+  await expect(trigger).toBeFocused();
+});
+
+test("caixa comum segura no selo em API lenta, revela carta real e valida payload inválido", async ({
+  page,
+}, info) => {
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  let releaseApi!: () => void;
+  const apiGate = new Promise<void>((resolve) => {
+    releaseApi = resolve;
+  });
+  let calls = 0;
+  await page.route("**/boxes/open", async (route) => {
+    calls++;
+    if (calls === 1) {
+      await apiGate;
+      return route.fulfill({
+        json: {
+          reward: {
+            category: "CARD",
+            name: "Aeliana — Guardiã do Gelo",
+            rarity: "LENDARIA",
+            image: "/aeliana/Aeliana.png",
+            foil: "HOLO",
+          },
+        },
+      });
+    }
+    return route.fulfill({ json: { reward: {} } });
+  });
+
+  await page.goto("/gacha/loja");
+  await openButton(page, "Comum").click();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog.locator("canvas")).toHaveCount(1, { timeout: 6000 });
+  await page.waitForTimeout(1150);
+  await expect(dialog).toHaveAttribute("data-phase", "opening");
+  await expect(dialog.getByText("Você ganhou")).toHaveCount(0);
+
+  releaseApi();
+  await expect(dialog).toHaveAttribute("data-phase", "revealing", {
+    timeout: 5000,
+  });
+  await page.waitForTimeout(420);
+  await page.screenshot({ path: info.outputPath("common-box-revealing.png") });
+  const art = dialog.getByRole("img", { name: "Aeliana — Guardiã do Gelo" });
+  await expect(art).toBeVisible({ timeout: 7000 });
+  await expect(dialog.getByText("Lendária", { exact: true })).toBeVisible();
+  await expect
+    .poll(() => art.evaluate((el: HTMLImageElement) => el.naturalWidth))
+    .toBeGreaterThan(0);
+  await page.waitForTimeout(380);
+  await page.screenshot({ path: info.outputPath("common-box-card-reward.png") });
+  await dialog.getByRole("button", { name: "Continuar", exact: true }).click();
+
+  // Resposta inválida do backend ({ reward: {} }) deve resultar em erro, nunca em sucesso
+  await openButton(page, "Comum").click();
+  await expect(dialog.getByRole("alert")).toContainText(
+    "Resposta inválida do servidor",
+  );
+  await expect(dialog.getByText("Você ganhou")).toHaveCount(0);
+  await expect(dialog).toHaveAttribute("data-phase", "error");
+});
+
+test("caixa comum previne cliques duplicados e permite abrir outra caixa comum", async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  let releaseOpen!: () => void;
+  const openGate = new Promise<void>((resolve) => {
+    releaseOpen = resolve;
+  });
+  let calls = 0;
+  await page.route("**/boxes/open", async (route) => {
+    calls++;
+    if (calls === 1) await openGate;
+    return route.fulfill({
+      json: { reward: { category: "CRYSTAL", amount: 200 + calls } },
+    });
+  });
+
+  await page.goto("/gacha/loja");
+  const trigger = openButton(page, "Comum");
+  await trigger.evaluate((btn: HTMLButtonElement) => {
+    btn.click();
+    btn.click();
+    btn.click();
+  });
+
+  const dialog = page.getByRole("dialog");
+  await expect(dialog).toBeVisible();
+  releaseOpen();
+
+  await expect(dialog.getByText("+201", { exact: true })).toBeVisible({
+    timeout: 7000,
+  });
+  expect(calls).toBe(1);
+
+  const againBtn = dialog.getByRole("button", { name: "Abrir outra comum" });
+  await expect(againBtn).toBeEnabled();
+  await againBtn.click();
+
+  await expect(dialog).toHaveAttribute("data-phase", /opening|revealing/);
+  await expect(dialog.getByText("+202", { exact: true })).toBeVisible({
+    timeout: 7000,
+  });
+  expect(calls).toBe(2);
+});
+
+test("caixa comum com WebGL indisponível usa fallback elegante e nunca perde recompensa", async ({
+  page,
+}) => {
+  const pageErrors: string[] = [];
+  page.on("pageerror", (err) => pageErrors.push(err.message));
+  await page.addInitScript(() => {
+    const orig = HTMLCanvasElement.prototype.getContext;
+    HTMLCanvasElement.prototype.getContext = function (
+      this: HTMLCanvasElement,
+      contextId: string,
+      ...args: unknown[]
+    ) {
+      if (
+        contextId === "webgl" ||
+        contextId === "webgl2" ||
+        contextId === "experimental-webgl"
+      ) {
+        return null;
+      }
+      return orig.call(this, contextId, ...(args as []));
+    } as typeof HTMLCanvasElement.prototype.getContext;
+  });
+
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  await page.route("**/boxes/open", (route) =>
+    route.fulfill({ json: { reward: { category: "CRYSTAL", amount: 320 } } }),
+  );
+
+  await page.goto("/gacha/loja");
+  await openButton(page, "Comum").click();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog).toHaveAttribute("data-renderer", "fallback");
+  await expect(dialog.locator("canvas")).toHaveCount(0);
+  await expect(dialog.getByText("+320", { exact: true })).toBeVisible({
+    timeout: 6000,
+  });
+  await expect(dialog.locator(".box-reveal-name")).toHaveText("Cristais");
+  expect(pageErrors).toEqual([]);
+});
+
+test("navegar para fora durante a abertura comum desmonta WebGL sem erros e reentrada funciona", async ({
+  page,
+}) => {
+  const pageErrors: string[] = [];
+  page.on("pageerror", (err) => pageErrors.push(err.message));
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  await page.route("**/boxes/open", async (route) => {
+    await new Promise((r) => setTimeout(r, 800));
+    return route.fulfill({ json: { reward: { category: "KEY", amount: 1 } } });
+  });
+
+  await page.goto("/gacha/loja");
+  await openButton(page, "Comum").click();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog.locator("canvas")).toHaveCount(1, { timeout: 6000 });
+
+  await page.goto("/gacha");
+  await expect(page.locator("canvas")).toHaveCount(0);
+  await page.goto("/gacha/loja");
+  await openButton(page, "Comum").click();
+  await expect(dialog.getByText("+1", { exact: true })).toBeVisible({
+    timeout: 15000,
+  });
+  expect(pageErrors).toEqual([]);
+});
+
+test("caixa comum em falha de rede exibe erro em português sem vazar exceção nem abrir WebGL", async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  await page.route("**/boxes/open", (route) => route.abort());
+
+  await page.goto("/gacha/loja");
+  await openButton(page, "Comum").click();
+
+  const dialog = page.getByRole("dialog");
+  await expect(dialog).toHaveAttribute("data-phase", "error");
+  await expect(dialog.getByRole("alert")).toContainText(
+    "Não foi possível confirmar a abertura.",
+  );
+  await expect(dialog.getByRole("alert")).not.toContainText(/failed to fetch/i);
+  await expect(dialog.locator("canvas")).toHaveCount(0);
+  await expect(dialog.getByText("Você ganhou")).toHaveCount(0);
+  await expect(dialog.locator("main")).toHaveCount(0);
+});
+
+test("pular caixa comum mantém foco preso no diálogo, preserva resultado após Escape e recupera foco ao concluir", async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  let releaseOpen!: () => void;
+  const openGate = new Promise<void>((resolve) => {
+    releaseOpen = resolve;
+  });
+  let calls = 0;
+  await page.route("**/boxes/open", async (route) => {
+    calls++;
+    if (calls === 1) await openGate;
+    return route.fulfill({
+      json: { reward: { category: "CRYSTAL", amount: 450 + calls } },
+    });
+  });
+
+  await page.goto("/gacha/loja");
+  await openButton(page, "Comum").click();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog.locator("canvas")).toHaveCount(1, { timeout: 6000 });
+  await expect(dialog.locator("main")).toHaveCount(0);
+
+  const skipBtn = dialog.getByRole("button", { name: "Pular animação" });
+  await page.keyboard.press("Tab");
+  await expect(skipBtn).toBeFocused();
+  await page.keyboard.press("Enter");
+
+  await expect(
+    dialog.getByRole("button", { name: "Aguardando recompensa…" }),
+  ).toBeDisabled();
+  const closeBtn = dialog.getByRole("button", { name: "Voltar à loja" });
+  await expect(closeBtn).toBeFocused();
+  await page.keyboard.press("Tab");
+  await expect(closeBtn).toBeFocused();
+
+  await page.keyboard.press("Escape");
+  await expect(dialog).toHaveCount(0);
+  releaseOpen();
+
+  const viewResultBtn = page.getByRole("button", {
+    name: "Ver resultado da caixa",
+  });
+  await expect(viewResultBtn).toBeVisible();
+  await viewResultBtn.click();
+
+  await expect(dialog).toHaveAttribute("data-phase", "reward");
+  await expect(dialog.getByText("+451", { exact: true })).toBeVisible();
+  await expect(dialog.locator("main")).toHaveCount(0);
+  await dialog.getByRole("button", { name: "Continuar", exact: true }).click();
+
+  // Segunda abertura: pular via teclado após API já respondida mantém foco no botão Continuar
+  await openButton(page, "Comum").click();
+  await expect(dialog.locator("canvas")).toHaveCount(1, { timeout: 6000 });
+  await page.keyboard.press("Tab");
+  await expect(
+    dialog.getByRole("button", { name: "Pular animação" }),
+  ).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect(dialog).toHaveAttribute("data-phase", "reward");
+  await expect(
+    dialog.getByRole("button", { name: "Continuar", exact: true }),
+  ).toBeFocused();
 });
