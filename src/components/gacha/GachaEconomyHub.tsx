@@ -1097,12 +1097,12 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
                     tier === "PREMIUM"
                       ? "text-amber-300"
                       : tier === "RARE"
-                        ? "text-ice"
+                        ? "text-violet-300"
                         : "text-mist";
                   return (
                     <article
                       key={tier}
-                      className={`market-box border ${tier === "PREMIUM" ? "border-amber-300/30" : tier === "RARE" ? "border-ice/25" : "border-hairline"} bg-panel p-5 ${busy === `open-${tier}` ? "market-box-opening" : ""}`}
+                      className={`market-box border ${tier === "PREMIUM" ? "border-amber-300/30" : tier === "RARE" ? "border-violet-400/35" : "border-hairline"} bg-panel p-5 ${busy === `open-${tier}` ? "market-box-opening" : ""}`}
                     >
                       <div className="shop-box-art" data-tier={tier}>
                         <Image

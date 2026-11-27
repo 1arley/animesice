@@ -3121,11 +3121,11 @@
 }
 
 .shop-box-art[data-tier="RARE"] {
-  --tier-glow: #38e8da;
+  --tier-glow: #a970ff;
 }
 
 .shop-box-art[data-tier="PREMIUM"] {
-  --tier-glow: #f5cb7d;
+  --tier-glow: #f2bf52;
 }
 
 .shop-box-art img {
@@ -3700,6 +3700,190 @@
     padding: 1.25rem 1rem;
     gap: 0.55rem;
   }
+}
+
+/* Tier-specific obsidian backdrop, glassmorphism, and typography themes for RARE & PREMIUM */
+.box-reveal-dialog--cinematic[data-tier="RARE"] {
+  background: #05030d;
+  color: #efe7ff;
+}
+.box-reveal-dialog--cinematic[data-tier="RARE"]::backdrop,
+.box-reveal-dialog--cinematic[data-tier="RARE"] .common-box-webgl-stage {
+  background: #05030d;
+}
+.box-reveal-dialog--cinematic[data-tier="RARE"] .common-box-fallback {
+  background: radial-gradient(
+    circle at 50% 48%,
+    rgba(185, 131, 255, 0.14),
+    rgba(5, 3, 13, 0.96) 62%,
+    #05030d 100%
+  );
+}
+.box-reveal-dialog--cinematic[data-tier="RARE"] .common-box-fallback-ring {
+  border-color: rgba(185, 131, 255, 0.34);
+  box-shadow: 0 0 46px rgba(139, 92, 246, 0.2);
+}
+.box-reveal-dialog--cinematic[data-tier="RARE"] .common-box-fallback[data-confirmed="true"] .common-box-fallback-frame img {
+  filter: drop-shadow(0 0 32px rgba(185, 131, 255, 0.55));
+}
+.box-reveal-dialog--cinematic[data-tier="RARE"] .common-box-brand {
+  color: #c8b6f2;
+}
+.box-reveal-dialog--cinematic[data-tier="RARE"] .common-box-reticle {
+  background: #b983ff;
+  box-shadow: 0 0 14px rgba(185, 131, 255, 0.85);
+}
+.box-reveal-dialog--cinematic[data-tier="RARE"] .common-box-close {
+  border-color: rgba(185, 131, 255, 0.34);
+  background: rgba(12, 7, 28, 0.72);
+  color: #efe7ff;
+}
+.box-reveal-dialog--cinematic[data-tier="RARE"] .common-box-close:hover {
+  border-color: #b983ff;
+  background: rgba(185, 131, 255, 0.16);
+}
+.box-reveal-dialog--cinematic[data-tier="RARE"] .common-box-live {
+  color: #cbbde8;
+}
+.box-reveal-dialog--cinematic[data-tier="RARE"] .common-box-skip {
+  border-color: rgba(185, 131, 255, 0.34);
+  background: rgba(12, 7, 28, 0.72);
+  color: #efe7ff;
+}
+.box-reveal-dialog--cinematic[data-tier="RARE"] .common-box-skip:hover:not(:disabled) {
+  border-color: #b983ff;
+  background: rgba(185, 131, 255, 0.16);
+}
+.box-reveal-dialog--cinematic[data-tier="RARE"] .common-reward-panel {
+  border-color: color-mix(in srgb, var(--panel-accent) 38%, rgba(185, 131, 255, 0.22));
+  background:
+    radial-gradient(
+      ellipse at 50% 0%,
+      color-mix(in srgb, var(--panel-accent) 16%, transparent),
+      transparent 64%
+    ),
+    rgba(12, 7, 28, 0.84);
+}
+.box-reveal-dialog--cinematic[data-tier="RARE"] .common-reward-heading,
+.box-reveal-dialog--cinematic[data-tier="RARE"] .common-reward-name {
+  color: #f6f0ff;
+}
+.box-reveal-dialog--cinematic[data-tier="RARE"] .common-reward-details {
+  color: #d6c8f5;
+}
+.box-reveal-dialog--cinematic[data-tier="RARE"] .common-reward-status {
+  color: #cbbde8;
+}
+.box-reveal-dialog--cinematic[data-tier="RARE"] .common-box-action {
+  color: #f6f0ff;
+  background: color-mix(in srgb, var(--panel-accent, #b983ff) 18%, rgba(12, 7, 28, 0.88));
+}
+.box-reveal-dialog--cinematic[data-tier="RARE"] .common-box-action:hover {
+  background: color-mix(in srgb, var(--panel-accent, #b983ff) 30%, rgba(12, 7, 28, 0.94));
+}
+.box-reveal-dialog--cinematic[data-tier="RARE"] .common-box-again {
+  color: #cbbde8;
+}
+.box-reveal-dialog--cinematic[data-tier="RARE"] .common-box-again:hover {
+  color: #f6f0ff;
+}
+.box-reveal-dialog--cinematic[data-tier="RARE"] button:focus-visible {
+  outline: 2px solid #b983ff;
+  outline-offset: 3px;
+}
+
+.box-reveal-dialog--cinematic[data-tier="PREMIUM"] {
+  background: #080603;
+  color: #fff8e7;
+}
+.box-reveal-dialog--cinematic[data-tier="PREMIUM"]::backdrop,
+.box-reveal-dialog--cinematic[data-tier="PREMIUM"] .common-box-webgl-stage {
+  background: #080603;
+}
+.box-reveal-dialog--cinematic[data-tier="PREMIUM"] .common-box-fallback {
+  background: radial-gradient(
+    circle at 50% 48%,
+    rgba(242, 191, 82, 0.14),
+    rgba(8, 6, 3, 0.96) 62%,
+    #080603 100%
+  );
+}
+.box-reveal-dialog--cinematic[data-tier="PREMIUM"] .common-box-fallback-ring {
+  border-color: rgba(242, 191, 82, 0.36);
+  box-shadow: 0 0 48px rgba(242, 191, 82, 0.18);
+}
+.box-reveal-dialog--cinematic[data-tier="PREMIUM"] .common-box-fallback[data-confirmed="true"] .common-box-fallback-frame img {
+  filter: drop-shadow(0 0 34px rgba(242, 191, 82, 0.52));
+}
+.box-reveal-dialog--cinematic[data-tier="PREMIUM"] .common-box-brand {
+  color: #dfc99b;
+}
+.box-reveal-dialog--cinematic[data-tier="PREMIUM"] .common-box-reticle {
+  background: #f2bf52;
+  box-shadow: 0 0 14px rgba(242, 191, 82, 0.85);
+}
+.box-reveal-dialog--cinematic[data-tier="PREMIUM"] .common-box-close {
+  border-color: rgba(242, 191, 82, 0.36);
+  background: rgba(18, 12, 5, 0.74);
+  color: #fff8e7;
+}
+.box-reveal-dialog--cinematic[data-tier="PREMIUM"] .common-box-close:hover {
+  border-color: #f2bf52;
+  background: rgba(242, 191, 82, 0.16);
+}
+.box-reveal-dialog--cinematic[data-tier="PREMIUM"] .common-box-live {
+  color: #ddd0b6;
+}
+.box-reveal-dialog--cinematic[data-tier="PREMIUM"] .common-box-skip {
+  border-color: rgba(242, 191, 82, 0.36);
+  background: rgba(18, 12, 5, 0.74);
+  color: #fff8e7;
+}
+.box-reveal-dialog--cinematic[data-tier="PREMIUM"] .common-box-skip:hover:not(:disabled) {
+  border-color: #f2bf52;
+  background: rgba(242, 191, 82, 0.16);
+}
+.box-reveal-dialog--cinematic[data-tier="PREMIUM"] .common-reward-panel {
+  border-color: color-mix(in srgb, var(--panel-accent) 44%, rgba(242, 191, 82, 0.24));
+  background:
+    radial-gradient(
+      ellipse at 50% 0%,
+      color-mix(in srgb, var(--panel-accent) 16%, transparent),
+      transparent 64%
+    ),
+    rgba(18, 12, 5, 0.86);
+  box-shadow:
+    0 32px 104px rgba(0, 0, 0, 0.84),
+    inset 0 0 0 4px rgba(18, 12, 5, 0.55),
+    inset 0 0 0 5px color-mix(in srgb, var(--panel-accent) 18%, transparent),
+    inset 0 1px 0 color-mix(in srgb, var(--panel-accent) 42%, transparent);
+}
+.box-reveal-dialog--cinematic[data-tier="PREMIUM"] .common-reward-heading,
+.box-reveal-dialog--cinematic[data-tier="PREMIUM"] .common-reward-name {
+  color: #fffaf0;
+}
+.box-reveal-dialog--cinematic[data-tier="PREMIUM"] .common-reward-details {
+  color: #eadcc0;
+}
+.box-reveal-dialog--cinematic[data-tier="PREMIUM"] .common-reward-status {
+  color: #ddd0b6;
+}
+.box-reveal-dialog--cinematic[data-tier="PREMIUM"] .common-box-action {
+  color: #fffaf0;
+  background: color-mix(in srgb, var(--panel-accent, #f2bf52) 18%, rgba(18, 12, 5, 0.9));
+}
+.box-reveal-dialog--cinematic[data-tier="PREMIUM"] .common-box-action:hover {
+  background: color-mix(in srgb, var(--panel-accent, #f2bf52) 30%, rgba(18, 12, 5, 0.95));
+}
+.box-reveal-dialog--cinematic[data-tier="PREMIUM"] .common-box-again {
+  color: #ddd0b6;
+}
+.box-reveal-dialog--cinematic[data-tier="PREMIUM"] .common-box-again:hover {
+  color: #fffaf0;
+}
+.box-reveal-dialog--cinematic[data-tier="PREMIUM"] button:focus-visible {
+  outline: 2px solid #f2bf52;
+  outline-offset: 3px;
 }
 
 @media (prefers-reduced-motion: reduce) {
