@@ -154,7 +154,11 @@ test("separa fragmentos do inventário principal com navegação bidirecional", 
   await expect(page.getByRole("heading", { name: "Oficina de Fragmentos" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Fragmentos e gemas de foil" })).toHaveCount(0);
   await expect(page.getByRole("heading", { name: "Pedras e fragmentos" })).toHaveCount(0);
-  await expect(page.getByRole("heading", { name: "Melhorar uma carta" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Melhorar uma carta" })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "Melhorar cartas" })).toHaveAttribute(
+    "href",
+    "/gacha/inventario/fragmentos#melhorar-carta",
+  );
   await expect(page.getByRole("heading", { name: "Proteção de reroll" })).toBeVisible();
 
   await page.getByRole("link", { name: "Abrir oficina de fragmentos" }).click();
@@ -162,6 +166,7 @@ test("separa fragmentos do inventário principal com navegação bidirecional", 
   await expect(page.getByRole("heading", { name: "Fragmentos", exact: true })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Fragmentos e gemas de foil" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Fragmentos de pedras" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Melhorar uma carta" })).toBeVisible();
 
   await page.getByRole("link", { name: "← Voltar ao inventário" }).click();
   await expect(page).toHaveURL(/\/gacha\/inventario$/);
@@ -183,11 +188,15 @@ test("blocks cross-route actions while an operation awaits a retry", async ({ pa
     },
   };
   const pendingCraft = "animesice:gacha-item-op:viewer-1:craft:TITANITA:1";
+  const pendingUse = "animesice:gacha-item-op:viewer-1:use:TITANITA:normal-card";
   const pendingProtection = "animesice:gacha-item-op:viewer-1:buy:PROTECAO:1";
   await blockAds(page);
   await blockExternalNavigation(page);
   await loginAs(page);
   await page.route("**/gacha/economy", (route) => route.fulfill({ json: inventory }));
+  await page.route("**/gacha/collection/normal-card", (route) =>
+    route.fulfill({ json: { card: cards[0] } }),
+  );
   await page.route("**/gacha/collection?**", (route) => route.fulfill({ json: {
     data: cards, meta: { page: 1, limit: 100, total: cards.length, totalPages: 1 },
   } }));
@@ -200,10 +209,24 @@ test("blocks cross-route actions while an operation awaits a retry", async ({ pa
   await page.getByRole("link", { name: "Abrir fragmentos" }).click();
   await expect(page.getByRole("button", { name: "Repetir a mesma operação com segurança" })).toBeVisible();
 
-  await page.evaluate(([oldKey, newKey]) => {
+  await page.evaluate(([oldKey, useKey]) => {
     localStorage.removeItem(oldKey);
+    localStorage.setItem(useKey, "pending-use-id");
+  }, [pendingCraft, pendingUse]);
+  await page.goto("/gacha/inventario");
+  await expect(page.getByRole("status").filter({ hasText: "Há uma operação de fragmentos pendente" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Comprar proteção" })).toBeDisabled();
+  await page.goto("/gacha/inventario/fragmentos");
+  await expect(page.getByRole("button", { name: "Repetir a mesma melhoria com segurança" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Fabricar gema · 20 fragmentos" }).first()).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Converter", exact: true })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Fabricar pedra" })).toBeDisabled();
+  await expect(page.getByLabel("Pedra", { exact: true })).toBeDisabled();
+
+  await page.evaluate(([useKey, newKey]) => {
+    localStorage.removeItem(useKey);
     localStorage.setItem(newKey, "pending-id");
-  }, [pendingCraft, pendingProtection]);
+  }, [pendingUse, pendingProtection]);
   await page.goto("/gacha/inventario/fragmentos");
   await expect(page.getByRole("status").filter({ hasText: "Há uma operação do inventário pendente" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Fabricar gema · 20 fragmentos" }).first()).toBeDisabled();
@@ -241,7 +264,16 @@ test("moves the selected mineral when the owned filter removes it", async ({ pag
   await expect(page.getByRole("heading", { name: "Magnetita", exact: true })).toBeVisible();
 });
 
-test("gerencia fragmentos de pedras, filtra categorias, trata erro/vazio e evita overflow", async ({ page }) => {
+test("gerencia fragmentos de pedras, melhora carta na oficina, filtra categorias e evita overflow", async ({ page }) => {
+  const upgradeCard = {
+    ...cards[0],
+    id: "upgrade-card",
+    condition: 0.25,
+    conditionLabel: "EX",
+    value: 300,
+    card: { ...cards[0].card, name: "Carta EX" },
+  };
+  let currentCards = [upgradeCard, ...cards];
   let current = {
     ...emptyEconomy,
     holoShards: 0,
@@ -256,6 +288,21 @@ test("gerencia fragmentos de pedras, filtra categorias, trata erro/vazio e evita
       item_shop_price: { TITANITA: 25, DRACONICA: 40 },
       item_shop_enabled: { TITANITA: true, DRACONICA: true },
       item_drop_available: { TITANITA: true, DRACONICA: true },
+      item_eligibility: {
+        DRACONICA: {
+          foils: ["NORMAL", "HOLO"],
+          sourceConditions: ["EX", "NM"],
+          maxCondition: "MINT",
+        },
+      },
+      item_condition_anchor: {
+        PLAYED: 0.45,
+        EX: 0.25,
+        NM: 0.1,
+        MINT: 0.03,
+      },
+      base_value: { RARA: 100 },
+      foil_mult: { NORMAL: 1, HOLO: 2 },
     },
   };
   await blockAds(page);
@@ -271,7 +318,7 @@ test("gerencia fragmentos de pedras, filtra categorias, trata erro/vazio e evita
     return route.fulfill({ json: current });
   });
   await page.route("**/gacha/collection?**", (route) => route.fulfill({ json: {
-    data: cards, meta: { page: 1, limit: 100, total: cards.length, totalPages: 1 },
+    data: currentCards, meta: { page: 1, limit: 100, total: currentCards.length, totalPages: 1 },
   } }));
   await page.route("**/gacha/economy/items/craft", async (route) => {
     const body = route.request().postDataJSON() as { kind: string; quantity: number; operationId: string };
@@ -288,6 +335,24 @@ test("gerencia fragmentos de pedras, filtra categorias, trata erro/vazio e evita
     expect(body.operationId).toMatch(/^[0-9a-f-]{36}$/i);
     current = { ...current, draconicaShards: 1 };
     await route.fulfill({ json: { ok: true } });
+  });
+  const useRequests: { kind: string; userCardId: string; operationId: string }[] = [];
+  await page.route("**/gacha/economy/items/use", async (route) => {
+    const body = route.request().postDataJSON() as {
+      kind: string;
+      userCardId: string;
+      operationId: string;
+    };
+    useRequests.push(body);
+    current = { ...current, draconicaItems: current.draconicaItems - 1 };
+    currentCards = currentCards.map((card) =>
+      card.id === body.userCardId
+        ? { ...card, condition: 0.1, conditionLabel: "NM", value: 400 }
+        : card,
+    );
+    await route.fulfill({
+      json: { userCardId: body.userCardId, condition: 0.1, conditionLabel: "NM", value: 400 },
+    });
   });
 
   await page.goto("/gacha/inventario/fragmentos");
@@ -315,12 +380,32 @@ test("gerencia fragmentos de pedras, filtra categorias, trata erro/vazio e evita
   await page.getByRole("button", { name: "Converter", exact: true }).click();
   await expect(page.getByText("Fragmentos convertidos em cristais.")).toBeVisible();
 
-  await page.getByRole("link", { name: /Melhorar carta com Magnetita no inventário/ }).click();
-  await expect(page).toHaveURL(/\/gacha\/inventario\?pedra=DRACONICA#melhorar-carta$/);
-  await expect(page.getByRole("button", { name: /Magnetita \d+ prontas$/ })).toHaveAttribute("aria-pressed", "true");
+  await page.getByRole("link", { name: /Usar Magnetita em uma carta/ }).click();
+  await expect(page).toHaveURL(/\/gacha\/inventario\/fragmentos#melhorar-carta$/);
+  await expect(page.getByLabel("Pedra", { exact: true })).toHaveValue("DRACONICA");
+  await page.getByLabel("Carta elegível para Magnetita").selectOption("upgrade-card");
+  await expect(page.getByText("Condição: EX → NM · Valor: 300 → 400 cristais")).toBeVisible();
+  await expect(page.getByText("Foil mantido: NORMAL")).toBeVisible();
+  await page.getByRole("button", { name: "Usar pedra" }).click();
+  const confirmDialog = page.getByRole("dialog", { name: "Confirmar melhoria?" });
+  await expect(confirmDialog.getByRole("heading", { name: "Confirmar melhoria?" })).toBeVisible();
+  await confirmDialog.getByRole("button", { name: "Usar pedra" }).click();
+  await expect(confirmDialog).toHaveCount(0);
+  await expect(page.getByRole("status").filter({ hasText: "Carta melhorada; saldos e coleção atualizados." })).toBeVisible();
+  expect(useRequests).toHaveLength(1);
+  expect(useRequests[0]).toMatchObject({ kind: "DRACONICA", userCardId: "upgrade-card" });
+  expect(useRequests[0].operationId).toMatch(/^[0-9a-f-]{36}$/i);
 
-  // Layout sem overflow no desktop e mobile
-  await page.goto("/gacha/inventario/fragmentos");
+  // Query string ?pedra=DRACONICA pré-seleciona Magnetita e layout evita overflow no desktop e mobile
+  await page.goto("/gacha/inventario/fragmentos?pedra=DRACONICA");
+  await expect(page.getByRole("button", { name: /^Magnetita 1 \// })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByLabel("Pedra", { exact: true })).toHaveValue("DRACONICA");
+  await page.setViewportSize({ width: 1280, height: 800 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+
+  await page.goto("/gacha/inventario");
   await page.setViewportSize({ width: 1280, height: 800 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   await page.setViewportSize({ width: 390, height: 844 });

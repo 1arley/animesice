@@ -295,10 +295,8 @@ export function GachaPageSkeleton({
             ))}
           </div>
           <Block className="mt-6 h-32" />
-          <div className="mt-6 grid gap-6 lg:grid-cols-[1.35fr_1fr]">
-            <Block className="h-96" />
-            <Block className="h-96" />
-          </div>
+          <Block className="mt-8 h-56" />
+          <Block className="mt-8 h-64" />
         </>
       )}
 
@@ -323,6 +321,7 @@ export function GachaPageSkeleton({
             <Block className="h-80" />
             <Block className="h-80" />
           </div>
+          <Block className="mt-6 h-48" />
         </>
       )}
     </main>
