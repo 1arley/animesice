@@ -19,8 +19,8 @@
     "test:e2e": "playwright test",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "release": "semantic-release",
-    "release:dry": "semantic-release --dry-run",
+    "release": "node scripts/release.mjs",
+    "release:dry": "node scripts/release.mjs --dry-run",
     "skills:install": "npx --yes skills@1.7.1 experimental_install"
   },
   "dependencies": {
@@ -41,9 +41,9 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.62.1",
-    "@semantic-release/changelog": "^7.0.0",
-    "@semantic-release/git": "^11.0.1",
-    "@semantic-release/github": "^12.0.9",
+    "conventional-changelog": "^8.1.3",
+    "conventional-changelog-angular": "^9.4.0",
+    "conventional-recommended-bump": "^12.1.1",
     "@tailwindcss/postcss": "^4.3.3",
     "@types/node": "^22.20.1",
     "@types/react": "^19.2.18",
@@ -52,7 +52,6 @@
     "eslint": "^9.39.5",
     "eslint-config-next": "^16.4.0",
     "postcss": "^8.5.29",
-    "semantic-release": "^25.0.9",
     "tailwindcss": "^4.3.3",
     "typescript": "^5.9.3"
   },

@@ -2,7 +2,7 @@
 
 ## Supported Versions
 
-Security fixes land on the default branch and are released by semantic-release.
+Security fixes land on the default branch and are released after CI succeeds.
 
 | Version | Supported |
 | ------- | --------- |
