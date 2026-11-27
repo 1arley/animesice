@@ -130,11 +130,12 @@ test.describe("Homepage & Shelf Navigation", () => {
     await expect(page.getByRole("button", { name: "Destaque 2:", exact: false })).toHaveAttribute("aria-current", "true");
   });
 
-  test("should not load the invasive OnClick tag", async ({ page }) => {
+  test("loads the Monetag tag", async ({ page }) => {
     await page.goto("/");
 
     const monetagScript = page.locator("script#monetag-loader");
-    await expect(monetagScript).toHaveCount(0);
+    await expect(monetagScript).toHaveCount(1);
+    await expect(monetagScript).toContainText("12367722");
   });
 
   test("renders the AdSense slot and injects the loader on demand", async ({

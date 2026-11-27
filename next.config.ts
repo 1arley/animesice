@@ -2,7 +2,7 @@ import type { NextConfig } from "next";
 
 /**
  * Politica de Seguranca de Conteudo (CSP) para producao.
- * Ad networks (ExoClick/AdSense) carregam scripts, iframes e conexoes de um
+ * Ad networks (Monetag/AdSense) carregam scripts, iframes e conexoes de um
  * conjunto dinamico de parceiros — sem `https:` eles nao renderizam. Com
  * `script-src https:` + os hosts explicitos, o bloqueio continua para http
  * e para recursos nao-HTTPS; os vetores de XSS mais criticos (object-src,
