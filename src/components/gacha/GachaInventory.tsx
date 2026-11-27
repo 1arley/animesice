@@ -4,119 +4,42 @@ import {
   useCallback,
   useEffect,
   useLayoutEffect,
+  useMemo,
   useRef,
   useState,
 } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { GachaEssences } from "@/components/gacha/GachaEssences";
+import { GachaInventorySubnav } from "@/components/gacha/GachaInventorySubnav";
+import { GachaPageSkeleton } from "@/components/gacha/GachaPageSkeleton";
 import { ConfirmDialog } from "@/components/common/ConfirmDialog";
+import { BonusShardIcon, SHARD_ICONS } from "@/components/gacha/BonusShardIcon";
+import { SearchField } from "@/components/ui/SearchField";
 import { useAuth } from "@/lib/auth-context";
 import { api, ApiError } from "@/lib/api";
-import { gachaConditionLabel } from "@/components/gacha/GachaCard";
-import { BonusShardIcon, SHARD_ICONS } from "@/components/gacha/BonusShardIcon";
-import { GachaStoneForge } from "@/components/gacha/GachaStoneForge";
-import type {
-  GachaEconomyInventory,
-  GachaFoil,
-  GachaItemKind,
-  GachaPull,
-} from "@/types";
+import {
+  clearOperationId,
+  gachaConditionLabel,
+  getInventoryFragmentStats,
+  getOrCreateOperationId,
+  isCardEligibleForStone,
+  isStoneKind,
+  nextConditionLabel,
+  pendingOperationRoute,
+  readPendingOperationKeys,
+  STONE_FRAGMENTS,
+  upgradedValue,
+  type StoneKind,
+} from "@/lib/gacha-inventory";
+import type { GachaEconomyInventory, GachaPull } from "@/types";
 
-type GemBalanceKey =
-  | "holoShards"
-  | "goldShards"
-  | "inkShards"
-  | "prismShards"
-  | "holoGems"
-  | "goldGems"
-  | "inkGems"
-  | "prismGems";
-const FOILS: {
-  foil: GachaFoil;
-  label: string;
-  shards: GemBalanceKey;
-  gems: GemBalanceKey;
-}[] = [
-  { foil: "HOLO", label: "Holo", shards: "holoShards", gems: "holoGems" },
-  { foil: "GOLD", label: "Gold", shards: "goldShards", gems: "goldGems" },
-  { foil: "INK", label: "Ink", shards: "inkShards", gems: "inkGems" },
-  {
-    foil: "PRISM",
-    label: "Prismática",
-    shards: "prismShards",
-    gems: "prismGems",
-  },
-];
-
-const STONES = [
-  {
-    kind: "TITANITA",
-    label: "Titanita",
-    shards: "titanitaShards",
-    items: "titanitaItems",
-  },
-  {
-    kind: "TITANITA_SOMBRIA",
-    label: "Titanita Sombria",
-    shards: "titanitaSombriaShards",
-    items: "titanitaSombriaItems",
-  },
-  // DRACONICA* são os tipos internos herdados; no gacha são exibidos como "Magnetita*".
-  {
-    kind: "DRACONICA",
-    label: "Magnetita",
-    shards: "draconicaShards",
-    items: "draconicaItems",
-  },
-  {
-    kind: "SOMBRIA_DRACONICA",
-    label: "Magnetita Sombria",
-    shards: "sombriaDraconicaShards",
-    items: "sombriaDraconicaItems",
-  },
+const GATEWAY_PREVIEWS = [
+  { src: "/gacha/holo_gem.png", tone: "foil", key: "HOLO" },
+  { src: "/gacha/gold_gem.png", tone: "foil", key: "GOLD" },
+  { src: "/gacha/titanita.png", tone: "stone", key: "TITANITA" },
+  { src: "/gacha/magnetita.png", tone: "stone", key: "DRACONICA" },
 ] as const;
-
-type StoneKind = (typeof STONES)[number]["kind"];
-type Operation = "buy" | "convert" | "craft";
-
-function conditionMultiplier(condition: number) {
-  if (condition <= 0.07) return 3;
-  if (condition <= 0.15) return 2;
-  if (condition <= 0.38) return 1.5;
-  if (condition <= 0.55) return 1.2;
-  return 1;
-}
-
-function upgradedValue(
-  card: GachaPull,
-  nextCondition: number,
-  economy: GachaEconomyInventory,
-) {
-  if (card.valueOverride != null) return card.value;
-  const { base_value: base, foil_mult: foil } = economy.itemConfig;
-  if (base[card.card.rarity] == null || foil[card.foil] == null) return null;
-  const amount =
-    base[card.card.rarity]! *
-    conditionMultiplier(nextCondition) *
-    foil[card.foil]!;
-  const editionBonus =
-    card.edition <= 10 ? (amount * (11 - card.edition)) / 10 : 0;
-  return Math.round(amount + editionBonus);
-}
-
-function fragmentCount(
-  inventory: GachaEconomyInventory,
-  stone: (typeof STONES)[number],
-) {
-  return inventory[stone.shards];
-}
-
-function craftedCount(
-  inventory: GachaEconomyInventory,
-  stone: (typeof STONES)[number],
-) {
-  return inventory[stone.items];
-}
 
 export function GachaInventory() {
   const { user, loading: authLoading } = useAuth();
@@ -124,70 +47,55 @@ export function GachaInventory() {
   useLayoutEffect(() => {
     currentUserIdRef.current = user?.id;
   }, [user?.id]);
+
   const [inventory, setInventory] = useState<GachaEconomyInventory | null>(
     null,
   );
   const [loadedUserId, setLoadedUserId] = useState<string | null>(null);
-  const [cards, setCards] = useState<GachaPull[]>([]);
-  const [cardsResultKey, setCardsResultKey] = useState("");
-  const [cardPage, setCardPage] = useState(1);
-  const [cardTotalPages, setCardTotalPages] = useState(1);
+  const [loadTick, setLoadTick] = useState(0);
   const [eligibleCards, setEligibleCards] = useState<GachaPull[]>([]);
   const [eligibleResultKey, setEligibleResultKey] = useState("");
   const [eligiblePage, setEligiblePage] = useState(1);
   const [eligibleTotalPages, setEligibleTotalPages] = useState(1);
   const [selectedKind, setSelectedKind] = useState<StoneKind>("TITANITA");
   const [selectedCard, setSelectedCard] = useState<GachaPull | null>(null);
-  const [gemFoil, setGemFoil] = useState<GachaFoil>("HOLO");
-  const [gemCardId, setGemCardId] = useState("");
-  const [gemCard, setGemCard] = useState<GachaPull | null>(null);
   const [cardSearch, setCardSearch] = useState("");
   const [debouncedCardSearch, setDebouncedCardSearch] = useState("");
   const [collectionRetry, setCollectionRetry] = useState(0);
-  const [cardsLoadError, setCardsLoadError] = useState(false);
   const [eligibleLoadError, setEligibleLoadError] = useState(false);
-  const [quantity, setQuantity] = useState(1);
   const [protectionQuantity, setProtectionQuantity] = useState(1);
   const [busy, setBusy] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [status, setStatus] = useState("");
-  const [gemStatus, setGemStatus] = useState("");
-  const [gemError, setGemError] = useState("");
   const [reconcileNeeded, setReconcileNeeded] = useState(false);
-  const [forge, setForge] = useState<{
-    kind: StoneKind;
-    result?: { kind: StoneKind; quantity: number };
-    error?: string;
-    canDismiss?: boolean;
-  } | null>(null);
-  const [pendingRetry, setPendingRetry] = useState<{
-    operation: Operation;
-    kind: GachaItemKind;
+  const [pendingProtectionRetry, setPendingProtectionRetry] = useState<{
     quantity: number;
   } | null>(null);
+  const [pendingFragmentsOperation, setPendingFragmentsOperation] =
+    useState(false);
   const [pendingUseRetry, setPendingUseRetry] = useState<{
     kind: StoneKind;
     userCardId: string;
   } | null>(null);
+
   const pendingOperations = useRef(new Map<string, string>());
   const busyRef = useRef(false);
-  const stone = STONES.find((entry) => entry.kind === selectedKind)!;
-  const gemType = FOILS.find((entry) => entry.foil === gemFoil)!;
-  const currentCardsKey = `${user?.id ?? ""}:${cardPage}:${cardSearch}`;
+
+  const stone =
+    STONE_FRAGMENTS.find((entry) => entry.kind === selectedKind) ??
+    STONE_FRAGMENTS[0]!;
   const currentEligibleKey = `${user?.id ?? ""}:${selectedKind}:${eligiblePage}:${cardSearch}`;
-  const currentCardsRequestKey = `${user?.id ?? ""}:${cardPage}:${debouncedCardSearch}`;
   const currentEligibleRequestKey = `${user?.id ?? ""}:${selectedKind}:${eligiblePage}:${debouncedCardSearch}`;
-  const currentCardsRequestKeyRef = useRef(currentCardsRequestKey);
   const currentEligibleRequestKeyRef = useRef(currentEligibleRequestKey);
   useLayoutEffect(() => {
-    currentCardsRequestKeyRef.current = currentCardsRequestKey;
     currentEligibleRequestKeyRef.current = currentEligibleRequestKey;
-  }, [currentCardsRequestKey, currentEligibleRequestKey]);
-  const gemCards =
-    cardsResultKey === currentCardsKey
-      ? cards.filter((card) => card.foil === "NORMAL")
-      : [];
+  }, [currentEligibleRequestKey]);
+
+  const stats = useMemo(
+    () => (inventory ? getInventoryFragmentStats(inventory) : null),
+    [inventory],
+  );
 
   const refreshInventory = useCallback(async () => {
     if (!user) return null;
@@ -197,34 +105,6 @@ export function GachaInventory() {
     setInventory(current);
     return current;
   }, [user]);
-
-  const refreshCards = useCallback(async () => {
-    if (!user) return false;
-    try {
-      const requestKey = currentCardsRequestKey;
-      const result = await api.gachaCollection(
-        user.id,
-        cardPage,
-        100,
-        "value",
-        "",
-        "NORMAL",
-        debouncedCardSearch,
-      );
-      if (currentCardsRequestKeyRef.current !== requestKey) return false;
-      setCards(result.data);
-      setCardsResultKey(`${user.id}:${cardPage}:${debouncedCardSearch}`);
-      setCardTotalPages(Math.max(1, result.meta.totalPages));
-      setCardPage((page) =>
-        Math.min(page, Math.max(1, result.meta.totalPages)),
-      );
-      setCardsLoadError(false);
-      return true;
-    } catch (cause) {
-      setCardsLoadError(true);
-      throw cause;
-    }
-  }, [user, cardPage, debouncedCardSearch, currentCardsRequestKey]);
 
   const refreshEligibleCards = useCallback(async () => {
     if (!user) return false;
@@ -264,184 +144,123 @@ export function GachaInventory() {
   ]);
 
   const refresh = useCallback(async () => {
-    const [current, cardsSynced, eligibleCardsSynced] = await Promise.all([
+    const [current, eligibleCardsSynced] = await Promise.all([
       refreshInventory(),
-      refreshCards(),
       refreshEligibleCards(),
     ]);
-    if (!current || !cardsSynced || !eligibleCardsSynced)
+    if (!current || !eligibleCardsSynced)
       throw new Error("A coleção mudou durante a atualização.");
-  }, [refreshCards, refreshEligibleCards, refreshInventory]);
+  }, [refreshEligibleCards, refreshInventory]);
 
   useEffect(() => {
     if (authLoading) return;
     if (!user) {
       setInventory(null);
-      setCards([]);
-      setCardsResultKey("");
       setEligibleCards([]);
       setEligibleResultKey("");
       setLoadedUserId(null);
-      setPendingRetry(null);
+      setPendingProtectionRetry(null);
       setPendingUseRetry(null);
+      setPendingFragmentsOperation(false);
       setReconcileNeeded(false);
       pendingOperations.current.clear();
       setLoading(false);
       return;
     }
+
     let active = true;
     setInventory(null);
-    setCards([]);
-    setCardsResultKey("");
     setEligibleCards([]);
     setEligibleResultKey("");
-    setCardsLoadError(false);
     setEligibleLoadError(false);
     setSelectedCard(null);
-    setGemCard(null);
-    setGemCardId("");
     setCardSearch("");
     setDebouncedCardSearch("");
-    setCardPage(1);
     setEligiblePage(1);
     setLoadedUserId(null);
     setError("");
     setStatus("");
-    setPendingRetry(null);
+    setPendingProtectionRetry(null);
     setPendingUseRetry(null);
+    setPendingFragmentsOperation(false);
     setReconcileNeeded(false);
     pendingOperations.current.clear();
     setLoading(true);
+
     void api
       .gachaEconomyInventory()
       .then((current) => {
-        if (active) {
-          setInventory(current);
-          setLoadedUserId(user.id);
-          try {
-            const prefix = `animesice:gacha-item-op:${user.id}:`;
-            const keys = Array.from(
-              { length: localStorage.length },
-              (_, index) => localStorage.key(index),
-            ).filter((key): key is string => !!key && key.startsWith(prefix));
-            const action = keys[0]?.slice(prefix.length).split(":");
-            if (
-              action?.[0] === "use" &&
-              STONES.some((entry) => entry.kind === action[1])
-            ) {
-              const kind = action[1] as StoneKind;
-              const userCardId = action.slice(2).join(":");
-              setSelectedKind(kind);
-              setPendingUseRetry({ kind, userCardId });
-              void api
-                .gachaOwnedCard(userCardId)
-                .then(({ card }) => {
-                  if (active) setSelectedCard(card);
-                })
-                .catch(() => {
-                  if (active)
-                    setError(
-                      "Não foi possível carregar a carta da melhoria pendente.",
-                    );
-                });
-            } else if (
-              (action?.[0] === "buy" ||
-                action?.[0] === "convert" ||
-                action?.[0] === "craft") &&
-              action.length === 3 &&
-              STONES.some((entry) => entry.kind === action[1])
-            ) {
-              const kind = action[1] as StoneKind;
-              const retryQuantity = Number(action[2]);
-              if (Number.isInteger(retryQuantity) && retryQuantity > 0) {
-                setSelectedKind(kind);
-                setQuantity(retryQuantity);
-                setPendingRetry({
-                  operation: action[0],
-                  kind,
-                  quantity: retryQuantity,
-                });
-              }
-            } else if (
-              action?.[0] === "buy" &&
-              action[1] === "PROTECAO" &&
-              Number.isInteger(Number(action[2]))
-            ) {
-              const retryQuantity = Number(action[2]);
-              setProtectionQuantity(retryQuantity);
-              setPendingRetry({
-                operation: "buy",
-                kind: "PROTECAO",
-                quantity: retryQuantity,
+        if (!active) return;
+        setInventory(current);
+        setLoadedUserId(user.id);
+
+        const pendingKeys = readPendingOperationKeys(user.id);
+        setPendingFragmentsOperation(
+          pendingKeys.some((key) => pendingOperationRoute(key) === "fragments"),
+        );
+        let pendingUseFound = false;
+        for (const suffix of pendingKeys) {
+          const action = suffix.split(":");
+          if (action[0] === "use" && isStoneKind(action[1])) {
+            const kind = action[1];
+            const userCardId = action.slice(2).join(":");
+            pendingUseFound = true;
+            setSelectedKind(kind);
+            setPendingUseRetry({ kind, userCardId });
+            void api
+              .gachaOwnedCard(userCardId)
+              .then(({ card }) => {
+                if (active) setSelectedCard(card);
+              })
+              .catch(() => {
+                if (active)
+                  setError(
+                    "Não foi possível carregar a carta da melhoria pendente.",
+                  );
               });
-            }
-          } catch {
-            /* Storage is optional; operation IDs remain usable in-session. */
+            break;
+          }
+          if (
+            action[0] === "buy" &&
+            action[1] === "PROTECAO" &&
+            Number.isInteger(Number(action[2]))
+          ) {
+            const retryQuantity = Number(action[2]);
+            setProtectionQuantity(retryQuantity);
+            setPendingProtectionRetry({ quantity: retryQuantity });
+            break;
+          }
+        }
+
+        if (!pendingUseFound && typeof window !== "undefined") {
+          const queryStone = new URLSearchParams(window.location.search).get(
+            "pedra",
+          );
+          if (isStoneKind(queryStone)) {
+            setSelectedKind(queryStone);
           }
         }
       })
       .catch(() => {
-        if (active) {
-          setLoadedUserId(user.id);
-          setError(
-            "Não foi possível carregar seu inventário. Tente atualizar a página.",
-          );
-        }
+        if (!active) return;
+        setLoadedUserId(user.id);
+        setError(
+          "Não foi possível carregar seu inventário. Tente atualizar a página.",
+        );
       })
       .finally(() => {
         if (active) setLoading(false);
       });
+
     return () => {
       active = false;
     };
-  }, [authLoading, user]);
+  }, [authLoading, user, loadTick]);
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedCardSearch(cardSearch), 250);
     return () => clearTimeout(timer);
   }, [cardSearch]);
-
-  useEffect(() => {
-    if (!user || loadedUserId !== user.id) return;
-    let active = true;
-    const requestKey = currentCardsRequestKey;
-    void api
-      .gachaCollection(
-        user.id,
-        cardPage,
-        100,
-        "value",
-        "",
-        "NORMAL",
-        debouncedCardSearch,
-      )
-      .then((result) => {
-        if (!active || currentCardsRequestKeyRef.current !== requestKey) return;
-        setCards(result.data);
-        setCardsResultKey(`${user.id}:${cardPage}:${debouncedCardSearch}`);
-        setCardTotalPages(Math.max(1, result.meta.totalPages));
-        setCardPage((page) =>
-          Math.min(page, Math.max(1, result.meta.totalPages)),
-        );
-        setCardsLoadError(false);
-      })
-      .catch(() => {
-        if (active) {
-          setCardsLoadError(true);
-          setError("Não foi possível atualizar as cartas para gemas.");
-        }
-      });
-    return () => {
-      active = false;
-    };
-  }, [
-    user,
-    loadedUserId,
-    cardPage,
-    debouncedCardSearch,
-    collectionRetry,
-    currentCardsRequestKey,
-  ]);
 
   useEffect(() => {
     if (!user || loadedUserId !== user.id) return;
@@ -490,83 +309,39 @@ export function GachaInventory() {
     currentEligibleRequestKey,
   ]);
 
-  function operationIdFor(key: string) {
-    const storageKey = `animesice:gacha-item-op:${user!.id}:${key}`;
-    let stored: string | null = null;
-    try {
-      stored = localStorage.getItem(storageKey);
-    } catch {
-      /* Storage can be disabled. */
-    }
-    const operationId =
-      pendingOperations.current.get(key) ?? stored ?? crypto.randomUUID();
-    pendingOperations.current.set(key, operationId);
-    try {
-      localStorage.setItem(storageKey, operationId);
-    } catch {
-      /* Keep the in-memory retry. */
-    }
-    return { operationId, storageKey };
-  }
-
-  function clearOperation(key: string, storageKey: string) {
-    pendingOperations.current.delete(key);
-    try {
-      localStorage.removeItem(storageKey);
-    } catch {
-      /* No persistent entry to clear. */
-    }
-  }
-
-  async function runItemOperation(
-    operation: Operation,
-    kind: GachaItemKind = selectedKind,
-    retryQuantity = quantity,
-  ) {
+  async function buyProtection(retryQuantity = protectionQuantity) {
+    const retrying = pendingProtectionRetry?.quantity === retryQuantity;
     if (
+      !user ||
       !inventory ||
       busyRef.current ||
       reconcileNeeded ||
+      (pendingFragmentsOperation && !retrying) ||
       pendingUseRetry ||
-      (pendingRetry &&
-        (operation !== pendingRetry.operation ||
-          kind !== pendingRetry.kind ||
-          retryQuantity !== pendingRetry.quantity)) ||
+      (pendingProtectionRetry &&
+        retryQuantity !== pendingProtectionRetry.quantity) ||
       !Number.isInteger(retryQuantity) ||
       retryQuantity < 1
     )
       return;
     busyRef.current = true;
-    const key = `${operation}:${kind}:${retryQuantity}`;
-    const { operationId, storageKey } = operationIdFor(key);
+    const key = `buy:PROTECAO:${retryQuantity}`;
+    const { operationId, storageKey } = getOrCreateOperationId(
+      pendingOperations.current,
+      user.id,
+      key,
+    );
     setBusy(key);
     setError("");
     setStatus("");
-    const body = { operationId, kind, quantity: retryQuantity };
-    let revealStarted = false;
     try {
-      if (operation === "buy") await api.gachaEconomyBuyItem(body);
-      else if (operation === "convert" && kind !== "PROTECAO")
-        await api.gachaEconomyConvertItem({ ...body, kind });
-      else if (operation === "craft" && kind !== "PROTECAO") {
-        const result = await api.gachaEconomyCraftItem({ ...body, kind });
-        if (
-          !result ||
-          typeof result.kind !== "string" ||
-          !result.kind.trim() ||
-          !Number.isSafeInteger(result.quantity) ||
-          result.quantity < 1
-        )
-          throw new Error("Resposta inválida da fabricação.");
-        revealStarted = true;
-        setForge({
-          kind: result.kind,
-          result: { kind: result.kind, quantity: result.quantity },
-        });
-      }
-      else throw new Error("Essa operação não aceita proteção.");
-      clearOperation(key, storageKey);
-      setPendingRetry(null);
+      await api.gachaEconomyBuyItem({
+        operationId,
+        kind: "PROTECAO",
+        quantity: retryQuantity,
+      });
+      clearOperationId(pendingOperations.current, user.id, key, storageKey);
+      setPendingProtectionRetry(null);
       setStatus("Operação concluída.");
       await refreshInventory()
         .then(() => setReconcileNeeded(false))
@@ -585,23 +360,20 @@ export function GachaInventory() {
         cause.statusCode >= 500 ||
         cause.statusCode === 408
       ) {
-        setPendingRetry({ operation, kind, quantity: retryQuantity });
+        setPendingProtectionRetry({ quantity: retryQuantity });
         await refreshInventory().catch(() => undefined);
       } else {
-        clearOperation(key, storageKey);
-        setPendingRetry(null);
+        clearOperationId(pendingOperations.current, user.id, key, storageKey);
+        setPendingProtectionRetry(null);
       }
     } finally {
-      if (revealStarted) {
-        setForge((current) => current && { ...current, canDismiss: true });
-      } else {
-        setBusy("");
-        busyRef.current = false;
-      }
+      setBusy("");
+      busyRef.current = false;
     }
   }
 
   async function handleUseStone(retry = false) {
+    if (!user) return;
     const action = retry
       ? pendingUseRetry
       : selectedCard
@@ -612,13 +384,18 @@ export function GachaInventory() {
       !action ||
       busyRef.current ||
       reconcileNeeded ||
-      pendingRetry ||
+      (pendingFragmentsOperation && !retry) ||
+      pendingProtectionRetry ||
       (pendingUseRetry && !retry)
     )
       return;
     busyRef.current = true;
     const key = `use:${action.kind}:${action.userCardId}`;
-    const { operationId, storageKey } = operationIdFor(key);
+    const { operationId, storageKey } = getOrCreateOperationId(
+      pendingOperations.current,
+      user.id,
+      key,
+    );
     setBusy(key);
     setError("");
     try {
@@ -627,7 +404,7 @@ export function GachaInventory() {
         kind: action.kind,
         userCardId: action.userCardId,
       });
-      clearOperation(key, storageKey);
+      clearOperationId(pendingOperations.current, user.id, key, storageKey);
       setPendingUseRetry(null);
       setSelectedCard(null);
       setStatus("Carta melhorada; saldos e coleção atualizados.");
@@ -651,8 +428,8 @@ export function GachaInventory() {
         );
         await refresh().catch(() => undefined);
       } else {
-        clearOperation(key, storageKey);
-        setPendingRetry(null);
+        clearOperationId(pendingOperations.current, user.id, key, storageKey);
+        setPendingProtectionRetry(null);
         setPendingUseRetry(null);
         setError(cause.message || "Falha ao melhorar a carta.");
       }
@@ -662,82 +439,88 @@ export function GachaInventory() {
     }
   }
 
-  if (authLoading || loading || loadedUserId !== (user?.id ?? null))
+  if (authLoading || loading || loadedUserId !== (user?.id ?? null)) {
+    return <GachaPageSkeleton kind="inventory" />;
+  }
+
+  if (!user) {
     return (
-      <main className="mx-auto max-w-shelf px-4 py-10" aria-live="polite">
-        Carregando inventário…
+      <main id="body-content" className="mx-auto max-w-shelf px-4 py-12">
+        <div className="border border-hairline bg-panel p-6 sm:p-8">
+          <p className="shelf-label">Gacha / Economia</p>
+          <h1 className="font-display text-3xl text-snow">Inventário</h1>
+          <p className="mt-3 text-body-sm text-mist">
+            Entre para ver seus itens, essências, pedras e proteção.
+          </p>
+          <Link
+            className="btn-ice mt-5 inline-flex min-h-11 items-center px-5"
+            href="/entrar"
+          >
+            Entrar
+          </Link>
+        </div>
       </main>
     );
-  if (!user)
+  }
+
+  if (error && !inventory) {
     return (
-      <main className="mx-auto max-w-shelf px-4 py-10">
-        <h1 className="font-display text-3xl">Inventário</h1>
-        <p className="mt-3 text-mist">Entre para ver seus itens.</p>
-        <a
-          className="btn-ice mt-5 inline-flex min-h-11 items-center px-5"
-          href="/entrar"
-        >
-          Entrar
-        </a>
+      <main id="body-content" className="mx-auto max-w-shelf px-4 py-12">
+        <div className="border border-signal/40 bg-panel p-6 sm:p-8">
+          <p role="alert" className="text-body-sm text-signal">
+            {error}
+          </p>
+          <button
+            type="button"
+            className="btn-ghost mt-4 min-h-11 px-4"
+            onClick={() => setLoadTick((tick) => tick + 1)}
+          >
+            Tentar novamente
+          </button>
+        </div>
       </main>
     );
-  if (error && !inventory)
-    return (
-      <main className="mx-auto max-w-shelf px-4 py-10">
-        <p role="alert">{error}</p>
-        <button
-          className="btn-ghost mt-4 min-h-11 px-4"
-          onClick={() => location.reload()}
-        >
-          Tentar novamente
-        </button>
-      </main>
-    );
+  }
+
   if (!inventory) return null;
-  if (!inventory.itemConfig)
+
+  if (!inventory.itemConfig) {
     return (
-      <main className="mx-auto max-w-shelf px-4 py-10">
-        <h1 className="font-display text-3xl">
-          Inventário temporariamente indisponível
-        </h1>
-        <p className="mt-3 text-mist">
-          A configuração da economia ainda não está disponível. Atualize a
-          página em instantes.
-        </p>
+      <main id="body-content" className="mx-auto max-w-shelf px-4 py-12">
+        <GachaInventorySubnav active="inventory" stats={stats} />
+        <div className="border border-hairline bg-panel p-6 sm:p-8">
+          <h1 className="font-display text-3xl text-snow">
+            Inventário temporariamente indisponível
+          </h1>
+          <p className="mt-3 text-body-sm text-mist">
+            A configuração da economia ainda não está disponível. Atualize a
+            página em instantes.
+          </p>
+          <button
+            type="button"
+            className="btn-ghost mt-5 min-h-11 px-4"
+            onClick={() => setLoadTick((tick) => tick + 1)}
+          >
+            Atualizar
+          </button>
+        </div>
       </main>
     );
+  }
 
   const config = inventory.itemConfig;
-  const recipe = config.item_recipes[selectedKind];
-  const eligibility = config.item_eligibility[selectedKind];
-  const nextConditionLabel = (condition: number) => {
-    const labels = ["POOR", "PLAYED", "EX", "NM", "MINT"];
-    const current = gachaConditionLabel(condition);
-    return labels[labels.indexOf(current) + 1] ?? null;
-  };
   const eligibleCardsForStone =
-    eligibility && eligibleResultKey === currentEligibleKey
-      ? eligibleCards.filter((card) => {
-          const label =
-            card.conditionLabel ?? gachaConditionLabel(card.condition);
-          const next = nextConditionLabel(card.condition);
-          const order = ["POOR", "PLAYED", "EX", "NM", "MINT"];
-          return (
-            eligibility.foils.includes(card.foil) &&
-            eligibility.sourceConditions.includes(label) &&
-            !!next &&
-            order.indexOf(next) <= order.indexOf(eligibility.maxCondition) &&
-            config.item_condition_anchor[
-              next as keyof typeof config.item_condition_anchor
-            ] != null
-          );
-        })
+    eligibleResultKey === currentEligibleKey
+      ? eligibleCards.filter((card) =>
+          isCardEligibleForStone(card, selectedKind, config),
+        )
       : [];
+
   const selectedNext = selectedCard
     ? nextConditionLabel(selectedCard.condition)
     : null;
   const afterCondition = selectedNext
-    ? config.item_condition_anchor[
+    ? config.item_condition_anchor?.[
         selectedNext as keyof typeof config.item_condition_anchor
       ]
     : undefined;
@@ -745,319 +528,62 @@ export function GachaInventory() {
     selectedCard && afterCondition != null
       ? upgradedValue(selectedCard, afterCondition, inventory)
       : null;
-  const buyPrice = config.item_shop_price[selectedKind];
-  const convertValue = config.item_convert_value[selectedKind];
-  const buyReason =
-    buyPrice <= 0
-      ? "Este item não está disponível para compra."
-      : inventory.available < buyPrice * quantity
-        ? "Saldo de cristais insuficiente."
-        : "";
-  const convertReason =
-    inventory[stone.shards] < quantity
-      ? "Fragmentos insuficientes."
-      : convertValue <= 0
-        ? "Este fragmento não pode ser convertido."
-        : "";
-  const craftReason = !recipe
-    ? "Receita indisponível."
-    : inventory[stone.shards] < recipe * quantity
-      ? `São necessários ${recipe * quantity} fragmentos.`
-      : "";
-  const protectionPrice = config.item_shop_price.PROTECAO;
+
+  const protectionPrice = config.item_shop_price?.PROTECAO ?? 0;
   const protectionReason =
     protectionPrice <= 0
       ? "Proteção indisponível para compra."
       : inventory.available < protectionPrice * protectionQuantity
         ? "Saldo de cristais insuficiente."
         : "";
-  const shopEnabled = config.item_shop_enabled?.[selectedKind] ?? buyPrice > 0;
   const protectionShopEnabled =
     config.item_shop_enabled?.PROTECAO ?? protectionPrice > 0;
-  const dropAvailable = config.item_drop_available?.[selectedKind];
-  const validQuantity = Number.isSafeInteger(quantity) && quantity >= 1;
   const validProtectionQuantity =
     Number.isSafeInteger(protectionQuantity) && protectionQuantity >= 1;
-  const visibleEligibleCards = eligibleCardsForStone;
 
   return (
-    <main className="mx-auto max-w-shelf px-4 pb-16 pt-8">
-      <header className="mb-8">
-        <p className="font-mono text-caption uppercase tracking-[0.2em] text-ice">
-          Economia · Gacha
-        </p>
-        <h1 className="mt-2 font-display text-3xl text-snow sm:text-4xl">
-          Inventário
-        </h1>
-        <p className="mt-2 max-w-2xl text-body-sm text-mist">
-          Gerencie seus fragmentos, pedras e proteção. Melhore suas cartas sem
-          alterar o foil.
-        </p>
-      </header>
+    <main
+      id="body-content"
+      className="gacha-inventory-page mx-auto max-w-shelf px-4 pb-16 pt-8"
+    >
+      <GachaInventorySubnav active="inventory" stats={stats} />
 
-      <GachaEssences
-        inventory={inventory}
-        refresh={refreshInventory}
-        disabled={!!busy || reconcileNeeded}
-      />
-      <section
-        className="mb-8 border border-hairline bg-panel p-4 sm:p-6"
-        aria-labelledby="foil-gems-heading"
-      >
-        <h2 id="foil-gems-heading" className="font-display text-xl text-snow">
-          Fragmentos e gemas de foil
-        </h2>
-        <p className="mt-2 text-sm text-mist">
-          Cada gema exige 20 fragmentos do mesmo foil. A aplicação só funciona
-          em uma carta sua sem foil; foils existentes não podem ser trocados.
-        </p>
-        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {FOILS.map((entry) => (
-            <article key={entry.foil} className="border border-hairline p-4">
-              <h3 className="font-display text-snow">{entry.label}</h3>
-              <p className="mt-2 text-sm text-mist">
-                Fragmentos:{" "}
-                <strong className="font-mono text-snow">
-                  {inventory[entry.shards]}
-                </strong>
-              </p>
-              <p className="mt-1 text-sm text-mist">
-                Gemas:{" "}
-                <strong className="font-mono text-snow">
-                  {inventory[entry.gems]}
-                </strong>
-              </p>
-              <button
-                type="button"
-                onClick={async () => {
-                  if (busy || inventory[entry.shards] < 20) return;
-                  setBusy(`gem-craft:${entry.foil}`);
-                  setGemError("");
-                  setGemStatus("");
-                  const key = `gem-craft:${entry.foil}`;
-                  const { operationId, storageKey } = operationIdFor(key);
-                  try {
-                    const updated = await api.gachaEconomyCraftGem({
-                      foil: entry.foil,
-                      operationId,
-                    });
-                    clearOperation(key, storageKey);
-                    setInventory(updated);
-                    setGemStatus(
-                      `Gema ${entry.label} fabricada. Restam ${updated[entry.shards]} fragmentos e você tem ${updated[entry.gems]} ${updated[entry.gems] === 1 ? "gema" : "gemas"}.`,
-                    );
-                  } catch (cause) {
-                    if (
-                      cause instanceof ApiError &&
-                      cause.statusCode < 500 &&
-                      cause.statusCode !== 408
-                    )
-                      clearOperation(key, storageKey);
-                    setGemError(
-                      cause instanceof Error
-                        ? cause.message
-                        : "Não foi possível fabricar a gema.",
-                    );
-                  } finally {
-                    setBusy("");
-                  }
-                }}
-                disabled={!!busy || inventory[entry.shards] < 20}
-                className="btn-ice mt-4 min-h-11 w-full px-3 disabled:opacity-50"
-              >
-                {busy === `gem-craft:${entry.foil}`
-                  ? "Fabricando…"
-                  : "Fabricar gema · 20 fragmentos"}
-              </button>
-            </article>
-          ))}
-        </div>
-        <div className="mt-5 grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,2fr)_auto] sm:items-end">
-          <div>
-            <label htmlFor="gem-foil" className="block text-sm text-mist">
-              Gema
-            </label>
-            <select
-              id="gem-foil"
-              value={gemFoil}
-              disabled={!!busy}
-              onChange={(event) => {
-                setGemFoil(event.target.value as GachaFoil);
-                setGemCardId("");
-                setGemCard(null);
-              }}
-              className="mt-2 h-11 w-full border border-hairline bg-ink px-3 text-snow focus-visible:outline focus-visible:outline-2 focus-visible:outline-ice disabled:opacity-60"
-            >
-              {FOILS.map((entry) => (
-                <option key={entry.foil} value={entry.foil}>
-                  {entry.label} · {inventory[entry.gems]} disponível(is)
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label htmlFor="gem-card" className="block text-sm text-mist">
-              Carta própria sem foil
-            </label>
-            <select
-              id="gem-card"
-              value={gemCardId}
-              onChange={(event) => {
-                const selected =
-                  gemCards.find((card) => card.id === event.target.value) ??
-                  null;
-                setGemCard(selected);
-                setGemCardId(selected?.id ?? "");
-              }}
-              disabled={
-                !gemCards.length || !!busy || cardsResultKey !== currentCardsKey
-              }
-              className="mt-2 h-11 w-full border border-hairline bg-ink px-3 text-snow focus-visible:outline focus-visible:outline-2 focus-visible:outline-ice disabled:opacity-60"
-            >
-              <option value="">
-                {cardsResultKey !== currentCardsKey
-                  ? "Carregando cartas…"
-                  : gemCards.length
-                    ? "Selecione uma carta"
-                    : "Nenhuma carta sem foil"}
-              </option>
-              {gemCard && !gemCards.some((card) => card.id === gemCard.id) && (
-                <option value={gemCard.id}>
-                  {gemCard.card.name} · selecionada
-                </option>
-              )}
-              {gemCards.map((card) => (
-                <option key={card.id} value={card.id}>
-                  {card.card.name} ·{" "}
-                  {card.conditionLabel ?? gachaConditionLabel(card.condition)}
-                </option>
-              ))}
-            </select>
-          </div>
-          <button
-            type="button"
-            disabled={!gemCardId || inventory[gemType.gems] < 1 || !!busy}
-            onClick={async () => {
-              const target = gemCard?.id === gemCardId ? gemCard : null;
-              if (
-                !target ||
-                target.foil !== "NORMAL" ||
-                inventory[gemType.gems] < 1 ||
-                busy
-              )
-                return;
-              setBusy("gem-apply");
-              setGemError("");
-              setGemStatus("");
-              const key = `gem-apply:${gemFoil}:${target.id}`;
-              const { operationId, storageKey } = operationIdFor(key);
-              try {
-                const updatedCard = await api.gachaEconomyApplyGem({
-                  foil: gemFoil,
-                  userCardId: target.id,
-                  operationId,
-                });
-                clearOperation(key, storageKey);
-                setGemCardId("");
-                setGemCard(null);
-                setGemStatus(
-                  `Gema ${gemType.label} aplicada a ${target.card.name}. A carta agora tem foil ${updatedCard.foil} e valor de ${updatedCard.value.toLocaleString("pt-BR")} cristais.`,
-                );
-                try {
-                  await refresh();
-                } catch {
-                  setGemError(
-                    "Gema aplicada; não foi possível atualizar os saldos. Atualize a página para sincronizar o inventário.",
-                  );
-                }
-              } catch (cause) {
-                if (
-                  cause instanceof ApiError &&
-                  cause.statusCode < 500 &&
-                  cause.statusCode !== 408
-                )
-                  clearOperation(key, storageKey);
-                setGemError(
-                  cause instanceof Error
-                    ? cause.message
-                    : "Não foi possível aplicar a gema.",
-                );
-              } finally {
-                setBusy("");
-              }
-            }}
-            className="btn-ice min-h-11 px-4 disabled:opacity-50"
+      {pendingFragmentsOperation && (
+        <p
+          role="status"
+          className="mb-4 border border-ice/30 bg-panel p-3 text-body-sm text-mist"
+        >
+          Há uma operação de fragmentos pendente. Resolva-a antes de iniciar
+          outra ação.{" "}
+          <Link
+            className="font-medium text-ice underline"
+            href="/gacha/inventario/fragmentos"
           >
-            {busy === "gem-apply" ? "Aplicando…" : "Aplicar gema"}
-          </button>
-        </div>
-        <div className="mt-3 flex items-center justify-between gap-3 text-xs text-mist">
-          <span>
-            {gemCards.length} cartas sem foil · página {cardPage}/
-            {cardTotalPages}
-          </span>
-          <span className="flex gap-2">
-            <button
-              type="button"
-              className="btn-ghost min-h-11 px-3 disabled:opacity-50"
-              disabled={
-                cardPage <= 1 || !!busy || cardsResultKey !== currentCardsKey
-              }
-              onClick={() => {
-                setCards([]);
-                setCardPage((page) => Math.max(1, page - 1));
-              }}
-            >
-              Anterior
-            </button>
-            <button
-              type="button"
-              className="btn-ghost min-h-11 px-3 disabled:opacity-50"
-              disabled={
-                cardPage >= cardTotalPages ||
-                !!busy ||
-                cardsResultKey !== currentCardsKey
-              }
-              onClick={() => {
-                setCards([]);
-                setCardPage((page) => Math.min(cardTotalPages, page + 1));
-              }}
-            >
-              Próxima
-            </button>
-          </span>
-        </div>
-        <p className="mt-3 text-xs text-mist">
-          Cartas com foil não aceitam outra gema. O foil atual é permanente.
+            Abrir fragmentos
+          </Link>
         </p>
-        {cardsLoadError && (
-          <p role="alert" className="mt-3 text-sm text-signal">
-            Não foi possível atualizar estas cartas.{" "}
-            <button
-              type="button"
-              className="underline"
-              onClick={() => {
-                setCardsLoadError(false);
-                setEligibleLoadError(false);
-                setError("");
-                setCollectionRetry((retry) => retry + 1);
-              }}
-            >
-              Tentar novamente
-            </button>
-          </p>
-        )}
-        {gemStatus && (
-          <p role="status" aria-live="polite" className="mt-3 text-sm text-ice">
-            {gemStatus}
-          </p>
-        )}
-        {gemError && (
-          <p role="alert" className="mt-3 text-sm text-signal">
-            {gemError}
-          </p>
-        )}
-      </section>
+      )}
+
+      <header className="gacha-inventory-hero mb-8 p-5 sm:p-8">
+        <div className="flex flex-wrap items-end justify-between gap-5">
+          <div className="max-w-2xl">
+            <p className="shelf-label">Economia · Gacha</p>
+            <h1 className="font-display text-3xl text-snow sm:text-4xl">
+              Inventário
+            </h1>
+            <p className="mt-2.5 text-body-sm text-mist">
+              Acompanhe seus saldos, abra essências, proteja rerolls e melhore
+              suas cartas com pedras prontas sem alterar o foil.
+            </p>
+          </div>
+          <Link
+            href="/gacha/inventario/fragmentos"
+            className="btn-ice gacha-fragment-action min-h-11 px-5"
+          >
+            Gerenciar fragmentos
+          </Link>
+        </div>
+      </header>
 
       <section
         aria-label="Resumo dos saldos"
@@ -1077,15 +603,12 @@ export function GachaInventory() {
           { label: "Chaves", value: inventory.keys },
           { label: "Resets", value: inventory.spinResets },
           {
-            label: "Fragmentos",
-            value: STONES.reduce(
-              (sum, item) => sum + inventory[item.shards],
-              0,
-            ),
+            label: "Pedras prontas",
+            value: stats?.totalReadyStones ?? 0,
           },
           {
-            label: "Pedras prontas",
-            value: STONES.reduce((sum, item) => sum + inventory[item.items], 0),
+            label: "Gemas de foil",
+            value: stats?.totalFoilGems ?? 0,
           },
           { label: "Proteções", value: inventory.protecao },
         ].map(({ label, value, detail }) => (
@@ -1101,7 +624,79 @@ export function GachaInventory() {
         ))}
       </section>
 
+      <section
+        aria-labelledby="fragments-gateway-heading"
+        className="gacha-inventory-gateway mb-8 p-5 sm:p-6"
+      >
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+            <div className="flex shrink-0 items-center gap-2">
+              {GATEWAY_PREVIEWS.map((preview) => (
+                <div
+                  key={preview.key}
+                  className="gacha-fragment-art h-12 w-12"
+                  data-foil={preview.tone === "foil" ? preview.key : undefined}
+                  data-stone={
+                    preview.tone === "stone" ? preview.key : undefined
+                  }
+                >
+                  <Image
+                    src={preview.src}
+                    alt=""
+                    width={40}
+                    height={40}
+                    className="h-9 w-9 object-contain"
+                  />
+                </div>
+              ))}
+            </div>
+            <div>
+              <div className="flex flex-wrap items-center gap-2">
+                <h2
+                  id="fragments-gateway-heading"
+                  className="font-display text-xl text-snow"
+                >
+                  Oficina de Fragmentos
+                </h2>
+                {stats && stats.totalCraftable > 0 && (
+                  <span className="border border-ice/40 bg-ice/10 px-2 py-0.5 font-mono text-label text-ice">
+                    {stats.totalCraftable.toLocaleString("pt-BR")} pronto(s)
+                    para forjar
+                  </span>
+                )}
+              </div>
+              <p className="mt-1.5 text-body-sm text-mist">
+                Gerencie fragmentos e gemas de foil, converta excedentes em
+                cristais e fabrique pedras de melhoria na página exclusiva.
+              </p>
+              {stats && (
+                <p className="mt-2 font-mono text-caption tabular-nums text-snow">
+                  {stats.totalFoilFragments.toLocaleString("pt-BR")} fragmentos
+                  de foil · {stats.totalStoneFragments.toLocaleString("pt-BR")}{" "}
+                  fragmentos de pedras
+                </p>
+              )}
+            </div>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            <Link
+              href="/gacha/inventario/fragmentos"
+              className="btn-ice gacha-fragment-action min-h-11 px-5"
+            >
+              Abrir oficina de fragmentos
+            </Link>
+          </div>
+        </div>
+      </section>
+
       <nav aria-label="Atalhos do gacha" className="mb-6 flex flex-wrap gap-2">
+        <Link
+          className="btn-ghost inline-flex min-h-11 items-center px-4"
+          href="/gacha/inventario/fragmentos"
+        >
+          Fragmentos e gemas
+        </Link>
         <Link
           className="btn-ghost inline-flex min-h-11 items-center px-4"
           href="/gacha/loja"
@@ -1116,26 +711,45 @@ export function GachaInventory() {
         </Link>
       </nav>
 
-      <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-3">
+      <GachaEssences
+        inventory={inventory}
+        refresh={refreshInventory}
+        disabled={!!busy || reconcileNeeded || pendingFragmentsOperation}
+      />
+
+      <div className="mt-8 grid gap-6 lg:grid-cols-[1.35fr_1fr]">
         <section
-          className="border border-hairline bg-panel p-4 sm:p-6"
-          aria-labelledby="stone-heading"
+          id="melhorar-carta"
+          className="scroll-mt-6 border border-hairline bg-panel p-4 sm:p-6"
+          aria-labelledby="upgrade-heading"
         >
-          <h2 id="stone-heading" className="font-display text-xl text-snow">
-            Pedras e fragmentos
-          </h2>
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <p className="font-mono text-caption uppercase tracking-[0.16em] text-ice">
+                Aprimoramento
+              </p>
+              <h2
+                id="upgrade-heading"
+                className="mt-1 font-display text-xl text-snow"
+              >
+                Melhorar uma carta
+              </h2>
+            </div>
+            <Link
+              href="/gacha/inventario/fragmentos#pedras"
+              className="inline-flex min-h-11 items-center text-caption text-ice underline underline-offset-4"
+            >
+              Forjar mais pedras →
+            </Link>
+          </div>
           <p className="mt-2 text-sm text-mist">
-            Escolha uma pedra para ver o progresso da receita e as ações
-            disponíveis.
+            Escolha uma pedra pronta e aplique em uma carta elegível.
+            Elegibilidade calculada pelas regras atuais da economia.
           </p>
+
           <div className="mt-4 grid gap-2 sm:grid-cols-2">
-            {STONES.map((item) => {
-              const current = inventory[item.shards];
-              const needed = config.item_recipes[item.kind] ?? 0;
-              const progress =
-                needed > 0
-                  ? Math.min(100, Math.floor((current / needed) * 100))
-                  : 0;
+            {STONE_FRAGMENTS.map((item) => {
+              const readyCount = inventory[item.items];
               return (
                 <button
                   key={item.kind}
@@ -1151,317 +765,45 @@ export function GachaInventory() {
                     setSelectedCard(null);
                     setStatus("");
                   }}
-                  className={`min-h-11 border p-3 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-ice disabled:opacity-60 ${selectedKind === item.kind ? "border-ice bg-ice/10" : "border-hairline bg-ink hover:border-ice/50"}`}
+                  className={`gacha-fragment-stone-btn flex min-h-11 items-center justify-between gap-2 border p-3 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-ice disabled:opacity-60 ${
+                    selectedKind === item.kind
+                      ? "border-ice bg-ice/10"
+                      : "border-hairline bg-ink hover:border-ice/50"
+                  }`}
                 >
-                  <span className="flex items-center justify-between gap-2 font-display text-sm text-snow">
-                    <span className="flex items-center gap-1.5">
-                      {SHARD_ICONS[item.kind] && (
-                        <BonusShardIcon kind={item.kind} className="h-4 w-4" />
-                      )}
-                      {item.label}
-                    </span>
-                    <span className="font-mono text-xs tabular-nums text-ice">
-                      {inventory[item.items]}
-                    </span>
+                  <span className="flex items-center gap-2 font-display text-sm text-snow">
+                    {SHARD_ICONS[item.kind] && (
+                      <BonusShardIcon kind={item.kind} className="h-5 w-5" />
+                    )}
+                    {item.label}
                   </span>
-                  <span className="mt-2 block text-xs text-mist">
-                    {current} / {needed} fragmentos · {inventory[item.items]}{" "}
-                    prontas
-                  </span>
-                  <span
-                    role="progressbar"
-                    aria-label={`Progresso de fabricação de ${item.label}`}
-                    aria-valuemin={0}
-                    aria-valuemax={100}
-                    aria-valuenow={progress}
-                    className="mt-2 block h-1.5 overflow-hidden bg-hairline"
-                  >
-                    <span
-                      className="block h-full bg-ice"
-                      style={{ width: `${progress}%` }}
-                    />
+                  <span className="font-mono text-xs tabular-nums text-ice">
+                    {readyCount} prontas
                   </span>
                 </button>
               );
             })}
           </div>
-          <dl className="mt-5 grid grid-cols-2 gap-3 text-sm">
-            <div className="border border-hairline p-3">
-              <dt className="text-mist">Fragmentos</dt>
-              <dd className="mt-1 font-mono text-lg text-snow">
-                {fragmentCount(inventory, stone)}
-              </dd>
-            </div>
-            <div className="border border-hairline p-3">
-              <dt className="text-mist">Pedras prontas</dt>
-              <dd className="mt-1 font-mono text-lg text-snow">
-                {craftedCount(inventory, stone)}
-              </dd>
-            </div>
-          </dl>
+
           <label
             className="mt-5 block text-sm text-mist"
-            htmlFor="item-quantity"
-          >
-            Quantidade
-          </label>
-          <input
-            id="item-quantity"
-            type="number"
-            min={1}
-            max={2_147_483_647}
-            step={1}
-            disabled={!!pendingRetry || !!pendingUseRetry}
-            value={quantity}
-            onChange={(event) =>
-              setQuantity(
-                Math.min(
-                  2_147_483_647,
-                  Math.max(1, Number(event.target.value) || 1),
-                ),
-              )
-            }
-            className="mt-2 h-11 w-full border border-hairline bg-ink px-3 font-mono text-snow focus-visible:outline focus-visible:outline-2 focus-visible:outline-ice disabled:opacity-60"
-          />
-          <div
-            className={`mt-4 grid gap-3 ${shopEnabled ? "sm:grid-cols-3" : "sm:grid-cols-2"}`}
-          >
-            {shopEnabled && (
-              <div>
-                <button
-                  type="button"
-                  onClick={() => void runItemOperation("buy")}
-                  disabled={
-                    !validQuantity ||
-                    !!busy ||
-                    !!buyReason ||
-                    reconcileNeeded ||
-                    !!pendingRetry ||
-                    !!pendingUseRetry
-                  }
-                  className="btn-ghost min-h-11 w-full px-3 disabled:opacity-50"
-                >
-                  Comprar fragmentos
-                </button>
-                <p className="mt-1 min-h-10 text-xs text-mist">
-                  {buyReason ||
-                    `${(buyPrice * quantity).toLocaleString("pt-BR")} cristais · ${buyPrice.toLocaleString("pt-BR")} cada`}
-                </p>
-              </div>
-            )}
-            <div>
-              <button
-                type="button"
-                onClick={() => void runItemOperation("convert")}
-                disabled={
-                  !validQuantity ||
-                  !!busy ||
-                  !!convertReason ||
-                  reconcileNeeded ||
-                  !!pendingRetry ||
-                  !!pendingUseRetry
-                }
-                className="btn-ghost min-h-11 w-full px-3 disabled:opacity-50"
-              >
-                Converter
-              </button>
-              <p className="mt-1 min-h-10 text-xs text-mist">
-                {convertReason ||
-                  `Recebe ${(convertValue * quantity).toLocaleString("pt-BR")} cristais`}
-              </p>
-            </div>
-            <div>
-              <button
-                type="button"
-                onClick={() => void runItemOperation("craft")}
-                disabled={
-                  !validQuantity ||
-                  !!busy ||
-                  !!craftReason ||
-                  reconcileNeeded ||
-                  !!pendingRetry ||
-                  !!pendingUseRetry
-                }
-                className="btn-ice min-h-11 w-full px-3 disabled:opacity-50"
-              >
-                {busy === `craft:${selectedKind}:${quantity}`
-                  ? "Fabricando…"
-                  : "Fabricar pedra"}
-              </button>
-              <p className="mt-1 min-h-10 text-xs text-mist">
-                {craftReason ||
-                  `Consome ${(recipe ?? 0) * quantity} fragmentos`}
-              </p>
-            </div>
-          </div>
-          {dropAvailable === true ? (
-            <p className="mt-3 text-xs text-ice">
-              {shopEnabled
-                ? "Fonte ativa:"
-                : "Compra direta pausada no piloto. Fonte ativa:"}{" "}
-              caixas de gacha.{" "}
-              <Link
-                href="/gacha/loja#box-odds"
-                className="underline underline-offset-4"
-              >
-                Ver chances
-              </Link>
-            </p>
-          ) : dropAvailable === false ? (
-            <p className="mt-3 text-xs text-mist">
-              Nenhuma caixa ativa concede este item.
-              {shopEnabled
-                ? ""
-                : " A compra está pausada até existir uma fonte ativa."}
-            </p>
-          ) : (
-            <p className="mt-3 text-xs text-mist">
-              Fonte em loot boxes indisponível para consulta.
-            </p>
-          )}
-        </section>
-
-        <section
-          className="border border-hairline bg-panel p-4 sm:p-6"
-          aria-labelledby="protection-heading"
-        >
-          <p className="font-mono text-caption uppercase tracking-[0.16em] text-ice">
-            Consumível
-          </p>
-          <h2
-            id="protection-heading"
-            className="mt-2 font-display text-xl text-snow"
-          >
-            Proteção de reroll
-          </h2>
-          <p className="mt-2 text-sm text-mist">
-            Usada ao refazer a condition de uma carta. Não pode ser fabricada
-            nem convertida.
-          </p>
-          <p className="mt-5 border border-hairline p-4 text-sm text-mist">
-            No inventário:{" "}
-            <strong className="font-mono text-lg text-snow">
-              {inventory.protecao}
-            </strong>
-          </p>
-          {config.item_drop_available?.PROTECAO === true ? (
-            <p className="mt-4 text-sm text-ice">
-              Disponível em loot boxes durante o piloto.
-            </p>
-          ) : config.item_drop_available?.PROTECAO === false ? (
-            <p className="mt-4 text-sm text-mist">
-              Nenhuma loot box ativa concede proteção agora.
-            </p>
-          ) : (
-            <p className="mt-4 text-sm text-mist">
-              Fonte em loot boxes indisponível para consulta.
-            </p>
-          )}
-          <p className="mt-1 text-xs text-mist">
-            <Link
-              href="/gacha/loja#box-odds"
-              className="text-ice underline underline-offset-4"
-            >
-              Ver probabilidades das caixas
-            </Link>
-          </p>
-          {protectionShopEnabled ? (
-            <div className="mt-5 border-t border-hairline pt-4">
-              <label
-                htmlFor="protection-quantity"
-                className="block text-sm text-mist"
-              >
-                Quantidade
-              </label>
-              <input
-                id="protection-quantity"
-                type="number"
-                min={1}
-                max={2_147_483_647}
-                step={1}
-                disabled={!!pendingRetry || !!pendingUseRetry}
-                value={protectionQuantity}
-                onChange={(event) =>
-                  setProtectionQuantity(
-                    Math.min(
-                      2_147_483_647,
-                      Math.max(1, Number(event.target.value) || 1),
-                    ),
-                  )
-                }
-                className="mt-2 h-11 w-full border border-hairline bg-ink px-3 font-mono text-snow focus-visible:outline focus-visible:outline-2 focus-visible:outline-ice disabled:opacity-60"
-              />
-              <button
-                type="button"
-                onClick={() =>
-                  void runItemOperation("buy", "PROTECAO", protectionQuantity)
-                }
-                disabled={
-                  !validProtectionQuantity ||
-                  !!busy ||
-                  !!protectionReason ||
-                  reconcileNeeded ||
-                  !!pendingRetry ||
-                  !!pendingUseRetry
-                }
-                className="btn-ghost mt-3 min-h-11 w-full px-3 disabled:opacity-50"
-              >
-                Comprar proteção
-              </button>
-              <p className="mt-1 text-xs text-mist">
-                {protectionReason ||
-                  `${(protectionPrice * protectionQuantity).toLocaleString("pt-BR")} cristais · ${protectionPrice.toLocaleString("pt-BR")} cada`}
-              </p>
-            </div>
-          ) : config.item_drop_available?.PROTECAO === true ? (
-            <p className="mt-5 border-t border-hairline pt-4 text-sm text-mist">
-              Compra direta pausada no piloto. Obtenha proteção em uma loot box.
-            </p>
-          ) : (
-            <p className="mt-5 border-t border-hairline pt-4 text-sm text-signal">
-              Compra direta pausada e nenhuma fonte ativa em loot boxes. A
-              equipe precisa restaurar uma fonte antes de continuar.
-            </p>
-          )}
-          <Link
-            href="/gacha/cartas"
-            className="mt-5 inline-flex min-h-11 items-center text-sm text-ice underline underline-offset-4"
-          >
-            Escolher carta para reroll
-          </Link>
-        </section>
-
-        <section
-          className="border border-hairline bg-panel p-4 sm:p-6"
-          aria-labelledby="upgrade-heading"
-        >
-          <h2 id="upgrade-heading" className="font-display text-xl text-snow">
-            Melhorar uma carta
-          </h2>
-          <p className="mt-2 text-sm text-mist">
-            Elegibilidade calculada pelas regras atuais da economia.
-          </p>
-          <label
-            className="mt-4 block text-sm text-mist"
             htmlFor="eligible-card"
           >
             Carta elegível para {stone.label}
           </label>
-          <input
+          <SearchField
             id="eligible-card-search"
             name="cardSearch"
-            type="search"
             autoComplete="off"
             spellCheck={false}
             value={cardSearch}
             onChange={(event) => {
               setCardSearch(event.target.value);
-              setCardPage(1);
               setEligiblePage(1);
             }}
             placeholder="Buscar por carta ou anime"
             aria-label="Buscar cartas"
-            className="mt-2 h-11 w-full border border-hairline bg-ink px-3 text-snow placeholder:text-mist focus-visible:outline focus-visible:outline-2 focus-visible:outline-ice"
+            containerClassName="mt-2"
           />
           <select
             id="eligible-card"
@@ -1480,14 +822,14 @@ export function GachaInventory() {
           >
             <option value="">Selecione uma carta</option>
             {selectedCard &&
-              !visibleEligibleCards.some(
+              !eligibleCardsForStone.some(
                 (card) => card.id === selectedCard.id,
               ) && (
                 <option value={selectedCard.id}>
                   {selectedCard.card.name} · selecionada
                 </option>
               )}
-            {visibleEligibleCards.map((card) => (
+            {eligibleCardsForStone.map((card) => (
               <option key={card.id} value={card.id}>
                 {card.card.name} ·{" "}
                 {card.conditionLabel ?? gachaConditionLabel(card.condition)} ·{" "}
@@ -1495,6 +837,7 @@ export function GachaInventory() {
               </option>
             ))}
           </select>
+
           {eligibleResultKey !== currentEligibleKey ? (
             <p
               role="status"
@@ -1503,19 +846,18 @@ export function GachaInventory() {
             >
               Carregando cartas elegíveis…
             </p>
-          ) : eligibleCardsForStone.length === 0 ? (
-            <p className="mt-3 text-sm text-mist">
-              Nenhuma carta elegível para esta pedra.
-            </p>
           ) : (
-            visibleEligibleCards.length === 0 && (
+            eligibleCardsForStone.length === 0 && (
               <p className="mt-3 text-sm text-mist">
-                Nenhuma carta corresponde à busca.
+                {cardSearch.trim()
+                  ? "Nenhuma carta elegível corresponde à busca."
+                  : "Nenhuma carta elegível para esta pedra."}
               </p>
             )
           )}
+
           <div className="mt-3 flex items-center justify-between gap-3 text-xs text-mist">
-            <span>
+            <span className="tabular-nums">
               {eligibleCardsForStone.length} cartas elegíveis · página{" "}
               {eligiblePage}/{eligibleTotalPages}
             </span>
@@ -1554,6 +896,7 @@ export function GachaInventory() {
               </button>
             </span>
           </div>
+
           {eligibleLoadError && (
             <p role="alert" className="mt-3 text-sm text-signal">
               Não foi possível atualizar as cartas elegíveis.{" "}
@@ -1561,7 +904,6 @@ export function GachaInventory() {
                 type="button"
                 className="underline"
                 onClick={() => {
-                  setCardsLoadError(false);
                   setEligibleLoadError(false);
                   setError("");
                   setCollectionRetry((retry) => retry + 1);
@@ -1571,8 +913,9 @@ export function GachaInventory() {
               </button>
             </p>
           )}
+
           {selectedCard && (
-            <div className="mt-4 border border-hairline p-4">
+            <div className="mt-4 border border-hairline bg-ink p-4">
               <p className="font-display text-snow">{selectedCard.card.name}</p>
               <p className="mt-2 text-sm text-mist">
                 Condição:{" "}
@@ -1581,14 +924,22 @@ export function GachaInventory() {
                 → {selectedNext ?? "—"}
               </p>
               <p className="mt-1 text-sm text-mist">
-                Valor: {selectedCard.value.toLocaleString("pt-BR")} →{" "}
-                {afterValue?.toLocaleString("pt-BR") ?? "indisponível"} cristais
+                Valor:{" "}
+                <span className="font-mono tabular-nums text-snow">
+                  {selectedCard.value.toLocaleString("pt-BR")}
+                </span>{" "}
+                →{" "}
+                <span className="font-mono tabular-nums text-ice">
+                  {afterValue?.toLocaleString("pt-BR") ?? "indisponível"}
+                </span>{" "}
+                cristais
               </p>
               <p className="mt-1 text-sm text-mist">
                 Foil mantido: {selectedCard.foil}
               </p>
             </div>
           )}
+
           <button
             type="button"
             disabled={
@@ -1597,26 +948,149 @@ export function GachaInventory() {
               !!busy ||
               afterValue == null ||
               reconcileNeeded ||
-              !!pendingRetry
+              (pendingFragmentsOperation && !pendingUseRetry) ||
+              !!pendingProtectionRetry
             }
             onClick={() => setStatus("confirm-upgrade")}
-            className="btn-ice mt-4 min-h-11 w-full px-4 disabled:opacity-50"
+            className="btn-ice gacha-fragment-action mt-4 min-h-11 w-full px-4 disabled:opacity-50"
           >
             Usar pedra
           </button>
+
           {!inventory[stone.items] && (
-            <p className="mt-2 text-sm text-mist">
-              Fabrique ou obtenha uma pedra antes de melhorar uma carta.
-            </p>
+            <div className="mt-2 text-sm text-mist">
+              <p>Fabrique ou obtenha uma pedra antes de melhorar uma carta.</p>
+              <Link
+                href="/gacha/inventario/fragmentos#pedras"
+                className="mt-1 inline-flex min-h-11 items-center text-ice underline underline-offset-4"
+              >
+                Forjar pedras com fragmentos
+              </Link>
+            </div>
           )}
-          <a
+
+          <Link
             href="/gacha/cartas"
-            className="mt-4 inline-flex min-h-11 items-center text-sm text-ice underline underline-offset-4"
+            className="mt-3 inline-flex min-h-11 items-center text-sm text-ice underline underline-offset-4"
           >
             Ver coleção completa
-          </a>
+          </Link>
+        </section>
+
+        <section
+          className="border border-hairline bg-panel p-4 sm:p-6"
+          aria-labelledby="protection-heading"
+        >
+          <p className="font-mono text-caption uppercase tracking-[0.16em] text-ice">
+            Consumível
+          </p>
+          <h2
+            id="protection-heading"
+            className="mt-2 font-display text-xl text-snow"
+          >
+            Proteção de reroll
+          </h2>
+          <p className="mt-2 text-sm text-mist">
+            Usada ao refazer a condition de uma carta. Não pode ser fabricada
+            nem convertida.
+          </p>
+          <p className="mt-5 border border-hairline bg-ink p-4 text-sm text-mist">
+            No inventário:{" "}
+            <strong className="font-mono text-lg tabular-nums text-snow">
+              {inventory.protecao}
+            </strong>
+          </p>
+          {config.item_drop_available?.PROTECAO === true ? (
+            <p className="mt-4 text-sm text-ice">
+              Disponível em loot boxes durante o piloto.
+            </p>
+          ) : config.item_drop_available?.PROTECAO === false ? (
+            <p className="mt-4 text-sm text-mist">
+              Nenhuma loot box ativa concede proteção agora.
+            </p>
+          ) : (
+            <p className="mt-4 text-sm text-mist">
+              Fonte em loot boxes indisponível para consulta.
+            </p>
+          )}
+          <p className="mt-1 text-xs text-mist">
+            <Link
+              href="/gacha/loja#box-odds"
+              className="text-ice underline underline-offset-4"
+            >
+              Ver probabilidades das caixas
+            </Link>
+          </p>
+          {protectionShopEnabled ? (
+            <div className="mt-5 border-t border-hairline pt-4">
+              <label
+                htmlFor="protection-quantity"
+                className="block text-sm text-mist"
+              >
+                Quantidade
+              </label>
+              <input
+                id="protection-quantity"
+                type="number"
+                min={1}
+                max={2_147_483_647}
+                step={1}
+                disabled={
+                  !!pendingProtectionRetry ||
+                  !!pendingUseRetry ||
+                  (pendingFragmentsOperation && !pendingProtectionRetry)
+                }
+                value={protectionQuantity}
+                onChange={(event) =>
+                  setProtectionQuantity(
+                    Math.min(
+                      2_147_483_647,
+                      Math.max(1, Number(event.target.value) || 1),
+                    ),
+                  )
+                }
+                className="mt-2 h-11 w-full border border-hairline bg-ink px-3 font-mono tabular-nums text-snow focus-visible:outline focus-visible:outline-2 focus-visible:outline-ice disabled:opacity-60"
+              />
+              <button
+                type="button"
+                onClick={() => void buyProtection(protectionQuantity)}
+                disabled={
+                  !validProtectionQuantity ||
+                  !!busy ||
+                  !!protectionReason ||
+                  reconcileNeeded ||
+                  !!pendingProtectionRetry ||
+                  !!pendingUseRetry ||
+                  (pendingFragmentsOperation && !pendingProtectionRetry)
+                }
+                className="btn-ghost gacha-fragment-action mt-3 min-h-11 w-full px-3 disabled:opacity-50"
+              >
+                Comprar proteção
+              </button>
+              <p className="mt-1 text-xs text-mist">
+                {protectionReason ||
+                  `${(protectionPrice * protectionQuantity).toLocaleString("pt-BR")} cristais · ${protectionPrice.toLocaleString("pt-BR")} cada`}
+              </p>
+            </div>
+          ) : config.item_drop_available?.PROTECAO === true ? (
+            <p className="mt-5 border-t border-hairline pt-4 text-sm text-mist">
+              Compra direta pausada no piloto. Obtenha proteção em uma loot box.
+            </p>
+          ) : (
+            <p className="mt-5 border-t border-hairline pt-4 text-sm text-signal">
+              Compra direta pausada e nenhuma fonte ativa em loot boxes. A
+              equipe precisa restaurar uma fonte antes de continuar.
+            </p>
+          )}
+          <Link
+            href="/gacha/cartas"
+            className="mt-5 inline-flex min-h-11 items-center text-sm text-ice underline underline-offset-4"
+          >
+            Escolher carta para reroll
+          </Link>
         </section>
       </div>
+
       <p
         role="status"
         aria-live="polite"
@@ -1650,16 +1124,10 @@ export function GachaInventory() {
           Atualizar saldos e coleção
         </button>
       )}
-      {pendingRetry && (
+      {pendingProtectionRetry && (
         <button
           type="button"
-          onClick={() =>
-            void runItemOperation(
-              pendingRetry.operation,
-              pendingRetry.kind,
-              pendingRetry.quantity,
-            )
-          }
+          onClick={() => void buyProtection(pendingProtectionRetry.quantity)}
           disabled={!!busy || reconcileNeeded || !!pendingUseRetry}
           className="btn-ghost mt-3 min-h-11 px-4 disabled:opacity-50"
         >
@@ -1694,17 +1162,6 @@ export function GachaInventory() {
         >
           Repetir a mesma melhoria com segurança
         </button>
-      )}
-      {busy.startsWith("craft:") && (
-        <GachaStoneForge
-          result={forge?.result}
-          canDismiss={forge?.canDismiss}
-          onDismiss={() => {
-            setForge(null);
-            setBusy("");
-            busyRef.current = false;
-          }}
-        />
       )}
     </main>
   );

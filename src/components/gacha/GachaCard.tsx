@@ -7,15 +7,10 @@ import { CosmeticSvg } from "@/components/gacha/CosmeticSvg";
 import { BonusShardIcon } from "@/components/gacha/BonusShardIcon";
 import { cosmeticTypeOf } from "@/lib/cosmetic-svg";
 import { HoloTilt } from "@/components/core/HoloTilt";
+import { gachaConditionLabel } from "@/lib/gacha-inventory";
 import type { GachaPull } from "@/types";
 
-export function gachaConditionLabel(condition: number): string {
-  if (condition <= 0.07) return "MINT";
-  if (condition <= 0.15) return "NM";
-  if (condition <= 0.38) return "EX";
-  if (condition <= 0.55) return "PLAYED";
-  return "POOR";
-}
+export { gachaConditionLabel };
 
 interface RarityStyle {
   text: string;
