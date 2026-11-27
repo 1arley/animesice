@@ -102,12 +102,12 @@ export function GachaStoneForge({
         event.preventDefault();
         if (result && complete && canDismiss) onDismiss();
       }}
-      className="fixed inset-0 z-[100] m-0 grid max-h-none max-w-none place-items-center overflow-y-auto border-0 bg-[#050a0d]/95 p-3 text-snow backdrop:bg-transparent backdrop:backdrop-blur-sm sm:p-6"
+      className="fixed inset-0 z-[100] m-0 grid max-h-none max-w-none place-items-center overflow-y-auto border-0 bg-[#050a0d]/95 p-0 text-snow backdrop:bg-transparent backdrop:backdrop-blur-sm"
       aria-labelledby="stone-forge-title"
       aria-describedby="stone-forge-status"
     >
       <section
-        className="relative isolate flex min-h-[min(82dvh,42rem)] w-full max-w-3xl flex-col items-center justify-end overflow-hidden border border-ice/30 px-5 pb-8 pt-12 shadow-[0_0_70px_rgba(46,242,173,0.12)] sm:px-10"
+        className="relative isolate flex min-h-[88dvh] w-full max-w-6xl flex-col items-center justify-end overflow-hidden border border-ice/30 px-5 pb-8 pt-12 shadow-[0_0_70px_rgba(46,242,173,0.12)] sm:min-h-[90dvh] sm:px-10"
         style={{ backgroundColor: variant.atmosphere }}
       >
         <div ref={sceneRef} className="absolute inset-0 -z-10" aria-hidden="true" />
