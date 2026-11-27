@@ -103,11 +103,9 @@ export default function RootLayout({
       <head>
         <Script
           id="monetag-loader"
+          src="https://al5sm.com/tag.min.js"
+          data-zone="12367722"
           strategy="beforeInteractive"
-          dangerouslySetInnerHTML={{
-            __html:
-              "(function(s){s.dataset.zone='12367722',s.src='https://al5sm.com/tag.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script'))) ",
-          }}
         />
         {/* Preconnect hints no <head>: abre handshake TCP+TLS cedo sem
             baixar nada. Só origens efetivamente requisitadas no load
