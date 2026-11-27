@@ -1631,12 +1631,16 @@ export const api = {
       body: JSON.stringify(body),
     }),
   gachaEconomyInventory: () => request<GachaEconomyInventory>("/gacha/economy"),
-  gachaEconomyCraftGem: (body: { foil: GachaFoil }) =>
+  gachaEconomyCraftGem: (body: { foil: GachaFoil; operationId: string }) =>
     request<GachaEconomyInventory>("/gacha/economy/gems/craft", {
       method: "POST",
       body: JSON.stringify(body),
     }),
-  gachaEconomyApplyGem: (body: { foil: GachaFoil; userCardId: string }) =>
+  gachaEconomyApplyGem: (body: {
+    foil: GachaFoil;
+    userCardId: string;
+    operationId: string;
+  }) =>
     request<GachaPullResponse>("/gacha/economy/gems/apply", {
       method: "POST",
       body: JSON.stringify(body),

@@ -18,7 +18,11 @@ import {
   GachaPriceTag,
 } from "@/components/gacha/cards";
 import { BoxReveal, BOX_LABEL } from "@/components/gacha/BoxReveal";
-import { boxRewardLabel, ITEM_KIND_LABEL } from "@/lib/gacha-box-reward";
+import {
+  boxRewardLabel,
+  isValidBoxRewardPayload,
+  ITEM_KIND_LABEL,
+} from "@/lib/gacha-box-reward";
 import { Modal } from "@/components/common/Modal";
 import { KeyVault } from "@/components/gacha/KeyVault";
 import { SearchField } from "@/components/ui/SearchField";
@@ -258,7 +262,17 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
     inventory: GachaEconomyInventory;
   } | null>(null);
   const openingRequest = useRef(false);
+  const buyAndOpenLockRef = useRef(false);
+  const mountedRef = useRef(true);
   const revealSeq = useRef(0);
+  const refreshSeq = useRef(0);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
   const [orderTarget, setOrderTarget] =
     useState<GachaEconomyListingItem | null>(null);
   const [orderPrice, setOrderPrice] = useState("");
@@ -315,6 +329,7 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
 
   const refresh = useCallback(async () => {
     if (!user) return null;
+    const request = ++refreshSeq.current;
     try {
       // Carteira e conteúdo da aba são independentes: em paralelo a página
       // pinta com uma ida ao servidor em vez de duas em série.
@@ -322,6 +337,7 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
         api.gachaEconomyInventory(),
         mode === "shop" ? api.gachaEconomyShop() : Promise.resolve(null),
       ]);
+      if (!mountedRef.current || request !== refreshSeq.current) return null;
       setInventory(wallet);
       if (mode === "shop" && shopOffers) {
         setOffers(shopOffers);
@@ -333,6 +349,7 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
           api.gachaEconomyMission(),
           api.gachaEconomyOwnedSkins(),
         ]);
+        if (!mountedRef.current || request !== refreshSeq.current) return null;
         setMine(
           [
             ...myListings.items,
@@ -349,6 +366,7 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
       }
       return wallet;
     } catch (cause) {
+      if (!mountedRef.current || request !== refreshSeq.current) return null;
       setError(
         cause instanceof ApiError
           ? cause.message
@@ -502,8 +520,16 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
   }
 
   async function openBox(tier: GachaBoxTier) {
-    if (openingRequest.current || busy !== null) return;
+    if (
+      !mountedRef.current ||
+      openingRequest.current ||
+      buyAndOpenLockRef.current ||
+      busy !== null
+    ) {
+      return;
+    }
     openingRequest.current = true;
+    refreshSeq.current += 1;
     setBusy(`open-${tier}`);
     setError("");
     const seq = ++revealSeq.current;
@@ -516,24 +542,40 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
     });
     try {
       const result = await api.gachaEconomyOpenBox(tier);
-      setOpenedBox(
-        (current) => current && { ...current, reward: result.reward },
+      if (!isValidBoxRewardPayload(result?.reward)) {
+        throw new ApiError(
+          502,
+          "Resposta inválida do servidor ao confirmar a abertura.",
+        );
+      }
+      if (!mountedRef.current) return;
+      setOpenedBox((current) =>
+        current && current.seq === seq
+          ? { ...current, reward: result.reward }
+          : current,
       );
       // Refresh is independent of the reveal and cannot turn a granted prize into an error.
       void refresh().then((updatedInventory) => {
-        if (updatedInventory) {
+        if (
+          mountedRef.current &&
+          seq === revealSeq.current &&
+          updatedInventory
+        ) {
           setRefreshedBoxInventory({ seq, inventory: updatedInventory });
         }
       });
     } catch (cause) {
+      if (!mountedRef.current) return;
       const message =
         cause instanceof ApiError
           ? cause.message
           : "Não foi possível confirmar a abertura.";
-      setOpenedBox((current) => current && { ...current, error: message });
+      setOpenedBox((current) =>
+        current && current.seq === seq ? { ...current, error: message } : current,
+      );
     } finally {
       openingRequest.current = false;
-      setBusy(null);
+      if (mountedRef.current) setBusy(null);
     }
   }
 
@@ -543,22 +585,42 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
     needBox: boolean,
     needKey: boolean,
   ) {
-    if (openingRequest.current || busy !== null) return;
     if (
-      needBox &&
-      !(await act(
-        `buy-${tier}`,
-        () => api.gachaEconomyBuyBox(tier),
-        `${BOX_LABEL[tier]} comprada.`,
-      ))
-    )
+      !mountedRef.current ||
+      openingRequest.current ||
+      buyAndOpenLockRef.current ||
+      busy !== null
+    ) {
       return;
-    if (
-      needKey &&
-      !(await act("key", api.gachaEconomyBuyKey, "Chave comprada."))
-    )
-      return;
-    await openBox(tier);
+    }
+    buyAndOpenLockRef.current = true;
+    let readyToOpen = false;
+    try {
+      if (
+        needBox &&
+        !(await act(
+          `buy-${tier}`,
+          () => api.gachaEconomyBuyBox(tier),
+          `${BOX_LABEL[tier]} comprada.`,
+        ))
+      ) {
+        return;
+      }
+      if (!mountedRef.current) return;
+      if (
+        needKey &&
+        !(await act("key", api.gachaEconomyBuyKey, "Chave comprada."))
+      ) {
+        return;
+      }
+      if (!mountedRef.current) return;
+      readyToOpen = true;
+    } finally {
+      buyAndOpenLockRef.current = false;
+    }
+    if (readyToOpen && mountedRef.current) {
+      await openBox(tier);
+    }
   }
 
   async function createOrder(event: React.FormEvent<HTMLFormElement>) {
@@ -1045,12 +1107,12 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
                     tier === "PREMIUM"
                       ? "text-amber-300"
                       : tier === "RARE"
-                        ? "text-ice"
+                        ? "text-violet-300"
                         : "text-mist";
                   return (
                     <article
                       key={tier}
-                      className={`market-box border ${tier === "PREMIUM" ? "border-amber-300/30" : tier === "RARE" ? "border-ice/25" : "border-hairline"} bg-panel p-5 ${busy === `open-${tier}` ? "market-box-opening" : ""}`}
+                      className={`market-box border ${tier === "PREMIUM" ? "border-amber-300/30" : tier === "RARE" ? "border-violet-400/35" : "border-hairline"} bg-panel p-5 ${busy === `open-${tier}` ? "market-box-opening" : ""}`}
                     >
                       <div className="shop-box-art" data-tier={tier}>
                         <Image

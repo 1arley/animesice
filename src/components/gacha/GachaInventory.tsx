@@ -808,15 +808,25 @@ export function GachaInventory() {
                   setBusy(`gem-craft:${entry.foil}`);
                   setGemError("");
                   setGemStatus("");
+                  const key = `gem-craft:${entry.foil}`;
+                  const { operationId, storageKey } = operationIdFor(key);
                   try {
                     const updated = await api.gachaEconomyCraftGem({
                       foil: entry.foil,
+                      operationId,
                     });
+                    clearOperation(key, storageKey);
                     setInventory(updated);
                     setGemStatus(
                       `Gema ${entry.label} fabricada. Restam ${updated[entry.shards]} fragmentos e você tem ${updated[entry.gems]} ${updated[entry.gems] === 1 ? "gema" : "gemas"}.`,
                     );
                   } catch (cause) {
+                    if (
+                      cause instanceof ApiError &&
+                      cause.statusCode < 500 &&
+                      cause.statusCode !== 408
+                    )
+                      clearOperation(key, storageKey);
                     setGemError(
                       cause instanceof Error
                         ? cause.message
@@ -913,15 +923,19 @@ export function GachaInventory() {
               setBusy("gem-apply");
               setGemError("");
               setGemStatus("");
+              const key = `gem-apply:${gemFoil}:${target.id}`;
+              const { operationId, storageKey } = operationIdFor(key);
               try {
                 const updatedCard = await api.gachaEconomyApplyGem({
                   foil: gemFoil,
                   userCardId: target.id,
+                  operationId,
                 });
+                clearOperation(key, storageKey);
                 setGemCardId("");
                 setGemCard(null);
                 setGemStatus(
-                  `Gema ${gemType.label} aplicada a ${updatedCard.card.name}. A carta agora tem foil ${updatedCard.foil} e valor de ${updatedCard.value.toLocaleString("pt-BR")} cristais.`,
+                  `Gema ${gemType.label} aplicada a ${target.card.name}. A carta agora tem foil ${updatedCard.foil} e valor de ${updatedCard.value.toLocaleString("pt-BR")} cristais.`,
                 );
                 try {
                   await refresh();
@@ -931,6 +945,12 @@ export function GachaInventory() {
                   );
                 }
               } catch (cause) {
+                if (
+                  cause instanceof ApiError &&
+                  cause.statusCode < 500 &&
+                  cause.statusCode !== 408
+                )
+                  clearOperation(key, storageKey);
                 setGemError(
                   cause instanceof Error
                     ? cause.message
