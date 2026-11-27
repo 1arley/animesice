@@ -63,7 +63,27 @@ test("crafta gema pelo retorno atualizado do inventário", async ({ page }) => {
   await button.click();
   await expect(page.getByRole("status").filter({ hasText: "Gema Holo fabricada. Restam 0 fragmentos e você tem 1 gema." })).toBeVisible();
   await expect(page.getByText("Fragmentos:").first()).toBeVisible();
-  expect(requests).toEqual([{ foil: "HOLO" }]);
+  expect(requests).toHaveLength(1);
+  expect(requests[0]).toMatchObject({ foil: "HOLO" });
+  expect((requests[0] as { operationId: string }).operationId).toMatch(/^[0-9a-f-]{36}$/i);
+});
+
+test("retries gem craft with the same operation id after a lost response", async ({ page }) => {
+  await openInventory(page, { ...emptyEconomy, holoShards: 20 });
+  const bodies: { foil: string; operationId: string }[] = [];
+  let attempts = 0;
+  await page.route("**/gacha/economy/gems/craft", async (route) => {
+    bodies.push(route.request().postDataJSON());
+    if (++attempts === 1) return route.abort();
+    await route.fulfill({ json: { ...emptyEconomy, holoGems: 1 } });
+  });
+  const button = page.getByRole("button", { name: "Fabricar gema · 20 fragmentos" }).first();
+  await button.click();
+  await expect(page.locator('p[role="alert"]')).toBeVisible();
+  await button.click();
+  await expect(page.locator('p[role="status"]').filter({ hasText: "Gema Holo fabricada" })).toBeVisible();
+  expect(bodies).toHaveLength(2);
+  expect(bodies[0]).toEqual(bodies[1]);
 });
 
 test("mostra erro autoritativo do backend ao craftar sem saldo", async ({ page }) => {
@@ -89,7 +109,8 @@ test("aplica gema e atualiza foil e valor com a resposta do backend", async ({ p
   await openInventory(page, inventory);
   let economyRequests = 0;
   await page.route("**/gacha/economy/gems/apply", async (route) => {
-    expect(route.request().postDataJSON()).toEqual({ foil: "HOLO", userCardId: "normal-card" });
+    expect(route.request().postDataJSON()).toMatchObject({ foil: "HOLO", userCardId: "normal-card" });
+    expect(route.request().postDataJSON().operationId).toMatch(/^[0-9a-f-]{36}$/i);
     await route.fulfill({ json: { ...cards[0], foil: "HOLO", value: 777 } });
   });
   await page.route("**/gacha/economy", (route) => {

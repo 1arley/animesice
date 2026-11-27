@@ -21,6 +21,143 @@ function json(res, obj, status = 200) {
 const delayedSourceResponses = new Map();
 const delayedSourceTimeouts = new Map();
 
+const BOX_PRICES = { COMMON: 500, RARE: 1000, PREMIUM: 2000 };
+const KEY_PRICE = 100;
+const DAILY_BONUS = 350;
+const BOX_FIELD = {
+  COMMON: 'commonBoxes',
+  RARE: 'rareBoxes',
+  PREMIUM: 'premiumBoxes',
+};
+
+function createInitialMockEconomy() {
+  return {
+    itemCatalog: [],
+    essenciaComum: 0,
+    essenciaIncomum: 0,
+    essenciaRara: 0,
+    essenciaEpica: 0,
+    essenciaLendaria: 0,
+    essenciaMitica: 0,
+    essenciaGalactica: 0,
+    commonBoxes: 8,
+    rareBoxes: 3,
+    premiumBoxes: 3,
+    keys: 15,
+    spinResets: 1,
+    weeklyRewardReady: true,
+    loyaltyDays: 4,
+    loyaltyRarePlusReady: false,
+    balance: 15000,
+    reserved: 0,
+    available: 15000,
+    titanitaShards: 0,
+    titanitaItems: 0,
+    titanitaSombriaShards: 0,
+    titanitaSombriaItems: 0,
+    draconicaShards: 0,
+    draconicaItems: 0,
+    sombriaDraconicaShards: 0,
+    sombriaDraconicaItems: 0,
+    holoShards: 0,
+    goldShards: 0,
+    inkShards: 0,
+    prismShards: 0,
+    holoGems: 0,
+    goldGems: 0,
+    inkGems: 0,
+    prismGems: 0,
+    protecao: 0,
+    itemConfig: {
+      item_shop_price: { TITANITA: 0, TITANITA_SOMBRIA: 0, DRACONICA: 0, SOMBRIA_DRACONICA: 0, PROTECAO: 0 },
+      item_convert_value: { TITANITA: 0, TITANITA_SOMBRIA: 0, DRACONICA: 0, SOMBRIA_DRACONICA: 0, PROTECAO: 0 },
+      item_recipes: {},
+      item_eligibility: {},
+      item_condition_anchor: {},
+      card_floors: {},
+      base_value: {},
+      foil_mult: {},
+      reroll_cost_pct: 0.1,
+    },
+    dailyClaimedToday: false,
+    watchEarnedToday: 0,
+  };
+}
+
+let mockEconomy = createInitialMockEconomy();
+let mockOpenIndex = 0;
+
+const MOCK_BOX_REWARDS = [
+  { category: 'CARD', name: 'Aeliana, Guardiã Glacial', rarity: 'LENDARIA', foil: 'HOLO', condition: 0.04, image: '/aeliana/Aeliana.png' },
+  { category: 'CRYSTAL', amount: 450 },
+  { category: 'KEY', amount: 2 },
+  { category: 'ITEM', kind: 'TITANITA', quantity: 2, rarity: 'EPICA' },
+  { category: 'SPIN_RESET', amount: 1 },
+  { category: 'RARE_BOX', amount: 1, rarity: 'RARA' },
+  { category: 'ESSENCE', name: 'Essência Épica', rarity: 'EPICA' },
+  { category: 'CARD_BACK', name: 'Selo Cryo-Core', rarity: 'RARA', duplicate: false },
+];
+
+const MOCK_RARE_REWARDS = [
+  { category: 'CARD', name: 'Aeliana, Fenda Violeta', rarity: 'EPICA', foil: 'HOLO', condition: 0.06, image: '/aeliana/Aeliana.png' },
+  { category: 'CRYSTAL', amount: 1450 },
+  { category: 'SKIN', name: 'Manto Ametista', rarity: 'EPIC' },
+  { category: 'KEY_PREMIUM_BOX', keys: 1, premiumBoxes: 1 },
+  { category: 'ITEM', kind: 'TITANITA_SOMBRIA', quantity: 3, rarity: 'EPICA' },
+  { category: 'SPIN_RESET', amount: 1 },
+];
+
+const MOCK_PREMIUM_REWARDS = [
+  { category: 'CARD', name: 'Aeliana, Soberana Áurea', rarity: 'LENDARIA', foil: 'GOLD', condition: 0.02, image: '/aeliana/Aeliana.png' },
+  { category: 'SKIN', skins: [{ name: 'Aura Solar', rarity: 'LEGENDARY' }, { name: 'Velo Obsidian', rarity: 'EPIC' }] },
+  { category: 'CRYSTAL', amount: 4800 },
+  { category: 'ITEM', kind: 'DRACONICA', quantity: 5, rarity: 'LENDARIA' },
+  { category: 'CARD', name: 'Aeliana, Eclipse Galáctico', rarity: 'GALACTICA', foil: 'PRISM', condition: 0.01, image: '/aeliana/Aeliana.png' },
+  { category: 'CARD_BACK', name: 'Brasão Real', rarity: 'LEGENDARY', duplicate: false },
+];
+
+function readJsonBody(req, res, onParsed) {
+  let body = '';
+  req.on('data', (c) => (body += c));
+  req.on('end', () => {
+    try {
+      onParsed(JSON.parse(body || '{}'));
+    } catch {
+      res.writeHead(400);
+      res.end('bad json');
+    }
+  });
+}
+
+function pickMockBoxReward(tier = 'COMMON') {
+  const override = (process.env.MOCK_BOX_REWARD || '').trim().toUpperCase();
+  if (override === 'ERROR') {
+    return { errorStatus: 500, errorMessage: 'Falha simulada ao abrir caixa.' };
+  }
+  if (override === 'INVALID') {
+    return { reward: {} };
+  }
+  const pool =
+    tier === 'PREMIUM'
+      ? MOCK_PREMIUM_REWARDS
+      : tier === 'RARE'
+        ? MOCK_RARE_REWARDS
+        : MOCK_BOX_REWARDS;
+  if (override) {
+    const matched =
+      pool.find((entry) => entry.category === override) ||
+      MOCK_BOX_REWARDS.find((entry) => entry.category === override);
+    if (matched) return { reward: { ...matched } };
+  }
+  const reward = pool[mockOpenIndex % pool.length];
+  mockOpenIndex += 1;
+  return { reward: { ...reward } };
+}
+
+function isApiRoute(pathname, route) {
+  return pathname === route || pathname === `/api${route}`;
+}
+
 const server = http.createServer((req, res) => {
   const parsed = url.parse(req.url, true);
   const p = parsed.pathname;
@@ -28,6 +165,26 @@ const server = http.createServer((req, res) => {
     res.writeHead(204, CORS_HEADERS);
     res.end();
     return;
+  }
+  if (req.method === 'GET' && p === '/__mock/login') {
+    const rawNext = parsed.query.next;
+    const nextPath =
+      typeof rawNext === 'string' && rawNext.startsWith('/') && !rawNext.startsWith('//')
+        ? rawNext
+        : '/gacha/loja';
+    const appPort = process.env.E2E_APP_PORT || 3000;
+    res.writeHead(302, {
+      'Set-Cookie': 'role=USER; Path=/; SameSite=Lax',
+      Location: `http://localhost:${appPort}${nextPath}`,
+      'Cache-Control': 'no-store',
+    });
+    res.end();
+    return;
+  }
+  if (req.method === 'POST' && p === '/__mock/economy/reset') {
+    mockEconomy = createInitialMockEconomy();
+    mockOpenIndex = 0;
+    return json(res, { ok: true, inventory: mockEconomy });
   }
   if (req.method === 'GET' && p === '/__e2e/pending-source') {
     return json(res, { pending: delayedSourceResponses.has(parsed.query.anime) });
@@ -374,11 +531,207 @@ const server = http.createServer((req, res) => {
   if (req.method === 'GET' && (p === '/api/gacha/trades/mine' || p === '/gacha/trades/mine')) {
     return json(res, []);
   }
-  if (req.method === 'GET' && (p === '/api/gacha/economy/market/offers/mine' || p === '/gacha/economy/market/offers/mine')) {
+  if (req.method === 'GET' && isApiRoute(p, '/gacha/economy/market/offers/mine')) {
     return json(res, []);
   }
-  if (req.method === 'GET' && (p === '/api/gacha/economy/night-market/status' || p === '/gacha/economy/night-market/status')) {
+  if (req.method === 'GET' && isApiRoute(p, '/gacha/economy/night-market/status')) {
     return json(res, { open: false, periodStart: null });
+  }
+  if (req.method === 'GET' && isApiRoute(p, '/gacha/engagement-pilot')) {
+    return json(res, { enabled: false, percent: 0 });
+  }
+  if (req.method === 'GET' && isApiRoute(p, '/gacha/collections/progress')) {
+    return json(res, []);
+  }
+  if (req.method === 'GET' && isApiRoute(p, '/gacha/crystals')) {
+    return json(res, {
+      balance: mockEconomy.balance,
+      dailyClaimedToday: mockEconomy.dailyClaimedToday,
+      events: [],
+      meta: { total: 0, page: 1, limit: 20, totalPages: 0 },
+    });
+  }
+  if (req.method === 'GET' && isApiRoute(p, '/gacha/economy')) {
+    return json(res, mockEconomy);
+  }
+  if (req.method === 'GET' && isApiRoute(p, '/gacha/economy/odds')) {
+    return json(res, {
+      versionId: 'mock-v1',
+      version: 1,
+      boxPrices: BOX_PRICES,
+      keyPrice: KEY_PRICE,
+      dailyBonus: DAILY_BONUS,
+      categories: {
+        COMMON: { CRYSTAL: 35, CARD: 30, KEY: 15, ITEM: 10, SPIN_RESET: 5, RARE_BOX: 5 },
+        RARE: { CARD: 45, CRYSTAL: 25, ITEM: 15, KEY: 10, SKIN: 5 },
+        PREMIUM: { CARD: 55, SKIN: 20, ITEM: 15, CRYSTAL: 10 },
+      },
+      qualities: {
+        COMMON: { COMUM: 55, INCOMUM: 25, RARA: 12, EPICA: 6, LENDARIA: 2 },
+        RARE: { RARA: 50, EPICA: 30, LENDARIA: 15, MITICA: 5 },
+        PREMIUM: { EPICA: 45, LENDARIA: 35, MITICA: 15, GALACTICA: 5 },
+      },
+      foilWeights: { NORMAL: 75, HOLO: 15, GOLD: 7, INK: 2, PRISM: 1 },
+      tierWeights: null,
+      pityWeights: null,
+      pityDays: 30,
+      crystalPackages: [
+        { id: 'BRL_490', cents: 490, crystals: 950 },
+        { id: 'BRL_990', cents: 990, crystals: 2000 },
+      ],
+    });
+  }
+  if (req.method === 'GET' && isApiRoute(p, '/gacha/economy/shop')) {
+    return json(res, []);
+  }
+  if (req.method === 'GET' && isApiRoute(p, '/gacha/economy/items/catalog')) {
+    return json(res, []);
+  }
+  if (req.method === 'GET' && isApiRoute(p, '/gacha/economy/skins/mine')) {
+    return json(res, []);
+  }
+  if (req.method === 'GET' && isApiRoute(p, '/gacha/economy/market/listings')) {
+    return json(res, {
+      items: [],
+      page: Number(parsed.query.page || 1),
+      limit: Number(parsed.query.limit || 24),
+      total: 0,
+    });
+  }
+  if (req.method === 'GET' && isApiRoute(p, '/gacha/economy/market/listings/mine')) {
+    return json(res, {
+      items: [],
+      page: Number(parsed.query.page || 1),
+      limit: Number(parsed.query.limit || 50),
+      total: 0,
+    });
+  }
+  if (req.method === 'GET' && isApiRoute(p, '/gacha/economy/market/orders/mine')) {
+    return json(res, {
+      items: [],
+      page: Number(parsed.query.page || 1),
+      limit: Number(parsed.query.limit || 50),
+      total: 0,
+    });
+  }
+  if (req.method === 'GET' && isApiRoute(p, '/gacha/economy/market/mission')) {
+    return json(res, {
+      periodStart: new Date().toISOString(),
+      visits: 0,
+      listingQualified: false,
+      ready: false,
+      claimedAt: null,
+    });
+  }
+  if (req.method === 'POST' && isApiRoute(p, '/gacha/economy/market/visit')) {
+    return json(res, {
+      periodStart: new Date().toISOString(),
+      visits: 1,
+      listingQualified: false,
+      ready: false,
+      claimedAt: null,
+    });
+  }
+  if (req.method === 'POST' && isApiRoute(p, '/gacha/economy/daily')) {
+    mockEconomy.dailyClaimedToday = true;
+    mockEconomy.balance += DAILY_BONUS;
+    mockEconomy.available += DAILY_BONUS;
+    return json(res, {
+      claimed: DAILY_BONUS,
+      day: new Date().toISOString().slice(0, 10),
+    });
+  }
+  if (req.method === 'POST' && isApiRoute(p, '/gacha/economy/weekly')) {
+    mockEconomy.weeklyRewardReady = false;
+    mockEconomy.commonBoxes += 1;
+    return json(res, { inventory: mockEconomy });
+  }
+  if (req.method === 'POST' && isApiRoute(p, '/gacha/economy/keys')) {
+    if (mockEconomy.available < KEY_PRICE) {
+      return json(res, { message: 'Cristais insuficientes.' }, 400);
+    }
+    mockEconomy.balance -= KEY_PRICE;
+    mockEconomy.available -= KEY_PRICE;
+    mockEconomy.keys += 1;
+    return json(res, { inventory: mockEconomy });
+  }
+  if (req.method === 'POST' && isApiRoute(p, '/gacha/economy/boxes')) {
+    readJsonBody(req, res, (body) => {
+      const tier = body?.tier;
+      if (!Object.prototype.hasOwnProperty.call(BOX_PRICES, tier)) {
+        return json(res, { message: 'Tipo de caixa inválido.' }, 400);
+      }
+      const price = BOX_PRICES[tier];
+      if (mockEconomy.available < price) {
+        return json(res, { message: 'Cristais insuficientes.' }, 400);
+      }
+      mockEconomy.balance -= price;
+      mockEconomy.available -= price;
+      mockEconomy[BOX_FIELD[tier]] += 1;
+      return json(res, { inventory: mockEconomy });
+    });
+    return;
+  }
+  if (req.method === 'POST' && isApiRoute(p, '/gacha/economy/boxes/open')) {
+    readJsonBody(req, res, (body) => {
+      const tier = body?.tier;
+      if (!Object.prototype.hasOwnProperty.call(BOX_FIELD, tier)) {
+        return json(res, { message: 'Tipo de caixa inválido.' }, 400);
+      }
+      const field = BOX_FIELD[tier];
+      if (mockEconomy[field] < 1 || mockEconomy.keys < 1) {
+        return json(
+          res,
+          { message: 'Você precisa de uma caixa e uma chave para abrir.' },
+          400,
+        );
+      }
+      const delayMs = Math.max(0, Number(process.env.MOCK_OPEN_DELAY_MS) || 0);
+      const completeOpen = () => {
+        const picked = pickMockBoxReward(tier);
+        if (picked.errorStatus) {
+          return json(res, { message: picked.errorMessage }, picked.errorStatus);
+        }
+        mockEconomy[field] -= 1;
+        mockEconomy.keys -= 1;
+        const reward = picked.reward;
+        if (reward && typeof reward === 'object') {
+          const amount = Number(reward.amount);
+          if (Number.isSafeInteger(amount) && amount > 0) {
+            if (reward.category === 'CRYSTAL') {
+              mockEconomy.balance += amount;
+              mockEconomy.available += amount;
+            } else if (reward.category === 'KEY') {
+              mockEconomy.keys += amount;
+            } else if (reward.category === 'SPIN_RESET') {
+              mockEconomy.spinResets += amount;
+            } else if (reward.category === 'RARE_BOX') {
+              mockEconomy.rareBoxes += amount;
+            }
+          }
+          if (reward.category === 'KEY_RARE_BOX') {
+            mockEconomy.rareBoxes += Number(reward.rareBoxes) || 1;
+            mockEconomy.keys += Number(reward.keys) || 1;
+          } else if (reward.category === 'KEY_PREMIUM_BOX') {
+            mockEconomy.premiumBoxes += Number(reward.premiumBoxes) || 1;
+            mockEconomy.keys += Number(reward.keys) || 1;
+          }
+        }
+        return json(res, { reward, inventory: mockEconomy });
+      };
+      if (delayMs > 0) {
+        setTimeout(completeOpen, delayMs);
+      } else {
+        completeOpen();
+      }
+    });
+    return;
+  }
+  if (req.method === 'POST' && isApiRoute(p, '/gacha/economy/spin-reset')) {
+    if (mockEconomy.spinResets > 0) {
+      mockEconomy.spinResets -= 1;
+    }
+    return json(res, { inventory: mockEconomy });
   }
   if (req.method === 'GET' && (p === '/api/gacha/shop' || p === '/gacha/shop')) {
     return json(res, { balance: 0, cosmetics: [], activeCardBack: null, spinPrice: 0 });

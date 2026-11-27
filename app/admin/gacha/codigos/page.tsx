@@ -178,7 +178,13 @@ export default function AdminCrystalCodesPage() {
     }
   }
   async function remove(code: GachaRewardCode) {
-    if (busyRef.current || !window.confirm(`Excluir o código ${code.code}?`))
+    const warning = code.uses
+      ? ` Ele já tem ${code.uses} resgate(s); o histórico será apagado e os cristais creditados não serão estornados.`
+      : "";
+    if (
+      busyRef.current ||
+      !window.confirm(`Excluir o código ${code.code}?${warning}`)
+    )
       return;
     busyRef.current = true;
     setBusy(true);
@@ -474,12 +480,7 @@ export default function AdminCrystalCodesPage() {
                       </button>
                       <button
                         type="button"
-                        disabled={busy || code.uses > 0}
-                        title={
-                          code.uses
-                            ? "Desative para preservar resgates"
-                            : undefined
-                        }
+                        disabled={busy}
                         onClick={() => void remove(code)}
                         className="btn-ghost min-h-11 px-3 text-signal disabled:opacity-40"
                       >

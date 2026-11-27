@@ -1,4 +1,5 @@
 import type { GachaItemKind } from "@/types";
+import { safeImageSrc } from "@/lib/url";
 
 const BOX_REWARD_CATEGORIES = [
   "CRYSTAL",
@@ -227,4 +228,158 @@ export function boxRewardStatus(reward: Record<string, unknown>) {
       : "A capa já estava na sua coleção. Nenhum cristal foi creditado como compensação.";
   }
   return "Recompensa adicionada ao seu inventário.";
+}
+
+export type BoxRewardArtifactKind =
+  | "crystal"
+  | "key"
+  | "spin_reset"
+  | "card"
+  | "tier_box"
+  | "relic";
+
+export interface BoxRewardVisualMeta {
+  category: string;
+  artifactKind: BoxRewardArtifactKind;
+  rarityKey: string;
+  rarityLabel?: string;
+  accentHex: string;
+  secondaryHex: string;
+  imageUrl: string | null;
+  hiddenCard: boolean;
+  stackableAmount: number | null;
+  isDuplicateComp: boolean;
+  boxRewardTier?: "RARE" | "PREMIUM";
+}
+
+const VISUAL_RARITY_PALETTE: Record<
+  string,
+  { accentHex: string; secondaryHex: string }
+> = {
+  COMMON: { accentHex: "#9fdcf5", secondaryHex: "#e6faff" },
+  COMUM: { accentHex: "#9fdcf5", secondaryHex: "#e6faff" },
+  UNCOMMON: { accentHex: "#7ee8c8", secondaryHex: "#d8fff4" },
+  INCOMUM: { accentHex: "#7ee8c8", secondaryHex: "#d8fff4" },
+  RARE: { accentHex: "#38e8da", secondaryHex: "#c8fffb" },
+  RARA: { accentHex: "#38e8da", secondaryHex: "#c8fffb" },
+  EPIC: { accentHex: "#c4a1ff", secondaryHex: "#ece0ff" },
+  EPICA: { accentHex: "#c4a1ff", secondaryHex: "#ece0ff" },
+  MYTHIC: { accentHex: "#e879f9", secondaryHex: "#fae2ff" },
+  MITICA: { accentHex: "#e879f9", secondaryHex: "#fae2ff" },
+  LEGENDARY: { accentHex: "#f5cb7d", secondaryHex: "#fff2d6" },
+  LENDARIA: { accentHex: "#f5cb7d", secondaryHex: "#fff2d6" },
+  GALACTIC: { accentHex: "#67e8f9", secondaryHex: "#e0d4ff" },
+  GALACTICA: { accentHex: "#67e8f9", secondaryHex: "#e0d4ff" },
+};
+
+export function isValidBoxRewardPayload(
+  value: unknown,
+): value is Record<string, unknown> {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    return false;
+  }
+  const record = value as Record<string, unknown>;
+  const hasCategory =
+    typeof record.category === "string" && record.category.trim().length > 0;
+  const hasName =
+    typeof record.name === "string" && record.name.trim().length > 0;
+  return hasCategory || hasName;
+}
+
+export function getBoxRewardVisualMeta(
+  reward: Record<string, unknown>,
+): BoxRewardVisualMeta {
+  const category =
+    typeof reward.category === "string" ? reward.category.trim().toUpperCase() : "";
+  const knownReward = isKnownBoxRewardCategory(category);
+  const hiddenCard =
+    category === "CARD" &&
+    (reward.imageHidden === true || reward.name === "???");
+  const isDuplicateComp = category === "CARD_BACK" && reward.duplicate === true;
+
+  let rawImage = "";
+  if (typeof reward.imageUrl === "string" && reward.imageUrl.trim()) {
+    rawImage = reward.imageUrl;
+  } else if (typeof reward.image === "string" && reward.image.trim()) {
+    rawImage = reward.image;
+  } else if (Array.isArray(reward.skins)) {
+    const firstSkin = reward.skins.find(
+      (skin): skin is Record<string, unknown> =>
+        typeof skin === "object" && skin !== null,
+    );
+    if (firstSkin) {
+      if (typeof firstSkin.imageUrl === "string") rawImage = firstSkin.imageUrl;
+      else if (typeof firstSkin.image === "string") rawImage = firstSkin.image;
+    }
+  }
+
+  const imageUrl =
+    knownReward && !hiddenCard ? (safeImageSrc(rawImage) ?? null) : null;
+
+  const amount = count(reward.amount);
+  const stackableAmount =
+    amount !== null &&
+    amount > 0 &&
+    (category === "CRYSTAL" || category === "KEY" || category === "SPIN_RESET")
+      ? amount
+      : null;
+
+  let raritySource = typeof reward.rarity === "string" ? reward.rarity : "";
+  if (!raritySource && Array.isArray(reward.skins)) {
+    const firstSkin = reward.skins.find(
+      (skin): skin is Record<string, unknown> =>
+        typeof skin === "object" && skin !== null,
+    );
+    if (firstSkin && typeof firstSkin.rarity === "string") {
+      raritySource = firstSkin.rarity;
+    }
+  }
+  const rarityKey = raritySource.trim().toUpperCase();
+  const rarityLabel = RARITY_LABEL[rarityKey];
+
+  let boxRewardTier: "RARE" | "PREMIUM" | undefined;
+  let artifactKind: BoxRewardArtifactKind = "relic";
+  if (category === "CRYSTAL" || isDuplicateComp) {
+    artifactKind = "crystal";
+  } else if (category === "KEY") {
+    artifactKind = "key";
+  } else if (category === "SPIN_RESET") {
+    artifactKind = "spin_reset";
+  } else if (
+    (category === "CARD" ||
+      category === "SKIN" ||
+      (category === "CARD_BACK" && !isDuplicateComp)) &&
+    imageUrl !== null &&
+    !hiddenCard
+  ) {
+    artifactKind = "card";
+  } else if (
+    category === "RARE_BOX" ||
+    category === "KEY_RARE_BOX" ||
+    category === "KEY_PREMIUM_BOX"
+  ) {
+    artifactKind = "tier_box";
+    boxRewardTier = category === "KEY_PREMIUM_BOX" ? "PREMIUM" : "RARE";
+  }
+
+  const palette =
+    boxRewardTier === "PREMIUM"
+      ? VISUAL_RARITY_PALETTE.LEGENDARY
+      : boxRewardTier === "RARE"
+        ? VISUAL_RARITY_PALETTE.RARE
+        : (VISUAL_RARITY_PALETTE[rarityKey] ?? VISUAL_RARITY_PALETTE.COMMON);
+
+  return {
+    category,
+    artifactKind,
+    rarityKey,
+    rarityLabel,
+    accentHex: palette.accentHex,
+    secondaryHex: palette.secondaryHex,
+    imageUrl,
+    hiddenCard,
+    stackableAmount,
+    isDuplicateComp,
+    boxRewardTier,
+  };
 }
