@@ -621,6 +621,7 @@ export interface GachaStatus {
   nextClaimAt?: string | null;
   claimWarning?: string | null;
   bypassPriceCents?: number | null;
+  ampulhetaCount?: number;
   claimEvent?: { name: string; tiers: string[] } | null;
   pointsBalance?: number;
   pointsCosmetics?: string[];

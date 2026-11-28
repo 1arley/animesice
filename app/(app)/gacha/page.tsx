@@ -197,6 +197,7 @@ function GachaPageContent() {
 
   useEffect(() => {
     festivalClaimLockUntil.current = null;
+    pendingAmpulhetaOps.current.clear();
   }, [user?.id]);
 
   // Endpoint público: a linha de odds aparece para visitante anônimo também.
@@ -390,6 +391,7 @@ function GachaPageContent() {
         festivalClaimLockUntil.current = null;
         setStatus(s);
       }
+      if (s.canClaim === false) setAmpulhetaFeedback("");
     }
     if (r) setRecent(r);
     if (sp) setSpins(sp);
@@ -922,7 +924,8 @@ function GachaPageContent() {
   const claimCountdown = formatCountdown(status?.nextClaimAt ?? null, now);
   const canSpinNow = (status?.canSpin ?? status == null) && !spinning;
   const locked = status != null && status.canClaim === false;
-  const ampulhetaCount = economy?.ampulhetaEter ?? 0;
+  const ampulhetaCount =
+    economy?.ampulhetaEter ?? status?.ampulhetaCount ?? 0;
   const canActivateAmpulheta = canUseAmpulheta({
     locked,
     claimEventActive: !!status?.claimEvent,
@@ -1136,7 +1139,10 @@ function GachaPageContent() {
           </div>
         </div>
         <ul className="mt-3 space-y-1.5 text-body-sm text-mist">
-          <li>• 1 unidade será consumida (restarão {ampulhetaSummary.nextCount.toLocaleString("pt-BR")}).</li>
+          <li>
+            • {ampulhetaSummary.consumedCount} unidade será consumida (restarão{" "}
+            {ampulhetaSummary.nextCount.toLocaleString("pt-BR")}).
+          </li>
           <li>• O tempo de espera será eliminado imediatamente.</li>
           <li>
             • Não concede giros extras e o cooldown após a próxima coleta volta ao normal.
