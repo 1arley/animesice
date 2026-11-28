@@ -1,3 +1,18 @@
+# [1.18.0](https://github.com/1arley/animesice/compare/v1.17.0...v1.18.0) (2026-11-28)
+
+### Bug Fixes
+
+* **gacha:** harden roll stage validation and layout recovery ([b0bdb23](https://github.com/1arley/animesice/commit/b0bdb23ef39c4588626a6caecdf1913521ee44fd))
+* **gacha:** preserve roll stage recovery states ([17300c8](https://github.com/1arley/animesice/commit/17300c8a6a7038ad15e5863d889d7314ad8c9926))
+
+### Features
+
+* **gacha:** bonus de fragmento de 5% no giro e icones Magnetita ([#43](https://github.com/1arley/animesice/issues/43)) ([8b29bdb](https://github.com/1arley/animesice/commit/8b29bdbd7ce06a63d4dce2d0473711ec5dd5a8ed))
+* **gacha:** bonus de fragmento de 5% no giro e icones Magnetita ([#43](https://github.com/1arley/animesice/issues/43)) ([439bb35](https://github.com/1arley/animesice/commit/439bb3527ba824c369010657d9c974f3196859af))
+* **gacha:** fragmento bonus no preview e icones Magnetita ([#41](https://github.com/1arley/animesice/issues/41)) ([#44](https://github.com/1arley/animesice/issues/44)) ([7539e1f](https://github.com/1arley/animesice/commit/7539e1f00a91ec833166467e0dbea01365bbe42d))
+* **gacha:** fragmento bonus no preview e icones Magnetita ([#41](https://github.com/1arley/animesice/issues/41)) ([#44](https://github.com/1arley/animesice/issues/44)) ([7be7b7b](https://github.com/1arley/animesice/commit/7be7b7b338e14ad60221bd25dcfed88a00795c5a))
+* **gacha:** replace roll stage with Three.js scene ([177a99f](https://github.com/1arley/animesice/commit/177a99f912daaddf326d734fbd748b4e3dbfbf91))
+
 # 1.17.0 (2026-11-28)
 
 ### Bug Fixes
