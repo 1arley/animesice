@@ -1225,6 +1225,31 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
                   <span className="text-ice">Próxima carta Rara+</span>
                 )}
               </div>
+              <div className="mt-3 flex flex-wrap items-center gap-3 border-t border-hairline pt-3 text-caption text-mist">
+                <Image
+                  src="/gacha/ampulheta-eter.png"
+                  alt=""
+                  width={24}
+                  height={24}
+                  className="h-6 w-6 shrink-0 object-contain"
+                />
+                <span>
+                  <strong className="font-mono tabular-nums text-snow">
+                    {(inventory.ampulhetaEter ?? 0).toLocaleString("pt-BR")}
+                  </strong>{" "}
+                  Ampulheta{(inventory.ampulhetaEter ?? 0) === 1 ? "" : "s"} do
+                  Éter · zera o cooldown de coleta (não reinicia previews como o
+                  Reset de giros)
+                </span>
+                {(inventory.ampulhetaEter ?? 0) > 0 && (
+                  <Link
+                    href="/gacha"
+                    className="inline-flex min-h-11 items-center border border-hairline px-3 text-caption text-ice hover:border-ice/50"
+                  >
+                    Usar na sala do Gacha
+                  </Link>
+                )}
+              </div>
             </section>
           )}
 

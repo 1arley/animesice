@@ -1724,6 +1724,14 @@ export const api = {
     }),
   gachaEconomyUseReset: () =>
     request("/gacha/economy/spin-reset", { method: "POST" }),
+  gachaEconomyUseAmpulheta: (operationId: string) =>
+    request<{ used: boolean; inventory: GachaEconomyInventory }>(
+      "/gacha/economy/ampulheta/use",
+      {
+        method: "POST",
+        body: JSON.stringify({ operationId }),
+      },
+    ),
   gachaEconomyListings: (itemType: "CARD" | "SKIN" | "ITEM", page = 1) =>
     request<GachaEconomyPage<GachaEconomyListingItem>>(
       `/gacha/economy/market/listings?itemType=${itemType}&page=${page}&limit=24`,

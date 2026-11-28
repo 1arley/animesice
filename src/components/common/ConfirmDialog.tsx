@@ -33,7 +33,7 @@ export function ConfirmDialog({
             type="button"
             onClick={onCancel}
             disabled={busy}
-            className="btn-ghost disabled:opacity-50"
+            className="btn-ghost min-h-11 disabled:opacity-50"
           >
             Cancelar
           </button>
@@ -41,7 +41,7 @@ export function ConfirmDialog({
             type="button"
             onClick={onConfirm}
             disabled={busy}
-            className="btn-ice disabled:opacity-50"
+            className="btn-ice min-h-11 disabled:opacity-50"
           >
             {busy ? busyLabel : confirmLabel}
           </button>

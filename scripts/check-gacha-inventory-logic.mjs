@@ -67,6 +67,7 @@ function makeInventory(overrides = {}) {
     premiumBoxes: 0,
     keys: 0,
     spinResets: 0,
+    ampulhetaEter: 0,
     weeklyRewardReady: false,
     loyaltyDays: 0,
     loyaltyRarePlusReady: false,
