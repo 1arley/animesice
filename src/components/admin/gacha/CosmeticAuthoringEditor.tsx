@@ -25,16 +25,22 @@ import {
   type Scene,
 } from "@/lib/cosmetic-svg-authoring";
 
-const blankOf = (type: CosmeticType) => ({
-  key: "BACK_",
-  name: "",
-  description: "",
-  type,
-  svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 750 1000"><rect width="750" height="1000" fill="#142d4c"/></svg>',
-  previewUrl: "",
-  price: 1200,
-  status: "PUBLISHED",
-});
+const keyPrefixOf = (type: CosmeticType) =>
+  type === "BACK" ? "BACK_" : type === "FRAME" ? "FRAME_" : "DESTAQUE_";
+
+const blankOf = (type: CosmeticType) => {
+  const starter = starterScene(type);
+  return {
+    key: keyPrefixOf(type),
+    name: "",
+    description: "",
+    type,
+    svg: serializeScene(starter, starter.viewBox),
+    previewUrl: "",
+    price: type === "BACK" ? 1200 : type === "FRAME" ? 2000 : 3000,
+    status: "PUBLISHED",
+  };
+};
 
 /**
  * Previa de autoria. A arte de referencia fica ATRAS do SVG para que moldura e
@@ -139,10 +145,10 @@ export function CosmeticAuthoringEditor({
   const [editing, setEditing] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [scene, setScene] = useState<Scene>(() => starterScene(defaultType));
-  const [selected, setSelected] = useState("bg");
+  const [selected, setSelected] = useState("");
   const [guides, setGuides] = useState(true);
   const layers = useMemo(() => layersOf(scene), [scene]);
-  const active = layers.find((l) => l.id === selected);
+  const active = layers.find((l) => l.id === selected) ?? layers[0];
 
   // form.svg e a fonte da verdade do viewBox: edicao manual no textarea
   // tambem move o canvas do preview, sem estado duplicado para dessincronizar.
@@ -168,7 +174,7 @@ export function CosmeticAuthoringEditor({
     sync({
       ...scene,
       nodes: scene.nodes.map((n) =>
-        n.kind === "layer" && n.layer.id === selected ? { ...n, layer: { ...n.layer, ...patch } } : n,
+        n.kind === "layer" && n.layer.id === active?.id ? { ...n, layer: { ...n.layer, ...patch } } : n,
       ),
     });
   }
@@ -183,7 +189,12 @@ export function CosmeticAuthoringEditor({
   }
   function changeType(type: CosmeticType) {
     const starter = starterScene(type);
-    setForm((f) => ({ ...f, type, svg: serializeScene(starter, starter.viewBox) }));
+    setForm((f) => ({
+      ...f,
+      type,
+      key: `${keyPrefixOf(type)}${f.key.replace(/^(BACK_|FRAME_|DESTAQUE_)/, "")}`,
+      svg: serializeScene(starter, starter.viewBox),
+    }));
     setScene(starter);
     setSelected(layersOf(starter)[0]?.id ?? "");
   }
@@ -212,10 +223,11 @@ export function CosmeticAuthoringEditor({
     setSelected(layersOf(parsed)[0]?.id ?? "");
   }
   function cancelEditing() {
+    const starter = starterScene(defaultType);
     setEditing(null);
     setForm(blank);
-    setScene(starterScene(defaultType));
-    setSelected("bg");
+    setScene(starter);
+    setSelected(layersOf(starter)[0]?.id ?? "");
   }
   async function save(event: React.FormEvent) {
     event.preventDefault();
@@ -255,7 +267,7 @@ export function CosmeticAuthoringEditor({
               <option>ARCHIVED</option>
             </select>
           </div>
-          <textarea className="field min-h-96 font-mono text-xs" required aria-label="SVG da capa" value={form.svg} onChange={(e) => setForm({ ...form, svg: e.target.value })} />
+          <textarea className="field min-h-96 font-mono text-xs" required aria-label={`SVG de ${typeLabel.toLowerCase()}`} value={form.svg} onChange={(e) => setForm({ ...form, svg: e.target.value })} />
           <div className="flex gap-2">
             <button className="btn-ice px-4 py-3" type="submit">
               {editing ? "Salvar versão" : `Criar ${typeLabel.toLowerCase()}`}
@@ -281,9 +293,7 @@ export function CosmeticAuthoringEditor({
               type="button"
               className="btn-ghost px-3 py-2"
               onClick={() =>
-                updateLayer({
-                  hidden: !layers.find((l) => l.id === selected)?.hidden,
-                })
+                updateLayer({ hidden: !active?.hidden })
               }
             >
               Mostrar/ocultar
@@ -292,7 +302,7 @@ export function CosmeticAuthoringEditor({
               type="button"
               className="btn-ghost px-3 py-2"
               onClick={() => {
-                const nodes = scene.nodes.filter((n) => n.kind !== "layer" || n.layer.id !== selected);
+                const nodes = scene.nodes.filter((n) => n.kind !== "layer" || n.layer.id !== active?.id);
                 sync({ ...scene, nodes });
                 setSelected(layersOf({ ...scene, nodes })[0]?.id ?? "");
               }}
@@ -302,7 +312,7 @@ export function CosmeticAuthoringEditor({
           </div>
           <div className="grid gap-2">
             {layers.map((l) => (
-              <button type="button" key={l.id} onClick={() => setSelected(l.id)} aria-pressed={selected === l.id} className={`border p-2 text-left ${selected === l.id ? "border-ice" : "border-hairline"}`}>
+              <button type="button" key={l.id} onClick={() => setSelected(l.id)} aria-pressed={active?.id === l.id} className={`border p-2 text-left ${active?.id === l.id ? "border-ice" : "border-hairline"}`}>
                 <span className="flex items-center gap-2">
                   {l.hidden && <span className="text-caption text-mist">(oculta)</span>}
                   {l.type === "text" ? l.text : "Forma"}
@@ -375,40 +385,21 @@ export function CosmeticAuthoringEditor({
           <p className="mt-2 text-caption text-mist">
             {form.type === "BACK"
               ? "Arte de referência atrás: a capa é opaca e cobre tudo."
-              : "A moldura é desenhada sobre a arte. A área tracejada é a janela do cartão — o anel deve ficar fora dela."}
+              : form.type === "FRAME"
+                ? "Moldura estática dentro da face; preserve o centro e evite as áreas dos selos."
+                : "Aura externa: desenhe na sangria fora da área tracejada. A face cobre o centro e a moldura fica por cima."}
           </p>
           <p className="mt-1 text-caption text-mist">Selecione camada para ajustar posição, tamanho e cor.</p>
           <StandardChecklist items={audit} idSuffix={defaultType.toLowerCase()} />
           <details className="mt-3 border border-hairline bg-ink p-3">
-            <summary className="cursor-pointer text-caption text-snow">Como escrever o SVG na medida</summary>
-            <ol className="mt-2 grid list-decimal gap-2 pl-4 text-caption text-mist">
-              <li>
-                Desenhe no <strong className="text-snow">750x1000</strong> (3/4, o slot da carta) e
-                declare <code className="font-mono text-ice">viewBox=&quot;0 0 750 1000&quot;</code>.
-                O preview estica a arte até preencher a caixa, então ela <em>parece</em> certa
-                mesmo fora da medida — por isso o contorno vermelho aparece quando sobra faixa.
-              </li>
-              <li>
-                Comece com um retângulo de fundo cobrindo o canvas inteiro
-                (<code className="font-mono text-ice">width=&quot;750&quot; height=&quot;1000&quot;</code>).
-                O verso é opaco: sem ele, a capa fica transparente.
-              </li>
-              <li>
-                Encoste as bordas na margem 0. A carta desenha a capa no mesmo tamanho da
-                arte da frente, sem overscan: moldura interna (o clássico
-                <code className="font-mono text-ice"> x=14 y=14 w=572 </code>) vira aro solto,
-                com o fundo do container aparecendo por baixo.
-              </li>
-              <li>
-                Centralize a composição no ponto <code className="font-mono text-ice">(375, 500)</code>.
-                Fora do 3/4 o verso recorta o excedente e perde ornamentos das pontas.
-              </li>
-              <li>
-                Moldura e destaque usam canvas com sangria
-                (<code className="font-mono text-ice">-30 -30 810 1060</code>), não 750x1000, e o
-                anel precisa ficar fora da área tracejada.
-              </li>
-            </ol>
+            <summary className="cursor-pointer text-caption text-snow">Estrutura padrão deste cosmético</summary>
+            <p className="mt-2 text-caption text-mist">
+              {form.type === "BACK"
+                ? "BACK usa viewBox 0 0 750 1000 e um fundo opaco cobrindo todo o canvas."
+                : form.type === "FRAME"
+                  ? "FRAME usa viewBox -30 -30 810 1060. Faça uma borda ornamental estática dentro da janela tracejada, deixe o centro transparente e mantenha os selos livres."
+                  : "HIGHLIGHT usa viewBox -60 -60 870 1120. Coloque brilho e partículas na sangria externa, fora da janela tracejada; não desenhe uma segunda moldura sobre o retrato, pois a face cobre essa área no runtime."}
+            </p>
           </details>
         </aside>
       </div>

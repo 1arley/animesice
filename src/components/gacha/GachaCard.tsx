@@ -210,19 +210,22 @@ export const GachaCard = memo(function GachaCard({ pull, preview = false, linkAn
       ? highlightSlot
       : null;
   // Chrome legado só entra quando o slot correspondente do loadout está vazio —
-  // loadout equipado tem prioridade e não soma com a moldura/destaque antigos.
+  // exceto DESTAQUE_CARTA, cujo registro legado não possui SVG.
   const hasAurora = !frameKey && cosmetics.includes("FRAME_AURORA");
+  const hasLegacyHighlight = highlightKey
+    ? highlightKey === "DESTAQUE_CARTA"
+    : cosmetics.includes("DESTAQUE_CARTA");
   const destaqueRing =
-    !highlightKey && cosmetics.includes("DESTAQUE_CARTA")
+    hasLegacyHighlight
       ? " shadow-[0_0_18px_rgba(252,211,77,0.45)]"
       : "";
 
-  const markup = (
+  const cardFace = (
     <div
       className={
         isGalaxy || hasAurora
-          ? `group ${GALAXY_FRAME}${destaqueRing}`
-          : `group overflow-hidden border bg-panel ${rarity.border} ${rarity.glow ?? ""}${destaqueRing}`
+          ? `group relative z-20 ${GALAXY_FRAME}${destaqueRing}`
+          : `group relative z-20 border bg-panel ${rarity.border} ${rarity.glow ?? ""}${destaqueRing}`
       }
     >
       <div className={`overflow-hidden ${isGalaxy || hasAurora ? "bg-panel" : ""}`}>
@@ -252,15 +255,6 @@ export const GachaCard = memo(function GachaCard({ pull, preview = false, linkAn
           {frameKey && (
             <CosmeticSvg
               cosmeticKey={frameKey}
-              fit="card"
-              className="pointer-events-none absolute z-10 object-fill"
-            />
-          )}
-          {/* Destaque: sangue maior (viewBox -60 -60 870 1120); anel fica fora
-              da moldura e também passa pelo overflow-hidden do cartão. */}
-          {highlightKey && (
-            <CosmeticSvg
-              cosmeticKey={highlightKey}
               fit="card"
               className="pointer-events-none absolute z-10 object-fill"
             />
@@ -365,6 +359,18 @@ export const GachaCard = memo(function GachaCard({ pull, preview = false, linkAn
         )}
         </>}
       </div>
+    </div>
+  );
+  const markup = (
+    <div className="relative isolate overflow-visible">
+      {highlightKey && side !== "back" && (
+        <CosmeticSvg
+          cosmeticKey={highlightKey}
+          fit="card"
+          className="pointer-events-none absolute z-10 object-fill"
+        />
+      )}
+      {cardFace}
     </div>
   );
 

@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="750" height="1000" viewBox="0 0 750 1000" role="img" aria-labelledby="title">
+<title id="title">Carta — verso</title>
+<defs>
+<clipPath id="clip"><rect x="18" y="18" width="714" height="964" rx="30"/></clipPath>
+<linearGradient id="scrim" x1="0" y1="0" x2="0" y2="1">
+<stop offset=".55" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".85"/>
+</linearGradient>
+</defs>
+<g clip-path="url(#clip)">
+<image x="0" y="0" width="750" height="1000" preserveAspectRatio="xMidYMid slice" href=""/>
+<rect x="18" y="18" width="714" height="964" rx="30" fill="url(#scrim)"/>
+</g>
+<rect x="18" y="18" width="714" height="964" rx="30" fill="none" stroke="#fff" stroke-opacity=".18" stroke-width="3"/>
+</svg>
