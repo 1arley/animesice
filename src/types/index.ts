@@ -599,6 +599,7 @@ export interface GachaPull {
   valueOverride?: number | null;
   /** Fragmento bônus do giro (5%): só na prévia anunciada; o claim credita o fragmento no inventário e a carta resgatada não carrega selo. */
   bonusShard?: GachaItemKind | null;
+  ampulhetaDropped?: boolean;
   obtainedAt: string;
   user: SocialUser;
   card: GachaCardInfo;
@@ -857,6 +858,7 @@ export interface GachaEconomyInventory {
   premiumBoxes: number;
   keys: number;
   spinResets: number;
+  ampulhetaEter: number;
   weeklyRewardReady: boolean;
   loyaltyDays: number;
   loyaltyRarePlusReady: boolean;

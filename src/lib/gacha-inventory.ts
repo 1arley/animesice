@@ -371,3 +371,29 @@ export function readPendingOperationKeys(userId: string): string[] {
     return [];
   }
 }
+
+export function canUseAmpulheta(params: {
+  locked: boolean;
+  claimEventActive?: boolean;
+  ampulhetaEter: number;
+}): boolean {
+  return params.locked && !params.claimEventActive && params.ampulhetaEter > 0;
+}
+
+export function ampulhetaUseSummary(params: {
+  ampulhetaEter: number;
+  remainingLabel: string | null;
+}): {
+  remainingText: string;
+  availableCount: number;
+  consumedCount: 1;
+  nextCount: number;
+} {
+  const availableCount = Math.max(0, Math.floor(params.ampulhetaEter));
+  return {
+    remainingText: params.remainingLabel ?? "menos de 1s",
+    availableCount,
+    consumedCount: 1,
+    nextCount: Math.max(0, availableCount - 1),
+  };
+}
