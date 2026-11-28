@@ -1,0 +1,31 @@
+{
+  "name": "animesice-art-tools",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Programmatic 2D art, SVG cosmetic authoring, GLSL shader baking, and visual inspection toolkit for AnimesIce.",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "node --test tests/toolkit.test.ts",
+    "cli": "node src/cli.ts",
+    "new": "node src/cli.ts new",
+    "build": "node src/cli.ts build",
+    "build:examples": "node src/cli.ts build-examples",
+    "catalog": "node src/cli.ts catalog",
+    "preview": "node src/cli.ts preview",
+    "render": "node src/cli.ts render",
+    "audit": "node src/cli.ts audit",
+    "shader": "node src/cli.ts shader"
+  },
+  "dependencies": {
+    "@svgdotjs/svg.js": "^3.2.8",
+    "gsap": "^3.15.0",
+    "paper-jsdom": "^0.17.0",
+    "svgdom": "^0.1.29",
+    "svgo": "^4.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.1",
+    "typescript": "^5.9.3"
+  }
+}

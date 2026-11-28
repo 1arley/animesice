@@ -3016,6 +3016,7 @@
 }
 
 .nm-front {
+  overflow: visible;
   transform: rotateY(180deg);
   background: #060a10;
 }
