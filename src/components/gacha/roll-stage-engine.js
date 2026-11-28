@@ -147,7 +147,7 @@ function buildSteps(mode, real, lock, cfg, rnd) {
       } else {
         const cand = [];
         for (let i = 0; i < 7; i++) if (i !== prev && (prev < 0 || i >= prev - cfg.maxDrop)) cand.push(i);
-        tier = cand[Math.floor(rnd() * cand.length)];
+        tier = cand.length ? cand[Math.floor(rnd() * cand.length)] : prev;
       }
       prev = tier;
       steps.push({ t: st, tier, peak: 0.7 + 0.3 * (tier / 6) });
@@ -215,8 +215,8 @@ export class Sfx {
     this.ctx = null;
     this.master = null;
     this.off = 0; // deslocamento de tempo (usado só em renderização offline)
-    this.on = true;
-    try { this.on = localStorage.getItem(SOUND_KEY) !== 'off'; } catch { /* ignore */ }
+    this.on = false;
+    try { this.on = localStorage.getItem(SOUND_KEY) === 'on'; } catch { /* ignore */ }
   }
   dispose() {
     const ctx = this.ctx;
@@ -231,6 +231,7 @@ export class Sfx {
   }
   /** Deve ser chamado dentro de um gesto do usuário (clique). Nunca toca sozinho. */
   ensure() {
+    if (!this.on) return;
     try {
       if (!this.ctx) {
         const AC = window.AudioContext || window.webkitAudioContext;
@@ -643,13 +644,14 @@ const runeTex = () =>
   });
 
 function loadImage(url) {
-  return new Promise((res, rej) => {
-    const im = new Image();
-    im.crossOrigin = 'anonymous';
-    im.onload = () => res(im);
-    im.onerror = () => rej(new Error('imagem não carregou'));
-    im.src = url;
+  const image = new Image();
+  image.crossOrigin = 'anonymous';
+  const promise = new Promise((res, rej) => {
+    image.onload = () => res(image);
+    image.onerror = () => rej(new Error('imagem não carregou'));
   });
+  image.src = url;
+  return { image, promise };
 }
 
 /** Arte de reserva (sem imagem / sem CORS): gradiente da raridade + silhueta. */
@@ -762,6 +764,7 @@ const CSS = /* css */ `
 .rs-dialog::backdrop{background:#000}
 .rs-frame{position:absolute;inset:0;will-change:transform}
 .rs-canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
+.rs-fallback-card{position:absolute;left:50%;top:47%;width:min(70vw,420px,37.5dvh);aspect-ratio:3/4;object-fit:cover;transform:translate(-50%,-50%);border:3px solid var(--rs-c,#38e8da)}
 .rs-hud{position:absolute;inset:0;pointer-events:none}
 .rs-hud>*{position:absolute;left:0;right:0;text-align:center}
 .rs-eyebrow{font:600 11px/1 ui-monospace,Menlo,Consolas,monospace;letter-spacing:.3em;text-transform:uppercase;color:var(--rs-c,#38e8da);opacity:.85}
@@ -770,6 +773,8 @@ const CSS = /* css */ `
   letter-spacing:.22em;padding-left:.22em}
 .rs-title.is-grad{background-clip:text;-webkit-background-clip:text;color:transparent;-webkit-text-fill-color:transparent}
 .rs-info{display:flex;flex-direction:column;align-items:center;gap:6px}
+.rs-attributes{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin-top:4px;font:500 11px/1.3 ui-monospace,Menlo,Consolas,monospace;color:#c5d4dc}
+.rs-attributes span{padding:4px 7px;border:1px solid rgba(198,220,232,.25);background:rgba(4,8,14,.72)}
 .rs-rarity{font:500 11px/1 ui-monospace,Menlo,Consolas,monospace;letter-spacing:.32em;color:#8b98a5;opacity:0}
 .rs-name{font-weight:700;font-size:22px;line-height:1.1;color:#f4fbff;min-height:1.1em;display:flex;justify-content:center;flex-wrap:wrap;padding:0 16px}
 .rs-name span{display:inline-block;white-space:pre;opacity:0;will-change:transform,opacity}
@@ -820,7 +825,7 @@ class RollStageEngine {
       this._layout();
       this._start();
       Promise.resolve(input).then(
-        (pull) => this._onResult(pull),
+        (pull) => this._onResult(pull).catch((err) => this._fail(err)),
         (err) => this._fail(err),
       );
     });
@@ -872,7 +877,7 @@ class RollStageEngine {
           <p class="rs-eyebrow"></p>
           <p class="rs-status"></p>
           <div class="rs-title" aria-hidden="true"></div>
-          <div class="rs-info"><span class="rs-rarity"></span><h2 class="rs-name" style="margin:0"></h2><span class="rs-pts"></span><span class="rs-tag"></span></div>
+          <div class="rs-info"><span class="rs-rarity"></span><h2 class="rs-name" style="margin:0"></h2><span class="rs-pts"></span><div class="rs-attributes"><span class="rs-foil"></span><span class="rs-condition"></span><span class="rs-shard"></span></div><span class="rs-tag"></span></div>
           <div class="rs-actions"><button type="button" class="rs-btn"></button></div>
         </div>
         <button type="button" class="rs-btn rs-sound" aria-pressed="true"></button>
@@ -884,7 +889,19 @@ class RollStageEngine {
     this.el = {
       frame: q('.rs-frame'), canvas: q('.rs-canvas'), eyebrow: q('.rs-eyebrow'), status: q('.rs-status'),
       title: q('.rs-title'), info: q('.rs-info'), rarity: q('.rs-rarity'), name: q('.rs-name'), pts: q('.rs-pts'),
+      foil: q('.rs-foil'), condition: q('.rs-condition'), shard: q('.rs-shard'),
       tag: q('.rs-tag'), actions: q('.rs-actions'), live: q('.rs-live'), sound: q('.rs-sound'),
+    };
+    this._onContextLost = (event) => {
+      event.preventDefault();
+      this.noGL = true;
+      this.dlg.style.opacity = 1;
+      if (this.raf) cancelAnimationFrame(this.raf);
+      this.raf = 0;
+      if (this.pull) {
+        this._staticDom();
+        if (this.plan && !this.continueReady) this._jumpFinal(true);
+      }
     };
     if (this.reduced) this.el.canvas.remove();
     this.btn = q('.rs-actions .rs-btn');
@@ -893,6 +910,7 @@ class RollStageEngine {
     this.btn.textContent = 'Fechar';
     this.el.sound.textContent = '♪ ' + L.sound;
     this.el.sound.setAttribute('aria-pressed', String(this.sfx.on));
+    this.el.sound.setAttribute('aria-label', this.sfx.on ? 'Desativar som' : 'Ativar som');
 
     this.btn.addEventListener('click', () => {
       if (this.continueReady || !this.pull) this._close();
@@ -901,6 +919,7 @@ class RollStageEngine {
     this.el.sound.addEventListener('click', () => {
       this.sfx.setOn(!this.sfx.on); this.sfx.ensure();
       this.el.sound.setAttribute('aria-pressed', String(this.sfx.on));
+      this.el.sound.setAttribute('aria-label', this.sfx.on ? 'Desativar som' : 'Ativar som');
     });
     d.addEventListener('cancel', (e) => {
       e.preventDefault();
@@ -908,7 +927,7 @@ class RollStageEngine {
     });
     d.addEventListener('pointerdown', (e) => {
       this.sfx.ensure();
-      this._requestGyro();
+      if (!e.target.closest('button') && this.pull) this._requestGyro();
       if (!e.target.closest('button') && (this.continueReady || !this.pull)) this._close();
       else if (!e.target.closest('button')) this.showFinal();
     });
@@ -931,7 +950,7 @@ class RollStageEngine {
   }
 
   _requestGyro() {
-    if (!this.mobile || this.gyroAsked || typeof DeviceOrientationEvent === 'undefined') return;
+    if (this.reduced || !this.mobile || this.gyroAsked || typeof DeviceOrientationEvent === 'undefined') return;
     this.gyroAsked = true;
     const attach = () => {
       this._onOrient = (ev) => {
@@ -943,7 +962,7 @@ class RollStageEngine {
     };
     try {
       if (typeof DeviceOrientationEvent.requestPermission === 'function') {
-        DeviceOrientationEvent.requestPermission().then((r) => r === 'granted' && attach()).catch(() => {});
+        DeviceOrientationEvent.requestPermission().then((r) => r === 'granted' && !this.destroyed && attach()).catch(() => {});
       } else attach();
     } catch { /* ignore */ }
   }
@@ -955,9 +974,11 @@ class RollStageEngine {
       renderer = new THREE.WebGLRenderer({ canvas: this.el.canvas, antialias: true, alpha: false, powerPreference: this.mobile ? 'low-power' : 'default' });
     } catch (e) {
       this.noGL = true;
+      this.dlg.style.opacity = 1;
       return;
     }
     this.renderer = renderer;
+    this.el.canvas.addEventListener('webglcontextlost', this._onContextLost);
     renderer.outputColorSpace = THREE.LinearSRGBColorSpace; // valores = hex CSS
     renderer.setClearColor(0x02050a, 1);
     renderer.sortObjects = true;
@@ -1181,6 +1202,8 @@ class RollStageEngine {
       image: p.image ?? p.imageUrl ?? p.imagem ?? null,
       foil: FOILS.includes(String(p.foil || '').toUpperCase()) ? String(p.foil).toUpperCase() : 'NORMAL',
       condition: p.condition ?? p.condicao ?? null,
+      bonusShard: p.bonusShard ?? null,
+      preview: p.preview === true,
       isNew: p.isNew === true || p.nova === true,
       compact: p.isDuplicate === true || p.duplicate === true || p.repetida === true || p.compact === true,
     };
@@ -1188,24 +1211,29 @@ class RollStageEngine {
     this.pull = pull;
     this._layout();
 
-    // arte: espera carregar (máx. 4s) — a timeline pausa em "waiting" enquanto isso
-    let art = null;
-    if (pull.image) {
-      try { art = await Promise.race([loadImage(pull.image), new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 4000))]); } catch { art = null; }
-    }
-    if (this.destroyed) return;
     const cv = document.createElement('canvas');
     cv.width = 768; cv.height = 1024;
     const g = cv.getContext('2d');
-    if (art) drawCover(g, art, 768, 1024); else g.drawImage(placeholderArt(tier, pull.name), 0, 0);
+    g.drawImage(placeholderArt(tier, pull.name), 0, 0);
+    this.fallbackSrc = cv.toDataURL('image/jpeg', 0.85);
     if (this.renderer) {
       this.frontTex.image = cv; this.frontTex.needsUpdate = true;
       this.badgeMat.map = badgesTex({ rarity: TIER_LABEL[TIERS[tier]], foil: pull.foil, condition: pull.condition, color: TIER_COLOR[tier] });
       this.badgeMat.needsUpdate = true;
       this.frontMat.uniforms.uFoil.value = FOILS.indexOf(pull.foil);
       this.frontMat.uniforms.uColor.value.copy(col(TIER_COLOR[tier]));
-    } else {
+    }
+    if (pull.image) {
+      const request = loadImage(pull.image);
+      this.artImage = request.image;
+      void request.promise.then((art) => {
+      if (this.destroyed) return;
+      g.clearRect(0, 0, cv.width, cv.height);
+      drawCover(g, art, cv.width, cv.height);
       this.fallbackSrc = cv.toDataURL('image/jpeg', 0.85);
+      if (this.renderer) this.frontTex.needsUpdate = true;
+      if (this.fbImg) this.fbImg.src = this.fallbackSrc;
+      }).catch(() => {}).finally(() => { if (this.artImage === request.image) this.artImage = null; });
     }
 
     const plan = (this.plan = buildPlan(pull, this.cfg, pull.name.length));
@@ -1236,6 +1264,13 @@ class RollStageEngine {
     });
     this.el.name.setAttribute('aria-label', pull.name);
     this.el.pts.textContent = pull.points != null ? `${pull.points} ${L.pts}` : '';
+    this.el.foil.textContent = pull.foil !== 'NORMAL' ? pull.foil : '';
+    this.el.condition.textContent = pull.condition ? String(pull.condition).toUpperCase() : '';
+    const shardLabels = {
+      TITANITA: 'Fragmento de Titanita', TITANITA_SOMBRIA: 'Fragmento de Titanita Sombria',
+      DRACONICA: 'Fragmento de Magnetita', SOMBRIA_DRACONICA: 'Fragmento de Magnetita Sombria',
+    };
+    this.el.shard.textContent = pull.bonusShard ? shardLabels[pull.bonusShard] || '' : '';
     this.el.tag.textContent = pull.compact ? L.isDupe : pull.isNew ? L.isNew : '';
     this.el.tag.className = 'rs-tag ' + (pull.compact ? 'is-dupe' : pull.isNew ? 'is-new' : '');
     this.btn.textContent = this.labels.skip;
@@ -1264,12 +1299,12 @@ class RollStageEngine {
     });
     add(P.revealAt, 'phase', () => {
       this._setPhase('reveal');
-      this.el.status.textContent = L.revealed;
+      this.el.status.textContent = pull.preview ? 'Prévia revelada' : L.revealed;
     });
     add(P.revealAt, 'sfx', () => s.whoosh());
     add(P.cardRevealedAt, 'chime', () => {
       if (P.compact) s.dupe(); else if (P.galactic) s.galacticChime(); else s.chime(P.tier / 6);
-      this.el.live.textContent = `${L.revealed}: ${pull.name}. ${L.rarity} ${TIER_LABEL[TIERS[pull.tier]]}. ${pull.compact ? L.isDupe : pull.isNew ? L.isNew : ''}`;
+      this.el.live.textContent = `${pull.preview ? 'Prévia revelada' : L.revealed}: ${pull.name}. ${L.rarity} ${TIER_LABEL[TIERS[pull.tier]]}. ${pull.foil}, ${pull.condition || ''}. ${pull.bonusShard ? this.el.shard.textContent : ''}. ${pull.compact ? L.isDupe : pull.isNew ? L.isNew : ''}`;
     });
     add(P.continueAt, 'continue', () => { this._enableContinue(); s.ready(); });
     add(P.effectsEnd, 'end', () => { if (this.particles) this.particles.setMode('none'); this.effectsDone = true; });
@@ -1290,7 +1325,7 @@ class RollStageEngine {
 
   _announce() {
     const { pull } = this, L = this.labels;
-    this.el.live.textContent = `${L.revealed}: ${pull.name}. ${L.rarity} ${TIER_LABEL[TIERS[pull.tier]]}. ${pull.compact ? L.isDupe : pull.isNew ? L.isNew : ''}`;
+    this.el.live.textContent = `${pull.preview ? 'Prévia revelada' : L.revealed}: ${pull.name}. ${L.rarity} ${TIER_LABEL[TIERS[pull.tier]]}. ${pull.foil}, ${pull.condition || ''}. ${pull.bonusShard ? this.el.shard.textContent : ''}. ${pull.compact ? L.isDupe : pull.isNew ? L.isNew : ''}`;
   }
 
   _setPhase(p) {
@@ -1316,13 +1351,14 @@ class RollStageEngine {
     this.skipped = !silentChime;
     this.final = true;
     this.started = true;
+    this.dlg.style.opacity = 1;
     this.t = this.invEnd;
     this.rt = P.effectsEnd + 1;
     this._fireCues(true);
     if (silentChime && this.sfx.ok) this.sfx.chime(P.tier / 6);
     if (this.particles) this.particles.setMode('none');
     this.effectsDone = true;
-    this.el.status.textContent = this.labels.revealed;
+    this.el.status.textContent = this.pull.preview ? 'Prévia revelada' : this.labels.revealed;
     if (!this.renderer) this._staticDom();
     this.continueAtClock = P.continueAt;
     this._enableContinue();
@@ -1333,7 +1369,8 @@ class RollStageEngine {
     if (this.fallbackSrc && !this.fbImg) {
       const im = (this.fbImg = new Image());
       im.src = this.fallbackSrc; im.alt = this.pull.name;
-      Object.assign(im.style, { position: 'absolute', left: '50%', top: this.centerY + 'px', width: this.cardW + 'px', transform: 'translate(-50%,-50%)', border: `3px solid ${TIER_COLOR[this.pull.tier]}` });
+      im.className = 'rs-fallback-card';
+      im.style.setProperty('--rs-c', TIER_COLOR[this.pull.tier]);
       this.el.frame.insertBefore(im, this.el.canvas.nextSibling);
     }
     [this.el.rarity, this.el.pts, this.el.tag].forEach((e) => (e.style.opacity = 1));
@@ -1349,7 +1386,7 @@ class RollStageEngine {
   /* ───────── laço ───────── */
   _start() {
     this.last = performance.now();
-    if (this.manual) return;
+    if (this.manual || this.reduced || this.noGL) return;
     const loop = (now) => {
       if (this.destroyed) return;
       this.raf = requestAnimationFrame(loop);
@@ -1743,8 +1780,14 @@ class RollStageEngine {
     this.destroyed = true;
     this.active = false;
     this.sfx.dispose();
+    if (this.artImage) {
+      this.artImage.onload = this.artImage.onerror = null;
+      this.artImage.src = '';
+      this.artImage = null;
+    }
     if (this.raf) cancelAnimationFrame(this.raf);
     window.removeEventListener('resize', this._onResize);
+    this.el.canvas.removeEventListener('webglcontextlost', this._onContextLost);
     if (this._onOrient) window.removeEventListener('deviceorientation', this._onOrient);
     if (this.renderer) {
       this.scene.traverse((o) => {

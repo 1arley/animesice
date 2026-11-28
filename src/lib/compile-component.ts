@@ -10,6 +10,29 @@
 
 export type ModuleMap = Record<string, unknown>;
 
+/** Checks the saved stage contract without evaluating admin supplied code. */
+export async function validateRollStageSource(source: string, filePath = "roll-stage-engine.js"): Promise<void> {
+  const { transform } = await import("sucrase");
+  const { code } = transform(source, {
+    filePath,
+    transforms: ["typescript", "jsx", "imports"],
+    jsxRuntime: "automatic",
+    production: true,
+  });
+  const imports = [...code.matchAll(/\brequire\((['"])(.*?)\1\)/g)].map((match) => match[2]);
+  const allowed = new Set(["three", "@/lib/roll-anim-config"]);
+  if (imports.some((id) => !allowed.has(id))) throw new Error("A fonte usa imports fora do contrato do RollStage.");
+  const start = code.indexOf("class RollStageEngine");
+  const exportAt = code.indexOf("exports.RollStageEngine", start);
+  const classSource = start >= 0 && exportAt >= 0 ? code.slice(start, exportAt) : "";
+  if (!classSource || !/exports\.RollStageEngine\s*=\s*RollStageEngine/.test(code)) {
+    throw new Error('A fonte precisa exportar a classe "RollStageEngine".');
+  }
+  if (!/(?:^|\n)\s*(?:async\s+)?play\s*\(/.test(classSource) || !/(?:^|\n)\s*destroy\s*\(/.test(classSource)) {
+    throw new Error('"RollStageEngine" precisa implementar play() e destroy().');
+  }
+}
+
 /** Sucrase emite `require()`; o `_interopRequireDefault` espera `__esModule`. */
 function interop(ns: Record<string, unknown>): Record<string, unknown> {
   if ("__esModule" in ns) return ns;

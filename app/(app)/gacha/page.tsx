@@ -378,7 +378,7 @@ function GachaPageContent() {
 
   async function handleSpin() {
     setError("");
-    if (spinning) return;
+    if (spinning || claiming) return;
     setSpinning(true);
     setSpinResult(null);
     setClaimResult(null);
@@ -430,7 +430,7 @@ function GachaPageContent() {
   async function handleClaim() {
     if (
       !selectedSpin ||
-      claiming ||
+      claiming || spinning ||
       new Date(selectedSpin.expiresAt).getTime() <= Date.now()
     )
       return;
@@ -827,7 +827,7 @@ function GachaPageContent() {
     selectedSpin != null && new Date(selectedSpin.expiresAt).getTime() <= now;
   const spinCountdown = formatCountdown(status?.nextSpinAt ?? null, now);
   const claimCountdown = formatCountdown(status?.nextClaimAt ?? null, now);
-  const canSpinNow = (status?.canSpin ?? status == null) && !spinning;
+  const canSpinNow = (status?.canSpin ?? status == null) && !spinning && !claiming;
   const locked = status != null && status.canClaim === false;
   const stagePull = useMemo(
     () =>
@@ -1119,7 +1119,7 @@ function GachaPageContent() {
                     type="button"
                     onClick={() => setConfirmOpen(true)}
                     disabled={
-                      claiming || !selectedSpin || selectedSpinExpired || locked
+                      claiming || spinning || !selectedSpin || selectedSpinExpired || locked
                     }
                     title={
                       locked

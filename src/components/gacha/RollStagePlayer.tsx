@@ -15,40 +15,51 @@ export type RollStageEngineConstructor = new (options: {
 export function RollStagePlayer({
   Engine,
   pull,
+  preview = false,
   onClose,
+  onError = onClose,
   config,
 }: {
   Engine: RollStageEngineConstructor;
   pull: GachaPull | null;
+  preview?: boolean;
   onClose: () => void;
+  onError?: () => void;
   config?: Partial<RollAnimConfig>;
 }) {
   const resolvePull = useRef<((value: ReturnType<typeof toRollStagePull>) => void) | null>(null);
   const onCloseRef = useRef(onClose);
+  const onErrorRef = useRef(onError);
   const configRef = useRef(config);
   onCloseRef.current = onClose;
+  onErrorRef.current = onError;
   configRef.current = config;
 
   useEffect(() => {
     let mounted = true;
-    const engine = new Engine({ config: configRef.current });
-    const pendingPull = new Promise<ReturnType<typeof toRollStagePull>>((resolve) => {
-      resolvePull.current = resolve;
-    });
-    void engine.play(pendingPull).then(
-      () => { if (mounted) onCloseRef.current(); },
-      () => { if (mounted) onCloseRef.current(); },
-    );
+    let engine: InstanceType<RollStageEngineConstructor> | null = null;
+    try {
+      engine = new Engine({ config: configRef.current });
+      const pendingPull = new Promise<ReturnType<typeof toRollStagePull>>((resolve) => {
+        resolvePull.current = resolve;
+      });
+      void engine.play(pendingPull).then(
+        () => { if (mounted) onCloseRef.current(); },
+        () => { if (mounted) onErrorRef.current(); },
+      );
+    } catch {
+      if (mounted) onErrorRef.current();
+    }
     return () => {
       mounted = false;
       resolvePull.current = null;
-      engine.destroy();
+      engine?.destroy();
     };
   }, [Engine]);
 
   useEffect(() => {
-    if (pull) resolvePull.current?.(toRollStagePull(pull));
-  }, [pull]);
+    if (pull) resolvePull.current?.(toRollStagePull(pull, preview));
+  }, [pull, preview]);
 
   return null;
 }

@@ -2,10 +2,8 @@ import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
-import * as THREE from "three";
 import { API_URL } from "@/lib/api-server";
-import { compileComponent } from "@/lib/compile-component";
-import * as RollAnimConfigModule from "@/lib/roll-anim-config";
+import { validateRollStageSource } from "@/lib/compile-component";
 
 /**
  * Lê/grava o ARQUIVO INTEIRO da animação (/admin/gacha/animacao).
@@ -22,10 +20,6 @@ import * as RollAnimConfigModule from "@/lib/roll-anim-config";
 const RELATIVE_PATH = "src/components/gacha/roll-stage-engine.js";
 const ABS_PATH = path.join(process.cwd(), RELATIVE_PATH);
 const MAX_BYTES = 400_000;
-const MODULES = {
-  three: THREE,
-  "@/lib/roll-anim-config": RollAnimConfigModule,
-};
 
 async function denyUnlessSuperadmin(): Promise<Response | null> {
   const cookie = (await headers()).get("cookie") ?? "";
@@ -72,7 +66,7 @@ export async function PUT(request: Request) {
   }
 
   try {
-    await compileComponent(source, MODULES, RELATIVE_PATH);
+    await validateRollStageSource(source, RELATIVE_PATH);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Falha ao compilar.";
     return NextResponse.json({ message }, { status: 422 });

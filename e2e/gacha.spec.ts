@@ -147,10 +147,31 @@ test.describe("Gacha", () => {
     await expect(dialog.getByRole("button", { name: "Continuar" })).toBeVisible();
     await expect(dialog.locator("video")).toHaveCount(0);
     await expect(dialog.locator("canvas")).toHaveCount(0);
+    await expect(dialog).toHaveCSS("opacity", "1");
+    await expect(dialog.getByRole("button", { name: "Ativar som" })).toHaveAttribute("aria-pressed", "false");
     await expect(dialog.locator(".rs-name")).toHaveText("Waifu E2E");
     await expect(dialog.locator(".rs-rarity")).toHaveText("ÉPICA");
     await expect(dialog.locator(".rs-pts")).toContainText("pts");
     expect(crystalRequests).toEqual([]);
+  });
+
+  test("sem WebGL a carta confirmada continua visível no modo estático", async ({ page }) => {
+    await page.addInitScript(() => {
+      const getContext = HTMLCanvasElement.prototype.getContext;
+      HTMLCanvasElement.prototype.getContext = function (this: HTMLCanvasElement, kind: string) {
+        if (kind.startsWith("webgl")) return null;
+        return getContext.call(this, kind as "2d");
+      } as typeof getContext;
+    });
+    await blockAds(page);
+    await mockGeneric(page);
+    await loginAs(page);
+    await page.goto("/gacha");
+    await page.getByRole("button", { name: /^Girar/ }).click();
+    const dialog = page.getByRole("dialog", { name: "Invocação" });
+    await expect(dialog).toHaveCSS("opacity", "1");
+    await expect(dialog.locator(".rs-fallback-card")).toHaveAttribute("alt", "Waifu E2E");
+    await expect(dialog.getByRole("button", { name: "Continuar" })).toBeVisible();
   });
 
   test("anônimo: explica o jogo, pede login e mostra listas vazias", async ({
@@ -219,11 +240,15 @@ test.describe("Gacha", () => {
       });
       let spins: unknown[] = [];
       await page.route("**/gacha/spins", route => route.fulfill({ json: spins }));
+      if (rarity === "COMUM") await page.route("**/slow-image.webp", () => {});
       await page.route("**/gacha/spin", async (route) => {
         const response = await route.fetch();
         const pull = await response.json();
         pull.card.rarity = rarity;
         pull.foil = rarity === "LENDARIA" ? "GOLD" : "NORMAL";
+        if (rarity === "COMUM") {
+          pull.card.image = "/slow-image.webp";
+        }
         await responseReady;
         spins = [pull];
         await route.fulfill({ response, json: pull });
@@ -235,18 +260,25 @@ test.describe("Gacha", () => {
       // resposta chega. O botão nesse estado é "Fechar" — não dá pular a
       // animação antes do resultado, então não há o que apertar aqui.
       await expect(dialog).toHaveAttribute("data-phase", "waiting");
-      const revealing = dialog.waitForFunction(el => el.dataset.phase === "reveal");
       release();
-      await revealing;
+      await expect(dialog).toHaveAttribute("data-phase", "reveal");
       if (rarity === "LENDARIA") {
         await expect(dialog.locator("canvas")).toBeVisible();
+        await expect(dialog.locator(".rs-foil")).toHaveText("GOLD");
+        await expect(dialog.locator(".rs-condition")).toHaveText("MINT");
         await page.screenshot({ path: test.info().outputPath("gacha-lendaria-rays.png") });
         if (isMobile) {
-          await expect(dialog.getByRole("button", { name: /Som/ })).toBeVisible();
+          await expect(dialog.getByRole("button", { name: /som/i })).toBeVisible();
         }
       }
       await expect(dialog.locator(".rs-name")).toHaveText("Waifu E2E");
       await page.screenshot({ path: test.info().outputPath(`gacha-${rarity.toLowerCase()}-flip-midpoint.png`) });
+      if (rarity === "COMUM") {
+        const skipAt = Date.now();
+        await dialog.getByRole("button", { name: "Pular", exact: true }).click();
+        await expect(dialog.getByRole("button", { name: "Continuar" })).toBeVisible();
+        expect(Date.now() - skipAt).toBeLessThan(1000);
+      }
       await expect(
         dialog.getByRole("button", { name: "Continuar" }),
       ).toBeVisible();
@@ -493,6 +525,7 @@ test.describe("Gacha", () => {
       conditionLabel: "MINT",
       foil: "GOLD",
       value: 9500,
+      bonusShard: "TITANITA",
       claimedAt: null,
       expiresAt: new Date(Date.now() + 3600000).toISOString(),
       createdAt: new Date().toISOString(),
@@ -518,6 +551,8 @@ test.describe("Gacha", () => {
     await page.getByRole("button", { name: /Girar/ }).click();
     const dialog = page.getByRole("dialog");
     await expect(dialog.locator(".rs-rarity")).toHaveText("ÉPICA");
+    await expect(dialog.locator(".rs-status")).toHaveText("Prévia revelada");
+    await expect(dialog.locator(".rs-shard")).toHaveText("Fragmento de Titanita");
     await expect(dialog.locator("video")).toHaveCount(0);
     await expect(dialog.locator(".rs-name")).toHaveText("Waifu E2E");
     await dialog.getByRole("button", { name: "Continuar" }).click();
@@ -531,8 +566,20 @@ test.describe("Gacha", () => {
     await page.getByRole("button", { name: "Pegar carta", exact: true }).click();
     await expect(dialog.getByRole("heading", { name: "Guardar carta?" })).toBeVisible();
     await expect(dialog.getByText("~9500 pts", { exact: true })).toBeVisible();
+    let releaseClaim!: () => void;
+    const claimPending = new Promise<void>((resolve) => { releaseClaim = resolve; });
+    await page.route("**/gacha/claim", async (route) => {
+      await claimPending;
+      await route.fulfill({ json: {
+        id: "pull-e2e-1", condition: 0.04, conditionLabel: "MINT", foil: "GOLD", value: 9500,
+        card: spinPreview.card,
+      } });
+    });
     await dialog.getByRole("button", { name: "Pegar carta", exact: true }).click();
+    await expect(page.getByRole("button", { name: /^Girar/ })).toBeDisabled();
+    releaseClaim();
     await expect(page.getByRole("dialog", { name: "Invocação" })).toBeVisible();
+    await expect(page.getByRole("dialog", { name: "Invocação" }).locator(".rs-name")).toHaveText("Waifu E2E");
   });
 
   test("Festival das Cartas bloqueia o próximo resgate imediatamente", async ({
