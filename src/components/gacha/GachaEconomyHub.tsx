@@ -105,7 +105,10 @@ function itemDropProbabilities(odds: GachaEconomyOdds, tier: GachaBoxTier) {
     if (weight <= 0) return [];
     const quantitiesByAmount = new Map<number, number>();
     for (const [quality, qualityWeight] of Object.entries(qualities)) {
-      const amount = kind === "PROTECAO" ? 1 : (quantities[quality] ?? 0);
+      const amount =
+        kind === "PROTECAO" || kind === "EXTRATOR_FOIL"
+          ? 1
+          : (quantities[quality] ?? 0);
       if (qualityWeight <= 0 || amount <= 0) continue;
       quantitiesByAmount.set(
         amount,
@@ -2238,7 +2241,9 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
                             >
                               <dt>
                                 {ITEM_KIND_LABEL[kind] ?? kind}
-                                {kind === "PROTECAO" ? "" : ` · ${amount}`}
+                                {kind === "PROTECAO" || kind === "EXTRATOR_FOIL"
+                                  ? ""
+                                  : ` · ${amount}`}
                               </dt>
                               <dd className="tabular-nums">
                                 {formatChance(probability)}

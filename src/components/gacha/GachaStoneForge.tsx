@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { GachaItemKind } from "@/types";
+import type { GachaStoneItemKind } from "@/types";
 import { resolveStoneForgeVariant } from "../../../forja/stone-forge-variants.mjs";
 
-type StoneKind = Exclude<GachaItemKind, "PROTECAO">;
+type StoneKind = GachaStoneItemKind;
 
 const STONE_LABELS: Record<StoneKind, string> = {
   TITANITA: "Titanita",

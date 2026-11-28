@@ -26,9 +26,14 @@ import { Avatar } from "@/components/common/Avatar";
 import { UserProfilePreview } from "@/features/social/identity";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { CardPreview } from "@/components/gacha/CardPreview";
+import {
+  FoilExtractDialog,
+  FoilExtractFeedback,
+} from "@/components/gacha/FoilExtractDialog";
 import type {
   GachaEconomyOdds,
   GachaEconomyInventory,
+  GachaFoilExtractResult,
   GachaPull,
   GachaRankingEntry,
   GachaSpinPreview,
@@ -155,6 +160,11 @@ function GachaPageContent() {
   const previewUserIdRef = useRef<string | null>(null);
   const [economy, setEconomy] = useState<GachaEconomyInventory | null>(null);
   const [listing, setListing] = useState(false);
+  const [extractTarget, setExtractTarget] = useState<GachaPull | null>(null);
+  const [extractFeedback, setExtractFeedback] = useState<{
+    result: GachaFoilExtractResult;
+    updatedCard: GachaPull;
+  } | null>(null);
   const [rerollConfirm, setRerollConfirm] = useState(false);
   const [applyingRanking, setApplyingRanking] = useState(false);
   const { toast } = useToast();
@@ -924,6 +934,15 @@ function GachaPageContent() {
           }
           onChange={setPreview}
           listing={listing}
+          foilExtractorsCount={economy?.foilExtractors ?? 0}
+          onExtractFoil={
+            user && preview.user.id === user.id && preview.foil !== "NORMAL"
+              ? () => {
+                  setExtractTarget(preview);
+                  closePreview();
+                }
+              : undefined
+          }
           onList={
             user && preview.user.id === user.id
               ? (price) => void handleList(price)
@@ -936,6 +955,41 @@ function GachaPageContent() {
               : undefined
           }
         />
+      )}
+      {user && (
+        <>
+          <FoilExtractDialog
+            open={extractTarget !== null}
+            card={extractTarget}
+            userId={user.id}
+            inventory={economy}
+            onClose={() => setExtractTarget(null)}
+            onExtracted={async (extracted, updatedCard) => {
+              setRecent((prev) =>
+                prev.map((pull) =>
+                  pull.id === updatedCard.id ? updatedCard : pull,
+                ),
+              );
+              setResult((prev) =>
+                prev?.id === updatedCard.id ? updatedCard : prev,
+              );
+              setClaimResult((prev) =>
+                prev?.id === updatedCard.id ? updatedCard : prev,
+              );
+              setExtractTarget(null);
+              setExtractFeedback({ result: extracted, updatedCard });
+              await Promise.all([
+                api.gachaEconomyInventory().then(setEconomy),
+                refresh(),
+              ]).catch(() => undefined);
+            }}
+          />
+          <FoilExtractFeedback
+            feedback={extractFeedback}
+            onClose={() => setExtractFeedback(null)}
+            showFragmentsLink
+          />
+        </>
       )}
       {selectedSpin && (
         <ConfirmDialog

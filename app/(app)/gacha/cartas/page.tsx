@@ -12,6 +12,10 @@ import {
 import { gachaRerollCost } from "@/lib/gacha-reroll";
 import { CardPreview } from "@/components/gacha/CardPreview";
 import {
+  FoilExtractDialog,
+  FoilExtractFeedback,
+} from "@/components/gacha/FoilExtractDialog";
+import {
   GachaCardGridSkeleton,
   GachaPageSkeleton,
 } from "@/components/gacha/GachaPageSkeleton";
@@ -24,6 +28,7 @@ import type {
   GachaCollectionProgress,
   GachaFeatured,
   GachaEconomyInventory,
+  GachaFoilExtractResult,
   GachaPull,
 } from "@/types";
 
@@ -65,6 +70,11 @@ export default function GachaCollectionPage() {
   const [burning, setBurning] = useState(false);
   const [applyingRanking, setApplyingRanking] = useState(false);
   const [burnTarget, setBurnTarget] = useState<GachaPull | null>(null);
+  const [extractTarget, setExtractTarget] = useState<GachaPull | null>(null);
+  const [extractFeedback, setExtractFeedback] = useState<{
+    result: GachaFoilExtractResult;
+    updatedCard: GachaPull;
+  } | null>(null);
   const [rerollConfirm, setRerollConfirm] = useState(false);
   const { toast } = useToast();
   const [burnResult, setBurnResult] = useState<{
@@ -674,6 +684,15 @@ export default function GachaCollectionPage() {
           }}
           listing={listing}
           burning={burning}
+          foilExtractorsCount={economy?.foilExtractors ?? 0}
+          onExtractFoil={
+            preview.user.id === user.id && preview.foil !== "NORMAL"
+              ? () => {
+                  setExtractTarget(preview);
+                  setPreview(null);
+                }
+              : undefined
+          }
           onBurn={
             preview.user.id === user.id
               ? () => {
@@ -708,6 +727,34 @@ export default function GachaCollectionPage() {
           A recompensa em Crystal depende da raridade. Cartas com foil também concedem fragmentos. Ação irreversível.
         </p>
       </ConfirmDialog>
+      <FoilExtractDialog
+        open={extractTarget !== null}
+        card={extractTarget}
+        userId={user.id}
+        inventory={economy}
+        onClose={() => setExtractTarget(null)}
+        onExtracted={async (result, updatedCard) => {
+          setItems((prev) =>
+            prev.map((pull) =>
+              pull.id === updatedCard.id ? updatedCard : pull,
+            ),
+          );
+          setExtractTarget(null);
+          setExtractFeedback({ result, updatedCard });
+          try {
+            setEconomy(await api.gachaEconomyInventory());
+          } catch {
+            setError(
+              "Foil extraído, mas não foi possível atualizar seus saldos. Atualize a página para sincronizar o inventário.",
+            );
+          }
+        }}
+      />
+      <FoilExtractFeedback
+        feedback={extractFeedback}
+        onClose={() => setExtractFeedback(null)}
+        showFragmentsLink
+      />
       {burnResult && (
         <div
           role="status"

@@ -77,6 +77,9 @@ import type {
   GachaEconomyInventory,
   GachaFoil,
   GachaItemKind,
+  GachaStoneItemKind,
+  GachaFoilExtractPreview,
+  GachaFoilExtractResult,
   GachaEconomyListingItem,
   GachaEconomyOrder,
   GachaMarketOffer,
@@ -1645,6 +1648,18 @@ export const api = {
       method: "POST",
       body: JSON.stringify(body),
     }),
+  gachaEconomyFoilExtractPreview: (userCardId: string) =>
+    request<GachaFoilExtractPreview>(
+      `/gacha/economy/gems/extract/preview/${encodeURIComponent(userCardId)}`,
+    ),
+  gachaEconomyExtractFoil: (body: {
+    operationId: string;
+    userCardId: string;
+  }) =>
+    request<GachaFoilExtractResult>("/gacha/economy/gems/extract", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
   gachaEconomyBuyItem: (body: {
     operationId: string;
     kind: GachaItemKind;
@@ -1656,7 +1671,7 @@ export const api = {
     }),
   gachaEconomyConvertItem: (body: {
     operationId: string;
-    kind: Exclude<GachaItemKind, "PROTECAO">;
+    kind: GachaStoneItemKind;
     quantity: number;
   }) =>
     request("/gacha/economy/items/convert", {
@@ -1665,11 +1680,11 @@ export const api = {
     }),
   gachaEconomyCraftItem: (body: {
     operationId: string;
-    kind: Exclude<GachaItemKind, "PROTECAO">;
+    kind: GachaStoneItemKind;
     quantity: number;
   }) =>
     request<{
-      kind: Exclude<GachaItemKind, "PROTECAO">;
+      kind: GachaStoneItemKind;
       quantity: number;
       shards: number;
     }>("/gacha/economy/items/craft", {
@@ -1678,7 +1693,7 @@ export const api = {
     }),
   gachaEconomyUseItem: (body: {
     operationId: string;
-    kind: Exclude<GachaItemKind, "PROTECAO">;
+    kind: GachaStoneItemKind;
     userCardId: string;
   }) =>
     request<{
