@@ -1,3 +1,13 @@
+# [1.19.0](https://github.com/1arley/animesice/compare/v1.18.0...v1.19.0) (2026-11-28)
+
+### Bug Fixes
+
+* **gacha:** guard unauth nav fetch, scope roulette storage and add admin itemId datalist ([eaad82c](https://github.com/1arley/animesice/commit/eaad82c8579d01925d220fed4c4e345061a313d2))
+
+### Features
+
+* **gacha:** add rewards hub (/gacha/recompensas) and prize roulette ([26ac5f7](https://github.com/1arley/animesice/commit/26ac5f7104785130a2892ea13f9c16f4f5eae750))
+
 # [1.18.0](https://github.com/1arley/animesice/compare/v1.17.0...v1.18.0) (2026-11-28)
 
 ### Bug Fixes
