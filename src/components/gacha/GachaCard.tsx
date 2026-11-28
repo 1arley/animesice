@@ -301,7 +301,11 @@ export const GachaCard = memo(function GachaCard({ pull, preview = false, linkAn
           {pull.bonusShard && (
             <BonusShardIcon
               kind={pull.bonusShard}
-              className="absolute left-1.5 top-1/2 z-20 h-5 w-5 -translate-y-1/2"
+              className={
+                pull.bonusShard === "ROULETTE_SPIN"
+                  ? "absolute left-1/2 top-1/2 z-20 h-11 w-11 -translate-x-1/2 -translate-y-1/2"
+                  : "absolute left-1.5 top-1/2 z-20 h-5 w-5 -translate-y-1/2"
+              }
             />
           )}
           <span

@@ -153,6 +153,30 @@ export default function AdminGachaJogadoresPage() {
     }
   }
 
+  async function grantRouletteSpins() {
+    if (!selectedUser) return;
+    const raw = window.prompt("Quantos giros da roleta conceder ao jogador?", "1");
+    if (!raw) return;
+    const amount = Number.parseInt(raw, 10);
+    if (!Number.isSafeInteger(amount) || amount === 0) {
+      setError("Informe um número inteiro diferente de zero.");
+      return;
+    }
+    const reason = window.prompt("Motivo da concessão:", "Concessão administrativa");
+    if (!reason?.trim()) return;
+    try {
+      const res = await api.adminGrantRouletteSpins(selectedUser, {
+        amount,
+        reason: reason.trim(),
+      });
+      toast(`Giros atualizados. Saldo atual: ${res.rouletteSpins}.`, "success");
+    } catch (e) {
+      setError(
+        e instanceof ApiError ? e.message : "Erro ao conceder giros da roleta.",
+      );
+    }
+  }
+
   async function grantCard(cardId: string) {
     if (!selectedUser || granting) return;
     const card = grantCards.find((item) => item.id === cardId);
@@ -430,6 +454,13 @@ export default function AdminGachaJogadoresPage() {
                   onClick={() => void resetRoll()}
                 >
                   Resetar Roll Diário
+                </button>
+                <button
+                  type="button"
+                  className="admin-tab"
+                  onClick={() => void grantRouletteSpins()}
+                >
+                  Conceder Giros da Roleta
                 </button>
               </div>
 

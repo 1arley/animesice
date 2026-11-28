@@ -207,7 +207,12 @@ export function GachaEssences({
       </h2>
       <p className="mt-2 max-w-2xl text-body-sm text-mist">
         Cada Essência revela uma carta da raridade indicada e a adiciona à
-        coleção. Seu giro de preview continua disponível.
+        coleção. Seu giro de preview continua disponível. Essências também podem
+        ser conquistadas por códigos promocionais e na{" "}
+        <a href="/gacha/recompensas" className="text-ice underline underline-offset-4">
+          Roleta de Prêmios
+        </a>
+        .
       </p>
       {error && (
         <p role="alert" className="mt-3 text-signal">

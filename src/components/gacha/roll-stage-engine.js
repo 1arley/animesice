@@ -792,6 +792,10 @@ const CSS = /* css */ `
 .rs-sound{position:absolute;top:14px;right:14px;left:auto;right:14px;width:auto;pointer-events:auto;cursor:pointer;
   background:transparent;border:1px solid #2a3a46;color:#9fb3c0;font:600 12px/1 ui-monospace,Menlo,monospace;padding:8px 10px;letter-spacing:.1em;min-width:0}
 .rs-sound[aria-pressed="false"]{opacity:.5;text-decoration:line-through}
+.rs-bonus-emblem{position:absolute;left:var(--rs-x,50%);top:var(--rs-y,40%);transform:translate(-50%,-50%) scale(.85);display:flex;flex-direction:column;align-items:center;gap:6px;opacity:0;pointer-events:none;transition:opacity .35s ease,transform .35s ease}
+.rs-dialog[data-phase="reveal"] .rs-bonus-emblem.is-active,.rs-dialog[data-phase="showcase"] .rs-bonus-emblem.is-active{opacity:1;transform:translate(-50%,-50%) scale(1)}
+.rs-bonus-emblem img{width:68px;height:68px;object-fit:contain;filter:drop-shadow(0 0 18px rgba(56,232,218,.7))}
+.rs-bonus-emblem span{padding:4px 10px;border:1px solid rgba(56,232,218,.65);background:rgba(4,10,18,.9);color:#38e8da;font:700 11px/1 ui-monospace,Menlo,Consolas,monospace;letter-spacing:.14em;text-transform:uppercase;white-space:nowrap}
 .rs-live{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 `;
 
@@ -878,6 +882,7 @@ class RollStageEngine {
           <p class="rs-eyebrow"></p>
           <p class="rs-status"></p>
           <div class="rs-title" aria-hidden="true"></div>
+          <div class="rs-bonus-emblem" aria-hidden="true"><img src="/gacha/roleta-premios.png" alt="" /><span>+1 Giro da Roleta</span></div>
           <div class="rs-info"><span class="rs-rarity"></span><h2 class="rs-name" style="margin:0"></h2><span class="rs-pts"></span><div class="rs-attributes"><span class="rs-foil"></span><span class="rs-condition"></span><span class="rs-shard"></span></div><span class="rs-tag"></span></div>
           <div class="rs-actions"><button type="button" class="rs-btn"></button></div>
         </div>
@@ -889,7 +894,7 @@ class RollStageEngine {
     const q = (s) => d.querySelector(s);
     this.el = {
       frame: q('.rs-frame'), canvas: q('.rs-canvas'), eyebrow: q('.rs-eyebrow'), status: q('.rs-status'),
-      title: q('.rs-title'), info: q('.rs-info'), attributes: q('.rs-attributes'), rarity: q('.rs-rarity'), name: q('.rs-name'), pts: q('.rs-pts'),
+      title: q('.rs-title'), bonusEmblem: q('.rs-bonus-emblem'), info: q('.rs-info'), attributes: q('.rs-attributes'), rarity: q('.rs-rarity'), name: q('.rs-name'), pts: q('.rs-pts'),
       foil: q('.rs-foil'), condition: q('.rs-condition'), shard: q('.rs-shard'),
       tag: q('.rs-tag'), actions: q('.rs-actions'), live: q('.rs-live'), sound: q('.rs-sound'),
     };
@@ -1292,8 +1297,12 @@ class RollStageEngine {
     const shardLabels = {
       TITANITA: 'Fragmento de Titanita', TITANITA_SOMBRIA: 'Fragmento de Titanita Sombria',
       DRACONICA: 'Fragmento de Magnetita', SOMBRIA_DRACONICA: 'Fragmento de Magnetita Sombria',
+      ROULETTE_SPIN: 'Giro da Roleta de Prêmios (+1)',
     };
     this.el.shard.textContent = pull.bonusShard ? shardLabels[pull.bonusShard] || '' : '';
+    if (this.el.bonusEmblem) {
+      this.el.bonusEmblem.classList.toggle('is-active', pull.bonusShard === 'ROULETTE_SPIN');
+    }
     this.el.tag.textContent = pull.compact ? L.isDupe : pull.isNew ? L.isNew : '';
     this.el.tag.className = 'rs-tag ' + (pull.compact ? 'is-dupe' : pull.isNew ? 'is-new' : '');
     this.btn.textContent = this.labels.skip;

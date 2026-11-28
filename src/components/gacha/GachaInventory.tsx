@@ -356,6 +356,12 @@ export function GachaInventory() {
           >
             <Link
               className="btn-ghost min-h-11 px-4"
+              href="/gacha/recompensas"
+            >
+              Central de Recompensas
+            </Link>
+            <Link
+              className="btn-ghost min-h-11 px-4"
               href="/gacha/loja"
             >
               Ver caixas e probabilidades
@@ -387,6 +393,11 @@ export function GachaInventory() {
           },
           { label: "Chaves", value: inventory.keys },
           { label: "Resets de giros", value: inventory.spinResets },
+          {
+            label: "Giros da Roleta",
+            value: inventory.rouletteSpins ?? 0,
+            detail: "Use na Central de Recompensas",
+          },
           { label: "Ampulhetas do Éter", value: inventory.ampulhetaEter ?? 0 },
           {
             label: "Pedras prontas",

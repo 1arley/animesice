@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 const TABS = [
   { href: "/admin/gacha", label: "Cartas" },
   { href: "/admin/gacha/jogadores", label: "Jogadores" },
+  { href: "/admin/gacha/roleta", label: "Roleta" },
   { href: "/admin/gacha/cosmeticos", label: "Cosméticos" },
   { href: "/admin/gacha/evento", label: "Evento" },
   { href: "/admin/gacha/config", label: "Configuração" },

@@ -901,6 +901,9 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
                 <a href="#retention-title" className="btn-ghost min-h-11 px-4">
                   Recompensas
                 </a>
+                <Link href="/gacha/recompensas" className="btn-ice min-h-11 px-4 inline-flex items-center">
+                  Roleta &amp; Central de Recompensas
+                </Link>
                 <a href="#cosmetics" className="btn-ghost min-h-11 px-4">
                   Capas e cosméticos
                 </a>
