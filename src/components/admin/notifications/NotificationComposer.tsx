@@ -99,8 +99,8 @@ export function NotificationComposer({
   const searchRequestId = useRef(0);
 
   const linkError =
-    linkUrl.trim() !== "" && !/^\/(?!\/)/.test(linkUrl.trim())
-      ? "Use um caminho interno, começando por / (ex.: /gacha)."
+    linkUrl.trim() !== "" && !/^\/(?!\/)[^\s\\]*$/.test(linkUrl.trim())
+      ? "Use um caminho interno, começando por / (ex.: /gacha), sem espaços ou barras invertidas."
       : null;
 
   const selectedIds = useMemo(
