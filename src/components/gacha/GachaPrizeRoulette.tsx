@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { api } from "@/lib/api";
+import { useAuth } from "@/lib/auth-context";
 import type {
   GachaRoulettePrizeCategory,
   GachaRouletteSpinResult,
@@ -10,8 +11,8 @@ import type {
 } from "@/types";
 
 const SOUND_KEY = "animesice:roll-sound";
-const PENDING_OP_KEY = "animesice:roulette-pending-op";
-const UNREVEALED_RESULT_KEY = "animesice:roulette-unrevealed-result";
+const PENDING_OP_PREFIX = "animesice:roulette-pending-op";
+const UNREVEALED_RESULT_PREFIX = "animesice:roulette-unrevealed-result";
 
 function readSoundPreference(): boolean {
   try {
@@ -143,7 +144,12 @@ function useRouletteAudio() {
     [ensureCtx],
   );
 
-  return { playTick, playWinChime };
+  return { playTick, playWinChime, closeAudio: () => {
+    if (ctxRef.current) {
+      void ctxRef.current.close().catch(() => {});
+      ctxRef.current = null;
+    }
+  } };
 }
 
 export function GachaPrizeRoulette({
@@ -157,6 +163,9 @@ export function GachaPrizeRoulette({
   prizes: GachaRouletteWheelPrize[];
   onSpinComplete: (result: GachaRouletteSpinResult) => void;
 }) {
+  const { user } = useAuth();
+  const pendingOpKey = user?.id ? `${PENDING_OP_PREFIX}:${user.id}` : PENDING_OP_PREFIX;
+  const unrevealedResultKey = user?.id ? `${UNREVEALED_RESULT_PREFIX}:${user.id}` : UNREVEALED_RESULT_PREFIX;
   const [soundOn, setSoundOn] = useState(true);
   const [spinning, setSpinning] = useState(false);
   const [rotation, setRotation] = useState(0);
@@ -168,7 +177,7 @@ export function GachaPrizeRoulette({
   const rafRef = useRef<number | null>(null);
   const rotationRef = useRef(0);
   const soundOnRef = useRef(true);
-  const { playTick, playWinChime } = useRouletteAudio();
+  const { playTick, playWinChime, closeAudio } = useRouletteAudio();
 
   useEffect(() => {
     const pref = readSoundPreference();
@@ -188,7 +197,7 @@ export function GachaPrizeRoulette({
   // Recupera resultado confirmado caso a página tenha sido fechada/atualizada durante a animação.
   useEffect(() => {
     try {
-      const savedResult = localStorage.getItem(UNREVEALED_RESULT_KEY);
+      const savedResult = localStorage.getItem(unrevealedResultKey);
       if (savedResult) {
         const parsed = JSON.parse(savedResult) as GachaRouletteSpinResult;
         if (parsed?.spinId && parsed?.prize) {
@@ -196,7 +205,7 @@ export function GachaPrizeRoulette({
           return;
         }
       }
-      const pendingOp = localStorage.getItem(PENDING_OP_KEY);
+      const pendingOp = localStorage.getItem(pendingOpKey);
       if (pendingOp) {
         const parsedOp = JSON.parse(pendingOp) as {
           operationId: string;
@@ -209,28 +218,29 @@ export function GachaPrizeRoulette({
           void api
             .gachaSpinRoulette(parsedOp.operationId)
             .then((res) => {
-              localStorage.removeItem(PENDING_OP_KEY);
-              localStorage.setItem(UNREVEALED_RESULT_KEY, JSON.stringify(res));
+              localStorage.removeItem(pendingOpKey);
+              localStorage.setItem(unrevealedResultKey, JSON.stringify(res));
               setRevealed(res);
               onSpinComplete(res);
             })
             .catch(() => {
-              localStorage.removeItem(PENDING_OP_KEY);
+              localStorage.removeItem(pendingOpKey);
             });
         } else {
-          localStorage.removeItem(PENDING_OP_KEY);
+          localStorage.removeItem(pendingOpKey);
         }
       }
     } catch {
       /* ignore */
     }
-  }, [onSpinComplete]);
+  }, [onSpinComplete, pendingOpKey, unrevealedResultKey]);
 
   useEffect(() => {
     return () => {
       if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
+      closeAudio();
     };
-  }, []);
+  }, [closeAudio]);
 
   const sliceCount = Math.max(1, prizes.length);
   const sliceAngle = 360 / sliceCount;
@@ -241,7 +251,7 @@ export function GachaPrizeRoulette({
     setRevealed(null);
     setBurstActive(false);
     try {
-      localStorage.removeItem(UNREVEALED_RESULT_KEY);
+      localStorage.removeItem(unrevealedResultKey);
     } catch {
       /* ignore */
     }
@@ -259,7 +269,7 @@ export function GachaPrizeRoulette({
     const operationId = createOperationId();
     try {
       localStorage.setItem(
-        PENDING_OP_KEY,
+        pendingOpKey,
         JSON.stringify({ operationId, startedAt: Date.now() }),
       );
     } catch {
@@ -272,7 +282,7 @@ export function GachaPrizeRoulette({
     } catch (err) {
       setSpinning(false);
       try {
-        localStorage.removeItem(PENDING_OP_KEY);
+        localStorage.removeItem(pendingOpKey);
       } catch {
         /* ignore */
       }
@@ -285,8 +295,8 @@ export function GachaPrizeRoulette({
     }
 
     try {
-      localStorage.removeItem(PENDING_OP_KEY);
-      localStorage.setItem(UNREVEALED_RESULT_KEY, JSON.stringify(result));
+      localStorage.removeItem(pendingOpKey);
+      localStorage.setItem(unrevealedResultKey, JSON.stringify(result));
     } catch {
       /* ignore */
     }

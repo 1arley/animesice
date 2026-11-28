@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Modal } from "@/components/common/Modal";
 import { api } from "@/lib/api";
+import { useAuth } from "@/lib/auth-context";
 
 const NIGHT_MARKET_HREF = "/gacha/mercado-noturno";
 const NIGHT_MARKET_CLICKED_KEY = "animesice:night-market-clicked";
@@ -97,12 +98,17 @@ function NavIcon({
 
 export function GachaNav() {
   const pathname = usePathname();
+  const { user } = useAuth();
   const [nightMarketPeriod, setNightMarketPeriod] = useState<string | null>();
   const [nightMarketClicked, setNightMarketClicked] = useState(false);
   const [pendingRewards, setPendingRewards] = useState(0);
   const [moreOpen, setMoreOpen] = useState(false);
 
   useEffect(() => {
+    if (!user) {
+      setPendingRewards(0);
+      return;
+    }
     let mounted = true;
     const refreshRewardsBadge = () => {
       api
@@ -123,7 +129,7 @@ export function GachaNav() {
         refreshRewardsBadge,
       );
     };
-  }, [pathname]);
+  }, [pathname, user]);
 
   useEffect(() => {
     let mounted = true;

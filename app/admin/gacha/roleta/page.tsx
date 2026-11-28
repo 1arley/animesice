@@ -392,6 +392,7 @@ export default function AdminGachaRoulettePage() {
                     <td className="p-2">
                       <input
                         type="text"
+                        list="roulette-item-ids"
                         value={prize.itemId ?? ""}
                         onChange={(e) =>
                           updatePrize(idx, { itemId: e.target.value || null })
@@ -443,6 +444,41 @@ export default function AdminGachaRoulettePage() {
             </tbody>
           </table>
         </div>
+
+        <datalist id="roulette-item-ids">
+          <option value="ESSENCIA_CODIGO" />
+          <option value="ESSENCIA_COMUM" />
+          <option value="ESSENCIA_INCOMUM" />
+          <option value="ESSENCIA_RARA" />
+          <option value="ESSENCIA_EPICA" />
+          <option value="ESSENCIA_LENDARIA" />
+          <option value="ESSENCIA_MITICA" />
+          <option value="ESSENCIA_GALACTICA" />
+          <option value="TITANITA_SHARD" />
+          <option value="TITANITA_SOMBRIA_SHARD" />
+          <option value="DRACONICA_SHARD" />
+          <option value="SOMBRIA_DRACONICA_SHARD" />
+          <option value="TITANITA" />
+          <option value="TITANITA_SOMBRIA" />
+          <option value="DRACONICA" />
+          <option value="SOMBRIA_DRACONICA" />
+          <option value="PROTECAO" />
+          <option value="EXTRATOR_FOIL" />
+          <option value="AMPULHETA_ETER" />
+          <option value="HOLO_SHARD" />
+          <option value="GOLD_SHARD" />
+          <option value="INK_SHARD" />
+          <option value="PRISM_SHARD" />
+          <option value="HOLO_GEM" />
+          <option value="GOLD_GEM" />
+          <option value="INK_GEM" />
+          <option value="PRISM_GEM" />
+          <option value="KEY" />
+          <option value="SPIN_RESET" />
+          <option value="COMMON_BOX" />
+          <option value="RARE_BOX" />
+          <option value="PREMIUM_BOX" />
+        </datalist>
 
         <button
           type="submit"
