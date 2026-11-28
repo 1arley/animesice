@@ -22,6 +22,13 @@ import type {
   WatchHistoryItem,
   NotificationItem,
   NotificationListResponse,
+  AdminNotificationDetail,
+  AdminNotificationHistoryResponse,
+  AdminNotificationRecipient,
+  AdminNotificationCategory,
+  AdminNotificationAudience,
+  SendAdminNotificationInput,
+  AdminNotificationSendResult,
   CommentRepliesResponse,
   PublicUserProfile,
   PublicAnimeListItem,
@@ -2283,6 +2290,46 @@ export const api = {
 
   gachaRanking: (limit = 20) =>
     request<GachaRankingEntry[]>(`/gacha/ranking?limit=${limit}`),
+
+  // --- Admin: central de notificações ---
+  adminSearchNotificationRecipients: (
+    search?: string,
+    page = 1,
+    limit = 20,
+  ) => {
+    const qs = new URLSearchParams({ page: String(page), limit: String(limit) });
+    if (search) qs.set("search", search);
+    return request<Paginated<AdminNotificationRecipient>>(
+      `/admin/notification/recipients?${qs.toString()}`,
+    );
+  },
+
+  adminGetNotificationAudience: () =>
+    request<{ count: number }>(`/admin/notification/audience`),
+
+  adminSendNotification: (body: SendAdminNotificationInput) =>
+    request<AdminNotificationSendResult>(`/admin/notification/send`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+
+  adminListNotificationHistory: (
+    page = 1,
+    limit = 20,
+    filters?: { category?: AdminNotificationCategory; search?: string },
+  ) => {
+    const qs = new URLSearchParams({ page: String(page), limit: String(limit) });
+    if (filters?.category) qs.set("category", filters.category);
+    if (filters?.search) qs.set("search", filters.search);
+    return request<AdminNotificationHistoryResponse>(
+      `/admin/notification/history?${qs.toString()}`,
+    );
+  },
+
+  adminGetNotificationCampaign: (id: string, page = 1, limit = 20) =>
+    request<AdminNotificationDetail>(
+      `/admin/notification/${encodeURIComponent(id)}?page=${page}&limit=${limit}`,
+    ),
 
   revalidateAdminCache,
 };
