@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Modal } from "@/components/common/Modal";
 import { api } from "@/lib/api";
+import { useAuth } from "@/lib/auth-context";
 
 const NIGHT_MARKET_HREF = "/gacha/mercado-noturno";
 const NIGHT_MARKET_CLICKED_KEY = "animesice:night-market-clicked";
@@ -21,6 +22,7 @@ const MARKET_CLOCK = new Intl.DateTimeFormat("en-CA", {
 
 const items = {
   spin: { href: "/gacha", label: "Girar", icon: "spin" },
+  rewards: { href: "/gacha/recompensas", label: "Recompensas", icon: "rewards" },
   skins: { href: "/gacha/skins", label: "Girar skins" },
   cards: { href: "/gacha/cartas", label: "Minhas cartas", icon: "cards" },
   encyclopedia: { href: "/gacha/enciclopedia", label: "Enciclopédia" },
@@ -39,7 +41,7 @@ const items = {
 } as const;
 
 const groups = [
-  { label: "Jogar", items: [items.spin, items.skins] },
+  { label: "Jogar", items: [items.spin, items.rewards, items.skins] },
   {
     label: "Colecionar",
     items: [items.cards, items.tradeUp, items.encyclopedia, items.wishlist, items.cosmetics],
@@ -57,10 +59,11 @@ const groups = [
   },
 ] as const;
 
-const primaryItems = [items.spin, items.cards, items.market, items.shop] as const;
+const primaryItems = [items.spin, items.rewards, items.cards, items.market] as const;
 
 const iconPaths = {
   spin: "M20 7v5h-5M4 17v-5h5M5.6 9A7 7 0 0 1 18 6.5L20 9M4 15l2 2.5A7 7 0 0 0 18.4 15",
+  rewards: "M12 3l2.4 4.9 5.4.8-3.9 3.8.9 5.4L12 15.3l-4.8 2.6.9-5.4L4.2 8.7l5.4-.8L12 3Z",
   cards: "M7 4h11a2 2 0 0 1 2 2v13H7a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2ZM5 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h12M10 9h6M10 13h6",
   market: "M3 10h18M5 10v9h14v-9M4 10l1-5h14l1 5M9 19v-5h6v5",
   shop: "M6 4h12l1 4H5l1-4ZM5 8v11h14V8M9 12h6",
@@ -95,9 +98,38 @@ function NavIcon({
 
 export function GachaNav() {
   const pathname = usePathname();
+  const { user } = useAuth();
   const [nightMarketPeriod, setNightMarketPeriod] = useState<string | null>();
   const [nightMarketClicked, setNightMarketClicked] = useState(false);
+  const [pendingRewards, setPendingRewards] = useState(0);
   const [moreOpen, setMoreOpen] = useState(false);
+
+  useEffect(() => {
+    if (!user) {
+      setPendingRewards(0);
+      return;
+    }
+    let mounted = true;
+    const refreshRewardsBadge = () => {
+      api
+        .gachaRewardsHub()
+        .then((hub) => {
+          if (mounted) setPendingRewards(hub.pendingCount ?? 0);
+        })
+        .catch(() => {
+          if (mounted) setPendingRewards(0);
+        });
+    };
+    refreshRewardsBadge();
+    window.addEventListener("animesice:rewards-updated", refreshRewardsBadge);
+    return () => {
+      mounted = false;
+      window.removeEventListener(
+        "animesice:rewards-updated",
+        refreshRewardsBadge,
+      );
+    };
+  }, [pathname, user]);
 
   useEffect(() => {
     let mounted = true;
@@ -221,13 +253,21 @@ export function GachaNav() {
                               ? markNightMarketClicked
                               : undefined
                           }
-                          className={`flex min-h-11 items-center border-l-2 px-3 text-body-sm transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-ice ${
+                          className={`flex min-h-11 items-center justify-between border-l-2 px-3 text-body-sm transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-ice ${
                             active
                               ? "border-ice bg-ice/10 text-ice"
                               : "border-transparent text-mist hover:bg-ink/60 hover:text-snow"
                           } ${highlightNightMarket ? "night-market-nav-new" : ""}`}
                         >
-                          {label}
+                          <span>{label}</span>
+                          {href === "/gacha/recompensas" && pendingRewards > 0 && (
+                            <span
+                              className="ml-2 rounded-full border border-ice/60 bg-ice/15 px-2 py-0.5 font-mono text-[11px] font-semibold text-ice"
+                              aria-label={`${pendingRewards} recompensas disponíveis`}
+                            >
+                              {pendingRewards}
+                            </span>
+                          )}
                           {highlightNightMarket && (
                             <span className="sr-only">
                               Nova oferta neste período
@@ -261,7 +301,17 @@ export function GachaNav() {
                   active ? "text-ice" : "text-mist hover:text-snow"
                 }`}
               >
-                <NavIcon name={icon} active={active} />
+                <div className="relative">
+                  <NavIcon name={icon} active={active} />
+                  {href === "/gacha/recompensas" && pendingRewards > 0 && (
+                    <span
+                      className="absolute -right-2 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-ice px-1 font-mono text-[10px] font-bold text-ink"
+                      aria-hidden="true"
+                    >
+                      {pendingRewards}
+                    </span>
+                  )}
+                </div>
                 <span>{label}</span>
               </Link>
             );

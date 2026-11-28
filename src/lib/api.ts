@@ -1,9 +1,13 @@
 import type {
+  AdminGachaRouletteResponse,
   GachaCatalogItem,
   GachaItemAmount,
   GachaEssenceKind,
   GachaRewardCode,
   GachaRewardCodeInput,
+  GachaRewardsHubResponse,
+  GachaRoulettePrizeCategory,
+  GachaRouletteSpinResult,
 } from "@/types";
 import type {
   Anime,
@@ -1737,6 +1741,57 @@ export const api = {
       {
         method: "POST",
         body: JSON.stringify({ operationId }),
+      },
+    ),
+  gachaRewardsHub: () => request<GachaRewardsHubResponse>("/gacha/roulette"),
+  gachaSpinRoulette: (operationId: string) =>
+    request<GachaRouletteSpinResult>("/gacha/roulette/spin", {
+      method: "POST",
+      body: JSON.stringify({ operationId }),
+    }),
+  adminGachaRoulette: (
+    page = 1,
+    limit = 25,
+    search?: string,
+    category?: string,
+  ) => {
+    const qs = new URLSearchParams({
+      page: String(page),
+      limit: String(limit),
+    });
+    if (search) qs.set("search", search);
+    if (category) qs.set("category", category);
+    return request<AdminGachaRouletteResponse>(
+      `/gacha/admin/roulette?${qs.toString()}`,
+    );
+  },
+  adminUpdateGachaRouletteConfig: (body: {
+    enabled?: boolean;
+    spinDropChance?: number;
+    prizes?: Array<{
+      id: string;
+      label: string;
+      category: GachaRoulettePrizeCategory;
+      itemId?: string | null;
+      quantity: number;
+      weight: number;
+      enabled: boolean;
+    }>;
+    reason?: string;
+  }) =>
+    request("/gacha/admin/roulette/config", {
+      method: "PATCH",
+      body: JSON.stringify(body),
+    }),
+  adminGrantRouletteSpins: (
+    userId: string,
+    body: { amount: number; reason: string },
+  ) =>
+    request<{ userId: string; rouletteSpins: number; delta: number }>(
+      `/gacha/admin/users/${encodeURIComponent(userId)}/roulette-spins`,
+      {
+        method: "POST",
+        body: JSON.stringify(body),
       },
     ),
   gachaEconomyListings: (itemType: "CARD" | "SKIN" | "ITEM", page = 1) =>

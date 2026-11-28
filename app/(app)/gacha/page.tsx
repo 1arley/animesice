@@ -414,6 +414,13 @@ function GachaPageContent() {
       setSpins((prev) => [...prev, previewSpin]);
       setSelectedSpinId(previewSpin.id);
       setSpinResult(previewSpin);
+      if (previewSpin.bonusShard === "ROULETTE_SPIN") {
+        toast(
+          "Você ganhou +1 Giro da Roleta de Prêmios! Acesse Recompensas para girar.",
+          "success",
+        );
+        window.dispatchEvent(new CustomEvent("animesice:rewards-updated"));
+      }
       setStatus((prev) =>
         prev && prev.spinsLeft != null
           ? {

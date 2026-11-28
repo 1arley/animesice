@@ -679,7 +679,8 @@ export interface GachaPull {
   rankedValue?: number;
   valueOverride?: number | null;
   /** Fragmento bônus do giro (5%): só na prévia anunciada; o claim credita o fragmento no inventário e a carta resgatada não carrega selo. */
-  bonusShard?: GachaItemKind | null;
+  bonusShard?: GachaBonusDropKind | null;
+  rouletteSpinGranted?: boolean;
   ampulhetaDropped?: boolean;
   obtainedAt: string;
   user: SocialUser;
@@ -703,6 +704,8 @@ export interface GachaStatus {
   claimWarning?: string | null;
   bypassPriceCents?: number | null;
   ampulhetaCount?: number;
+  rouletteSpins?: number;
+  rouletteEnabled?: boolean;
   claimEvent?: { name: string; tiers: string[] } | null;
   pointsBalance?: number;
   pointsCosmetics?: string[];
@@ -865,6 +868,7 @@ export type GachaItemKind =
 
 export type GachaConsumableItemKind = "PROTECAO" | "EXTRATOR_FOIL";
 export type GachaStoneItemKind = Exclude<GachaItemKind, GachaConsumableItemKind>;
+export type GachaBonusDropKind = GachaItemKind | "ROULETTE_SPIN";
 
 export type GachaEssenceKind =
   `ESSENCIA_${"COMUM" | "INCOMUM" | "RARA" | "EPICA" | "LENDARIA" | "MITICA" | "GALACTICA"}`;
@@ -940,6 +944,7 @@ export interface GachaEconomyInventory {
   premiumBoxes: number;
   keys: number;
   spinResets: number;
+  rouletteSpins?: number;
   ampulhetaEter: number;
   weeklyRewardReady: boolean;
   loyaltyDays: number;
@@ -968,6 +973,97 @@ export interface GachaEconomyInventory {
   itemConfig: GachaItemConfig;
   dailyClaimedToday: boolean;
   watchEarnedToday: number;
+}
+
+export type GachaRoulettePrizeCategory =
+  | "CRYSTAL"
+  | "KEY"
+  | "SPIN_RESET"
+  | "COMMON_BOX"
+  | "RARE_BOX"
+  | "PREMIUM_BOX"
+  | "KEY_RARE_BOX"
+  | "KEY_PREMIUM_BOX"
+  | "ITEM"
+  | "FOIL_SHARD"
+  | "FOIL_GEM"
+  | "ESSENCE"
+  | "CARD"
+  | "SKIN"
+  | "CARD_BACK";
+
+export interface GachaRouletteWheelPrize {
+  id: string;
+  label: string;
+  category: GachaRoulettePrizeCategory;
+  itemId: string | null;
+  quantity: number;
+}
+
+export interface GachaRouletteSpinRecord {
+  id: string;
+  operationId: string;
+  prizeId: string;
+  prizeLabel: string;
+  category: GachaRoulettePrizeCategory;
+  itemId: string | null;
+  quantity: number;
+  reward: Record<string, unknown>;
+  createdAt: string;
+  user?: {
+    id: string;
+    name: string | null;
+    userName: string | null;
+    email?: string;
+    avatar: string | null;
+  };
+}
+
+export interface GachaRewardsHubResponse {
+  enabled: boolean;
+  spinsAvailable: number;
+  pendingCount: number;
+  wheelPrizes: GachaRouletteWheelPrize[];
+  recentSpins: GachaRouletteSpinRecord[];
+  recentDailyClaims: Array<{
+    id: string;
+    delta: number;
+    type: string;
+    reason: string | null;
+    createdAt: string;
+  }>;
+  probabilityDisclosure: string;
+}
+
+export interface GachaRouletteSpinResult {
+  spinId: string;
+  operationId: string;
+  prizeIndex: number;
+  prize: GachaRouletteWheelPrize;
+  reward: Record<string, unknown>;
+  spinsRemaining: number;
+  createdAt: string;
+}
+
+export interface AdminGachaRoulettePrize extends GachaRouletteWheelPrize {
+  weight: number;
+  enabled: boolean;
+  probabilityPct: number;
+}
+
+export interface AdminGachaRouletteResponse {
+  enabled: boolean;
+  spinDropChance: number;
+  prizes: AdminGachaRoulettePrize[];
+  stats: {
+    totalSpins: number;
+    spinsLast24h: number;
+    byCategory: Array<{ category: string; count: number }>;
+  };
+  history: {
+    data: GachaRouletteSpinRecord[];
+    meta: { page: number; limit: number; total: number; totalPages: number };
+  };
 }
 
 export interface GachaFoilExtractFragments {
@@ -1216,8 +1312,9 @@ export interface GachaSpinPreview {
   conditionLabel?: string;
   foil: string;
   value: number;
-  /** Fragmento bônus (5%): anunciado na prévia, concedido só no claim. */
-  bonusShard?: GachaItemKind | null;
+  /** Fragmento bônus ou Giro da Roleta anunciado na prévia. */
+  bonusShard?: GachaBonusDropKind | null;
+  rouletteSpinGranted?: boolean;
   claimedAt: string | null;
   expiresAt: string;
   createdAt: string;

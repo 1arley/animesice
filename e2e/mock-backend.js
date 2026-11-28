@@ -646,6 +646,74 @@ const server = http.createServer((req, res) => {
       day: new Date().toISOString().slice(0, 10),
     });
   }
+  if (req.method === 'GET' && isApiRoute(p, '/gacha/roulette')) {
+    const spins = Number(mockEconomy.rouletteSpins ?? 2);
+    return json(res, {
+      enabled: true,
+      spinsAvailable: spins,
+      pendingCount: (mockEconomy.dailyClaimedToday ? 0 : 1) + (mockEconomy.weeklyRewardReady ? 1 : 0) + spins,
+      wheelPrizes: [
+        { id: 'crystals_120', label: '120 Cristais', category: 'CRYSTAL', itemId: null, quantity: 120 },
+        { id: 'key_1', label: 'Chave de Baú', category: 'KEY', itemId: 'KEY', quantity: 1 },
+        { id: 'rare_box_1', label: 'Baú Raro', category: 'RARE_BOX', itemId: 'RARE_BOX', quantity: 1 },
+        { id: 'code_essence', label: 'Essência Exclusiva de Código', category: 'ESSENCE', itemId: 'ESSENCIA_CODIGO', quantity: 1 },
+      ],
+      recentSpins: mockEconomy.recentRouletteSpins ?? [],
+      recentDailyClaims: [],
+      probabilityDisclosure: 'Os prêmios da roleta possuem pesos configurados no servidor.',
+    });
+  }
+  if (req.method === 'POST' && isApiRoute(p, '/gacha/roulette/spin')) {
+    readJsonBody(req, res, (body) => {
+      const currentSpins = Number(mockEconomy.rouletteSpins ?? 2);
+      if (currentSpins < 1) {
+        return json(res, { message: 'Você não possui giros da roleta disponíveis.' }, 400);
+      }
+      mockEconomy.rouletteSpins = currentSpins - 1;
+      mockEconomy.balance += 120;
+      mockEconomy.available += 120;
+      const entry = {
+        id: `rspin-${Date.now()}`,
+        operationId: body?.operationId || 'op-mock',
+        prizeId: 'crystals_120',
+        prizeLabel: '120 Cristais',
+        category: 'CRYSTAL',
+        itemId: null,
+        quantity: 120,
+        reward: { category: 'CRYSTAL', amount: 120 },
+        createdAt: new Date().toISOString(),
+      };
+      mockEconomy.recentRouletteSpins = [entry, ...(mockEconomy.recentRouletteSpins || [])];
+      return json(res, {
+        spinId: entry.id,
+        operationId: entry.operationId,
+        prizeIndex: 0,
+        prize: {
+          id: 'crystals_120',
+          label: '120 Cristais',
+          category: 'CRYSTAL',
+          itemId: null,
+          quantity: 120,
+        },
+        reward: entry.reward,
+        spinsRemaining: mockEconomy.rouletteSpins,
+        createdAt: entry.createdAt,
+      });
+    });
+    return;
+  }
+  if (req.method === 'GET' && isApiRoute(p, '/gacha/admin/roulette')) {
+    return json(res, {
+      enabled: true,
+      spinDropChance: 4.5,
+      prizes: [
+        { id: 'crystals_120', label: '120 Cristais', category: 'CRYSTAL', itemId: null, quantity: 120, weight: 50, enabled: true, probabilityPct: 50 },
+        { id: 'code_essence', label: 'Essência Exclusiva de Código', category: 'ESSENCE', itemId: 'ESSENCIA_CODIGO', quantity: 1, weight: 50, enabled: true, probabilityPct: 50 },
+      ],
+      stats: { totalSpins: 1, spinsLast24h: 1, byCategory: [{ category: 'CRYSTAL', count: 1 }] },
+      history: { data: mockEconomy.recentRouletteSpins ?? [], meta: { page: 1, limit: 25, total: 0, totalPages: 1 } },
+    });
+  }
   if (req.method === 'POST' && isApiRoute(p, '/gacha/economy/weekly')) {
     mockEconomy.weeklyRewardReady = false;
     mockEconomy.commonBoxes += 1;
