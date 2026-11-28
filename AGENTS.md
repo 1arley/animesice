@@ -12,6 +12,8 @@ Inspect `git status`, existing diffs, route structure, and installed dependencie
 - `src/components/`: reusable React UI, including `gacha/` card and preview components.
 - `src/lib/`, `src/types/`: API client, auth, utilities, and contracts.
 - `e2e/`: Playwright journeys; `scripts/`: build checks.
+- `tools/`: standalone programmatic 2D art & cosmetic authoring framework (`tools/README.md`, `tools/docs/AGENT-AUTHORING-GUIDE.md`) with isolated `tools/package.json` (`paper-jsdom`, `@svgdotjs/svg.js`, `gsap`, `svgo`, WebGL2 shaders); excluded from Next.js/ESLint/Docker runtime builds and invoked via `npm run cosmetics:*` or inside `tools/`.
+- `remotion/`: standalone programmatic video & motion production framework (`remotion/README.md`, `remotion/docs/AGENT-AUTHORING-GUIDE.md`) with isolated `remotion/package.json` (`remotion`, `@remotion/bundler`, `@remotion/renderer`, `@remotion/transitions`, `@remotion/shapes`, `zod`); excluded from Next.js/ESLint/Docker runtime builds and invoked via `npm run video:*`, `npm run render:gacha`, or inside `remotion/`.
 - `../animesice-back/`: NestJS + Prisma API; migrations in `prisma/migrations/`.
 
 ## Commands
