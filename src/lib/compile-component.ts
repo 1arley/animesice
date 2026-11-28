@@ -1,7 +1,7 @@
 /**
- * Compila um componente TSX colado e devolve o que ele exporta.
+ * Compila uma fonte JS/TSX colada e devolve o que ela exporta.
  * Usado por /admin/gacha/animacao para rodar o ARQUIVO INTEIRO da animação
- * colado pelo dev, sem deploy: compila no browser e monta o componente.
+ * colado pelo dev, sem deploy: compila no browser e monta o preview.
  *
  * ponytail: o mapa de imports é injetado pelo chamador (roll-anim-source.ts).
  * Import fora do mapa = erro claro na hora. Subir para esbuild-wasm (resolve a

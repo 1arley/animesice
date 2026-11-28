@@ -3,7 +3,7 @@ import path from "node:path";
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { API_URL } from "@/lib/api-server";
-import { compileComponent } from "@/lib/compile-component";
+import { validateRollStageSource } from "@/lib/validate-roll-stage-source";
 
 /**
  * Lê/grava o ARQUIVO INTEIRO da animação (/admin/gacha/animacao).
@@ -11,13 +11,13 @@ import { compileComponent } from "@/lib/compile-component";
  * Escrever aqui é escrever código que roda no site inteiro, então:
  * - só SUPERADMIN (cookie validada no backend, mesmo padrão do /revalidate);
  * - caminho fixo no repo, nunca vindo do request;
- * - o TSX só é gravado depois de compilar com sucesso.
+ * - o JS só é gravado depois de compilar com sucesso.
  *
  * ponytail: em container de produção o repo não existe (standalone), o GET
  * responde 501 e o dev edita localmente. Subir para "persistir no banco + compilar
  * no request" quando a prévia tiver que funcionar longe do repo.
  */
-const RELATIVE_PATH = "src/components/gacha/RollStage.tsx";
+const RELATIVE_PATH = "src/components/gacha/roll-stage-engine.js";
 const ABS_PATH = path.join(process.cwd(), RELATIVE_PATH);
 const MAX_BYTES = 400_000;
 
@@ -66,7 +66,7 @@ export async function PUT(request: Request) {
   }
 
   try {
-    await compileComponent(source, {}, RELATIVE_PATH);
+    await validateRollStageSource(source, RELATIVE_PATH);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Falha ao compilar.";
     return NextResponse.json({ message }, { status: 422 });

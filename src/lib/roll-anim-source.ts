@@ -2,15 +2,9 @@
 
 import type { ComponentType } from "react";
 import * as React from "react";
-import * as ReactJSXRuntime from "react/jsx-runtime";
-import * as ReactJSXDevRuntime from "react/jsx-dev-runtime";
-import * as ReducedMotionModule from "@/lib/use-prefers-reduced-motion";
-import * as GsapModule from "@/lib/gsap";
-import * as GachaRarityColorsModule from "@/lib/gacha-rarity-colors";
-import * as GachaCardModule from "@/components/gacha/GachaCard";
-import * as CountUpModule from "@/components/core/CountUp";
+import * as THREE from "three";
+import { RollStagePlayer, type RollStageEngineConstructor } from "@/components/gacha/RollStagePlayer";
 import * as RollAnimConfigModule from "@/lib/roll-anim-config";
-import * as RollTeaseModule from "@/lib/roll-tease";
 import type { GachaPull } from "@/types";
 import type { RollAnimConfig } from "@/lib/roll-anim-config";
 import { compileComponent, pickExport, type ModuleMap } from "@/lib/compile-component";
@@ -30,27 +24,23 @@ export type RollStageComponent = ComponentType<RollStageProps>;
  */
 const MODULES: ModuleMap = {
   react: React,
-  "react/jsx-runtime": ReactJSXRuntime,
-  "react/jsx-dev-runtime": ReactJSXDevRuntime,
-  "@/lib/use-prefers-reduced-motion": ReducedMotionModule,
-  "@/lib/gsap": GsapModule,
-  "@/lib/gacha-rarity-colors": GachaRarityColorsModule,
-  "./GachaCard": GachaCardModule,
-  "@/components/gacha/GachaCard": GachaCardModule,
-  "@/components/core/CountUp": CountUpModule,
+  three: THREE,
   "@/lib/roll-anim-config": RollAnimConfigModule,
-  "@/lib/roll-tease": RollTeaseModule,
-  "@/types": {},
 };
 
-/** Compila a fonte colada e devolve o componente `RollStage` pronto pra render. */
+/** Compila o motor e o encaixa no mesmo adaptador React usado em produção. */
 export async function compileRollStage(source: string): Promise<RollStageComponent> {
-  const exports = await compileComponent(source, MODULES, "RollStage.tsx");
-  const component = exports.RollStage ?? exports.default ?? pickExport(exports, "RollStage");
-  if (typeof component !== "function") {
-    throw new Error('O export "RollStage" precisa ser um componente React.');
+  const exports = await compileComponent(source, MODULES, "roll-stage-engine.js");
+  const Engine = pickExport(exports, "RollStageEngine");
+  if (typeof Engine !== "function") {
+    throw new Error('O export "RollStageEngine" precisa ser uma classe.');
   }
-  return component as RollStageComponent;
+  return function CompiledRollStage(props: RollStageProps) {
+    return React.createElement(RollStagePlayer, {
+      ...props,
+      Engine: Engine as RollStageEngineConstructor,
+    });
+  };
 }
 
 /** Mensagem legível para erro de compilação/execução (code frame do Sucrase). */

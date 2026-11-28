@@ -32,7 +32,7 @@ const SAMPLES: Array<[string, string, number]> = [
   ["GALACTICA", "PRISM", 5000],
 ];
 
-const ANIM_FILE = "src/components/gacha/RollStage.tsx";
+const ANIM_FILE = "src/components/gacha/roll-stage-engine.js";
 
 const SAMPLE_PULLS: GachaPull[] = SAMPLES.map(([rarity, foil, value]) => ({
   id: `preview-${rarity}`,
@@ -729,7 +729,7 @@ export default function AdminGachaAnimacaoPage() {
                   value={source ?? ""}
                   onChange={(event) => setSource(event.target.value)}
                   spellCheck={false}
-                  placeholder="Cole aqui o arquivo inteiro da animação (ex.: src/components/gacha/RollStage.tsx)."
+                  placeholder="Cole aqui o arquivo inteiro do motor (src/components/gacha/roll-stage-engine.js)."
                   className="mt-3 h-[60vh] w-full resize-y rounded border border-hairline bg-panel p-3 font-mono text-xs leading-relaxed text-snow focus-visible:outline focus-visible:outline-ice"
                 />
               </div>

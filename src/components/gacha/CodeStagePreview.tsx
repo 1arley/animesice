@@ -12,8 +12,8 @@ export type CompileStatus =
 
 /**
  * Monta a animação a partir do ARQUIVO INTEIRO colado pelo dev.
- * Compila com debounce (erro de TSX aparece enquanto digita) e só remonta o
- * <dialog> quando o runId muda, para a timeline do GSAP recomeçar do zero.
+ * Compila com debounce (erro de sintaxe aparece enquanto digita) e só remonta
+ * o estágio quando o runId muda, para reproduzir a sequência do início.
  */
 export function CodeStagePreview({
   source,
