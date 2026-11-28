@@ -1,3 +1,13 @@
+# [1.16.0](https://github.com/1arley/animesice/compare/v1.15.0...v1.16.0) (2026-11-28)
+
+### Bug Fixes
+
+* **gacha:** harden ampulheta eter state and guards ([3ec9dcf](https://github.com/1arley/animesice/commit/3ec9dcf2d5a51b94c8800b800644a529825fdd61))
+
+### Features
+
+* **gacha:** add Ampulheta do Éter UI, inventory and artwork ([86fc842](https://github.com/1arley/animesice/commit/86fc84232fcb5fe8846c94e98ada8cdd39d58c23))
+
 # [1.15.0](https://github.com/1arley/animesice/compare/v1.14.1...v1.15.0) (2026-11-28)
 
 ### Features
