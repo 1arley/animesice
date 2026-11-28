@@ -155,7 +155,33 @@ test.describe("Gacha", () => {
     expect(crystalRequests).toEqual([]);
   });
 
+  test("movimento reduzido mantém o palco visível enquanto a API aguarda", async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await blockAds(page);
+    await mockGeneric(page);
+    await loginAs(page);
+    let release!: () => void;
+    const pending = new Promise<void>((resolve) => { release = resolve; });
+    await page.route("**/gacha/spin", async (route) => {
+      await pending;
+      await route.fulfill({ json: {
+        id: "spin-reduced", hour: new Date().toISOString(), slot: 0, condition: 0.04,
+        conditionLabel: "MINT", foil: "NORMAL", value: 100, claimedAt: null,
+        expiresAt: new Date(Date.now() + 3600000).toISOString(), createdAt: new Date().toISOString(),
+        card: { id: "w-e2e", name: "Waifu E2E", image: null, rarity: "EPICA", favourites: 5000, animeId: null, animeTitle: "Anime E2E", anime: null },
+      } });
+    });
+    await page.goto("/gacha");
+    await page.getByRole("button", { name: /^Girar/ }).click();
+    const dialog = page.getByRole("dialog", { name: "Invocação" });
+    await expect(dialog).toHaveCSS("opacity", "1");
+    await expect(dialog.locator(".rs-status")).toHaveText("Invocando sua carta…");
+    release();
+    await expect(dialog.getByRole("button", { name: "Continuar" })).toBeVisible();
+  });
+
   test("sem WebGL a carta confirmada continua visível no modo estático", async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: "no-preference" });
     await page.addInitScript(() => {
       const getContext = HTMLCanvasElement.prototype.getContext;
       HTMLCanvasElement.prototype.getContext = function (this: HTMLCanvasElement, kind: string) {
@@ -172,6 +198,24 @@ test.describe("Gacha", () => {
     await expect(dialog).toHaveCSS("opacity", "1");
     await expect(dialog.locator(".rs-fallback-card")).toHaveAttribute("alt", "Waifu E2E");
     await expect(dialog.getByRole("button", { name: "Continuar" })).toBeVisible();
+  });
+
+  test("landscape baixo mantém detalhes e ação sem sobreposição", async ({ page }) => {
+    await page.setViewportSize({ width: 667, height: 375 });
+    await page.emulateMedia({ reducedMotion: "no-preference" });
+    await blockAds(page);
+    await mockGeneric(page);
+    await loginAs(page);
+    await page.goto("/gacha");
+    await page.getByRole("button", { name: /^Girar/ }).click();
+    const dialog = page.getByRole("dialog", { name: "Invocação" });
+    await expect(dialog.getByRole("button", { name: "Continuar" })).toBeVisible();
+    const info = await dialog.locator(".rs-info").boundingBox();
+    const button = await dialog.getByRole("button", { name: "Continuar" }).boundingBox();
+    expect(info).not.toBeNull();
+    expect(button).not.toBeNull();
+    expect(info!.x + info!.width).toBeLessThanOrEqual(667);
+    expect(info!.y + info!.height).toBeLessThanOrEqual(button!.y);
   });
 
   test("anônimo: explica o jogo, pede login e mostra listas vazias", async ({

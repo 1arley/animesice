@@ -764,7 +764,7 @@ const CSS = /* css */ `
 .rs-dialog::backdrop{background:#000}
 .rs-frame{position:absolute;inset:0;will-change:transform}
 .rs-canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
-.rs-fallback-card{position:absolute;left:50%;top:47%;width:min(70vw,420px,37.5dvh);aspect-ratio:3/4;object-fit:cover;transform:translate(-50%,-50%);border:3px solid var(--rs-c,#38e8da)}
+.rs-fallback-card{position:absolute;left:var(--rs-x,50%);top:var(--rs-y,40%);width:min(70vw,420px,34dvh);aspect-ratio:3/4;object-fit:cover;transform:translate(-50%,-50%);border:3px solid var(--rs-c,#38e8da)}
 .rs-hud{position:absolute;inset:0;pointer-events:none}
 .rs-hud>*{position:absolute;left:0;right:0;text-align:center}
 .rs-eyebrow{font:600 11px/1 ui-monospace,Menlo,Consolas,monospace;letter-spacing:.3em;text-transform:uppercase;color:var(--rs-c,#38e8da);opacity:.85}
@@ -773,7 +773,8 @@ const CSS = /* css */ `
   letter-spacing:.22em;padding-left:.22em}
 .rs-title.is-grad{background-clip:text;-webkit-background-clip:text;color:transparent;-webkit-text-fill-color:transparent}
 .rs-info{display:flex;flex-direction:column;align-items:center;gap:6px}
-.rs-attributes{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin-top:4px;font:500 11px/1.3 ui-monospace,Menlo,Consolas,monospace;color:#c5d4dc}
+.rs-info[hidden]{display:none}
+.rs-attributes{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin-top:4px;font:500 11px/1.3 ui-monospace,Menlo,Consolas,monospace;color:#c5d4dc;opacity:0}
 .rs-attributes span{padding:4px 7px;border:1px solid rgba(198,220,232,.25);background:rgba(4,8,14,.72)}
 .rs-rarity{font:500 11px/1 ui-monospace,Menlo,Consolas,monospace;letter-spacing:.32em;color:#8b98a5;opacity:0}
 .rs-name{font-weight:700;font-size:22px;line-height:1.1;color:#f4fbff;min-height:1.1em;display:flex;justify-content:center;flex-wrap:wrap;padding:0 16px}
@@ -888,10 +889,11 @@ class RollStageEngine {
     const q = (s) => d.querySelector(s);
     this.el = {
       frame: q('.rs-frame'), canvas: q('.rs-canvas'), eyebrow: q('.rs-eyebrow'), status: q('.rs-status'),
-      title: q('.rs-title'), info: q('.rs-info'), rarity: q('.rs-rarity'), name: q('.rs-name'), pts: q('.rs-pts'),
+      title: q('.rs-title'), info: q('.rs-info'), attributes: q('.rs-attributes'), rarity: q('.rs-rarity'), name: q('.rs-name'), pts: q('.rs-pts'),
       foil: q('.rs-foil'), condition: q('.rs-condition'), shard: q('.rs-shard'),
       tag: q('.rs-tag'), actions: q('.rs-actions'), live: q('.rs-live'), sound: q('.rs-sound'),
     };
+    this.el.info.hidden = true;
     this._onContextLost = (event) => {
       event.preventDefault();
       this.noGL = true;
@@ -939,6 +941,7 @@ class RollStageEngine {
     this._onResize = () => this._layout();
     window.addEventListener('resize', this._onResize);
     d.showModal();
+    if (this.reduced) d.style.opacity = 1;
     this.btn.focus({ preventScroll: true });
   }
 
@@ -1152,16 +1155,34 @@ class RollStageEngine {
   _layout() {
     const d = this.dlg;
     const w = (this.W = d.clientWidth || innerWidth), h = (this.H = d.clientHeight || innerHeight);
-    this.cardW = Math.max(140, Math.min(w * 0.7, 420, h * 0.375));
+    this.compactLayout = h <= 500;
+    this.cardW = Math.max(this.compactLayout ? 96 : 140, Math.min(w * (this.compactLayout ? 0.28 : 0.7), 420, h * (this.compactLayout ? 0.42 : 0.34)));
     this.cardH = (this.cardW * 4) / 3;
-    this.centerY = h * 0.47; // distância do topo
+    this.centerY = h * (this.compactLayout ? 0.55 : 0.4);
     this.shiftY = h / 2 - this.centerY; // px para cima
     const top = this.centerY - this.cardH / 2, bottom = this.centerY + this.cardH / 2;
     const setTop = (el, v) => (el.style.top = Math.round(v) + 'px');
-    setTop(this.el.eyebrow, top - 78);
-    setTop(this.el.status, top - 52);
-    setTop(this.el.info, bottom + 22);
-    setTop(this.el.actions, Math.min(h - 64, bottom + 140));
+    this.el.info.style.left = this.compactLayout ? `${Math.round(w * 0.44)}px` : '0';
+    this.el.info.style.right = this.compactLayout ? '12px' : '0';
+    this.el.info.style.width = 'auto';
+    this.el.info.style.transform = '';
+    this.el.actions.style.left = this.compactLayout ? `${Math.round(w * 0.44)}px` : '0';
+    this.el.actions.style.right = this.compactLayout ? '12px' : '0';
+    setTop(this.el.eyebrow, this.compactLayout ? 12 : top - 78);
+    setTop(this.el.status, this.compactLayout ? 34 : top - 52);
+    if (this.compactLayout) {
+      setTop(this.el.info, Math.max(62, (h - this.el.info.getBoundingClientRect().height - 72) / 2));
+      setTop(this.el.actions, h - 60);
+      this.el.title.style.left = '0';
+      this.el.title.style.right = '56%';
+    } else {
+      this.el.title.style.left = '0';
+      this.el.title.style.right = '0';
+      const infoTop = bottom + 16;
+      setTop(this.el.info, this.el.info.hidden ? infoTop : Math.min(infoTop, h - this.el.info.getBoundingClientRect().height - 74));
+      const infoBottom = Number.parseFloat(this.el.info.style.top) + this.el.info.getBoundingClientRect().height;
+      setTop(this.el.actions, Math.min(h - 60, Math.max(bottom + 24, infoBottom + 12)));
+    }
     const n = Math.max(6, (this.pull ? TIER_LABEL[TIERS[this.pull.tier]] : 'GALÁCTICA').length);
     const fs = Math.min(this.cardW * 0.16, this.cardW / (n * 0.9));
     this.titleFs = fs;
@@ -1169,7 +1190,7 @@ class RollStageEngine {
     this.el.name.style.fontSize = Math.max(17, Math.min(24, this.cardW * 0.058)) + 'px';
     this.el.status.style.fontSize = Math.max(15, Math.min(19, this.cardW * 0.047)) + 'px';
 
-    if (!this.renderer) return;
+    if (!this.renderer || this.noGL) return;
     this.renderer.setSize(w, h, false);
     this.camera.aspect = w / h;
     this.camera.fov = (2 * Math.atan(h / 2 / 1000) * 180) / Math.PI;
@@ -1177,6 +1198,7 @@ class RollStageEngine {
     this.uRes.value.set(w, h);
     this.uOff.value.set(0, this.shiftY);
     this.world.position.y = this.shiftY;
+    this.world.position.x = this.compactLayout ? -w * 0.22 : 0;
     const u = this.cardW;
     this.card.scale.setScalar(u);
     this.sigil.scale.setScalar(u);
@@ -1216,7 +1238,7 @@ class RollStageEngine {
     const g = cv.getContext('2d');
     g.drawImage(placeholderArt(tier, pull.name), 0, 0);
     this.fallbackSrc = cv.toDataURL('image/jpeg', 0.85);
-    if (this.renderer) {
+    if (this.renderer && !this.noGL) {
       this.frontTex.image = cv; this.frontTex.needsUpdate = true;
       this.badgeMat.map = badgesTex({ rarity: TIER_LABEL[TIERS[tier]], foil: pull.foil, condition: pull.condition, color: TIER_COLOR[tier] });
       this.badgeMat.needsUpdate = true;
@@ -1257,6 +1279,7 @@ class RollStageEngine {
 
   _buildInfoDom() {
     const { pull } = this, L = this.labels;
+    this.el.info.hidden = false;
     this.el.rarity.textContent = TIER_LABEL[TIERS[pull.tier]];
     this.el.name.textContent = '';
     this.letters = [...pull.name].map((ch) => {
@@ -1359,7 +1382,7 @@ class RollStageEngine {
     if (this.particles) this.particles.setMode('none');
     this.effectsDone = true;
     this.el.status.textContent = this.pull.preview ? 'Prévia revelada' : this.labels.revealed;
-    if (!this.renderer) this._staticDom();
+    if (!this.renderer || this.noGL) this._staticDom();
     this.continueAtClock = P.continueAt;
     this._enableContinue();
   }
@@ -1371,9 +1394,11 @@ class RollStageEngine {
       im.src = this.fallbackSrc; im.alt = this.pull.name;
       im.className = 'rs-fallback-card';
       im.style.setProperty('--rs-c', TIER_COLOR[this.pull.tier]);
+      im.style.setProperty('--rs-x', this.compactLayout ? '28%' : '50%');
+      im.style.setProperty('--rs-y', `${(this.centerY / this.H) * 100}%`);
       this.el.frame.insertBefore(im, this.el.canvas.nextSibling);
     }
-    [this.el.rarity, this.el.pts, this.el.tag].forEach((e) => (e.style.opacity = 1));
+    [this.el.rarity, this.el.pts, this.el.attributes, this.el.tag].forEach((e) => (e.style.opacity = 1));
     (this.letters || []).forEach((s) => (s.style.opacity = 1));
   }
 
@@ -1400,7 +1425,7 @@ class RollStageEngine {
   _tick(dt) {
     if (this.destroyed) return;
     this._step(dt);
-    if (this.renderer) { this._render(dt); this.renderer.render(this.scene, this.camera); }
+    if (this.renderer && !this.noGL) { this._render(dt); this.renderer.render(this.scene, this.camera); }
   }
 
   _step(dt) {
@@ -1752,6 +1777,7 @@ class RollStageEngine {
     });
     const pts = clamp((rt - P.cardDetailsAt - 0.1) / 0.3);
     set('pts', pts.toFixed(2), () => (el.pts.style.opacity = pts));
+    set('attributes', pts.toFixed(2), () => (el.attributes.style.opacity = pts));
     // tag: NOVA = pop elástico, REPETIDA = entra "riscando" com blur e tremor
     const tp = clamp((rt - P.tagAt) / 0.45);
     if (this.pull.isNew || this.pull.compact) {

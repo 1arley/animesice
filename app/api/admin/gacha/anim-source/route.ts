@@ -3,7 +3,7 @@ import path from "node:path";
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { API_URL } from "@/lib/api-server";
-import { validateRollStageSource } from "@/lib/compile-component";
+import { validateRollStageSource } from "@/lib/validate-roll-stage-source";
 
 /**
  * Lê/grava o ARQUIVO INTEIRO da animação (/admin/gacha/animacao).

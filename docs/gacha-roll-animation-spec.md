@@ -33,8 +33,11 @@ Three.js resources, and closes its Web Audio context.
 ## Configuration and administration
 
 Timing and tease settings remain in `src/lib/roll-anim-config.ts`. The admin
-configuration preview and source editor compile this same engine file, with
-Three.js and native roll configuration provided by the existing import shim.
+configuration preview compiles this same engine file, with Three.js and native
+roll configuration provided by the existing import shim. Saving the source runs
+`validateRollStageSource`, which compiles the file with that same pipeline
+without executing it and rejects imports outside the shim or a missing
+`RollStageEngine.play()/destroy()` contract before anything is written.
 
 The source-only checker is `npm run check:roll-anim-source`; config parsing is
 covered by `npm run check:roll-anim-config`. The previous GSAP-specific tier

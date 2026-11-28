@@ -6,7 +6,8 @@ import { readFile } from "node:fs/promises";
 import * as React from "react";
 import * as ReactJSXRuntime from "react/jsx-runtime";
 import * as THREE from "three";
-import { compileComponent, pickExport, validateRollStageSource } from "../src/lib/compile-component.ts";
+import { compileComponent, pickExport } from "../src/lib/compile-component.ts";
+import { validateRollStageSource } from "../src/lib/validate-roll-stage-source.ts";
 import * as RollAnimConfigModule from "../src/lib/roll-anim-config.ts";
 
 const FILE = "src/components/gacha/roll-stage-engine.js";
@@ -78,7 +79,10 @@ assert.equal(typeof pickExport(typed, "Box"), "function");
 
 // Erro de sintaxe tem que rebocar com o code frame do Sucrase.
 await assert.rejects(() => compileComponent("export function () {", modules), /SyntaxError|Unexpected/);
-await assert.rejects(() => validateRollStageSource("export const RollStageEngine = {};"), /exportar a classe/);
-await assert.rejects(() => validateRollStageSource("export class RollStageEngine { play() {} }"), /play\(\) e destroy\(\)/);
+assert.throws(() => validateRollStageSource("export const RollStageEngine = {};"), /exportar a classe/);
+assert.throws(() => validateRollStageSource("export class RollStageEngine { play() {} }"), /play\(\) e destroy\(\)/);
+assert.throws(() => validateRollStageSource("export class RollStageEngine { play() {} destroy() {}"), /expected|SyntaxError|Unexpected/i);
+assert.throws(() => validateRollStageSource("import nope from 'mod-inexistente'; export class RollStageEngine { play() { nope(); } destroy() {} }"), /Import não disponível/);
+assert.throws(() => validateRollStageSource("export class RollStageEngine { play() { void import('fs'); } destroy() {} }"), /Import não disponível/);
 
 console.log("roll-anim-source ok");
