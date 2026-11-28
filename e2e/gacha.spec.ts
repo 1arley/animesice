@@ -2,10 +2,15 @@ import { test, expect } from "@playwright/test";
 import { blockAds, mockGeneric, loginAs } from "./helpers";
 import { GACHA_RARITY_COLORS } from "../src/lib/gacha-rarity-colors";
 
-function cssColor(hex: string) {
-  const color = Number.parseInt(hex.slice(1), 16);
-  return `rgb(${color >> 16}, ${(color >> 8) & 255}, ${color & 255})`;
-}
+const rarityLabels: Record<keyof typeof GACHA_RARITY_COLORS, string> = {
+  COMUM: "COMUM",
+  INCOMUM: "INCOMUM",
+  RARA: "RARA",
+  EPICA: "ÉPICA",
+  LENDARIA: "LENDÁRIA",
+  MITICA: "MÍTICA",
+  GALACTICA: "GALÁCTICA",
+};
 
 test.describe("Gacha", () => {
   test("invocação pode ser pulada enquanto a API ainda calcula o giro", async ({ page }) => {
@@ -127,7 +132,7 @@ test.describe("Gacha", () => {
     }
   });
 
-  test("movimento reduzido não baixa vídeo nem monta canvas", async ({ page }) => {
+  test("movimento reduzido revela sem animar a cena", async ({ page }) => {
     await page.emulateMedia({ reducedMotion: "reduce" });
     await blockAds(page);
     await mockGeneric(page);
@@ -140,11 +145,11 @@ test.describe("Gacha", () => {
     await page.getByRole("button", { name: /^Girar/ }).click();
     const dialog = page.getByRole("dialog", { name: "Invocação" });
     await expect(dialog.getByRole("button", { name: "Continuar" })).toBeVisible();
-    await expect(dialog.locator("video, canvas")).toHaveCount(0);
-    await expect(dialog.locator("[data-badge]")).toHaveCSS("opacity", "1");
-    await expect(dialog.locator("[data-name]")).toHaveText("Waifu E2E");
-    await expect(dialog.locator("[data-rarity-label]")).toBeVisible();
-    await expect(dialog.locator("[data-badge]")).toContainText("pts");
+    await expect(dialog.locator("video")).toHaveCount(0);
+    await expect(dialog.locator("canvas")).toHaveCount(0);
+    await expect(dialog.locator(".rs-name")).toHaveText("Waifu E2E");
+    await expect(dialog.locator(".rs-rarity")).toHaveText("ÉPICA");
+    await expect(dialog.locator(".rs-pts")).toContainText("pts");
     expect(crystalRequests).toEqual([]);
   });
 
@@ -188,24 +193,11 @@ test.describe("Gacha", () => {
       await expect(dialog).toHaveAttribute("data-phase", "showcase", {
         timeout: 10_000,
       });
-      await expect(dialog.locator("[data-stage]")).toHaveCSS("color", cssColor(GACHA_RARITY_COLORS[rarity]));
-      // Sample the first rendered frame with Continuar, before polling can
-      // conceal a button that appeared while the card was still rotating.
-      const transform = await dialog.evaluate(el => new Promise<number[]>(resolve => {
-        const sample = () => {
-          if (el.querySelector("button")?.textContent === "Continuar") {
-            const flip = el.querySelector("[data-flip]")!;
-            const matrix = new DOMMatrixReadOnly(getComputedStyle(flip).transform);
-            resolve([matrix.m11, matrix.m13, matrix.m22]);
-          } else requestAnimationFrame(sample);
-        };
-        sample();
-      }));
-      expect(transform[0]).toBeCloseTo(-1, 2);
-      expect(transform[1]).toBeCloseTo(0, 2);
-      expect(transform[2]).toBeCloseTo(1, 2);
-      await expect(dialog.locator("[data-badge]")).toHaveCSS("opacity", "1");
-      await expect(dialog.locator("[data-name]")).toHaveText("Waifu E2E");
+      const color = await dialog.evaluate(el => getComputedStyle(el).getPropertyValue("--rs-c").trim());
+      expect(color.toLowerCase()).toBe(GACHA_RARITY_COLORS[rarity].toLowerCase());
+      await expect(dialog.locator("canvas")).toBeVisible();
+      await expect(dialog.locator(".rs-rarity")).toHaveText(rarityLabels[rarity]);
+      await expect(dialog.locator(".rs-name")).toHaveText("Waifu E2E");
       expect(Date.now() - startedAt).toBeLessThan(10_000);
       expect(cdnGsapRequests).toEqual([]);
       await page.screenshot({ path: test.info().outputPath(`gacha-${rarity.toLowerCase()}-showcase.png`) });
@@ -243,35 +235,22 @@ test.describe("Gacha", () => {
       // resposta chega. O botão nesse estado é "Fechar" — não dá pular a
       // animação antes do resultado, então não há o que apertar aqui.
       await expect(dialog).toHaveAttribute("data-phase", "waiting");
-      const revealDetails = dialog.evaluate(el => new Promise<string[]>((resolve) => {
-        const observer = new MutationObserver(() => {
-          const art = el.querySelector<HTMLElement>("[data-card-art]");
-          if (art?.dataset.artReady !== "true") return;
-          observer.disconnect();
-          resolve([
-            getComputedStyle(art).opacity,
-            getComputedStyle(el.querySelector<HTMLElement>("[data-badge]")!).opacity,
-            getComputedStyle(el.querySelector<HTMLElement>("[data-name-letter]")!).opacity,
-          ]);
-        });
-        observer.observe(el, { subtree: true, attributes: true, attributeFilter: ["data-art-ready"] });
-      }));
+      const revealing = dialog.waitForFunction(el => el.dataset.phase === "reveal");
       release();
+      await revealing;
       if (rarity === "LENDARIA") {
-        await expect(dialog.locator("[data-godrays]")).toHaveCSS("opacity", /0\.[1-9]/);
+        await expect(dialog.locator("canvas")).toBeVisible();
         await page.screenshot({ path: test.info().outputPath("gacha-lendaria-rays.png") });
         if (isMobile) {
-          const label = await dialog.getByText("SINAL DE INVOCAÇÃO").boundingBox();
-          const sound = await dialog.getByRole("button", { name: "Ativar som" }).boundingBox();
-          expect(label!.x + label!.width).toBeLessThanOrEqual(sound!.x);
+          await expect(dialog.getByRole("button", { name: /Som/ })).toBeVisible();
         }
       }
-      expect(await revealDetails).toEqual(["1", "0", "0"]);
+      await expect(dialog.locator(".rs-name")).toHaveText("Waifu E2E");
       await page.screenshot({ path: test.info().outputPath(`gacha-${rarity.toLowerCase()}-flip-midpoint.png`) });
       await expect(
         dialog.getByRole("button", { name: "Continuar" }),
       ).toBeVisible();
-      await expect(dialog.locator("[data-name]")).toHaveText("Waifu E2E");
+      await expect(dialog.locator(".rs-name")).toHaveText("Waifu E2E");
       await page.keyboard.press("Escape");
       await expect(dialog).toHaveCount(0);
       await expect(
@@ -300,7 +279,7 @@ test.describe("Gacha", () => {
     await dialog.getByRole("button", { name: "Pular", exact: true }).click();
     await expect(dialog).toHaveAttribute("data-phase", "showcase");
     await expect(dialog.getByRole("button", { name: "Continuar" })).toBeVisible();
-    await expect(dialog.locator("[data-badge]")).toContainText("LENDÁRIA");
+    await expect(dialog.locator(".rs-rarity")).toHaveText("LENDÁRIA");
     await page.screenshot({ path: test.info().outputPath("gacha-skip-mid-tease.png") });
   });
 
@@ -538,13 +517,9 @@ test.describe("Gacha", () => {
     );
     await page.getByRole("button", { name: /Girar/ }).click();
     const dialog = page.getByRole("dialog");
-    // O rebuild do roll stage trocou o callout de raridade pelo rótulo de
-    // estágio: a prévia abre com "Prévia revelada" e vira "Sua carta" após
-    // guardar. O heading acessível do diálogo segue sendo "Invocação".
-    await expect(dialog.getByRole("heading")).toHaveText("Invocação");
-    await expect(dialog.locator("[data-invocation-label]")).toHaveText("Prévia revelada");
+    await expect(dialog.locator(".rs-rarity")).toHaveText("ÉPICA");
     await expect(dialog.locator("video")).toHaveCount(0);
-    await expect(dialog.locator("[data-name]")).toHaveText("Waifu E2E");
+    await expect(dialog.locator(".rs-name")).toHaveText("Waifu E2E");
     await dialog.getByRole("button", { name: "Continuar" }).click();
     await expect(dialog).toHaveCount(0);
     await expect(page.getByText("Previews desta hora (1/5)")).toBeVisible();

@@ -3,27 +3,49 @@
 // Roda em predev junto com check:roll-anim-config.
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
+import * as React from "react";
+import * as ReactJSXRuntime from "react/jsx-runtime";
+import * as THREE from "three";
 import { compileComponent, pickExport } from "../src/lib/compile-component.ts";
+import * as RollAnimConfigModule from "../src/lib/roll-anim-config.ts";
 
-const FILE = "src/components/gacha/RollStage.tsx";
+const FILE = "src/components/gacha/roll-stage-engine.js";
 const source = await readFile(FILE, "utf8");
 
-// Shim mínimo: o arquivo real importa scripts, reduced-motion, GachaCard e config.
+// O motor compilado pelo painel usa o Three.js e a configuração nativa.
 const modules = {
-  react: { useEffect: () => {}, useRef: () => ({ current: null }), useState: () => [null, () => {}] },
-  "react/jsx-runtime": { jsx: () => null, jsxs: () => null, Fragment: () => null },
-  "@/lib/use-prefers-reduced-motion": { usePrefersReducedMotion: () => false },
-  "@/lib/gsap": { gsap: {}, useGSAP: () => {}, ScrollTrigger: {} },
-  "@/lib/gacha-rarity-colors": { GACHA_RARITY_COLORS: {} },
-  "./GachaCard": { GachaCard: () => null, GACHA_TIERS: [], GALAXY_TEXT: "", RARITY_TEXT: {} },
-  "@/components/core/CountUp": { CountUp: () => null },
-  "@/lib/roll-anim-config": { DEFAULT_ROLL_ANIM_CONFIG: {}, parseRollAnimJson: () => ({ ok: true }) },
-  "@/lib/roll-tease": { randomTeaseSequence: () => [], orderedTeaseSequence: () => [], climbTeaseSequence: () => [] },
-  "@/lib/use-roll-audio": { useRollAudio: () => ({ sfx: {}, enabled: true, toggle: () => {} }) },
+  react: React,
+  "react/jsx-runtime": ReactJSXRuntime,
+  three: THREE,
+  "@/lib/roll-anim-config": RollAnimConfigModule,
 };
 
-const exports = await compileComponent(source, modules, "RollStage.tsx");
-assert.equal(typeof pickExport(exports, "RollStage"), "function", "esperava export RollStage");
+const exports = await compileComponent(source, modules, "roll-stage-engine.js");
+assert.equal(typeof pickExport(exports, "RollStageEngine"), "function", "esperava export RollStageEngine");
+const buildSteps = pickExport(exports, "buildSteps");
+for (const mode of ["random", "ordered", "climb", "fake-drop"]) {
+  const steps = buildSteps(mode, 4, 1.15, RollAnimConfigModule.DEFAULT_ROLL_ANIM_CONFIG, () => 0.5);
+  assert.equal(steps.at(-1).tier, 4, `${mode} deve terminar na raridade confirmada`);
+}
+const fakeDrop = buildSteps("fake-drop", 4, 1.15, RollAnimConfigModule.DEFAULT_ROLL_ANIM_CONFIG, () => 0.5);
+assert.ok(fakeDrop.some((step) => step.tier === 5), "fake-drop deve criar o clímax acima da raridade real");
+const pullSource = await readFile("src/lib/gacha-roll-stage-pull.ts", "utf8");
+const pullModule = await compileComponent(pullSource, {
+  "@/lib/url": { safeImageSrc: (url) => url || undefined },
+}, "gacha-roll-stage-pull.ts");
+const toRollStagePull = pickExport(pullModule, "toRollStagePull");
+const pull = {
+  id: "pull-1", condition: 4, conditionLabel: "Excelente", foil: "PRISM", value: 180,
+  card: { id: "card-1", name: "Rin", image: "https://cdn.example/rin.webp", imageHidden: false, rarity: "GALACTICA" },
+};
+assert.deepEqual(toRollStagePull(pull), {
+  id: "pull-1", rarity: "GALACTICA", name: "Rin", points: 180,
+  image: "https://cdn.example/rin.webp", foil: "PRISM", condition: "Excelente",
+  isNew: false, isDuplicate: false,
+});
+assert.equal(toRollStagePull({ ...pull, card: { ...pull.card, imageHidden: true } }).image, null);
+assert.equal(toRollStagePull({ ...pull, isNew: true }).isNew, true);
+assert.equal(toRollStagePull({ ...pull, isDuplicate: true }).isDuplicate, true);
 
 // Export ausente e import fora do mapa falham com erro legível, não TypeScript cru.
 const noExport = await compileComponent("export const X = 1;", modules);
