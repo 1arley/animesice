@@ -1235,13 +1235,13 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
                 />
                 <span>
                   <strong className="font-mono tabular-nums text-snow">
-                    {inventory.ampulhetaEter.toLocaleString("pt-BR")}
+                    {(inventory.ampulhetaEter ?? 0).toLocaleString("pt-BR")}
                   </strong>{" "}
-                  Ampulheta{inventory.ampulhetaEter === 1 ? "" : "s"} do Éter ·
-                  zera o cooldown de coleta (não reinicia previews como o Reset
-                  de giros)
+                  Ampulheta{(inventory.ampulhetaEter ?? 0) === 1 ? "" : "s"} do
+                  Éter · zera o cooldown de coleta (não reinicia previews como o
+                  Reset de giros)
                 </span>
-                {inventory.ampulhetaEter > 0 && (
+                {(inventory.ampulhetaEter ?? 0) > 0 && (
                   <Link
                     href="/gacha"
                     className="inline-flex min-h-11 items-center border border-hairline px-3 text-caption text-ice hover:border-ice/50"

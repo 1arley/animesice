@@ -387,7 +387,7 @@ export function GachaInventory() {
           },
           { label: "Chaves", value: inventory.keys },
           { label: "Resets de giros", value: inventory.spinResets },
-          { label: "Ampulhetas do Éter", value: inventory.ampulhetaEter },
+          { label: "Ampulhetas do Éter", value: inventory.ampulhetaEter ?? 0 },
           {
             label: "Pedras prontas",
             value: stats?.totalReadyStones ?? 0,
@@ -538,7 +538,7 @@ export function GachaInventory() {
             <p className="border border-hairline bg-panel p-4 text-sm text-mist">
               No inventário:{" "}
               <strong className="font-mono text-lg tabular-nums text-snow">
-                {inventory.ampulhetaEter.toLocaleString("pt-BR")}
+                {(inventory.ampulhetaEter ?? 0).toLocaleString("pt-BR")}
               </strong>
             </p>
             <p className="mt-3 text-xs text-mist">
