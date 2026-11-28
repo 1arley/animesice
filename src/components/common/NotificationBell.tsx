@@ -4,6 +4,8 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
+import { NotificationCategoryIcon } from "@/components/common/NotificationCategoryIcon";
+import { notificationCategoryMeta } from "@/lib/notification-categories";
 import type { NotificationItem } from "@/types";
 
 const loadApi = () => import("@/lib/api").then((module) => module.api);
@@ -115,7 +117,9 @@ export function NotificationBell() {
             {notifications.length === 0 ? (
               <p className="px-3 py-4 text-body-sm text-mist">Sem notificações.</p>
             ) : (
-              notifications.map((n) => (
+              notifications.map((n) => {
+                const categoryMeta = notificationCategoryMeta(n.adminCategory);
+                return (
                 <Link
                   key={n.id}
                   href={
@@ -127,7 +131,16 @@ export function NotificationBell() {
                     !n.read ? "bg-ice/5" : ""
                   }`}
                 >
-                  <p className="font-sans text-body-sm font-medium text-ice">
+                  <p className="flex items-center gap-1.5 font-sans text-body-sm font-medium text-ice">
+                    {categoryMeta && n.adminCategory && (
+                      <>
+                        <NotificationCategoryIcon
+                          category={n.adminCategory}
+                          className={`h-3.5 w-3.5 shrink-0 ${categoryMeta.iconClass}`}
+                        />
+                        <span className="sr-only">{categoryMeta.label}: </span>
+                      </>
+                    )}
                     {n.title}
                   </p>
                   {n.body && (
@@ -137,7 +150,8 @@ export function NotificationBell() {
                     {new Date(n.createdAt).toLocaleDateString("pt-BR")}
                   </p>
                 </Link>
-              ))
+                );
+              })
             )}
           </div>
           <Link

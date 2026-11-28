@@ -175,6 +175,8 @@ export interface NotificationItem {
   actorId?: string | null;
   read: boolean;
   createdAt: string;
+  /** Presente quando a notificação veio de um comunicado administrativo. */
+  adminCategory?: AdminNotificationCategory | null;
 }
 
 export interface NotificationListResponse {
@@ -186,6 +188,85 @@ export interface NotificationListResponse {
     limit: number;
     totalPages: number;
   };
+}
+
+/** Finalidade de um comunicado enviado pela administração. */
+export type AdminNotificationCategory =
+  | "THANKS"
+  | "ANNOUNCEMENT"
+  | "UPDATE"
+  | "EVENT"
+  | "COMPENSATION"
+  | "GENERAL"
+  | "CUSTOM";
+
+export type AdminNotificationAudience = "SINGLE" | "SELECTED" | "GLOBAL";
+
+export interface AdminNotificationRecipient {
+  id: string;
+  userName: string | null;
+  name: string | null;
+  avatar: string | null;
+  role: "USER" | "ADMIN" | "SUPERADMIN";
+}
+
+export interface AdminNotificationCampaign {
+  id: string;
+  adminId: string;
+  admin: {
+    id: string;
+    name: string | null;
+    userName: string | null;
+  };
+  category: AdminNotificationCategory;
+  audience: AdminNotificationAudience;
+  title: string;
+  body: string;
+  linkUrl: string | null;
+  recipientCount: number;
+  createdAt: string;
+}
+
+export interface AdminNotificationHistoryResponse {
+  data: AdminNotificationCampaign[];
+  meta: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+}
+
+export interface AdminNotificationDetail extends AdminNotificationCampaign {
+  recipients: {
+    data: Array<{
+      id: string;
+      read: boolean;
+      createdAt: string;
+      user: AdminNotificationRecipient;
+    }>;
+    meta: {
+      total: number;
+      page: number;
+      limit: number;
+      totalPages: number;
+    };
+  };
+}
+
+export interface SendAdminNotificationInput {
+  audience: AdminNotificationAudience;
+  userIds?: string[];
+  category: AdminNotificationCategory;
+  title: string;
+  body: string;
+  linkUrl?: string;
+  dedupeKey: string;
+  confirmGlobal?: boolean;
+}
+
+export interface AdminNotificationSendResult extends AdminNotificationCampaign {
+  duplicate: boolean;
 }
 
 export interface CommentItem {

@@ -38,6 +38,7 @@ const ADMIN_NAV_GROUPS: readonly AdminNavGroup[] = [
       { href: "/admin/moderacao", label: "Moderação" },
       { href: "/admin/pedidos", label: "Pedidos" },
       { href: "/admin/feedbacks", label: "Feedbacks" },
+      { href: "/admin/notificacoes", label: "Notificações" },
     ],
   },
   {
