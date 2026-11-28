@@ -175,6 +175,7 @@ export function GachaCosmeticShop({
                       <CosmeticThumb
                         svg={item.svg}
                         type={type ?? "FRAME"}
+                        fallbackGlow={item.key === "DESTAQUE_CARTA"}
                         className="h-full"
                       />
                     </div>

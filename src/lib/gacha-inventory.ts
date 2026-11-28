@@ -1,6 +1,7 @@
 import type {
   GachaEconomyInventory,
   GachaFoil,
+  GachaFoilExtractResult,
   GachaItemConfig,
   GachaPull,
 } from "../types";
@@ -43,7 +44,12 @@ export function pendingOperationRoute(
   key: string,
 ): "inventory" | "fragments" | null {
   const [operation, kind] = key.split(":");
-  if (operation === "buy" && kind === "PROTECAO") return "inventory";
+  if (
+    operation === "buy" &&
+    (kind === "PROTECAO" || kind === "EXTRATOR_FOIL")
+  ) {
+    return "inventory";
+  }
   if (
     (operation === "use" ||
       operation === "buy" ||
@@ -53,7 +59,11 @@ export function pendingOperationRoute(
   ) {
     return "fragments";
   }
-  if (operation === "gem-craft" || operation === "gem-apply") {
+  if (
+    operation === "gem-craft" ||
+    operation === "gem-apply" ||
+    operation === "foil-extract"
+  ) {
     return "fragments";
   }
   return null;
@@ -116,6 +126,43 @@ export const FOIL_FRAGMENTS: readonly FoilFragmentMeta[] = [
     image: "/gacha/gem_prism.png",
   },
 ];
+
+export function getFoilDisplayMeta(foil: string): {
+  foil: string;
+  label: string;
+  image: string | null;
+} {
+  const known = FOIL_FRAGMENTS.find((entry) => entry.foil === foil);
+  return known
+    ? { foil: known.foil, label: known.label, image: known.image }
+    : { foil, label: foil, image: null };
+}
+
+export function foilExtractFragmentsForConfig(
+  foil: string,
+  config?: GachaItemConfig,
+): number | null {
+  const table = config?.foil_extract_fragments;
+  if (!table || foil === "NORMAL") return null;
+  const specific = table[foil];
+  if (typeof specific === "number" && Number.isFinite(specific)) return specific;
+  const fallback = table.default;
+  return typeof fallback === "number" && Number.isFinite(fallback)
+    ? fallback
+    : null;
+}
+
+export function applyFoilExtractionToPull(
+  pull: GachaPull,
+  result: GachaFoilExtractResult,
+): GachaPull {
+  return {
+    ...pull,
+    foil: result.foil,
+    value: result.value,
+    rankedValue: result.rankedValue,
+  };
+}
 
 // DRACONICA* são os tipos internos herdados; no gacha são exibidos como "Magnetita*".
 export const STONE_FRAGMENTS: readonly StoneFragmentMeta[] = [
@@ -323,4 +370,30 @@ export function readPendingOperationKeys(userId: string): string[] {
   } catch {
     return [];
   }
+}
+
+export function canUseAmpulheta(params: {
+  locked: boolean;
+  claimEventActive?: boolean;
+  ampulhetaEter: number;
+}): boolean {
+  return params.locked && !params.claimEventActive && params.ampulhetaEter > 0;
+}
+
+export function ampulhetaUseSummary(params: {
+  ampulhetaEter: number;
+  remainingLabel: string | null;
+}): {
+  remainingText: string;
+  availableCount: number;
+  consumedCount: 1;
+  nextCount: number;
+} {
+  const availableCount = Math.max(0, Math.floor(params.ampulhetaEter));
+  return {
+    remainingText: params.remainingLabel ?? "menos de 1s",
+    availableCount,
+    consumedCount: 1,
+    nextCount: Math.max(0, availableCount - 1),
+  };
 }

@@ -1,0 +1,40 @@
+{
+  "name": "animesice-video-studio",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Programmatic video, motion graphics, gacha reveal rendering, and visual inspection framework for AnimesIce.",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "node --test tests/framework.test.ts",
+    "cli": "node src/cli.ts",
+    "sync": "node src/cli.ts sync",
+    "new": "node src/cli.ts new",
+    "list": "node src/cli.ts list",
+    "render": "node src/cli.ts render",
+    "still": "node src/cli.ts still",
+    "contact-sheet": "node src/cli.ts contact-sheet",
+    "publish": "node src/cli.ts publish",
+    "catalog": "node src/cli.ts catalog",
+    "audit": "node src/cli.ts audit",
+    "studio": "node src/cli.ts studio",
+    "preview": "node src/cli.ts preview"
+  },
+  "dependencies": {
+    "@remotion/bundler": "4.0.534",
+    "@remotion/cli": "4.0.534",
+    "@remotion/renderer": "4.0.534",
+    "@remotion/shapes": "4.0.534",
+    "@remotion/transitions": "4.0.534",
+    "react": "19.0.0",
+    "react-dom": "19.0.0",
+    "remotion": "4.0.534",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.1",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
+    "typescript": "^5.9.3"
+  }
+}

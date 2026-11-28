@@ -2,6 +2,9 @@ import assert from "node:assert/strict";
 import {
   FOIL_FRAGMENTS,
   STONE_FRAGMENTS,
+  applyFoilExtractionToPull,
+  foilExtractFragmentsForConfig,
+  getFoilDisplayMeta,
   getOwnedStoneSelection,
   getInventoryFragmentStats,
   isCardEligibleForStone,
@@ -20,6 +23,7 @@ const baseConfig = {
     DRACONICA: 40,
     SOMBRIA_DRACONICA: 90,
     PROTECAO: 150,
+    EXTRATOR_FOIL: 2000,
   },
   item_convert_value: {
     TITANITA: 5,
@@ -27,6 +31,7 @@ const baseConfig = {
     DRACONICA: 8,
     SOMBRIA_DRACONICA: 18,
     PROTECAO: 0,
+    EXTRATOR_FOIL: 0,
   },
   item_recipes: {
     TITANITA: 10,
@@ -51,6 +56,8 @@ const baseConfig = {
   foil_mult: { NORMAL: 1, HOLO: 2 },
   reroll_cost_pct: 0.15,
   reroll_protection_mint_block: true,
+  foil_extract_fragments: { default: 10, GOLD: 12 },
+  gem_fragment_recipe: 20,
 };
 
 function makeInventory(overrides = {}) {
@@ -60,6 +67,7 @@ function makeInventory(overrides = {}) {
     premiumBoxes: 0,
     keys: 0,
     spinResets: 0,
+    ampulhetaEter: 0,
     weeklyRewardReady: false,
     loyaltyDays: 0,
     loyaltyRarePlusReady: false,
@@ -83,6 +91,7 @@ function makeInventory(overrides = {}) {
     inkGems: 0,
     prismGems: 0,
     protecao: 0,
+    foilExtractors: 0,
     dailyClaimedToday: false,
     watchEarnedToday: 0,
     itemConfig: baseConfig,
@@ -96,10 +105,13 @@ assert.equal(STONE_FRAGMENTS.length, 4);
 assert.equal(isStoneKind("TITANITA"), true);
 assert.equal(isStoneKind("DRACONICA"), true);
 assert.equal(isStoneKind("PROTECAO"), false);
+assert.equal(isStoneKind("EXTRATOR_FOIL"), false);
 assert.equal(isStoneKind(null), false);
 assert.equal(pendingOperationRoute("craft:TITANITA:2"), "fragments");
 assert.equal(pendingOperationRoute("gem-apply:HOLO:card-1"), "fragments");
+assert.equal(pendingOperationRoute("foil-extract:uc-1"), "fragments");
 assert.equal(pendingOperationRoute("buy:PROTECAO:1"), "inventory");
+assert.equal(pendingOperationRoute("buy:EXTRATOR_FOIL:2"), "inventory");
 assert.equal(pendingOperationRoute("use:TITANITA:card-1"), "fragments");
 assert.equal(pendingOperationRoute("unknown:1"), null);
 assert.equal(
@@ -210,5 +222,43 @@ assert.equal(
   upgradedValue({ ...eligibleCard, value: 999, valueOverride: 999 }, 0.1, previewEconomy),
   999,
 );
+
+// 6. Foil extractor helpers & future-foil fallback
+assert.equal(foilExtractFragmentsForConfig("HOLO", baseConfig), 10);
+assert.equal(foilExtractFragmentsForConfig("GOLD", baseConfig), 12);
+assert.equal(foilExtractFragmentsForConfig("FUTURE_FOIL", baseConfig), 10);
+assert.equal(foilExtractFragmentsForConfig("NORMAL", baseConfig), null);
+assert.deepEqual(getFoilDisplayMeta("HOLO"), {
+  foil: "HOLO",
+  label: "Holo",
+  image: "/gacha/holo_gem.png",
+});
+assert.deepEqual(getFoilDisplayMeta("FUTURE_FOIL"), {
+  foil: "FUTURE_FOIL",
+  label: "FUTURE_FOIL",
+  image: null,
+});
+const extractedPull = applyFoilExtractionToPull(
+  { ...eligibleCard, rankedValue: 300 },
+  {
+    userCardId: "uc-1",
+    extractedFoil: "HOLO",
+    foil: "NORMAL",
+    value: 150,
+    rankedValue: 150,
+    extractorsRemaining: 1,
+    fragments: {
+      foil: "HOLO",
+      itemId: "FRAG_HOLO",
+      itemName: "Fragmento Holo",
+      quantity: 10,
+    },
+  },
+);
+assert.equal(extractedPull.foil, "NORMAL");
+assert.equal(extractedPull.value, 150);
+assert.equal(extractedPull.rankedValue, 150);
+assert.equal(extractedPull.edition, 1);
+assert.equal(extractedPull.condition, 0.25);
 
 console.log("All Gacha inventory & fragment logic checks passed!");

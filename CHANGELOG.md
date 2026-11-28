@@ -1,3 +1,21 @@
+# [1.16.0](https://github.com/1arley/animesice/compare/v1.15.0...v1.16.0) (2026-11-28)
+
+### Bug Fixes
+
+* **gacha:** harden ampulheta eter state and guards ([3ec9dcf](https://github.com/1arley/animesice/commit/3ec9dcf2d5a51b94c8800b800644a529825fdd61))
+
+### Features
+
+* **gacha:** add Ampulheta do Éter UI, inventory and artwork ([86fc842](https://github.com/1arley/animesice/commit/86fc84232fcb5fe8846c94e98ada8cdd39d58c23))
+
+# [1.15.0](https://github.com/1arley/animesice/compare/v1.14.1...v1.15.0) (2026-11-28)
+
+### Features
+
+* **gacha:** add cosmetic authoring kit and external highlights ([cf62148](https://github.com/1arley/animesice/commit/cf6214890c7341a79d6fcaa848e638a8d019cd3a))
+* **gacha:** add foil extractor flow ([b92a715](https://github.com/1arley/animesice/commit/b92a715f92e8be3cf156dfd24ce5c3c5026d8198))
+* **remotion:** integrate video authoring framework ([8e66240](https://github.com/1arley/animesice/commit/8e6624051e463b2ed2ec2ff534d95d0acd724db5))
+
 ## [1.14.1](https://github.com/1arley/animesice/compare/v1.14.0...v1.14.1) (2026-11-27)
 
 ### Bug Fixes

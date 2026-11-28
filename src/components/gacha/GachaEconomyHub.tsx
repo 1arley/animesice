@@ -105,7 +105,10 @@ function itemDropProbabilities(odds: GachaEconomyOdds, tier: GachaBoxTier) {
     if (weight <= 0) return [];
     const quantitiesByAmount = new Map<number, number>();
     for (const [quality, qualityWeight] of Object.entries(qualities)) {
-      const amount = kind === "PROTECAO" ? 1 : (quantities[quality] ?? 0);
+      const amount =
+        kind === "PROTECAO" || kind === "EXTRATOR_FOIL"
+          ? 1
+          : (quantities[quality] ?? 0);
       if (qualityWeight <= 0 || amount <= 0) continue;
       quantitiesByAmount.set(
         amount,
@@ -1222,6 +1225,31 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
                   <span className="text-ice">Próxima carta Rara+</span>
                 )}
               </div>
+              <div className="mt-3 flex flex-wrap items-center gap-3 border-t border-hairline pt-3 text-caption text-mist">
+                <Image
+                  src="/gacha/ampulheta-eter.png"
+                  alt=""
+                  width={24}
+                  height={24}
+                  className="h-6 w-6 shrink-0 object-contain"
+                />
+                <span>
+                  <strong className="font-mono tabular-nums text-snow">
+                    {(inventory.ampulhetaEter ?? 0).toLocaleString("pt-BR")}
+                  </strong>{" "}
+                  Ampulheta{(inventory.ampulhetaEter ?? 0) === 1 ? "" : "s"} do
+                  Éter · zera o cooldown de coleta (não reinicia previews como o
+                  Reset de giros)
+                </span>
+                {(inventory.ampulhetaEter ?? 0) > 0 && (
+                  <Link
+                    href="/gacha"
+                    className="inline-flex min-h-11 items-center border border-hairline px-3 text-caption text-ice hover:border-ice/50"
+                  >
+                    Usar na sala do Gacha
+                  </Link>
+                )}
+              </div>
             </section>
           )}
 
@@ -2238,7 +2266,9 @@ export function GachaEconomyHub({ mode }: { mode: GachaEconomyMode }) {
                             >
                               <dt>
                                 {ITEM_KIND_LABEL[kind] ?? kind}
-                                {kind === "PROTECAO" ? "" : ` · ${amount}`}
+                                {kind === "PROTECAO" || kind === "EXTRATOR_FOIL"
+                                  ? ""
+                                  : ` · ${amount}`}
                               </dt>
                               <dd className="tabular-nums">
                                 {formatChance(probability)}

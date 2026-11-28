@@ -8,6 +8,7 @@ const emptyEconomy = {
   titanitaShards: 0, titanitaItems: 0, titanitaSombriaShards: 0,
   titanitaSombriaItems: 0, draconicaShards: 0, draconicaItems: 0,
   sombriaDraconicaShards: 0, sombriaDraconicaItems: 0, protecao: 0,
+  foilExtractors: 0,
   holoShards: 20, goldShards: 0, inkShards: 0, prismShards: 0,
   holoGems: 0, goldGems: 0, inkGems: 0, prismGems: 0,
   dailyClaimedToday: false, watchEarnedToday: 0,
@@ -16,6 +17,8 @@ const emptyEconomy = {
     item_eligibility: {}, item_condition_anchor: {}, card_floors: {},
     base_value: {}, foil_mult: {}, reroll_cost_pct: 0,
     reroll_protection_mint_block: false,
+    foil_extract_fragments: { default: 10 },
+    gem_fragment_recipe: 20,
   },
 };
 
@@ -461,4 +464,282 @@ test("não estima payout de Crystal antes de confirmar o burn", async ({ page })
   const preview = page.locator("dialog");
   await expect(preview.getByRole("button", { name: "Queimar carta" })).toBeVisible();
   await expect(preview.getByRole("button", { name: /Crystal|crystals/ })).toHaveCount(0);
+});
+
+test("compra Extrator de Foil no inventário com idempotência", async ({ page }) => {
+  let current = {
+    ...emptyEconomy,
+    balance: 5000,
+    available: 5000,
+    foilExtractors: 0,
+    itemConfig: {
+      ...emptyEconomy.itemConfig,
+      item_shop_price: { PROTECAO: 150, EXTRATOR_FOIL: 2000 },
+      item_shop_enabled: { PROTECAO: true, EXTRATOR_FOIL: true },
+      item_drop_available: { PROTECAO: true, EXTRATOR_FOIL: false },
+    },
+  };
+  const buyBodies: { kind: string; quantity: number; operationId: string }[] = [];
+
+  await blockAds(page);
+  await blockExternalNavigation(page);
+  await loginAs(page);
+  await page.route("**/gacha/economy", (route) => route.fulfill({ json: current }));
+  await page.route("**/gacha/economy/items/buy", async (route) => {
+    const body = route.request().postDataJSON() as {
+      kind: string;
+      quantity: number;
+      operationId: string;
+    };
+    buyBodies.push(body);
+    current = {
+      ...current,
+      balance: current.balance - 2000 * body.quantity,
+      available: current.available - 2000 * body.quantity,
+      foilExtractors: (current.foilExtractors ?? 0) + body.quantity,
+    };
+    await route.fulfill({ json: { ok: true } });
+  });
+
+  await page.goto("/gacha/inventario");
+  await expect(page.getByRole("heading", { name: "Extrator de Foil" })).toBeVisible();
+  await page.getByLabel("Quantidade de extratores").fill("2");
+  await page.getByRole("button", { name: "Comprar extrator de foil" }).click();
+
+  await expect(page.getByRole("status").filter({ hasText: "Operação concluída." })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Extrair foil", exact: true })).toHaveAttribute(
+    "href",
+    "/gacha/inventario/fragmentos#extrair-foil",
+  );
+  expect(buyBodies).toHaveLength(1);
+  expect(buyBodies[0]).toMatchObject({ kind: "EXTRATOR_FOIL", quantity: 2 });
+  expect(buyBodies[0].operationId).toMatch(/^[0-9a-f-]{36}$/i);
+
+  await page.setViewportSize({ width: 1280, height: 800 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+});
+
+test("extrai foil na oficina de fragmentos com feedback e retry idempotente", async ({ page }) => {
+  let current = {
+    ...emptyEconomy,
+    holoShards: 0,
+    foilExtractors: 1,
+  };
+  let currentCards = [...cards];
+  const extractBodies: { userCardId: string; operationId: string }[] = [];
+  let failOnce = true;
+
+  await blockAds(page);
+  await blockExternalNavigation(page);
+  await loginAs(page);
+  await page.route("**/gacha/economy", (route) => route.fulfill({ json: current }));
+  await page.route("**/gacha/collection?**", (route) =>
+    route.fulfill({
+      json: {
+        data: currentCards,
+        meta: { page: 1, limit: 100, total: currentCards.length, totalPages: 1 },
+      },
+    }),
+  );
+  await page.route("**/gacha/economy/gems/extract/preview/foil-card", (route) =>
+    route.fulfill({
+      json: {
+        userCardId: "foil-card",
+        cardName: "Carta Holo",
+        rarity: "RARA",
+        edition: 1,
+        condition: 0.5,
+        conditionLabel: "NM",
+        currentFoil: "HOLO",
+        targetFoil: "NORMAL",
+        currentValue: 100,
+        projectedValue: 50,
+        currentRankedValue: 100,
+        projectedRankedValue: 50,
+        extractorsAvailable: current.foilExtractors,
+        fragments: {
+          foil: "HOLO",
+          itemId: "FRAG_HOLO",
+          itemName: "Fragmento Holo",
+          quantity: 10,
+        },
+        canExtract: (current.foilExtractors ?? 0) >= 1 && currentCards[1]?.foil === "HOLO",
+        blockedReason: (current.foilExtractors ?? 0) >= 1 ? null : "Extrator de Foil insuficiente.",
+      },
+    }),
+  );
+  await page.route("**/gacha/economy/gems/extract", async (route) => {
+    const body = route.request().postDataJSON() as {
+      userCardId: string;
+      operationId: string;
+    };
+    extractBodies.push(body);
+    if (failOnce) {
+      failOnce = false;
+      return route.abort();
+    }
+    current = {
+      ...current,
+      holoShards: current.holoShards + 10,
+      foilExtractors: Math.max(0, (current.foilExtractors ?? 0) - 1),
+    };
+    currentCards = currentCards.map((c) =>
+      c.id === "foil-card" ? { ...c, foil: "NORMAL", value: 50 } : c,
+    );
+    await route.fulfill({
+      json: {
+        userCardId: "foil-card",
+        extractedFoil: "HOLO",
+        foil: "NORMAL",
+        value: 50,
+        rankedValue: 50,
+        extractorsRemaining: current.foilExtractors,
+        fragments: {
+          foil: "HOLO",
+          itemId: "FRAG_HOLO",
+          itemName: "Fragmento Holo",
+          quantity: 10,
+        },
+      },
+    });
+  });
+
+  await page.goto("/gacha/inventario/fragmentos#extrair-foil");
+  await expect(page.getByRole("heading", { name: "Extrair foil para fragmentos" })).toBeVisible();
+
+  await page.getByRole("button", { name: /Carta Holo/ }).click();
+  await page.getByRole("button", { name: "Extrair foil" }).click();
+
+  const dialog = page.getByRole("dialog", { name: "Extrair foil da carta?" });
+  await expect(dialog.getByText("+10 Fragmento Holo")).toBeVisible();
+  await expect(dialog.getByText("Holo → Normal")).toBeVisible();
+  await dialog.getByRole("button", { name: "Confirmar extração" }).click();
+
+  await expect(dialog.getByRole("alert")).toContainText("Resultado incerto");
+  await dialog.getByRole("button", { name: "Repetir com segurança" }).click();
+
+  expect(extractBodies).toHaveLength(2);
+  expect(extractBodies[0]).toEqual(extractBodies[1]);
+
+  const feedback = page.getByRole("dialog", { name: "Foil extraído" });
+  await expect(feedback).toBeVisible();
+  await expect(feedback.getByText("+10 Fragmento Holo")).toBeVisible();
+  await expect(feedback.getByText("Extratores restantes: 0")).toBeVisible();
+  await feedback.getByRole("button", { name: "Continuar" }).click();
+  await expect(feedback).toHaveCount(0);
+
+  await expect(page.getByRole("status").filter({ hasText: "Foil extraído; fragmentos e coleção atualizados." })).toBeVisible();
+  await expect(page.getByText("Nenhuma carta com foil encontrada na coleção.")).toBeVisible();
+
+  await page.setViewportSize({ width: 1280, height: 800 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+});
+
+test("extrai foil pelo CardPreview na coleção preservando carta e bloqueia carta indisponível", async ({ page }) => {
+  const blockedCard = {
+    ...cards[1],
+    id: "blocked-foil-card",
+    card: { ...cards[1].card, id: "card-c", name: "Carta em Troca" },
+  };
+  let current = { ...emptyEconomy, foilExtractors: 1 };
+  let collectionCards = [cards[1], blockedCard];
+
+  await blockAds(page);
+  await blockExternalNavigation(page);
+  await loginAs(page);
+  await page.route("**/gacha/collection?**", (route) =>
+    route.fulfill({
+      json: {
+        data: collectionCards,
+        meta: { page: 1, limit: 24, total: collectionCards.length, totalPages: 1 },
+      },
+    }),
+  );
+  await page.route("**/gacha/featured", (route) => route.fulfill({ json: null }));
+  await page.route("**/gacha/collections/progress", (route) => route.fulfill({ json: [] }));
+  await page.route("**/gacha/engagement-pilot", (route) => route.fulfill({ json: { enabled: false, percent: 0 } }));
+  await page.route("**/gacha/economy", (route) => route.fulfill({ json: current }));
+  await page.route("**/gacha/economy/gems/extract/preview/foil-card", (route) =>
+    route.fulfill({
+      json: {
+        userCardId: "foil-card",
+        cardName: "Carta Holo",
+        rarity: "RARA",
+        edition: 1,
+        condition: 0.5,
+        conditionLabel: "NM",
+        currentFoil: "HOLO",
+        targetFoil: "NORMAL",
+        currentValue: 100,
+        projectedValue: 50,
+        currentRankedValue: 100,
+        projectedRankedValue: 50,
+        extractorsAvailable: 1,
+        fragments: { foil: "HOLO", itemId: "FRAG_HOLO", itemName: "Fragmento Holo", quantity: 10 },
+        canExtract: true,
+        blockedReason: null,
+      },
+    }),
+  );
+  await page.route("**/gacha/economy/gems/extract/preview/blocked-foil-card", (route) =>
+    route.fulfill({
+      json: {
+        userCardId: "blocked-foil-card",
+        cardName: "Carta em Troca",
+        rarity: "RARA",
+        edition: 1,
+        condition: 0.5,
+        conditionLabel: "NM",
+        currentFoil: "HOLO",
+        targetFoil: "NORMAL",
+        currentValue: 100,
+        projectedValue: 50,
+        currentRankedValue: 100,
+        projectedRankedValue: 50,
+        extractorsAvailable: 1,
+        fragments: { foil: "HOLO", itemId: "FRAG_HOLO", itemName: "Fragmento Holo", quantity: 10 },
+        canExtract: false,
+        blockedReason: "Carta envolvida em troca pendente.",
+      },
+    }),
+  );
+  await page.route("**/gacha/economy/gems/extract", async (route) => {
+    current = { ...current, foilExtractors: 0, holoShards: 30 };
+    collectionCards = collectionCards.map((c) =>
+      c.id === "foil-card" ? { ...c, foil: "NORMAL", value: 50 } : c,
+    );
+    await route.fulfill({
+      json: {
+        userCardId: "foil-card",
+        extractedFoil: "HOLO",
+        foil: "NORMAL",
+        value: 50,
+        rankedValue: 50,
+        extractorsRemaining: 0,
+        fragments: { foil: "HOLO", itemId: "FRAG_HOLO", itemName: "Fragmento Holo", quantity: 10 },
+      },
+    });
+  });
+
+  await page.goto("/gacha/cartas");
+  await page.getByRole("button", { name: /Carta em Troca/ }).click();
+  await page.getByRole("button", { name: /Extrair foil/ }).click();
+  const blockedDialog = page.getByRole("dialog", { name: "Extrair foil da carta?" });
+  await expect(blockedDialog.getByRole("alert")).toContainText("Carta envolvida em troca pendente.");
+  await expect(blockedDialog.getByRole("button", { name: "Confirmar extração" })).toBeDisabled();
+  await blockedDialog.getByRole("button", { name: "Cancelar" }).click();
+
+  await page.getByRole("button", { name: /Carta Holo/ }).click();
+  await page.getByRole("button", { name: "Extrair foil · 1 no inventário" }).click();
+  const confirmDialog = page.getByRole("dialog", { name: "Extrair foil da carta?" });
+  await confirmDialog.getByRole("button", { name: "Confirmar extração" }).click();
+
+  const feedback = page.getByRole("dialog", { name: "Foil extraído" });
+  await expect(feedback).toBeVisible();
+  await feedback.getByRole("button", { name: "Continuar" }).click();
+  await expect(page.getByRole("button", { name: /Carta Holo/ })).toBeVisible();
 });

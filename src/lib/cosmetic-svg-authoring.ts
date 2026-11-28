@@ -18,7 +18,6 @@
  */
 
 import {
-  BLEED,
   CARD_ART,
   TYPE_VIEWBOX,
   type CosmeticType,
@@ -97,7 +96,7 @@ function parseLayer(el: Element): Layer {
   };
 }
 
-/** Bandas de moldura: 4 retangulos fora da janela da arte, sem cobrir a arte. */
+/** Estrutura inicial por tipo: borda estática ou aura transparente na sangria. */
 export function starterScene(type: CosmeticType): Scene {
   const band = (x: number, y: number, width: number, height: number, fill: string): Layer => ({
     id: crypto.randomUUID(),
@@ -114,10 +113,14 @@ export function starterScene(type: CosmeticType): Scene {
       viewBox: TYPE_VIEWBOX.FRAME,
       rootAttrs: {},
       nodes: [
-        { kind: "layer", layer: band(-BLEED, -BLEED, CARD_ART.w + BLEED * 2, BLEED, "#142d4c") },
-        { kind: "layer", layer: band(-BLEED, CARD_ART.h, CARD_ART.w + BLEED * 2, BLEED, "#142d4c") },
-        { kind: "layer", layer: band(-BLEED, 0, BLEED, CARD_ART.h, "#142d4c") },
-        { kind: "layer", layer: band(CARD_ART.w, 0, BLEED, CARD_ART.h, "#142d4c") },
+        {
+          kind: "layer",
+          layer: { ...band(16, 16, CARD_ART.w - 32, CARD_ART.h - 32, "none"), stroke: "#38e8da", strokeWidth: 6, rest: { rx: "28" } },
+        },
+        {
+          kind: "layer",
+          layer: { ...band(28, 28, CARD_ART.w - 56, CARD_ART.h - 56, "none"), stroke: "#fcd34d", strokeWidth: 1.5, rest: { rx: "22" } },
+        },
       ],
     };
   }
@@ -127,8 +130,26 @@ export function starterScene(type: CosmeticType): Scene {
       rootAttrs: {},
       nodes: [
         {
+          kind: "opaque",
+          html: '<defs><filter id="starter-aura" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="8"/></filter></defs>',
+        },
+        {
           kind: "layer",
-          layer: { ...band(24, 24, CARD_ART.w - 48, CARD_ART.h - 48, "none"), stroke: "#fcd34d", strokeWidth: 10 },
+          layer: {
+            ...band(-48, -48, CARD_ART.w + 96, CARD_ART.h + 96, "none"),
+            stroke: "#38e8da",
+            strokeWidth: 12,
+            rest: { rx: "38", filter: "url(#starter-aura)", opacity: "0.8" },
+          },
+        },
+        {
+          kind: "layer",
+          layer: {
+            ...band(-28, -28, CARD_ART.w + 56, CARD_ART.h + 56, "none"),
+            stroke: "#fcd34d",
+            strokeWidth: 2,
+            rest: { rx: "26" },
+          },
         },
       ],
     };

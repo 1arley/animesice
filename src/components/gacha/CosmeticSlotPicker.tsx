@@ -13,7 +13,7 @@ const SLOT_LABEL: Record<CosmeticType, string> = {
 const SLOT_HINT: Record<CosmeticType, string> = {
   BACK: "O verso das suas cartas.",
   FRAME: "O contorno em volta da arte, em todas as cartas.",
-  HIGHLIGHT: "O realce aplicado sobre a carta.",
+  HIGHLIGHT: "Aura luminosa ao redor da carta, sem cobrir o retrato.",
 };
 
 /**
@@ -48,6 +48,7 @@ export function CosmeticSlotPicker({
         <CosmeticThumb
           svg={active?.svg}
           type={type}
+          fallbackGlow={active?.key === "DESTAQUE_CARTA"}
           alt={active ? `${SLOT_LABEL[type]} em uso: ${active.label}` : `Nenhum ${SLOT_LABEL[type].toLowerCase()} em uso`}
           className="aspect-[3/4] w-24 flex-none border border-hairline"
         />
@@ -98,6 +99,7 @@ export function CosmeticSlotPicker({
                 <CosmeticThumb
                   svg={item.svg}
                   type={type}
+                  fallbackGlow={item.key === "DESTAQUE_CARTA"}
                   className="aspect-[3/4] w-20"
                 />
                 <span className="mt-1 block truncate text-[11px] text-snow">

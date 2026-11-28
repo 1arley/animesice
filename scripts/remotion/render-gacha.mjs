@@ -1,27 +1,47 @@
 import { spawnSync } from "node:child_process";
-import { access, mkdir } from "node:fs/promises";
+import fs from "node:fs";
+import path from "node:path";
 
-const output = "public/gacha/crystal.mp4";
-const poster = "public/gacha/crystal.webp";
-await mkdir("public/gacha", { recursive: true });
+const RARITIES = [
+  "COMUM",
+  "INCOMUM",
+  "RARA",
+  "EPICA",
+  "LENDARIA",
+  "MITICA",
+  "GALACTICA",
+];
 
-const render = spawnSync("npx", [
-  "--yes",
-  "--package=@remotion/cli@4.0.534",
-  "remotion",
+const requested = process.argv.slice(2).map((r) => r.toUpperCase());
+const rarities = requested.length > 0 ? requested : RARITIES;
+
+for (const rarity of rarities) {
+  if (!RARITIES.includes(rarity)) {
+    console.error(`Raridade inválida: ${rarity}. Use: ${RARITIES.join(", ")}`);
+    process.exit(1);
+  }
+}
+
+const remotionNodeModules = path.resolve("remotion/node_modules");
+if (!fs.existsSync(remotionNodeModules)) {
+  console.error(
+    "Dependências do estúdio de vídeo não instaladas. Execute primeiro: npm run video:install",
+  );
+  process.exit(1);
+}
+
+const args = [
+  "remotion/src/cli.ts",
   "render",
-  "remotion/index.tsx",
-  "GachaCrystal",
-  output,
-  "--codec=h264",
-  "--pixel-format=yuv420p",
-  "--crf=23",
-  "--overwrite",
-], { stdio: "inherit" });
-if (render.error) throw render.error;
-if (render.status !== 0) process.exit(render.status ?? 1);
+  "--slug",
+  "gacha-crystal",
+  "--publish",
+];
 
-const frame = spawnSync("ffmpeg", ["-y", "-ss", "0.3", "-i", output, "-frames:v", "1", "-c:v", "libwebp", "-lossless", "0", "-quality", "82", poster], { stdio: "inherit" });
-if (frame.error) throw frame.error;
-if (frame.status !== 0) process.exit(frame.status ?? 1);
-await Promise.all([access(output), access(poster)]);
+if (requested.length > 0) {
+  args.push("--variant", rarities.map((r) => r.toLowerCase()).join(","));
+}
+
+const res = spawnSync("node", args, { stdio: "inherit" });
+if (res.error) throw res.error;
+if (res.status !== 0) process.exit(res.status ?? 1);

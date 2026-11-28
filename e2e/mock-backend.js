@@ -68,15 +68,19 @@ function createInitialMockEconomy() {
     inkGems: 0,
     prismGems: 0,
     protecao: 0,
+    foilExtractors: 0,
     itemConfig: {
-      item_shop_price: { TITANITA: 0, TITANITA_SOMBRIA: 0, DRACONICA: 0, SOMBRIA_DRACONICA: 0, PROTECAO: 0 },
-      item_convert_value: { TITANITA: 0, TITANITA_SOMBRIA: 0, DRACONICA: 0, SOMBRIA_DRACONICA: 0, PROTECAO: 0 },
+      item_shop_price: { TITANITA: 0, TITANITA_SOMBRIA: 0, DRACONICA: 0, SOMBRIA_DRACONICA: 0, PROTECAO: 0, EXTRATOR_FOIL: 2000 },
+      item_convert_value: { TITANITA: 0, TITANITA_SOMBRIA: 0, DRACONICA: 0, SOMBRIA_DRACONICA: 0, PROTECAO: 0, EXTRATOR_FOIL: 0 },
+      item_shop_enabled: { EXTRATOR_FOIL: true },
       item_recipes: {},
       item_eligibility: {},
       item_condition_anchor: {},
       card_floors: {},
       base_value: {},
       foil_mult: {},
+      foil_extract_fragments: { default: 10 },
+      gem_fragment_recipe: 20,
       reroll_cost_pct: 0.1,
     },
     dailyClaimedToday: false,
@@ -86,6 +90,7 @@ function createInitialMockEconomy() {
 
 let mockEconomy = createInitialMockEconomy();
 let mockOpenIndex = 0;
+const mockItemOps = new Map();
 
 const MOCK_BOX_REWARDS = [
   { category: 'CARD', name: 'Aeliana, Guardiã Glacial', rarity: 'LENDARIA', foil: 'HOLO', condition: 0.04, image: '/aeliana/Aeliana.png' },
@@ -732,6 +737,90 @@ const server = http.createServer((req, res) => {
       mockEconomy.spinResets -= 1;
     }
     return json(res, { inventory: mockEconomy });
+  }
+  if (req.method === 'POST' && isApiRoute(p, '/gacha/economy/items/buy')) {
+    readJsonBody(req, res, (body) => {
+      const kind = body?.kind;
+      const quantity = Number(body?.quantity) || 1;
+      const opKey = body?.operationId ? `buy:${body.operationId}` : null;
+      if (opKey && mockItemOps.has(opKey)) {
+        return json(res, mockItemOps.get(opKey));
+      }
+      const price = Number(mockEconomy.itemConfig?.item_shop_price?.[kind] ?? 0);
+      if (price <= 0) return json(res, { message: 'Item indisponível.' }, 400);
+      if (mockEconomy.available < price * quantity) {
+        return json(res, { message: 'Saldo de cristais insuficiente.' }, 400);
+      }
+      mockEconomy.balance -= price * quantity;
+      mockEconomy.available -= price * quantity;
+      if (kind === 'PROTECAO') mockEconomy.protecao += quantity;
+      if (kind === 'EXTRATOR_FOIL') mockEconomy.foilExtractors += quantity;
+      const response = { kind, quantity, balance: mockEconomy.available };
+      if (opKey) mockItemOps.set(opKey, response);
+      return json(res, response);
+    });
+    return;
+  }
+  const foilExtractPreviewMatch =
+    p && p.match(/^\/(?:api\/)?gacha\/economy\/gems\/extract\/preview\/([^/]+)$/);
+  if (req.method === 'GET' && foilExtractPreviewMatch) {
+    const userCardId = decodeURIComponent(foilExtractPreviewMatch[1]);
+    const qty = Number(mockEconomy.itemConfig?.foil_extract_fragments?.default ?? 10);
+    return json(res, {
+      userCardId,
+      cardName: 'Waifu E2E',
+      rarity: 'EPICA',
+      edition: 1,
+      condition: 0.04,
+      conditionLabel: 'MINT',
+      currentFoil: 'GOLD',
+      targetFoil: 'NORMAL',
+      currentValue: 9500,
+      projectedValue: 3167,
+      currentRankedValue: 9500,
+      projectedRankedValue: 3167,
+      extractorsAvailable: mockEconomy.foilExtractors,
+      fragments: {
+        foil: 'GOLD',
+        itemId: 'FRAG_GOLD',
+        itemName: 'Fragmento Gold',
+        quantity: qty,
+      },
+      canExtract: mockEconomy.foilExtractors >= 1,
+      blockedReason:
+        mockEconomy.foilExtractors >= 1 ? null : 'Extrator de Foil insuficiente.',
+    });
+  }
+  if (req.method === 'POST' && isApiRoute(p, '/gacha/economy/gems/extract')) {
+    readJsonBody(req, res, (body) => {
+      const opKey = body?.operationId ? `extract:${body.operationId}` : null;
+      if (opKey && mockItemOps.has(opKey)) {
+        return json(res, mockItemOps.get(opKey));
+      }
+      if (mockEconomy.foilExtractors < 1) {
+        return json(res, { message: 'Extrator de Foil insuficiente.' }, 400);
+      }
+      const qty = Number(mockEconomy.itemConfig?.foil_extract_fragments?.default ?? 10);
+      mockEconomy.foilExtractors -= 1;
+      mockEconomy.goldShards += qty;
+      const response = {
+        userCardId: body?.userCardId || 'pull-e2e',
+        extractedFoil: 'GOLD',
+        foil: 'NORMAL',
+        value: 3167,
+        rankedValue: 3167,
+        extractorsRemaining: mockEconomy.foilExtractors,
+        fragments: {
+          foil: 'GOLD',
+          itemId: 'FRAG_GOLD',
+          itemName: 'Fragmento Gold',
+          quantity: qty,
+        },
+      };
+      if (opKey) mockItemOps.set(opKey, response);
+      return json(res, response);
+    });
+    return;
   }
   if (req.method === 'GET' && (p === '/api/gacha/shop' || p === '/gacha/shop')) {
     return json(res, { balance: 0, cosmetics: [], activeCardBack: null, spinPrice: 0 });

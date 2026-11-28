@@ -6,13 +6,14 @@ Three.js anima o cristal no navegador e PixiJS desenha as partículas em um
 canvas independente. A timeline GSAP continua responsável por esperar a API
 e revelar a carta; o burst aplica a saturação depois de conhecer a raridade.
 
-Para regenerar os assets a partir da raiz do projeto:
+Para regenerar os assets do cristal a partir da raiz do projeto:
 
 ```bash
+npm run video:install
 npm run render:gacha
 ```
 
-O script usa a CLI Remotion 4.0.534 via `npx` e FFmpeg local. Esses utilitários
+O script delega ao framework isolado em `remotion/` (Remotion 4.0.534 + FFmpeg local). Esses utilitários
 são necessários só para regenerar os assets, não para servir o app.
 
 `scripts/manim/night_market_intro.py` continua usando Manim para o vídeo de

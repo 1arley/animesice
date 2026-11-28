@@ -17,6 +17,7 @@ import { useAuth } from "@/lib/auth-context";
 import { api, ApiError } from "@/lib/api";
 import {
   clearOperationId,
+  foilExtractFragmentsForConfig,
   getInventoryFragmentStats,
   getOrCreateOperationId,
   pendingOperationRoute,
@@ -44,12 +45,14 @@ export function GachaInventory() {
   const [loadedUserId, setLoadedUserId] = useState<string | null>(null);
   const [loadTick, setLoadTick] = useState(0);
   const [protectionQuantity, setProtectionQuantity] = useState(1);
+  const [extractorQuantity, setExtractorQuantity] = useState(1);
   const [busy, setBusy] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [status, setStatus] = useState("");
   const [reconcileNeeded, setReconcileNeeded] = useState(false);
-  const [pendingProtectionRetry, setPendingProtectionRetry] = useState<{
+  const [pendingBuyRetry, setPendingBuyRetry] = useState<{
+    kind: "PROTECAO" | "EXTRATOR_FOIL";
     quantity: number;
   } | null>(null);
   const [pendingFragmentsOperation, setPendingFragmentsOperation] =
@@ -77,7 +80,7 @@ export function GachaInventory() {
     if (!user) {
       setInventory(null);
       setLoadedUserId(null);
-      setPendingProtectionRetry(null);
+      setPendingBuyRetry(null);
       setPendingFragmentsOperation(false);
       setReconcileNeeded(false);
       pendingOperations.current.clear();
@@ -90,7 +93,7 @@ export function GachaInventory() {
     setLoadedUserId(null);
     setError("");
     setStatus("");
-    setPendingProtectionRetry(null);
+    setPendingBuyRetry(null);
     setPendingFragmentsOperation(false);
     setReconcileNeeded(false);
     pendingOperations.current.clear();
@@ -111,13 +114,15 @@ export function GachaInventory() {
           const action = suffix.split(":");
           if (
             action[0] === "buy" &&
-            action[1] === "PROTECAO" &&
+            (action[1] === "PROTECAO" || action[1] === "EXTRATOR_FOIL") &&
             Number.isInteger(Number(action[2])) &&
             Number(action[2]) > 0
           ) {
+            const retryKind = action[1];
             const retryQuantity = Number(action[2]);
-            setProtectionQuantity(retryQuantity);
-            setPendingProtectionRetry({ quantity: retryQuantity });
+            if (retryKind === "PROTECAO") setProtectionQuantity(retryQuantity);
+            else setExtractorQuantity(retryQuantity);
+            setPendingBuyRetry({ kind: retryKind, quantity: retryQuantity });
             break;
           }
         }
@@ -138,22 +143,28 @@ export function GachaInventory() {
     };
   }, [authLoading, user, loadTick]);
 
-  async function buyProtection(retryQuantity = protectionQuantity) {
-    const retrying = pendingProtectionRetry?.quantity === retryQuantity;
+  async function buyItem(
+    kind: "PROTECAO" | "EXTRATOR_FOIL",
+    retryQuantity = kind === "PROTECAO"
+      ? protectionQuantity
+      : extractorQuantity,
+  ) {
+    const retrying =
+      pendingBuyRetry?.kind === kind &&
+      pendingBuyRetry.quantity === retryQuantity;
     if (
       !user ||
       !inventory ||
       busyRef.current ||
       reconcileNeeded ||
       (pendingFragmentsOperation && !retrying) ||
-      (pendingProtectionRetry &&
-        retryQuantity !== pendingProtectionRetry.quantity) ||
+      (pendingBuyRetry && !retrying) ||
       !Number.isInteger(retryQuantity) ||
       retryQuantity < 1
     )
       return;
     busyRef.current = true;
-    const key = `buy:PROTECAO:${retryQuantity}`;
+    const key = `buy:${kind}:${retryQuantity}`;
     const { operationId, storageKey } = getOrCreateOperationId(
       pendingOperations.current,
       user.id,
@@ -165,11 +176,11 @@ export function GachaInventory() {
     try {
       await api.gachaEconomyBuyItem({
         operationId,
-        kind: "PROTECAO",
+        kind,
         quantity: retryQuantity,
       });
       clearOperationId(pendingOperations.current, user.id, key, storageKey);
-      setPendingProtectionRetry(null);
+      setPendingBuyRetry(null);
       setStatus("Operação concluída.");
       await refreshInventory()
         .then(() => setReconcileNeeded(false))
@@ -188,11 +199,11 @@ export function GachaInventory() {
         cause.statusCode >= 500 ||
         cause.statusCode === 408
       ) {
-        setPendingProtectionRetry({ quantity: retryQuantity });
+        setPendingBuyRetry({ kind, quantity: retryQuantity });
         await refreshInventory().catch(() => undefined);
       } else {
         clearOperationId(pendingOperations.current, user.id, key, storageKey);
-        setPendingProtectionRetry(null);
+        setPendingBuyRetry(null);
       }
     } finally {
       setBusy("");
@@ -283,6 +294,27 @@ export function GachaInventory() {
   const validProtectionQuantity =
     Number.isSafeInteger(protectionQuantity) && protectionQuantity >= 1;
 
+  const extractorPrice = config.item_shop_price?.EXTRATOR_FOIL ?? 0;
+  const extractorReason =
+    extractorPrice <= 0
+      ? "Extrator de Foil indisponível para compra."
+      : inventory.available < extractorPrice * extractorQuantity
+        ? "Saldo de cristais insuficiente."
+        : "";
+  const extractorShopEnabled =
+    config.item_shop_enabled?.EXTRATOR_FOIL ?? extractorPrice > 0;
+  const validExtractorQuantity =
+    Number.isSafeInteger(extractorQuantity) && extractorQuantity >= 1;
+  const foilExtractors = inventory.foilExtractors ?? 0;
+  const sampleExtractFragments =
+    foilExtractFragmentsForConfig("HOLO", config) ??
+    config.foil_extract_fragments?.default ??
+    10;
+  const pendingProtecaoRetry =
+    pendingBuyRetry?.kind === "PROTECAO" ? pendingBuyRetry : null;
+  const pendingExtractorRetry =
+    pendingBuyRetry?.kind === "EXTRATOR_FOIL" ? pendingBuyRetry : null;
+
   return (
     <main
       id="body-content"
@@ -314,8 +346,8 @@ export function GachaInventory() {
               Inventário
             </h1>
             <p className="mt-2.5 text-body-sm text-mist">
-              Acompanhe seus saldos, abra essências e gerencie proteções de
-              reroll.
+              Acompanhe seus saldos, abra essências e gerencie proteções e
+              extratores de foil.
             </p>
           </div>
           <nav
@@ -340,7 +372,7 @@ export function GachaInventory() {
 
       <section
         aria-label="Resumo dos saldos"
-        className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-4 xl:grid-cols-8"
+        className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5"
       >
         {[
           { label: "Cristais disponíveis", value: inventory.available },
@@ -354,7 +386,8 @@ export function GachaInventory() {
             detail: `${inventory.commonBoxes} comuns · ${inventory.rareBoxes} raras · ${inventory.premiumBoxes} premium`,
           },
           { label: "Chaves", value: inventory.keys },
-          { label: "Resets", value: inventory.spinResets },
+          { label: "Resets de giros", value: inventory.spinResets },
+          { label: "Ampulhetas do Éter", value: inventory.ampulhetaEter ?? 0 },
           {
             label: "Pedras prontas",
             value: stats?.totalReadyStones ?? 0,
@@ -364,6 +397,7 @@ export function GachaInventory() {
             value: stats?.totalFoilGems ?? 0,
           },
           { label: "Proteções", value: inventory.protecao },
+          { label: "Extratores de foil", value: foilExtractors },
         ].map(({ label, value, detail }) => (
           <div key={label} className="border border-hairline bg-panel p-4">
             <p className="text-xs text-mist">{label}</p>
@@ -447,6 +481,14 @@ export function GachaInventory() {
                 Melhorar cartas
               </Link>
             )}
+            {foilExtractors > 0 && (
+              <Link
+                href="/gacha/inventario/fragmentos#extrair-foil"
+                className="btn-ghost min-h-11 px-4"
+              >
+                Extrair foil
+              </Link>
+            )}
           </div>
         </div>
       </section>
@@ -456,6 +498,62 @@ export function GachaInventory() {
         refresh={refreshInventory}
         disabled={!!busy || reconcileNeeded || pendingFragmentsOperation}
       />
+
+      <section
+        className="mt-8 border border-hairline bg-panel p-4 sm:p-6"
+        aria-labelledby="ampulheta-heading"
+      >
+        <div className="grid gap-6 lg:grid-cols-[1.2fr_1fr] lg:items-start">
+          <div className="flex items-start gap-4">
+            <div className="gacha-fragment-art h-16 w-16 shrink-0">
+              <Image
+                src="/gacha/ampulheta-eter.png"
+                alt=""
+                width={52}
+                height={52}
+                className="h-13 w-13 object-contain"
+              />
+            </div>
+            <div>
+              <p className="font-mono text-caption uppercase tracking-[0.16em] text-ice">
+                Consumível raro · Cooldown de coleta
+              </p>
+              <h2
+                id="ampulheta-heading"
+                className="mt-2 font-display text-2xl text-snow"
+              >
+                Ampulheta do Éter
+              </h2>
+              <p className="mt-2 max-w-xl text-body-sm text-mist">
+                Elimina imediatamente o tempo de espera para guardar a próxima
+                carta no Gacha. Drop raro ao guardar cartas; não concede giros
+                extras e é diferente do{" "}
+                <strong className="font-medium text-snow">Reset de giros</strong>{" "}
+                (que restaura apenas os 5 previews da hora).
+              </p>
+            </div>
+          </div>
+
+          <div className="border border-hairline bg-ink/80 p-4 sm:p-5">
+            <p className="border border-hairline bg-panel p-4 text-sm text-mist">
+              No inventário:{" "}
+              <strong className="font-mono text-lg tabular-nums text-snow">
+                {(inventory.ampulhetaEter ?? 0).toLocaleString("pt-BR")}
+              </strong>
+            </p>
+            <p className="mt-3 text-xs text-mist">
+              Use diretamente na sala do Gacha quando houver cooldown ativo fora
+              de eventos de resgate.
+            </p>
+            <Link
+              href="/gacha"
+              className="btn-ghost mt-3 inline-flex min-h-11 w-full items-center justify-center px-3"
+            >
+              Ir para o Gacha
+            </Link>
+          </div>
+        </div>
+      </section>
 
       <section
         className="mt-8 border border-hairline bg-panel p-4 sm:p-6"
@@ -527,8 +625,8 @@ export function GachaInventory() {
                   max={2_147_483_647}
                   step={1}
                   disabled={
-                    !!pendingProtectionRetry ||
-                    (pendingFragmentsOperation && !pendingProtectionRetry)
+                    !!pendingBuyRetry ||
+                    (pendingFragmentsOperation && !pendingProtecaoRetry)
                   }
                   value={protectionQuantity}
                   onChange={(event) =>
@@ -543,14 +641,14 @@ export function GachaInventory() {
                 />
                 <button
                   type="button"
-                  onClick={() => void buyProtection(protectionQuantity)}
+                  onClick={() => void buyItem("PROTECAO", protectionQuantity)}
                   disabled={
                     !validProtectionQuantity ||
                     !!busy ||
                     !!protectionReason ||
                     reconcileNeeded ||
-                    !!pendingProtectionRetry ||
-                    (pendingFragmentsOperation && !pendingProtectionRetry)
+                    !!pendingBuyRetry ||
+                    (pendingFragmentsOperation && !pendingProtecaoRetry)
                   }
                   className="btn-ghost gacha-fragment-action mt-3 min-h-11 w-full px-3 disabled:opacity-50"
                 >
@@ -571,6 +669,137 @@ export function GachaInventory() {
                 Compra direta pausada e nenhuma fonte ativa em loot boxes. A
                 equipe precisa restaurar uma fonte antes de continuar.
               </p>
+            )}
+            {pendingProtecaoRetry && (
+              <button
+                type="button"
+                onClick={() =>
+                  void buyItem("PROTECAO", pendingProtecaoRetry.quantity)
+                }
+                disabled={!!busy || reconcileNeeded}
+                className="btn-ghost mt-3 min-h-11 w-full px-4 disabled:opacity-50"
+              >
+                Repetir a mesma operação com segurança
+              </button>
+            )}
+          </div>
+        </div>
+      </section>
+
+      <section
+        id="extrator-foil"
+        className="mt-8 scroll-mt-6 border border-hairline bg-panel p-4 sm:p-6"
+        aria-labelledby="foil-extractor-shop-heading"
+      >
+        <div className="grid gap-6 lg:grid-cols-[1.2fr_1fr] lg:items-start">
+          <div>
+            <p className="font-mono text-caption uppercase tracking-[0.16em] text-ice">
+              Consumível
+            </p>
+            <h2
+              id="foil-extractor-shop-heading"
+              className="mt-2 font-display text-2xl text-snow"
+            >
+              Extrator de Foil
+            </h2>
+            <p className="mt-2 max-w-xl text-body-sm text-mist">
+              Remove o foil aplicado a uma carta preservando raridade, condition,
+              edição e skin, e converte o foil em fragmentos da gema
+              correspondente ({sampleExtractFragments} fragmentos por extração
+              no padrão atual;{" "}
+              {config.gem_fragment_recipe ?? 20} formam uma gema). Não pode ser
+              fabricado nem convertido.
+            </p>
+            <div className="mt-4 flex flex-wrap gap-4 text-sm">
+              <Link
+                href="/gacha/inventario/fragmentos#extrair-foil"
+                className="inline-flex min-h-11 items-center text-ice underline underline-offset-4"
+              >
+                Extrair foil na oficina
+              </Link>
+              <Link
+                href="/gacha/cartas"
+                className="inline-flex min-h-11 items-center text-ice underline underline-offset-4"
+              >
+                Escolher carta na coleção
+              </Link>
+            </div>
+          </div>
+
+          <div className="border border-hairline bg-ink/80 p-4 sm:p-5">
+            <p className="border border-hairline bg-panel p-4 text-sm text-mist">
+              No inventário:{" "}
+              <strong className="font-mono text-lg tabular-nums text-snow">
+                {foilExtractors}
+              </strong>
+            </p>
+            {extractorShopEnabled ? (
+              <div className="mt-4">
+                <label
+                  htmlFor="foil-extractor-quantity"
+                  className="block text-sm text-mist"
+                >
+                  Quantidade de extratores
+                </label>
+                <input
+                  id="foil-extractor-quantity"
+                  type="number"
+                  min={1}
+                  max={2_147_483_647}
+                  step={1}
+                  disabled={
+                    !!pendingBuyRetry ||
+                    (pendingFragmentsOperation && !pendingExtractorRetry)
+                  }
+                  value={extractorQuantity}
+                  onChange={(event) =>
+                    setExtractorQuantity(
+                      Math.min(
+                        2_147_483_647,
+                        Math.max(1, Number(event.target.value) || 1),
+                      ),
+                    )
+                  }
+                  className="mt-2 h-11 w-full border border-hairline bg-ink px-3 font-mono tabular-nums text-snow focus-visible:outline focus-visible:outline-2 focus-visible:outline-ice disabled:opacity-60"
+                />
+                <button
+                  type="button"
+                  onClick={() =>
+                    void buyItem("EXTRATOR_FOIL", extractorQuantity)
+                  }
+                  disabled={
+                    !validExtractorQuantity ||
+                    !!busy ||
+                    !!extractorReason ||
+                    reconcileNeeded ||
+                    !!pendingBuyRetry ||
+                    (pendingFragmentsOperation && !pendingExtractorRetry)
+                  }
+                  className="btn-ghost gacha-fragment-action mt-3 min-h-11 w-full px-3 disabled:opacity-50"
+                >
+                  Comprar extrator de foil
+                </button>
+                <p className="mt-1.5 text-xs text-mist">
+                  {extractorReason ||
+                    `${(extractorPrice * extractorQuantity).toLocaleString("pt-BR")} cristais · ${extractorPrice.toLocaleString("pt-BR")} cada`}
+                </p>
+              </div>
+            ) : (
+              <p className="mt-4 text-sm text-mist">
+                Compra direta de Extrator de Foil indisponível no momento.
+              </p>
+            )}
+            {pendingExtractorRetry && (
+              <button
+                type="button"
+                onClick={() =>
+                  void buyItem("EXTRATOR_FOIL", pendingExtractorRetry.quantity)
+                }
+                disabled={!!busy || reconcileNeeded}
+                className="btn-ghost mt-3 min-h-11 w-full px-4 disabled:opacity-50"
+              >
+                Repetir a mesma compra com segurança
+              </button>
             )}
           </div>
         </div>
@@ -604,16 +833,6 @@ export function GachaInventory() {
             className="btn-ghost mt-3 min-h-11 px-4 disabled:opacity-50"
           >
             Atualizar saldos
-          </button>
-        )}
-        {pendingProtectionRetry && (
-          <button
-            type="button"
-            onClick={() => void buyProtection(pendingProtectionRetry.quantity)}
-            disabled={!!busy || reconcileNeeded}
-            className="btn-ghost mt-3 min-h-11 px-4 disabled:opacity-50"
-          >
-            Repetir a mesma operação com segurança
           </button>
         )}
       </section>

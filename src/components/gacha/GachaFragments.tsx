@@ -18,6 +18,10 @@ import { GachaInventorySubnav } from "@/components/gacha/GachaInventorySubnav";
 import { GachaPageSkeleton } from "@/components/gacha/GachaPageSkeleton";
 import { GachaStoneForge } from "@/components/gacha/GachaStoneForge";
 import {
+  GachaFoilExtractor,
+  type PendingFoilExtractRetry,
+} from "@/components/gacha/GachaFoilExtractor";
+import {
   GachaStoneUpgrade,
   type PendingStoneUseRetry,
 } from "@/components/gacha/GachaStoneUpgrade";
@@ -106,6 +110,8 @@ export function GachaFragments() {
   } | null>(null);
   const [pendingUseRetry, setPendingUseRetry] =
     useState<PendingStoneUseRetry | null>(null);
+  const [pendingExtractRetry, setPendingExtractRetry] =
+    useState<PendingFoilExtractRetry | null>(null);
   const [collectionVersion, setCollectionVersion] = useState(0);
 
   const [busy, setBusy] = useState("");
@@ -205,6 +211,7 @@ export function GachaFragments() {
       setLoadedUserId(null);
       setPendingRetry(null);
       setPendingUseRetry(null);
+      setPendingExtractRetry(null);
       setPendingInventoryOperation(false);
       setForge(null);
       setBusy("");
@@ -234,6 +241,7 @@ export function GachaFragments() {
     setStoneStatus("");
     setPendingRetry(null);
     setPendingUseRetry(null);
+    setPendingExtractRetry(null);
     setPendingInventoryOperation(false);
     setForge(null);
     setBusy("");
@@ -255,6 +263,12 @@ export function GachaFragments() {
         let pendingStoneFound = false;
         for (const suffix of pendingKeys) {
           const action = suffix.split(":");
+          if (action[0] === "foil-extract" && action.length >= 2) {
+            setPendingExtractRetry({
+              userCardId: action.slice(1).join(":"),
+            });
+            break;
+          }
           if (action[0] === "use" && isStoneKind(action[1])) {
             pendingStoneFound = true;
             setSelectedKind(action[1]);
@@ -387,6 +401,7 @@ export function GachaFragments() {
       pendingInventoryOperation ||
       !!pendingRetry ||
       !!pendingUseRetry ||
+      !!pendingExtractRetry ||
       inventory[entry.shards] < FOIL_GEM_COST ||
       !tryBeginBusy(key)
     )
@@ -432,7 +447,8 @@ export function GachaFragments() {
       !inventory ||
       pendingInventoryOperation ||
       !!pendingRetry ||
-      !!pendingUseRetry
+      !!pendingUseRetry ||
+      !!pendingExtractRetry
     ) {
       return;
     }
@@ -502,6 +518,7 @@ export function GachaFragments() {
       reconcileNeeded ||
       (pendingInventoryOperation && !retrying) ||
       !!pendingUseRetry ||
+      !!pendingExtractRetry ||
       (pendingRetry &&
         (operation !== pendingRetry.operation ||
           kind !== pendingRetry.kind ||
@@ -906,8 +923,9 @@ export function GachaFragments() {
           </div>
 
           {showFoilSection && (
-            <section
-              id="foil"
+            <>
+              <section
+                id="foil"
               className="mb-10 scroll-mt-6 border border-hairline bg-panel p-4 sm:p-6"
               aria-labelledby="foil-gems-heading"
             >
@@ -1042,7 +1060,9 @@ export function GachaFragments() {
                             shards < FOIL_GEM_COST ||
                             pendingInventoryOperation ||
                             !!pendingRetry ||
-                            !!pendingUseRetry
+                            !!pendingUseRetry ||
+                            !!pendingExtractRetry ||
+                            !!pendingExtractRetry
                           }
                           className="btn-ice gacha-fragment-action mt-4 min-h-11 w-full px-3 disabled:opacity-50"
                         >
@@ -1146,6 +1166,7 @@ export function GachaFragments() {
                         !gemCards.length ||
                         !!busy ||
                         !!pendingUseRetry ||
+                        !!pendingExtractRetry ||
                         cardsResultKey !== currentCardsKey
                       }
                       className="mt-2 h-11 w-full border border-hairline bg-ink px-3 text-snow focus-visible:outline focus-visible:outline-2 focus-visible:outline-ice disabled:opacity-60"
@@ -1181,7 +1202,8 @@ export function GachaFragments() {
                       !!busy ||
                       pendingInventoryOperation ||
                       !!pendingRetry ||
-                      !!pendingUseRetry
+                      !!pendingUseRetry ||
+                      !!pendingExtractRetry
                     }
                     onClick={() => void handleApplyGem()}
                     className="btn-ice gacha-fragment-action min-h-11 px-4 disabled:opacity-50"
@@ -1303,6 +1325,30 @@ export function GachaFragments() {
                 )}
               </div>
             </section>
+            <GachaFoilExtractor
+              key={`extract-${user.id}`}
+              userId={user.id}
+              inventory={inventory}
+              busy={busy}
+              tryBeginBusy={tryBeginBusy}
+              endBusy={endBusy}
+              pendingOperations={pendingOperations}
+              pendingExtractRetry={pendingExtractRetry}
+              setPendingExtractRetry={setPendingExtractRetry}
+              lockedByOtherAction={
+                pendingInventoryOperation ||
+                !!pendingRetry ||
+                !!pendingUseRetry
+              }
+              reconcileNeeded={reconcileNeeded}
+              setReconcileNeeded={setReconcileNeeded}
+              collectionVersion={collectionVersion}
+              onExtractComplete={async () => {
+                await refreshAll();
+                setCollectionVersion((version) => version + 1);
+              }}
+            />
+          </>
           )}
 
           {showStonesSection && (
@@ -1373,7 +1419,7 @@ export function GachaFragments() {
                           key={item.kind}
                           type="button"
                           aria-pressed={selected}
-                          disabled={!!pendingRetry || !!pendingUseRetry}
+                          disabled={!!pendingRetry || !!pendingUseRetry || !!pendingExtractRetry}
                           initial={{ opacity: 0, y: 8, scale: 0.97 }}
                           animate={{ opacity: 1, y: 0, scale: 1 }}
                           transition={{
@@ -1522,7 +1568,7 @@ export function GachaFragments() {
                         <div className="flex flex-wrap gap-1.5">
                           <button
                             type="button"
-                            disabled={!!pendingRetry || !!pendingUseRetry}
+                            disabled={!!pendingRetry || !!pendingUseRetry || !!pendingExtractRetry}
                             onClick={() => setQuantity(1)}
                             className="min-h-11 min-w-11 border border-hairline bg-panel px-2.5 font-mono text-caption text-mist hover:border-ice/50 hover:text-snow disabled:opacity-50"
                           >
@@ -1531,7 +1577,7 @@ export function GachaFragments() {
                           {maxCraftableStones > 1 && (
                             <button
                               type="button"
-                              disabled={!!pendingRetry || !!pendingUseRetry}
+                              disabled={!!pendingRetry || !!pendingUseRetry || !!pendingExtractRetry}
                               onClick={() => setQuantity(maxCraftableStones)}
                               className="min-h-11 border border-hairline bg-panel px-2.5 font-mono text-caption text-ice hover:border-ice/50 disabled:opacity-50"
                             >
@@ -1541,7 +1587,7 @@ export function GachaFragments() {
                           {currentStoneShards > 1 && convertValue > 0 && (
                             <button
                               type="button"
-                              disabled={!!pendingRetry || !!pendingUseRetry}
+                              disabled={!!pendingRetry || !!pendingUseRetry || !!pendingExtractRetry}
                               onClick={() => setQuantity(currentStoneShards)}
                               className="min-h-11 border border-hairline bg-panel px-2.5 font-mono text-caption text-mist hover:border-ice/50 hover:text-snow disabled:opacity-50"
                             >
@@ -1556,7 +1602,7 @@ export function GachaFragments() {
                         min={1}
                         max={2_147_483_647}
                         step={1}
-                        disabled={!!pendingRetry || !!pendingUseRetry}
+                        disabled={!!pendingRetry || !!pendingUseRetry || !!pendingExtractRetry}
                         value={quantity}
                         onChange={(event) =>
                           setQuantity(
@@ -1587,7 +1633,8 @@ export function GachaFragments() {
                               reconcileNeeded ||
                               pendingInventoryOperation ||
                               !!pendingRetry ||
-                              !!pendingUseRetry
+                              !!pendingUseRetry ||
+                              !!pendingExtractRetry
                             }
                             className="btn-ghost gacha-fragment-action min-h-11 w-full px-3 disabled:opacity-50"
                           >
@@ -1610,7 +1657,8 @@ export function GachaFragments() {
                             reconcileNeeded ||
                             pendingInventoryOperation ||
                             !!pendingRetry ||
-                            !!pendingUseRetry
+                            !!pendingUseRetry ||
+                            !!pendingExtractRetry
                           }
                           className="btn-ghost gacha-fragment-action min-h-11 w-full px-3 disabled:opacity-50"
                         >
@@ -1633,7 +1681,8 @@ export function GachaFragments() {
                             reconcileNeeded ||
                             pendingInventoryOperation ||
                             !!pendingRetry ||
-                            !!pendingUseRetry
+                            !!pendingUseRetry ||
+                            !!pendingExtractRetry
                           }
                           className="btn-ice gacha-fragment-action min-h-11 w-full px-3 disabled:opacity-50"
                         >
@@ -1755,7 +1804,10 @@ export function GachaFragments() {
                 pendingUseRetry={pendingUseRetry}
                 setPendingUseRetry={setPendingUseRetry}
                 lockedByOtherAction={
-                  pendingInventoryOperation || !!pendingRetry || reconcileNeeded
+                  pendingInventoryOperation ||
+                  !!pendingRetry ||
+                  !!pendingExtractRetry ||
+                  reconcileNeeded
                 }
                 reconcileNeeded={reconcileNeeded}
                 setReconcileNeeded={setReconcileNeeded}
