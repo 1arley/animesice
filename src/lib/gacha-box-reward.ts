@@ -22,6 +22,7 @@ export const ITEM_KIND_LABEL: Record<GachaItemKind, string> = {
   DRACONICA: "Fragmentos de Magnetita",
   SOMBRIA_DRACONICA: "Fragmentos de Magnetita Sombria",
   PROTECAO: "Proteção de reroll",
+  EXTRATOR_FOIL: "Extrator de Foil",
 };
 
 /** Rótulos pt-BR das raridades — reutilizado pelo banner de evento e pelo admin. */

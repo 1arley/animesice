@@ -61,6 +61,9 @@ type CardPreviewProps = {
   listing?: boolean;
   burning?: boolean;
   onBurn?: () => void;
+  foilExtractorsCount?: number;
+  extractingFoil?: boolean;
+  onExtractFoil?: () => void;
   applyingRanking?: boolean;
   onApplyRanking?: () => void;
   onChange?: (pull: GachaPull) => void;
@@ -184,6 +187,9 @@ function OwnedCardPreview({
   listing = false,
   burning = false,
   onBurn,
+  foilExtractorsCount,
+  extractingFoil = false,
+  onExtractFoil,
   applyingRanking = false,
   onApplyRanking,
   onChange,
@@ -862,6 +868,20 @@ function OwnedCardPreview({
               {listing ? "Anunciando…" : "Anunciar no mercado"}
             </button>
           </form>
+        )}
+        {onExtractFoil && pull.foil !== "NORMAL" && (
+          <button
+            type="button"
+            onClick={onExtractFoil}
+            disabled={extractingFoil}
+            className="mt-3 min-h-11 w-full border border-ice/60 px-4 py-3 font-mono text-caption text-ice transition-colors hover:bg-ice/10 disabled:opacity-50"
+          >
+            {extractingFoil
+              ? "Extraindo foil…"
+              : foilExtractorsCount != null
+                ? `Extrair foil · ${foilExtractorsCount} no inventário`
+                : "Extrair foil"}
+          </button>
         )}
         {onBurn && (
           <button

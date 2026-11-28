@@ -777,7 +777,11 @@ export type GachaItemKind =
   | "TITANITA_SOMBRIA"
   | "DRACONICA"
   | "SOMBRIA_DRACONICA"
-  | "PROTECAO";
+  | "PROTECAO"
+  | "EXTRATOR_FOIL";
+
+export type GachaConsumableItemKind = "PROTECAO" | "EXTRATOR_FOIL";
+export type GachaStoneItemKind = Exclude<GachaItemKind, GachaConsumableItemKind>;
 
 export type GachaEssenceKind =
   `ESSENCIA_${"COMUM" | "INCOMUM" | "RARA" | "EPICA" | "LENDARIA" | "MITICA" | "GALACTICA"}`;
@@ -816,10 +820,10 @@ export interface GachaItemConfig {
   item_shop_enabled?: Record<GachaItemKind, boolean>;
   item_drop_available?: Record<GachaItemKind, boolean>;
   item_convert_value: Record<GachaItemKind, number>;
-  item_recipes: Partial<Record<Exclude<GachaItemKind, "PROTECAO">, number>>;
+  item_recipes: Partial<Record<GachaStoneItemKind, number>>;
   item_eligibility: Partial<
     Record<
-      Exclude<GachaItemKind, "PROTECAO">,
+      GachaStoneItemKind,
       {
         foils: string[];
         sourceConditions: string[];
@@ -830,6 +834,8 @@ export interface GachaItemConfig {
   item_condition_anchor: Partial<
     Record<"PLAYED" | "EX" | "NM" | "MINT", number>
   >;
+  foil_extract_fragments?: Record<string, number>;
+  gem_fragment_recipe?: number;
   card_floors: Record<string, number>;
   base_value: Record<string, number>;
   foil_mult: Record<string, number>;
@@ -874,9 +880,46 @@ export interface GachaEconomyInventory {
   inkGems: number;
   prismGems: number;
   protecao: number;
+  foilExtractors?: number;
   itemConfig: GachaItemConfig;
   dailyClaimedToday: boolean;
   watchEarnedToday: number;
+}
+
+export interface GachaFoilExtractFragments {
+  foil: string;
+  itemId: string;
+  itemName: string;
+  quantity: number;
+}
+
+export interface GachaFoilExtractPreview {
+  userCardId: string;
+  cardName: string;
+  rarity: string;
+  edition: number;
+  condition: number;
+  conditionLabel: string;
+  currentFoil: string;
+  targetFoil: "NORMAL";
+  currentValue: number;
+  projectedValue: number;
+  currentRankedValue: number;
+  projectedRankedValue: number;
+  extractorsAvailable: number;
+  fragments: GachaFoilExtractFragments | null;
+  canExtract: boolean;
+  blockedReason: string | null;
+}
+
+export interface GachaFoilExtractResult {
+  userCardId: string;
+  extractedFoil: string;
+  foil: "NORMAL";
+  value: number;
+  rankedValue: number;
+  extractorsRemaining: number;
+  fragments: GachaFoilExtractFragments;
 }
 
 export interface GachaEconomyListingItem {
