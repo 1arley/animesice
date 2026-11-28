@@ -1,0 +1,5 @@
+node_modules/
+output/
+.remotion/
+*.tsbuildinfo
+.DS_Store

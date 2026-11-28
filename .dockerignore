@@ -13,3 +13,7 @@ node_modules
 .env
 .env.*
 !*.example
+
+# Frameworks offline de autoria (nao entram no bundle de producao)
+tools
+remotion
