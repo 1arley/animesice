@@ -386,7 +386,8 @@ export function GachaInventory() {
             detail: `${inventory.commonBoxes} comuns · ${inventory.rareBoxes} raras · ${inventory.premiumBoxes} premium`,
           },
           { label: "Chaves", value: inventory.keys },
-          { label: "Resets", value: inventory.spinResets },
+          { label: "Resets de giros", value: inventory.spinResets },
+          { label: "Ampulhetas do Éter", value: inventory.ampulhetaEter ?? 0 },
           {
             label: "Pedras prontas",
             value: stats?.totalReadyStones ?? 0,
@@ -497,6 +498,62 @@ export function GachaInventory() {
         refresh={refreshInventory}
         disabled={!!busy || reconcileNeeded || pendingFragmentsOperation}
       />
+
+      <section
+        className="mt-8 border border-hairline bg-panel p-4 sm:p-6"
+        aria-labelledby="ampulheta-heading"
+      >
+        <div className="grid gap-6 lg:grid-cols-[1.2fr_1fr] lg:items-start">
+          <div className="flex items-start gap-4">
+            <div className="gacha-fragment-art h-16 w-16 shrink-0">
+              <Image
+                src="/gacha/ampulheta-eter.png"
+                alt=""
+                width={52}
+                height={52}
+                className="h-13 w-13 object-contain"
+              />
+            </div>
+            <div>
+              <p className="font-mono text-caption uppercase tracking-[0.16em] text-ice">
+                Consumível raro · Cooldown de coleta
+              </p>
+              <h2
+                id="ampulheta-heading"
+                className="mt-2 font-display text-2xl text-snow"
+              >
+                Ampulheta do Éter
+              </h2>
+              <p className="mt-2 max-w-xl text-body-sm text-mist">
+                Elimina imediatamente o tempo de espera para guardar a próxima
+                carta no Gacha. Drop raro ao guardar cartas; não concede giros
+                extras e é diferente do{" "}
+                <strong className="font-medium text-snow">Reset de giros</strong>{" "}
+                (que restaura apenas os 5 previews da hora).
+              </p>
+            </div>
+          </div>
+
+          <div className="border border-hairline bg-ink/80 p-4 sm:p-5">
+            <p className="border border-hairline bg-panel p-4 text-sm text-mist">
+              No inventário:{" "}
+              <strong className="font-mono text-lg tabular-nums text-snow">
+                {(inventory.ampulhetaEter ?? 0).toLocaleString("pt-BR")}
+              </strong>
+            </p>
+            <p className="mt-3 text-xs text-mist">
+              Use diretamente na sala do Gacha quando houver cooldown ativo fora
+              de eventos de resgate.
+            </p>
+            <Link
+              href="/gacha"
+              className="btn-ghost mt-3 inline-flex min-h-11 w-full items-center justify-center px-3"
+            >
+              Ir para o Gacha
+            </Link>
+          </div>
+        </div>
+      </section>
 
       <section
         className="mt-8 border border-hairline bg-panel p-4 sm:p-6"

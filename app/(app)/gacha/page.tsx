@@ -1,9 +1,18 @@
 "use client";
 
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { domAnimation, LazyMotion, MotionConfig } from "motion/react";
+import * as m from "motion/react-m";
 import { api, ApiError } from "@/lib/api";
+import {
+  ampulhetaUseSummary,
+  canUseAmpulheta,
+  clearOperationId,
+  getOrCreateOperationId,
+} from "@/lib/gacha-inventory";
 import { useAuth } from "@/lib/auth-context";
 import { RollStage, type RollAnimConfig } from "@/components/gacha/RollStage";
 import { SpinPreviewCard } from "@/components/gacha/SpinPreviewCard";
@@ -142,6 +151,10 @@ function GachaPageContent() {
   const [stagePreview, setStagePreview] = useState(false);
   const [claiming, setClaiming] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [ampulhetaConfirmOpen, setAmpulhetaConfirmOpen] = useState(false);
+  const [ampulhetaPending, setAmpulhetaPending] = useState(false);
+  const [ampulhetaFeedback, setAmpulhetaFeedback] = useState("");
+  const pendingAmpulhetaOps = useRef(new Map<string, string>());
   const [bypassPending, setBypassPending] = useState(false);
   const [rerolling, setRerolling] = useState(false);
   const [rerollError, setRerollError] = useState("");
@@ -184,6 +197,7 @@ function GachaPageContent() {
 
   useEffect(() => {
     festivalClaimLockUntil.current = null;
+    pendingAmpulhetaOps.current.clear();
   }, [user?.id]);
 
   // Endpoint público: a linha de odds aparece para visitante anônimo também.
@@ -377,6 +391,7 @@ function GachaPageContent() {
         festivalClaimLockUntil.current = null;
         setStatus(s);
       }
+      if (s.canClaim === false) setAmpulhetaFeedback("");
     }
     if (r) setRecent(r);
     if (sp) setSpins(sp);
@@ -437,6 +452,72 @@ function GachaPageContent() {
     }
   }
 
+  async function handleUseAmpulheta() {
+    if (!user || ampulhetaPending) return;
+    const opKey = "use:AMPULHETA_ETER";
+    const { operationId, storageKey } = getOrCreateOperationId(
+      pendingAmpulhetaOps.current,
+      user.id,
+      opKey,
+    );
+    setAmpulhetaPending(true);
+    setError("");
+    setAmpulhetaFeedback("");
+    try {
+      const res = await api.gachaEconomyUseAmpulheta(operationId);
+      clearOperationId(pendingAmpulhetaOps.current, user.id, opKey, storageKey);
+      setAmpulhetaConfirmOpen(false);
+      festivalClaimLockUntil.current = null;
+      setCheckoutUrl(null);
+      setBypassReference(null);
+      setStatus((prev) =>
+        prev
+          ? {
+              ...prev,
+              canClaim: true,
+              nextClaimAt: null,
+              claimWarning: null,
+              bypassPriceCents: null,
+            }
+          : prev,
+      );
+      setEconomy((prev) =>
+        prev
+          ? { ...prev, ampulhetaEter: res.inventory.ampulhetaEter }
+          : prev,
+      );
+      setAmpulhetaFeedback(
+        "Ampulheta do Éter ativada! Tempo de espera eliminado — você já pode guardar uma carta.",
+      );
+      toast("Tempo de espera eliminado com a Ampulheta do Éter!", "success");
+      await refresh();
+    } catch (err) {
+      const message =
+        err instanceof ApiError
+          ? err.message
+          : "Erro ao usar Ampulheta do Éter. Tente novamente para reutilizar a mesma operação.";
+      if (
+        err instanceof ApiError &&
+        err.statusCode < 500 &&
+        err.statusCode !== 408
+      ) {
+        clearOperationId(
+          pendingAmpulhetaOps.current,
+          user.id,
+          opKey,
+          storageKey,
+        );
+        setAmpulhetaConfirmOpen(false);
+        if (err.statusCode === 400 || STALE_RE.test(message)) {
+          await refresh().catch(() => undefined);
+        }
+      }
+      setError(message);
+    } finally {
+      setAmpulhetaPending(false);
+    }
+  }
+
   async function handleClaim() {
     if (
       !selectedSpin ||
@@ -451,6 +532,10 @@ function GachaPageContent() {
       const pull = await api.gachaClaim({ spinId: selectedSpin.id });
       setClaimResult(pull);
       setResult(pull);
+      setAmpulhetaFeedback("");
+      if (pull.ampulhetaDropped) {
+        toast("Drop raro! Você encontrou 1 Ampulheta do Éter.", "success");
+      }
       setStagePreview(false);
       setStageOpen(true);
       setSpins((prev) =>
@@ -839,6 +924,17 @@ function GachaPageContent() {
   const claimCountdown = formatCountdown(status?.nextClaimAt ?? null, now);
   const canSpinNow = (status?.canSpin ?? status == null) && !spinning;
   const locked = status != null && status.canClaim === false;
+  const ampulhetaCount =
+    economy?.ampulhetaEter ?? status?.ampulhetaCount ?? 0;
+  const canActivateAmpulheta = canUseAmpulheta({
+    locked,
+    claimEventActive: !!status?.claimEvent,
+    ampulhetaEter: ampulhetaCount,
+  });
+  const ampulhetaSummary = ampulhetaUseSummary({
+    ampulhetaEter: ampulhetaCount,
+    remainingLabel: claimCountdown,
+  });
   const stagePull = useMemo(
     () =>
       stagePreview
@@ -1010,6 +1106,49 @@ function GachaPageContent() {
           </p>
         </ConfirmDialog>
       )}
+      <ConfirmDialog
+        open={ampulhetaConfirmOpen}
+        title="Usar Ampulheta do Éter?"
+        confirmLabel="Usar ampulheta"
+        busyLabel="Ativando…"
+        busy={ampulhetaPending}
+        onCancel={() => {
+          if (!ampulhetaPending) setAmpulhetaConfirmOpen(false);
+        }}
+        onConfirm={() => void handleUseAmpulheta()}
+      >
+        <div className="flex items-center gap-4 border border-hairline bg-ink/70 p-3">
+          <Image
+            src="/gacha/ampulheta-eter.png"
+            alt=""
+            width={56}
+            height={56}
+            className="h-14 w-14 shrink-0 object-contain"
+          />
+          <div className="min-w-0 text-body-sm text-mist">
+            <p className="font-medium text-snow">
+              Tempo restante: {ampulhetaSummary.remainingText}
+            </p>
+            <p className="mt-1">
+              Quantidade disponível:{" "}
+              <span className="font-mono tabular-nums text-snow">
+                {ampulhetaSummary.availableCount.toLocaleString("pt-BR")}
+              </span>{" "}
+              {ampulhetaSummary.availableCount === 1 ? "unidade" : "unidades"}
+            </p>
+          </div>
+        </div>
+        <ul className="mt-3 space-y-1.5 text-body-sm text-mist">
+          <li>
+            • {ampulhetaSummary.consumedCount} unidade será consumida (restarão{" "}
+            {ampulhetaSummary.nextCount.toLocaleString("pt-BR")}).
+          </li>
+          <li>• O tempo de espera será eliminado imediatamente.</li>
+          <li>
+            • Não concede giros extras e o cooldown após a próxima coleta volta ao normal.
+          </li>
+        </ul>
+      </ConfirmDialog>
 
       <section className="relative mt-3 overflow-hidden border border-hairline bg-panel shadow-[0_18px_60px_rgba(0,0,0,0.22)] sm:mt-4">
         <div
@@ -1200,22 +1339,78 @@ function GachaPageContent() {
                   </div>
                 )}
 
+                {ampulhetaFeedback && (
+                  <LazyMotion features={domAnimation}>
+                    <MotionConfig reducedMotion="user">
+                      <m.div
+                        role="status"
+                        aria-live="polite"
+                        initial={{ opacity: 0, y: -6, scale: 0.98 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
+                        className="mx-auto mt-4 flex max-w-2xl items-center gap-3 border border-ice/50 bg-ice/10 p-3 text-left"
+                      >
+                        <Image
+                          src="/gacha/ampulheta-eter.png"
+                          alt=""
+                          width={32}
+                          height={32}
+                          className="h-8 w-8 shrink-0 object-contain"
+                        />
+                        <p className="text-body-sm text-ice">
+                          {ampulhetaFeedback}
+                        </p>
+                      </m.div>
+                    </MotionConfig>
+                  </LazyMotion>
+                )}
+
                 {status?.claimWarning && (
                   <div className="mx-auto mt-4 max-w-2xl border border-hairline bg-ink/60 p-3 text-left">
                     <p className="text-body-sm text-mist">
                       {status.claimWarning}
                     </p>
-                    {status.bypassPriceCents != null && (
-                      <button
-                        type="button"
-                        onClick={() => void handleBypass()}
-                        disabled={bypassPending}
-                        className="mt-3 min-h-11 border border-amber-400/60 px-4 font-display text-body-sm text-amber-200 disabled:opacity-40"
-                      >
-                        {bypassPending
-                          ? "Aguardando Pix…"
-                          : `Desbloquear agora · R$ ${(status.bypassPriceCents / 100).toFixed(2).replace(".", ",")}`}
-                      </button>
+                    {(canActivateAmpulheta || status.bypassPriceCents != null) && (
+                      <div className="mt-3 flex flex-wrap items-center gap-3">
+                        {canActivateAmpulheta && (
+                          <button
+                            type="button"
+                            onClick={() => setAmpulhetaConfirmOpen(true)}
+                            disabled={ampulhetaPending}
+                            className="btn-ice inline-flex min-h-11 items-center gap-2 px-4 py-2 text-body-sm disabled:opacity-40"
+                          >
+                            <Image
+                              src="/gacha/ampulheta-eter.png"
+                              alt=""
+                              width={22}
+                              height={22}
+                              className="h-[22px] w-[22px] shrink-0 object-contain"
+                            />
+                            <span>
+                              {ampulhetaPending
+                                ? "Ativando ampulheta…"
+                                : `Usar Ampulheta do Éter (${ampulhetaCount})`}
+                            </span>
+                          </button>
+                        )}
+                        {status.bypassPriceCents != null && (
+                          <button
+                            type="button"
+                            onClick={() => void handleBypass()}
+                            disabled={bypassPending}
+                            className="min-h-11 border border-amber-400/60 px-4 font-display text-body-sm text-amber-200 disabled:opacity-40"
+                          >
+                            {bypassPending
+                              ? "Aguardando Pix…"
+                              : `Desbloquear agora · R$ ${(status.bypassPriceCents / 100).toFixed(2).replace(".", ",")}`}
+                          </button>
+                        )}
+                      </div>
+                    )}
+                    {status?.claimEvent && ampulhetaCount > 0 && (
+                      <p className="mt-2 text-caption text-mist">
+                        Ampulheta do Éter ({ampulhetaCount}) indisponível durante evento de resgate ativo.
+                      </p>
                     )}
                     {checkoutUrl && (
                       <a
